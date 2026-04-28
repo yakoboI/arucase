@@ -52,19 +52,19 @@ const PublicHeader = () => {
     return `${baseUrl}/static/${cleanPath}`;
   };
 
-  // Navigation items organized logically
+  // Vichwa vya urambazaji — Kiswahili sanifu (njia zile zile za kiufundi)
   const navigationItems = [
-    { path: '/', label: 'Home', icon: 'fa-home' },
-    { path: '/about', label: 'About', icon: 'fa-info-circle' },
-    { path: '/admissions', label: 'Admissions', icon: 'fa-user-plus' },
-    { path: '/staff', label: 'Staff', icon: 'fa-users' },
-    { path: '/student-life', label: 'Student Life', icon: 'fa-heart' },
-    { path: '/student-login', label: 'Student Report', icon: 'fa-file-alt' },
-    { path: '/school-fee', label: 'School Fee', icon: 'fa-money-bill-wave' },
-    { path: '/gallery', label: 'Gallery', icon: 'fa-images' },
-    { path: '/announcements', label: 'Announcements', icon: 'fa-bullhorn' },
-    { path: '/necta-results', label: 'NECTA Results', icon: 'fa-certificate' },
-    { path: '/contact', label: 'Contact', icon: 'fa-envelope' },
+    { path: '/', label: 'Nyumbani', icon: 'fa-home' },
+    { path: '/about', label: 'Kuhusu Sisi', icon: 'fa-info-circle' },
+    { path: '/admissions', label: 'Udahili', icon: 'fa-user-plus' },
+    { path: '/staff', label: 'Watumishi', icon: 'fa-users' },
+    { path: '/student-life', label: 'Maisha ya Wanafunzi', icon: 'fa-heart' },
+    { path: '/student-login', label: 'Ripoti za Mwanafunzi', icon: 'fa-file-alt' },
+    { path: '/school-fee', label: 'Ada ya Shule', icon: 'fa-money-bill-wave' },
+    { path: '/gallery', label: 'Picha', icon: 'fa-images' },
+    { path: '/announcements', label: 'Matangazo', icon: 'fa-bullhorn' },
+    { path: '/necta-results', label: 'Matokeo ya NECTA', icon: 'fa-certificate' },
+    { path: '/contact', label: 'Mawasiliano', icon: 'fa-envelope' },
   ];
 
   const isActive = (path) => {
@@ -112,13 +112,21 @@ const PublicHeader = () => {
             {/* School Crest/Logo - Left */}
             <div className="school-crest">
               {schoolLogo ? (
-                <img 
-                  src={getImageUrl(schoolLogo)} 
-                  alt="Arusha Catholic Seminary official school logo" 
-                  className="school-logo-img" 
-                  loading="eager"
-                  fetchpriority="high"
-                />
+                <figure className="header-tropical-frame">
+                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--tl" aria-hidden />
+                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--br" aria-hidden />
+                  <div className="header-tropical-frame__wood">
+                    <div className="header-tropical-frame__mat">
+                      <img
+                        src={getImageUrl(schoolLogo)}
+                        alt="Arusha Catholic Seminary official school logo"
+                        className="header-tropical-frame__img header-tropical-frame__img--logo"
+                        loading="eager"
+                        fetchpriority="high"
+                      />
+                    </div>
+                  </div>
+                </figure>
               ) : (
                 <i className="fas fa-school"></i>
               )}
@@ -130,17 +138,25 @@ const PublicHeader = () => {
             {/* Patron Saint - Right */}
             <div className="patron-saint">
               {patronSaintImage ? (
-                <img 
-                  src={getImageUrl(patronSaintImage)} 
-                  alt="Patron saint image of Arusha Catholic Seminary" 
-                  className="school-logo-img" 
-                  loading="eager"
-                  fetchpriority="high"
-                />
+                <figure className="header-tropical-frame header-tropical-frame--patron">
+                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--tr" aria-hidden />
+                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--bl" aria-hidden />
+                  <div className="header-tropical-frame__wood">
+                    <div className="header-tropical-frame__mat">
+                      <img
+                        src={getImageUrl(patronSaintImage)}
+                        alt="Picha ya somo wa seminari"
+                        className="header-tropical-frame__img header-tropical-frame__img--patron"
+                        loading="eager"
+                        fetchpriority="high"
+                      />
+                    </div>
+                  </div>
+                </figure>
               ) : (
                 <>
                   <i className="fas fa-user-circle"></i>
-                  <span className="saint-label">Patron Saint</span>
+                  <span className="saint-label">Somo wa Seminari</span>
                 </>
               )}
             </div>
@@ -161,13 +177,14 @@ const PublicHeader = () => {
               createPortal(
                 <>
                   <button
+                    type="button"
                     className="mobile-menu-toggle"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    aria-label="Toggle menu"
+                    aria-label={mobileMenuOpen ? 'Funga menyu' : 'Fungua menyu'}
                     aria-expanded={mobileMenuOpen}
                   >
                     <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-                    <span className="menu-toggle-text">{mobileMenuOpen ? 'Close' : 'Menu'}</span>
+                    <span className="menu-toggle-text">{mobileMenuOpen ? 'Funga' : 'Menyu'}</span>
                   </button>
                   {mobileMenuOpen && (
                     <div
@@ -197,13 +214,14 @@ const PublicHeader = () => {
             ) : (
               <>
                 <button
+                  type="button"
                   className="mobile-menu-toggle"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  aria-label="Toggle menu"
+                  aria-label={mobileMenuOpen ? 'Funga menyu' : 'Fungua menyu'}
                   aria-expanded={mobileMenuOpen}
                 >
                   <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-                  <span className="menu-toggle-text">{mobileMenuOpen ? 'Close' : 'Menu'}</span>
+                  <span className="menu-toggle-text">{mobileMenuOpen ? 'Funga' : 'Menyu'}</span>
                 </button>
                 {mobileMenuOpen && (
                   <div

@@ -3,6 +3,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { useMemo, useCallback } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
 import { publicAPI } from '../../services/public';
@@ -13,82 +14,198 @@ const Staff = () => {
     queryKey: ['page', 'staff'],
     queryFn: () => publicAPI.getPage('staff'),
     retry: false,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 15 * 60 * 1000, // 15 minutes - content rarely changes
   });
 
+  const { data: staffProfiles = [], isLoading: profilesLoading } = useQuery({
+    queryKey: ['public-staff-profiles'],
+    queryFn: async () => {
+      const res = await publicAPI.getStaffProfiles();
+      return res.data?.staff_profiles || [];
+    },
+    staleTime: 15 * 60 * 1000, // 15 minutes - staff profiles rarely change
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ['homepage-settings'],
+    queryFn: () => publicAPI.getHomepage(),
+    select: (res) => res.data?.settings,
+    staleTime: 15 * 60 * 1000, // 15 minutes - settings rarely change
+  });
+
+  const getPhotoUrl = useCallback((photoPath) => {
+    if (!photoPath) return null;
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) return photoPath;
+    const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (apiUrl) return `${apiUrl.replace('/api', '')}/static/${cleanPath}`;
+    return `/static/${cleanPath}`;
+  }, []);
+
+  // Memoized arrays - must be before early return to follow Rules of Hooks
+  const teachers = useMemo(() => (staffProfiles || []).filter((p) => p.is_teaching), [staffProfiles]);
+  const nonTeaching = useMemo(() => (staffProfiles || []).filter((p) => !p.is_teaching), [staffProfiles]);
+
   const fallbackContent = (
-    <div className="staff-page">
-      <Link to="/" className="home-button">
-        <i className="fas fa-home"></i> Back to Home
-      </Link>
+    <div className="content-card">
+      <h2>Watumishi</h2>
 
-      <div className="content-card">
-        <h2>Our Staff</h2>
-        
-        <h3>Administration</h3>
-        <p>
-          The seminary is led by a dedicated team of clergy and lay staff committed to the 
-          holistic formation of our students.
-        </p>
+      <h3>Uongozi</h3>
+      <p>
+        Seminari inaongozwa na timu ya mapadre na watumishi walei waliobobea katika malezi ya jumla ya wanafunzi.
+      </p>
 
-        <h3>Academic Staff</h3>
-        <p>
-          Our teaching staff consists of qualified and experienced educators, many holding 
-          advanced degrees in their respective fields. They are dedicated to academic excellence 
-          and the spiritual formation of our students.
-        </p>
+      <h3>Walimu</h3>
+      <p>
+        Walimu wetu ni wataalamu wa masomo mbalimbali ambao wanatoa mafunzo ya kitaaluma na malezi ya kiroho
+        kwa wanafunzi.
+      </p>
 
-        <h3>Formation Team</h3>
-        <p>
-          The formation team comprises priests and religious who guide students in their spiritual 
-          journey, helping them discern their vocation and grow in their faith.
-        </p>
+      <h3>Watumishi Wasio Walimu</h3>
+      <p>
+        Watumishi wasio walimu wanahudumia shule kwa kutoa huduma za usimamizi, usafi, chakula, na mengineyo.
+      </p>
 
-        <h3>Support Staff</h3>
-        <p>Our support staff ensures the smooth running of daily operations, including:</p>
-        <ul>
-          <li>Maintenance and facilities management</li>
-          <li>Kitchen and dining services</li>
-          <li>Library and resource center</li>
-          <li>Administrative support</li>
-          <li>Health and medical services</li>
-        </ul>
-
-        <h3>Staff Development</h3>
-        <p>
-          The seminary is committed to continuous professional development for all staff members, 
-          ensuring they remain current with best practices in education and formation.
-        </p>
-      </div>
+      <h3>Wasiliana Nasi</h3>
+      <p>
+        Kwa maelezo zaidi kuhusu watumishi, wasiliana nasi:<br />
+        <strong>Barua pepe:</strong>{' '}
+        <a href={`mailto:${settings?.contact_email || 'info@arushacatholicseminary.co.tz'}`} className="contact-link">
+          {settings?.contact_email || 'info@arushacatholicseminary.co.tz'}
+        </a>
+        <br />
+        <strong>Simu:</strong>{' '}
+        <a href={`tel:${settings?.contact_phone || '+255 123 456 789'}`} className="contact-link">
+          {settings?.contact_phone || '+255 123 456 789'}
+        </a>
+      </p>
     </div>
   );
 
   if (isLoading) {
     return (
       <PublicLayout>
-        <Loading message="Loading staff page..." />
+        <Loading message="Inapakia ukurasa wa watumishi..." />
       </PublicLayout>
     );
   }
 
   const page = pageData?.data?.page;
   const hasCustomContent = !isError && page && (page.html_content || page.content);
+  const contactPhone = settings?.contact_phone || '+255 123 456 789';
+  const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
 
   return (
     <PublicLayout>
-      {hasCustomContent ? (
-        <div className="staff-page">
-          <Link to="/" className="home-button">
-            <i className="fas fa-home"></i> Back to Home
-          </Link>
-          <div 
-            className="content-card"
-            dangerouslySetInnerHTML={{ __html: page.html_content || page.content || '' }}
-          />
+      <div className="staff-page">
+        <Link to="/" className="home-button">
+          <i className="fas fa-home"></i> Rudi Nyumbani
+        </Link>
+
+        {hasCustomContent ? (
+          <div className="content-card" dangerouslySetInnerHTML={{ __html: page.html_content || page.content || '' }} />
+        ) : (
+          fallbackContent
+        )}
+
+        <div className="content-card staff-directory-card">
+          <h2>Wasifu wa Watumishi</h2>
+          <p className="staff-directory-intro">
+            Taarifa hizi husasishwa na ofisi ya utawala. Hapa utaona walimu na watumishi wasio walimu pamoja na majukumu yao.
+          </p>
+
+          {profilesLoading ? (
+            <div className="staff-empty"><i className="fas fa-spinner fa-spin" /> Inapakia wasifu wa watumishi...</div>
+          ) : (staffProfiles || []).length === 0 ? (
+            <div className="staff-empty">
+              <i className="fas fa-users" />
+              Hakuna wasifu wa watumishi kwa sasa. Taarifa zitapatikana baada ya kuongezwa.
+            </div>
+          ) : (
+            <>
+              <h3>Walimu</h3>
+              {teachers.length === 0 ? (
+                <div className="staff-empty">Hakuna wasifu wa walimu kwa sasa.</div>
+              ) : (
+                <div className="staff-grid-public">
+                  {teachers.map((p) => (
+                    <article key={p.id} className="staff-profile-card">
+                      <div className="profile-head">
+                        <div className="profile-photo-frame">
+                          {p.photo_path ? (
+                            <img
+                              src={getPhotoUrl(p.photo_path)}
+                              alt={p.full_name}
+                              className="profile-photo-inner"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="profile-photo-inner profile-photo-placeholder">
+                              <i className="fas fa-user" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <h4>{p.full_name}</h4>
+                          <p className="role">{p.role_title}</p>
+                        </div>
+                      </div>
+                      <div className="profile-body">
+                        {p.professional_subjects ? <div><strong>Taaluma:</strong> {p.professional_subjects}</div> : null}
+                        {p.teaching_since_year ? <div><strong>Mwaka wa kuanza kufundisha:</strong> {p.teaching_since_year}</div> : null}
+                        {p.subjects_teaching ? <div><strong>Masomo anayofundisha:</strong> {p.subjects_teaching}</div> : null}
+                        {p.class_teacher_for ? <div><strong>Mlezi wa darasa:</strong> {p.class_teacher_for}</div> : null}
+                        {p.other_duties ? <div><strong>Majukumu mengine:</strong> {p.other_duties}</div> : null}
+                        {p.contact_phone ? <div><strong>Simu:</strong> <a href={`tel:${p.contact_phone}`}>{p.contact_phone}</a></div> : null}
+                        {p.contact_email ? <div><strong>Barua pepe:</strong> <a href={`mailto:${p.contact_email}`}>{p.contact_email}</a></div> : null}
+                        {p.profile_summary ? <p className="summary">{p.profile_summary}</p> : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+              <h3>Watumishi Wasio Walimu</h3>
+              {nonTeaching.length === 0 ? (
+                <div className="staff-empty">Hakuna wasifu wa watumishi wasio walimu kwa sasa.</div>
+              ) : (
+                <div className="staff-grid-public">
+                  {nonTeaching.map((p) => (
+                    <article key={p.id} className="staff-profile-card">
+                      <div className="profile-head">
+                        <div className="profile-photo-frame">
+                          {p.photo_path ? (
+                            <img
+                              src={getPhotoUrl(p.photo_path)}
+                              alt={p.full_name}
+                              className="profile-photo-inner"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="profile-photo-inner profile-photo-placeholder">
+                              <i className="fas fa-user" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <h4>{p.full_name}</h4>
+                          <p className="role">{p.role_title}</p>
+                        </div>
+                      </div>
+                      <div className="profile-body">
+                        {p.other_duties ? <div><strong>Majukumu:</strong> {p.other_duties}</div> : null}
+                        {p.contact_phone ? <div><strong>Simu:</strong> <a href={`tel:${p.contact_phone}`}>{p.contact_phone}</a></div> : null}
+                        {p.contact_email ? <div><strong>Barua pepe:</strong> <a href={`mailto:${p.contact_email}`}>{p.contact_email}</a></div> : null}
+                        {p.profile_summary ? <p className="summary">{p.profile_summary}</p> : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
-      ) : (
-        fallbackContent
-      )}
+      </div>
     </PublicLayout>
   );
 };

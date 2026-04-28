@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import './MarksConfigManagement.css';
@@ -26,13 +26,20 @@ const MarksConfigManagement = ({ formLevel }) => {
   const normalizedStream = stream || 'A';
 
   // Get months for term - memoize to prevent infinite loops
+  // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
+  // Form I-IV: Term I: Feb-May, Term II: Aug-Nov
   const getMonthsForTerm = React.useCallback((termParam) => {
-    if (termParam === 'Term I' || termParam === 'Term 1') {
-      return ['February', 'March', 'April', 'May'];
+    const isForm5Or6 = normalizedLevel && (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI');
+    if (isForm5Or6) {
+      return (termParam === 'Term I' || termParam === 'Term 1')
+        ? ['August', 'September', 'October', 'November']
+        : ['February', 'March', 'April', 'May'];
     } else {
-      return ['August', 'September', 'October', 'November'];
+      return (termParam === 'Term I' || termParam === 'Term 1')
+        ? ['February', 'March', 'April', 'May']
+        : ['August', 'September', 'October', 'November'];
     }
-  }, []);
+  }, [normalizedLevel]);
 
   const months = React.useMemo(() => getMonthsForTerm(term), [term, getMonthsForTerm]);
 

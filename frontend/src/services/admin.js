@@ -4,6 +4,10 @@
 import api from './api';
 
 export const adminAPI = {
+  // School branding (text)
+  getSchoolBranding: () => api.get('/admin/school-branding'),
+  saveSchoolBranding: (data) => api.post('/admin/school-branding', data),
+
   // Get all announcements
   getAnnouncements: () => api.get('/admin/announcements'),
 
@@ -20,27 +24,13 @@ export const adminAPI = {
   getSchoolLogo: () => api.get('/admin/school-logo'),
 
   // Upload school logo
-  uploadSchoolLogo: (formData) => {
-    // Don't set Content-Type manually - let Axios handle it automatically with boundary
-    return api.post('/admin/school-logo', formData, {
-      headers: {
-        // Remove Content-Type to let Axios set it automatically with boundary
-      },
-    });
-  },
+  uploadSchoolLogo: (formData) => api.post('/admin/school-logo', formData),
 
   // Get school stamp
   getSchoolStamp: () => api.get('/admin/school-stamp'),
 
   // Upload school stamp
-  uploadSchoolStamp: (formData) => {
-    // Don't set Content-Type manually - let Axios handle it automatically with boundary
-    return api.post('/admin/school-stamp', formData, {
-      headers: {
-        // Remove Content-Type to let Axios set it automatically with boundary
-      },
-    });
-  },
+  uploadSchoolStamp: (formData) => api.post('/admin/school-stamp', formData),
 
   // Get authority data
   getAuthorityData: () => api.get('/admin/authority-data'),
@@ -49,14 +39,7 @@ export const adminAPI = {
   saveAuthorityData: (data) => api.post('/admin/authority-data', data),
 
   // Upload authority signature
-  uploadAuthoritySignature: (formData) => {
-    // Don't set Content-Type manually - let Axios handle it automatically with boundary
-    return api.post('/admin/authority-data/upload-signature', formData, {
-      headers: {
-        // Remove Content-Type to let Axios set it automatically with boundary
-      },
-    });
-  },
+  uploadAuthoritySignature: (formData) => api.post('/admin/authority-data/upload-signature', formData),
 
   // Delete authority signature
   deleteAuthoritySignature: () => api.post('/admin/authority-data/delete-signature'),
@@ -65,14 +48,7 @@ export const adminAPI = {
   getPatronSaintImage: () => api.get('/admin/patron-saint-image'),
 
   // Upload patron saint image
-  uploadPatronSaintImage: (formData) => {
-    // Don't set Content-Type manually - let Axios handle it automatically with boundary
-    return api.post('/admin/patron-saint-image', formData, {
-      headers: {
-        // Remove Content-Type to let Axios set it automatically with boundary
-      },
-    });
-  },
+  uploadPatronSaintImage: (formData) => api.post('/admin/patron-saint-image', formData),
 
   // ========== USER MANAGEMENT ==========
 
@@ -124,17 +100,13 @@ export const adminAPI = {
 
   // ========== GALLERY ==========
   getGalleryPhotos: () => api.get('/admin/gallery'),
-  uploadGalleryPhotos: (formData) => api.post('/admin/gallery/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  uploadGalleryPhotos: (formData) => api.post('/admin/gallery/upload', formData),
   deleteGalleryPhoto: (id) => api.delete(`/admin/gallery/${id}`),
   deleteAllGalleryPhotos: () => api.delete('/admin/gallery/delete-all'),
 
   // ========== ALUMNI ==========
   getAlumni: () => api.get('/admin/alumni'),
-  saveAlumni: (formData) => api.post('/admin/alumni', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  saveAlumni: (formData) => api.post('/admin/alumni', formData),
   updateAlumniStatus: (id, status) => api.post(`/admin/alumni/${id}/status`, { status }),
   deleteAlumni: (id) => api.delete(`/admin/alumni/${id}`),
 
@@ -155,15 +127,13 @@ export const adminAPI = {
 
   // ========== ADMINISTRATORS ==========
   getAdministrators: () => api.get('/admin/administrators'),
-  saveAdministrator: (formData) => {
-    // Don't set Content-Type manually - let Axios handle it automatically with boundary
-    return api.post('/admin/administrators', formData, {
-      headers: {
-        // Remove Content-Type to let Axios set it automatically with boundary
-      },
-    });
-  },
+  saveAdministrator: (formData) => api.post('/admin/administrators', formData),
   deleteAdministrator: (id) => api.delete(`/admin/administrators/${id}`),
+
+  // ========== STAFF PROFILES ==========
+  getStaffProfiles: () => api.get('/admin/staff-profiles'),
+  saveStaffProfile: (formData) => api.post('/admin/staff-profiles', formData),
+  deleteStaffProfile: (id) => api.delete(`/admin/staff-profiles/${id}`),
 
   // ========== PASS ID MANAGEMENT ==========
   getPassIds: (form, params) => {
@@ -177,6 +147,7 @@ export const adminAPI = {
   getPublicPages: () => api.get('/admin/public-pages'),
   getPublicPage: (pageName) => api.get(`/admin/public-pages/${pageName}`),
   savePublicPage: (data) => api.post('/admin/public-pages', data),
+  deletePublicPage: (pageName) => api.delete(`/admin/public-pages/${pageName}`),
 
   // ========== NECTA URLS ==========
   getNECTAUrls: () => api.get('/admin/necta-urls'),
@@ -191,5 +162,13 @@ export const adminAPI = {
   uploadAIMattersDocument: (formData) => api.post('/admin/ai-matters/upload', formData),
   deleteAIMattersDocument: (id) => api.delete(`/admin/ai-matters/documents/${id}`),
   chatAIMatters: (message) => api.post('/admin/ai-matters/chat', { message }),
+
+  // Admissions applications (public applicants)
+  getAdmissionApplications: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return api.get(`/admin/admission-applications${qs ? `?${qs}` : ''}`);
+  },
+  updateAdmissionApplicationStatus: (id, status, feedback) =>
+    api.post(`/admin/admission-applications/${id}/status`, { status, feedback }),
 };
 

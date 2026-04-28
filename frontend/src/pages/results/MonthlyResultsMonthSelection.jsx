@@ -1,12 +1,13 @@
 /**
  * Monthly Results Month Selection Page
  */
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
 import '../academic/MarksConfigTermSelection.css';
 
 const MonthlyResultsMonthSelection = ({ formLevel }) => {
   const { year, stream } = useParams();
+  const navigate = useNavigate();
   
   // Assessment months for both terms
   const months = [
@@ -22,7 +23,7 @@ const MonthlyResultsMonthSelection = ({ formLevel }) => {
     if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
       return `/admin/results/monthly/${formLevel}/stream/${stream}/years`;
     } else {
-      return `/admin/results/monthly/${formLevel}/years`;
+      return `/admin/results/monthly/${formLevel}/year/${year}/streams`;
     }
   };
 
@@ -42,9 +43,9 @@ const MonthlyResultsMonthSelection = ({ formLevel }) => {
             <i className="fas fa-calendar-alt"></i>
             Select Month
             <div className="header-actions">
-              <Link to={getBackPath()} className="excel-btn small secondary">
+              <button type="button" onClick={() => navigate(-1)} className="excel-btn small secondary">
                 <i className="fas fa-arrow-left"></i> Back
-              </Link>
+              </button>
             </div>
           </div>
           <div className="excel-card-body">

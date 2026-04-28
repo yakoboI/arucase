@@ -2,10 +2,10 @@
  * Fees Announcements Management Page
  * Manage up to 10 announcements per class
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import './FeesManagement.css';
@@ -17,74 +17,63 @@ const FeesManagement = ({ formLevel }) => {
   const [announcements, setAnnouncements] = useState({});
 
   // Normalize form level
-  const normalizedLevel = formLevel
-    ? formLevel.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-    : '';
+  const normalizedLevel = useMemo(() => {
+    if (!formLevel) return '';
+    return formLevel.split('-').map(w => {
+      const lower = w.toLowerCase();
+      if (['i', 'ii', 'iii', 'iv', 'v', 'vi'].includes(lower)) {
+        return lower.toUpperCase();
+      }
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+  }, [formLevel]);
   
-  const normalizedStream = stream || 'NA';
+  // Normalize stream: NA -> A (match backend normalizeStream logic)
+  const normalizedStream = useMemo(() => {
+    return stream ? (stream.trim().toUpperCase() === 'NA' ? 'A' : stream.trim()) : 'A';
+  }, [stream]);
+  
   // Decode URL-encoded term parameter (e.g., "Term%20II" -> "Term II")
-  const decodedTerm = term ? decodeURIComponent(term) : null;
-  const normalizedTerm = decodedTerm || 'Term I';
+  const normalizedTerm = useMemo(() => {
+    const decodedTerm = term ? decodeURIComponent(term) : null;
+    return decodedTerm || 'Term I';
+  }, [term]);
 
   // Fetch existing announcements
   const { data: existingAnnouncements = {}, isLoading, error } = useQuery({
     queryKey: ['fees-announcements', normalizedLevel, normalizedStream, year, normalizedTerm],
     queryFn: async () => {
       try {
-        console.log('[FeesManagement] Fetching announcements:', {
-          level: normalizedLevel,
-          stream: normalizedStream,
-          year: year,
-          term: normalizedTerm,
-        });
         const res = await studentsAPI.getFeesAnnouncements({
           level: normalizedLevel,
           stream: normalizedStream,
           year: year,
           term: normalizedTerm,
         });
-        console.log('[FeesManagement] Received announcements:', res.data.announcements);
         return res.data.announcements || {};
       } catch (error) {
-        // Log error for debugging
-        console.error('[FeesManagement] Error in queryFn:', error);
-        // Re-throw to let React Query handle it properly
-        // React Query will catch this and set the error state
-        throw error;
+        console.error('Error fetching fees announcements:', error);
+        return {};
       }
     },
     enabled: !!normalizedLevel && !!normalizedStream && !!year && !!normalizedTerm && !!localStorage.getItem('token'),
     retry: (failureCount, error) => {
-      // Don't retry on 401 (authentication) or 404 (not found) errors
       if (error?.response?.status === 401 || error?.response?.status === 404) {
         return false;
       }
-      // Retry up to 2 times for other errors
       return failureCount < 2;
-    },
-    onError: (error) => {
-      // Handle error gracefully - React Query will set error state
-      // Only log non-401 errors (401 means authentication required, which is handled by interceptor)
-      if (error?.response?.status !== 401) {
-        console.error('[FeesManagement] Query error:', error);
-      }
     },
   });
 
-  // Log errors
-  useEffect(() => {
-    if (error) {
-      // Only log non-401 errors (401 is expected when not authenticated)
-      if (error?.response?.status !== 401) {
-        console.error('[FeesManagement] Error fetching announcements:', error);
-      }
-    }
-  }, [error]);
-
   // Initialize announcements from existing data
   useEffect(() => {
-    // Always set announcements, even if empty (to clear previous term's data)
-    setAnnouncements(existingAnnouncements || {});
+    try {
+      // Always set announcements, even if empty (to clear previous term's data)
+      setAnnouncements(existingAnnouncements || {});
+    } catch (error) {
+      console.error('Error initializing announcements:', error);
+      setAnnouncements({});
+    }
   }, [existingAnnouncements, normalizedTerm]);
 
   // Save announcements mutation
@@ -107,31 +96,30 @@ const FeesManagement = ({ formLevel }) => {
     },
   });
 
-  const handleChange = (index, value) => {
-    setAnnouncements({ ...announcements, [index]: value });
-  };
+  const handleChange = useCallback((index, value) => {
+    setAnnouncements(prev => ({ ...prev, [index]: value }));
+  }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     saveMutation.mutate(announcements);
-  };
+  }, [announcements, saveMutation]);
 
-  const getBackPath = () => {
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
-      return `/admin/fees/${formLevel}/stream/${stream}/year/${year}/terms`;
-    } else {
-      return `/admin/fees/${formLevel}/year/${year}/stream/${stream}/terms`;
-    }
-  };
+  const getBackPath = useCallback(() => {
+    const isFormVOrVI = normalizedLevel.toUpperCase() === 'FORM V' || normalizedLevel.toUpperCase() === 'FORM VI';
+    return isFormVOrVI
+      ? `/admin/fees/${formLevel}/stream/${stream}/years`
+      : `/admin/fees/${formLevel}/years`;
+  }, [normalizedLevel, formLevel, stream]);
 
-  const getOtherTermPath = () => {
-    const otherTerm = normalizedTerm === 'Term I' ? 'Term II' : 'Term I';
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
-      return `/admin/fees/${formLevel}/stream/${stream}/year/${year}/term/${otherTerm}`;
-    } else {
-      return `/admin/fees/${formLevel}/year/${year}/stream/${stream}/term/${otherTerm}`;
-    }
-  };
+  const getOtherTermPath = useCallback(() => {
+    const otherTerm = normalizedTerm === 'First Term' ? 'Second Term' : 'First Term';
+    const isFormVOrVI = normalizedLevel.toUpperCase() === 'FORM V' || normalizedLevel.toUpperCase() === 'FORM VI';
+    const encodedTerm = encodeURIComponent(otherTerm);
+    return isFormVOrVI
+      ? `/admin/fees/${formLevel}/stream/${stream}/year/${year}/term/${encodedTerm}`
+      : `/admin/fees/${formLevel}/year/${year}/stream/${stream}/term/${encodedTerm}`;
+  }, [normalizedTerm, normalizedLevel, formLevel, stream, year]);
 
   return (
     <AdminLayout>
@@ -141,10 +129,10 @@ const FeesManagement = ({ formLevel }) => {
             <i className="fas fa-money-bill-wave"></i>
             Fees Announcements - {normalizedLevel} {normalizedStream} {year} - {normalizedTerm}
             <div className="header-actions">
-              <Link to={getOtherTermPath()} className="excel-btn secondary small">
-                <i className="fas fa-exchange-alt"></i> Switch to {normalizedTerm === 'Term I' ? 'Term II' : 'Term I'}
+              <Link to={getOtherTermPath()} className="excel-btn secondary small" style={{ pointerEvents: 'auto' }}>
+                <i className="fas fa-exchange-alt"></i> Switch to {normalizedTerm === 'First Term' ? 'Second Term' : 'First Term'}
               </Link>
-              <Link to={getBackPath()} className="excel-btn secondary small">
+              <Link to={getBackPath()} className="excel-btn secondary small" style={{ pointerEvents: 'auto' }}>
                 <i className="fas fa-arrow-left"></i> Back
               </Link>
             </div>
@@ -152,10 +140,15 @@ const FeesManagement = ({ formLevel }) => {
           <div className="excel-card-body">
             {isLoading ? (
               <div className="loading-state">Loading...</div>
+            ) : error ? (
+              <div className="error-state">
+                <p>Error loading fees announcements. Please try again.</p>
+                <p style={{ fontSize: '12px', color: '#666' }}>{error.message || 'Unknown error'}</p>
+              </div>
             ) : (
               <>
-                <p className="fees-description">Enter fees announcements and information for students (up to 10 announcements)</p>
-                
+                <p className="fees-description">Enter fees announcements and important information for students. These will appear in the instructions section of student reports.</p>
+
                 <form onSubmit={handleSubmit} className="fees-form">
                   <div className="table-container">
                     <table className="excel-table announcements-table">

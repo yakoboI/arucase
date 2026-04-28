@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import api from '../../services/api';
@@ -233,13 +233,15 @@ const ComprehensiveStudentMarks = ({ formLevel }) => {
   }, [formLevel, normalizedLevel, normalizedStream, year, stream, term, admNo, isFormVOrVI]);
 
   // Get months for term - memoize to prevent infinite loops
+  // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
+  // Form I-IV: Term I: Feb-May, Term II: Aug-Nov
   const getMonthsForTerm = React.useCallback((termParam, formCode) => {
     const isForm5Or6 = formCode && (formCode.includes('FORM V') || formCode.includes('FORM VI'));
-    
+
     if (termParam === 'Term I' || termParam === 'Term 1') {
       return isForm5Or6 ? ['August', 'September', 'October', 'November'] : ['February', 'March', 'April', 'May'];
     } else {
-      return isForm5Or6 ? ['January', 'February', 'March', 'April'] : ['August', 'September', 'October', 'November'];
+      return isForm5Or6 ? ['February', 'March', 'April', 'May'] : ['August', 'September', 'October', 'November'];
     }
   }, []);
 
@@ -345,7 +347,7 @@ const ComprehensiveStudentMarks = ({ formLevel }) => {
         if (!scores[displayCode]) {
           scores[displayCode] = {};
         }
-        scores[displayCode][score.month] = score.score || 0;
+        scores[displayCode][score.month] = score.score; // Keep NULL for not registered
       });
       return scores;
     },
@@ -422,7 +424,7 @@ const ComprehensiveStudentMarks = ({ formLevel }) => {
             if (!allScores[student.adm_no][mappedCode]) {
               allScores[student.adm_no][mappedCode] = {};
             }
-            allScores[student.adm_no][mappedCode][score.month] = score.score || 0;
+            allScores[student.adm_no][mappedCode][score.month] = score.score; // Keep NULL for not registered
           });
         }
       });
@@ -455,14 +457,22 @@ const ComprehensiveStudentMarks = ({ formLevel }) => {
         const studentScores = allScoresData[student.adm_no] || {};
         const subjectScores = studentScores[subjectCode] || {};
         let subjectTotal = 0;
-        
+        let validMonths = 0;
+
         months.forEach(month => {
-          const rawScore = parseFloat(subjectScores[month] || 0);
+          const rawScore = subjectScores[month];
+          // Skip NULL/not registered scores (dash or empty space)
+          if (rawScore === null || rawScore === undefined || rawScore === '' || rawScore === '-') {
+            return;
+          }
+          const score = parseFloat(rawScore);
           const weight = (weights[month] || 0) / 100;
-          subjectTotal += rawScore * weight;
+          subjectTotal += score * weight;
+          validMonths++;
         });
-        
-        subjectTotals[student.adm_no] = subjectTotal;
+
+        // Use average per valid month instead of total for fair comparison
+        subjectTotals[student.adm_no] = validMonths > 0 ? subjectTotal / validMonths : 0;
       });
       
       // Sort and rank students for this subject
@@ -482,23 +492,36 @@ const ComprehensiveStudentMarks = ({ formLevel }) => {
     const studentTotals = {};
     allStudents.forEach(student => {
       let grandTotal = 0;
+      let validSubjects = 0;
       const studentScores = allScoresData[student.adm_no] || {};
-      
+
       subjects.forEach(subject => {
         const subjectCode = subject.subject_abbreviation || subject.subject_code;
         const subjectScores = studentScores[subjectCode] || {};
         let subjectTotal = 0;
-        
+        let validMonths = 0;
+
         months.forEach(month => {
-          const rawScore = parseFloat(subjectScores[month] || 0);
+          const rawScore = subjectScores[month];
+          // Skip NULL/not registered scores (dash or empty space)
+          if (rawScore === null || rawScore === undefined || rawScore === '' || rawScore === '-') {
+            return;
+          }
+          const score = parseFloat(rawScore);
           const weight = (weights[month] || 0) / 100;
-          subjectTotal += rawScore * weight;
+          subjectTotal += score * weight;
+          validMonths++;
         });
-        
-        grandTotal += subjectTotal;
+
+        // Only count subjects with valid scores
+        if (validMonths > 0) {
+          grandTotal += subjectTotal / validMonths;
+          validSubjects++;
+        }
       });
-      
-      studentTotals[student.adm_no] = grandTotal;
+
+      // Use average per subject instead of grand total for fair comparison
+      studentTotals[student.adm_no] = validSubjects > 0 ? grandTotal / validSubjects : 0;
     });
     
     // Sort and rank for overall position
@@ -571,12 +594,17 @@ const ComprehensiveStudentMarks = ({ formLevel }) => {
     subjects.forEach(subject => {
       const subjectCode = subject.subject_abbreviation || subject.subject_code;
       const subjectScores = scoresData[subjectCode] || {};
-      
+
       let weightedTotal = 0;
       months.forEach(month => {
-        const rawScore = parseFloat(subjectScores[month] || 0);
+        const rawScore = subjectScores[month];
+        // Skip NULL/not registered scores (dash or empty space)
+        if (rawScore === null || rawScore === undefined || rawScore === '' || rawScore === '-') {
+          return;
+        }
+        const score = parseFloat(rawScore);
         const weight = (weights[month] || 0) / 100;
-        weightedTotal += rawScore * weight;
+        weightedTotal += score * weight;
       });
 
       // Calculate grade
@@ -843,17 +871,19 @@ const ComprehensiveStudentMarks = ({ formLevel }) => {
                         </td>
                         <td className="subject-code-cell">{subjectCode}</td>
                         {months.map((month) => {
-                          const rawScore = parseFloat(subjectScores[month] || 0);
+                          const rawScore = subjectScores[month];
+                          const isNotRegistered = rawScore === null || rawScore === undefined || rawScore === '' || rawScore === '-';
+                          const scoreValue = isNotRegistered ? null : parseFloat(rawScore);
                           const weight = (weights[month] || 0) / 100;
-                          const weightedScore = rawScore * weight;
+                          const weightedScore = isNotRegistered ? 0 : scoreValue * weight;
 
                           return (
                             <React.Fragment key={month}>
                               <td className="raw-score-cell">
                                 <input
-                                  type="number"
+                                  type="text"
                                   className="raw-score-input"
-                                  value={rawScore > 0 ? rawScore : ''}
+                                  value={isNotRegistered ? '-' : (scoreValue !== null ? scoreValue : '')}
                                   readOnly
                                   placeholder="0"
                                 />

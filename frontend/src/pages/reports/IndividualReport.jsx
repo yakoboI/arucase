@@ -34,18 +34,15 @@ const IndividualReport = () => {
   const handleFormClick = (form) => {
     if (form.hasStreams) {
       // For Form V/VI, navigate to stream selection
-      // React Router handles URL encoding automatically
-      navigate(`/reports/individual/${form.code}/stream`);
+      navigate(`/reports/individual/${encodeURIComponent(form.code)}/stream`);
     } else {
       // For Form I-IV, go directly to year selection
-      // React Router handles URL encoding automatically
-      navigate(`/reports/individual/${form.code}/${form.stream}/year`);
+      navigate(`/reports/individual/${encodeURIComponent(form.code)}/${encodeURIComponent(form.stream)}/year`);
     }
   };
 
   const handleStreamClick = (formCode, stream) => {
-    // React Router handles URL encoding automatically
-    navigate(`/reports/individual/${formCode}/${stream}/year`);
+    navigate(`/reports/individual/${encodeURIComponent(formCode)}/${encodeURIComponent(stream)}/year`);
   };
 
   // If we're on the stream selection route, show only streams for the selected form
@@ -73,6 +70,7 @@ const IndividualReport = () => {
               <div className="streams-grid">
                 {selectedForm.streams.map((stream) => (
                   <button
+                    type="button"
                     key={stream}
                     onClick={() => handleStreamClick(selectedForm.code, stream)}
                     className="stream-card"
@@ -122,6 +120,7 @@ const IndividualReport = () => {
                     <div className="streams-grid">
                       {form.streams.map((stream) => (
                         <button
+                          type="button"
                           key={stream}
                           onClick={() => handleStreamClick(form.code, stream)}
                           className="stream-card"
@@ -141,6 +140,7 @@ const IndividualReport = () => {
                 ) : (
                   // Regular form (I-IV)
                   <button
+                    type="button"
                     key={form.code}
                     onClick={() => handleFormClick(form)}
                     className="form-card"

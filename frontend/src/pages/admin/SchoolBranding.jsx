@@ -1,10 +1,10 @@
 /**
  * School Branding Management
  */
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './SchoolBranding.css';
@@ -17,6 +17,24 @@ const SchoolBranding = () => {
   const [schoolName, setSchoolName] = useState('Arusha Catholic Seminary');
   const [tagline, setTagline] = useState('');
   const [bannerText, setBannerText] = useState('');
+
+  // Fetch current text branding
+  const { data: brandingData } = useQuery({
+    queryKey: ['school-branding'],
+    queryFn: async () => {
+      const res = await adminAPI.getSchoolBranding();
+      return res.data?.branding || null;
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!brandingData) return;
+    setSchoolName(brandingData.school_name || 'Arusha Catholic Seminary');
+    setTagline(brandingData.tagline || '');
+    setBannerText(brandingData.banner_text || '');
+  }, [brandingData]);
 
   // Fetch current logo
   const { data: logoData, isLoading: logoLoading } = useQuery({
@@ -170,9 +188,30 @@ const SchoolBranding = () => {
     return `${baseUrl}/static/${cleanPath}`;
   };
 
+  const saveTextBrandingMutation = useMutation({
+    mutationFn: async () => {
+      return adminAPI.saveSchoolBranding({
+        school_name: schoolName,
+        tagline,
+        banner_text: bannerText,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['school-branding']);
+      queryClient.invalidateQueries(['homepage']); // public header/footer/settings use this
+      toast.success('Text branding saved successfully!');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to save text branding');
+    },
+  });
+
   const handleSaveTextBranding = () => {
-    // TODO: Implement save text branding API call
-    toast.info('Text branding save functionality coming soon');
+    if (!schoolName.trim()) {
+      toast.error('School Name is required');
+      return;
+    }
+    saveTextBrandingMutation.mutate();
   };
 
   return (
@@ -238,8 +277,17 @@ const SchoolBranding = () => {
                   <button 
                     className="branding-btn-primary"
                     onClick={handleSaveTextBranding}
+                    disabled={saveTextBrandingMutation.isPending}
                   >
-                    <i className="fas fa-save"></i> Save Text Branding
+                    {saveTextBrandingMutation.isPending ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin"></i> Saving...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-save"></i> Save Text Branding
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

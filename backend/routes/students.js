@@ -12,13 +12,21 @@ const { saveUserActivity } = require('../utils/activityLogger');
 const { generatePhotoEntryFormPDF, generateMonthlyResultsPDF } = require('../utils/pdfGenerator');
 const { normalizeStream } = require('../utils/streamNormalizer');
 const { sendError } = require('../utils/safeError');
+const { cacheRoutes } = require('../middleware/cache');
+const sharp = require('sharp');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 
 // Term variants so DELETE matches both "Term I" and "Term 1" (and II/2, etc.) in DB
 function getTermMatchValues(term) {
   const t = term != null ? String(term).trim() : '';
   const variants = [t];
-  if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t)) { variants.push('Term I', 'Term 1'); }
-  else if (/^Term\s+II$/i.test(t) || /^Term\s+2$/i.test(t)) { variants.push('Term II', 'Term 2'); }
+  if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t) || /^First\s+Term$/i.test(t)) {
+    variants.push('Term I', 'Term 1', 'First Term');
+  }
+  else if (/^Term\s+II$/i.test(t) || /^Term\s+2$/i.test(t) || /^Second\s+Term$/i.test(t)) {
+    variants.push('Term II', 'Term 2', 'Second Term');
+  }
   else if (/^Term\s+III$/i.test(t) || /^Term\s+3$/i.test(t)) { variants.push('Term III', 'Term 3'); }
   else if (/^Term\s+IV$/i.test(t) || /^Term\s+4$/i.test(t)) { variants.push('Term IV', 'Term 4'); }
   return [...new Set(variants)];
@@ -37,25 +45,87 @@ function getLevelMatchValues(level) {
   return [...new Set(variants)];
 }
 
+// Helper function to calculate com (combination) based on level and scores
+async function calculateComForStudent(admNo, level, stream, year) {
+  // Form I: always UI (Under Investigation)
+  if (level === 'FORM I') {
+    return 'UI';
+  }
+  
+  // Form II-IV: check if student has Chemistry, Physics, or Biology scores
+  if (level === 'FORM II' || level === 'FORM III' || level === 'FORM IV') {
+    try {
+      const scienceSubjects = ['CHE', 'PHY', 'BIO', 'CHEMISTRY', 'PHYSICS', 'BIOLOGY'];
+      const scoresResult = await query(
+        `SELECT DISTINCT subject_code 
+         FROM individual_scores 
+         WHERE adm_no = $1 AND level = $2 AND stream = $3 AND year = $4
+         AND subject_code = ANY($5)`,
+        [admNo, level, stream, parseInt(year), scienceSubjects]
+      );
+      
+      if (scoresResult.rows.length > 0) {
+        return 'SC'; // Has science subjects
+      } else {
+        return 'SS'; // No science subjects - Social Science
+      }
+    } catch (error) {
+      console.error('Error calculating com:', error);
+      return 'UI'; // Default to UI if error
+    }
+  }
+  
+  // Form V-VI: use stream as combination (PCM, PCB, etc.)
+  return stream || 'UI';
+}
+
 // All student routes require authentication
 router.use(requireAuth);
 
-// Configure multer for student photos (use absolute path so it matches server's static serve location)
-const photosUploadDir = path.join(__dirname, '..', 'static', 'uploads', 'photos');
-const storage = multer.diskStorage({
+// Helper function to check if user is allocated to a subject
+async function isUserAllocatedToSubject(username, level, stream, year, subject_code) {
+  try {
+    const normalizedStream = normalizeStream(stream);
+    const result = await query(
+      'SELECT id FROM subject_teachers WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND subject_code = $5 AND teacher_name = $6',
+      [level, normalizedStream, 'NA', parseInt(year), subject_code, username]
+    );
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking subject allocation:', error);
+    return false;
+  }
+}
+
+// Configure Cloudinary storage for student photos
+// Passport-style output: ~35×45 mm at ~300 DPI (ICAO-style digital photo), JPEG capped for web/reports.
+// Uploads may be up to 5MB; we resize (contain on white), then lower quality until <= max bytes.
+const STUDENT_PHOTO_MAX_BYTES = 150 * 1024; // ~150KB — sharp enough for ID/reports; still fast to load
+const STUDENT_PHOTO_UPLOAD_MAX_BYTES = 5 * 1024 * 1024; // Raw upload limit (<= 5MB) before resizing/compression
+const STUDENT_PHOTO_TARGET_WIDTH = 413;
+const STUDENT_PHOTO_TARGET_HEIGHT = 531; // 35:45 passport aspect
+
+// Use disk storage first, then upload to Cloudinary with fallback
+const diskStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    await fs.mkdir(photosUploadDir, { recursive: true });
-    cb(null, photosUploadDir);
+    try {
+      const uploadPath = path.join(__dirname, '../static/uploads/photos');
+      await fs.mkdir(uploadPath, { recursive: true });
+      cb(null, uploadPath);
+    } catch (err) {
+      console.error('Error creating upload directory:', err);
+      cb(err, null);
+    }
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'student-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
-const upload = multer({ 
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+const upload = multer({
+  storage: diskStorage,
+  limits: { fileSize: STUDENT_PHOTO_UPLOAD_MAX_BYTES },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -63,10 +133,52 @@ const upload = multer({
     if (extname && mimetype) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
     }
   }
 });
+
+async function enforceStudentPhotoSpec(reqFile) {
+  if (!reqFile?.path) return;
+
+  // Read original bytes (multer wrote a file already).
+  const inputBuffer = await fs.readFile(reqFile.path);
+
+  // Resize to target dimensions (contain on white). Then lower JPEG quality until under STUDENT_PHOTO_MAX_BYTES.
+  const resizeBase = {
+    width: STUDENT_PHOTO_TARGET_WIDTH,
+    height: STUDENT_PHOTO_TARGET_HEIGHT,
+    fit: 'contain',
+    background: { r: 255, g: 255, b: 255, alpha: 1 },
+    withoutEnlargement: true,
+  };
+
+  let finalBuffer = null;
+  let lastSize = null;
+  // JPEG quality levels to try (higher first, then reduce).
+  for (let quality = 85; quality >= 10; quality -= 5) {
+    const buf = await sharp(inputBuffer)
+      .resize(resizeBase)
+      .jpeg({ quality })
+      .toBuffer();
+    lastSize = buf.length;
+    if (buf.length <= STUDENT_PHOTO_MAX_BYTES) {
+      finalBuffer = buf;
+      break;
+    }
+  }
+
+  if (!finalBuffer) {
+    throw new Error(
+      `Photo could not be compressed to <= ${Math.round(STUDENT_PHOTO_MAX_BYTES / 1024)}KB (passport-quality cap). Last try: ${lastSize} bytes. Try a simpler image.`
+    );
+  }
+
+  // Overwrite uploaded file with the compressed buffer.
+  await fs.writeFile(reqFile.path, finalBuffer);
+  reqFile.size = finalBuffer.length;
+  reqFile.filename = path.basename(reqFile.path);
+}
 
 // Separate multer config for CSV uploads (no file filter, accepts CSV files)
 const csvUploadDir = path.join(__dirname, '..', 'static', 'uploads', 'csv');
@@ -108,9 +220,12 @@ router.get('/years', async (req, res) => {
       queryText += ` AND level = $${paramCount++}`;
       params.push(level);
     }
-    if (stream && stream !== 'NA') {
-      queryText += ` AND stream = $${paramCount++}`;
-      params.push(stream);
+    if (stream) {
+      const normalizedStream = normalizeStream(stream);
+      if (normalizedStream !== 'NA' && normalizedStream !== 'ALL') {
+        queryText += ` AND stream = $${paramCount++}`;
+        params.push(normalizedStream);
+      }
     }
     
     queryText += ' ORDER BY year DESC';
@@ -125,14 +240,59 @@ router.get('/years', async (req, res) => {
   }
 });
 
+// Form V/VI combination to subjects mapping (used consistently across all endpoints)
+const combinationSubjects = {
+  'PCB': ['PHY', 'CHE', 'BIO', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'PCM': ['PHY', 'CHE', 'MAT', 'MATH', 'MATHEMATICS', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'CBG': ['CHE', 'BIO', 'GEO', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'PGM': ['PHY', 'GEO', 'MAT', 'MATH', 'MATHEMATICS', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'HGE': ['HIS', 'GEO', 'ECO', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'HKL': ['HIS', 'KIS', 'ENG', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'HGK': ['HIS', 'GEO', 'KIS', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'EGM': ['ECO', 'GEO', 'MAT', 'MATH', 'MATHEMATICS', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+  'HGL': ['HIS', 'GEO', 'ENG', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM']
+};
+
+// Helper function to check if a combination includes a subject
+const doesCombinationTakeSubject = (combination, subjectCode) => {
+  if (!combination || !subjectCode) return false;
+  const subjects = combinationSubjects[combination];
+  if (!subjects) return false; // Return false for unknown combinations to exclude those students
+  const subjectUpper = subjectCode.toUpperCase();
+  const result = subjects.some(s => {
+    const sUpper = s.toUpperCase();
+    if (subjectUpper.includes(sUpper) || sUpper.includes(subjectUpper)) {
+      return true;
+    }
+    const subjectKeywords = ['MAT', 'MATH', 'MATHEMATICS', 'APPLIED'];
+    if (sUpper === 'MAT' && subjectKeywords.some(kw => subjectUpper.includes(kw))) {
+      return true;
+    }
+    return false;
+  });
+  return result;
+};
+
+// Helper function to get streams that offer a subject (inverse of combinationSubjects)
+const getStreamsForSubject = (subjectCode) => {
+  if (!subjectCode) return [];
+  const streams = [];
+  for (const [combination, subjects] of Object.entries(combinationSubjects)) {
+    if (doesCombinationTakeSubject(combination, subjectCode)) {
+      streams.push(combination);
+    }
+  }
+  return streams;
+};
+
 // Get students with filters.
-// Used by score entry and others: returns ALL registered students for the requested class (level, stream, year).
+// Used by score entry and others: returns ALL registered students for the requested class (level, stream, year, term).
 // Do not filter by user allocation here; access to which class a user can request is enforced by the frontend.
 // For FORM I-IV, match both stream 'A' and 'NA' so all registered students in that class are returned.
 router.get('/', async (req, res) => {
   try {
-    const { level, stream, year, search } = req.query;
-    let queryText = 'SELECT * FROM students WHERE 1=1';
+    const { level, stream, year, term, search, subject_code } = req.query;
+    let queryText = 'SELECT adm_no, first_name, middle_name, surname, sex, level, stream, year, term FROM students WHERE 1=1';
     const params = [];
     let paramCount = 1;
     
@@ -145,6 +305,25 @@ router.get('/', async (req, res) => {
     }
     if (stream && stream.trim()) {
       const normalizedStream = normalizeStream(stream.trim());
+      // Combined mode for FORM V/VI: stream=ALL means include all streams.
+      if (normalizedStream === 'ALL') {
+        // In together mode with subject filter, only include streams that offer the subject
+        const normalizedLevel = level ? level.trim().toUpperCase() : '';
+        if (subject_code && (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI')) {
+          const streamsForSubject = getStreamsForSubject(subject_code);
+          if (streamsForSubject.length > 0) {
+            queryText += ` AND stream IN ($${paramCount}`;
+            params.push(streamsForSubject[0]);
+            paramCount++;
+            for (let i = 1; i < streamsForSubject.length; i++) {
+              queryText += `, $${paramCount++}`;
+              params.push(streamsForSubject[i]);
+            }
+            queryText += ')';
+          }
+        }
+        // no stream filter if no subject_code or no matching streams
+      } else {
       // FORM I-IV: return students with stream A or NA so all registered in that class are visible (e.g. score entry)
       const isFormIV = level && /^FORM\s+(I|II|III|IV)$/i.test(level.trim());
       if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
@@ -156,13 +335,24 @@ router.get('/', async (req, res) => {
         params.push(normalizedStream);
       }
     }
+    }
     if (year) {
       const yearNum = parseInt(year);
       if (!isNaN(yearNum) && yearNum > 0) {
-        // Frontend already converts display year to API year for FORM V/VI
-        // So we just use the year parameter directly
         queryText += ` AND year = $${paramCount++}`;
         params.push(yearNum);
+      }
+    }
+    if (term && term.trim()) {
+      const termMatchValues = getTermMatchValues(term.trim());
+      if (termMatchValues.length > 1) {
+        const termPlaceholders = termMatchValues.map((_, i) => `$${paramCount + i}`).join(', ');
+        queryText += ` AND term IN (${termPlaceholders})`;
+        params.push(...termMatchValues);
+        paramCount += termMatchValues.length;
+      } else {
+        queryText += ` AND term = $${paramCount++}`;
+        params.push(term.trim());
       }
     }
     if (search && search.trim()) {
@@ -179,23 +369,7 @@ router.get('/', async (req, res) => {
     const maxStudents = Math.min(isNaN(requestedLimit) ? 500 : requestedLimit, 2000);
     queryText += ` LIMIT ${maxStudents}`;
     
-    // Debug logging for Form V/VI queries
-    if (level && (level.toUpperCase().includes('FORM V') || level.toUpperCase().includes('FORM VI'))) {
-      console.log('Form V/VI Student Query:', {
-        level: level.trim().toUpperCase(),
-        stream: stream ? normalizeStream(stream.trim()) : 'none',
-        year: year ? parseInt(year) : 'none',
-        query: queryText,
-        params: params
-      });
-    }
-    
     const result = await query(queryText, params);
-    
-    // Debug logging for Form V/VI results
-    if (level && (level.toUpperCase().includes('FORM V') || level.toUpperCase().includes('FORM VI'))) {
-      console.log(`Found ${result.rows.length} students for ${level.trim().toUpperCase()} ${stream ? normalizeStream(stream.trim()) : ''} ${year || ''}`);
-    }
     
     res.json({ students: result.rows || [] });
   } catch (error) {
@@ -255,9 +429,9 @@ router.get('/export', async (req, res) => {
     // Normalize stream: NA -> A
     const normalizedStream = normalizeStream(stream);
     
-    // Fetch students
+    // Fetch students (select only needed columns)
     const result = await query(
-      'SELECT * FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
+      'SELECT adm_no, first_name, middle_name, surname, sex, year FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
       [level, normalizedStream, parseInt(year)]
     );
     
@@ -317,41 +491,118 @@ router.get('/scores/template', async (req, res) => {
     const yearNum = parseInt(year, 10);
     if (isNaN(yearNum)) return res.status(400).json({ message: 'Invalid year' });
 
+    // Restrict non-admin to subjects they are allocated to
+    const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
+    const isAdmin = ['admin', 'superadmin'].includes(userRole);
+    if (!isAdmin && req.user && req.user.username) {
+      const isAllocated = await isUserAllocatedToSubject(req.user.username, normalizedLevel, stream, yearNum, subject_code);
+      if (!isAllocated) {
+        return res.status(403).json({
+          message: 'You are not allocated to this subject. Contact an administrator to assign subjects.',
+        });
+      }
+    }
+
     const isFormIV = /^FORM\s+(I|II|III|IV)$/i.test(normalizedLevel);
+    const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
+    
+    // Determine term from month for Form V/VI
+    // First Term: Jul-Dec (August, September, October, November)
+    // Second Term: Jan-Jun (February, March, April, May)
+    const getTermFromMonth = (month) => {
+      const firstTermMonths = ['August', 'September', 'October', 'November'];
+      const secondTermMonths = ['February', 'March', 'April', 'May'];
+      
+      if (firstTermMonths.includes(month)) {
+        return 'First Term';
+      } else if (secondTermMonths.includes(month)) {
+        return 'Second Term';
+      }
+      return 'First Term'; // Default fallback
+    };
+    
+    const currentTerm = isFormVOrVI ? getTermFromMonth(month) : null;
+    const termMatchValues = isFormVOrVI && currentTerm ? getTermMatchValues(currentTerm) : [];
+    
     let studentsResult;
-    if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
+    // Handle ALL stream mode (together mode) - fetch students from all streams
+    if (normalizedStream === 'ALL') {
+      let queryText = 'SELECT adm_no, first_name, middle_name, surname, stream FROM students WHERE level = $1 AND year = $2';
+      let queryParams = [normalizedLevel, yearNum];
+      
+      // Add term filtering for Form V/VI together mode
+      if (isFormVOrVI && termMatchValues.length > 0) {
+        const termPlaceholders = termMatchValues.map((_, i) => `$${3 + i}`).join(', ');
+        queryText += ` AND term IN (${termPlaceholders})`;
+        queryParams.push(...termMatchValues);
+      }
+      
+      queryText += ' ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC';
+      studentsResult = await query(queryText, queryParams);
+    } else if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
       studentsResult = await query(
-        'SELECT * FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC',
+        'SELECT adm_no, first_name, middle_name, surname, stream FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC',
         [normalizedLevel, 'A', 'NA', yearNum]
       );
     } else {
-      studentsResult = await query(
-        'SELECT * FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC',
-        [normalizedLevel, normalizedStream, yearNum]
-      );
+      // Normal mode (specific stream) - add term filtering for Form V/VI
+      let queryText = 'SELECT adm_no, first_name, middle_name, surname, stream FROM students WHERE level = $1 AND stream = $2 AND year = $3';
+      let queryParams = [normalizedLevel, normalizedStream, yearNum];
+      
+      // Add term filtering for Form V/VI normal mode
+      if (isFormVOrVI && termMatchValues.length > 0) {
+        const termPlaceholders = termMatchValues.map((_, i) => `$${4 + i}`).join(', ');
+        queryText += ` AND term IN (${termPlaceholders})`;
+        queryParams.push(...termMatchValues);
+      }
+      
+      queryText += ' ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC';
+      studentsResult = await query(queryText, queryParams);
     }
-    const students = studentsResult.rows || [];
+    let students = studentsResult.rows || [];
+
+    // Filter students to only include those whose combination includes the subject (for Form V/VI together mode)
+    if (isFormVOrVI && normalizedStream === 'ALL') {
+      students = students.filter(s => doesCombinationTakeSubject(s.stream, subject_code));
+    }
 
     let subjectCodesToSearch = [subject_code];
     try {
-      const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
       const lookupStream = isFormVOrVI ? normalizedStream : 'A';
       const subjRes = await query(
         'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND (subject_code = $5 OR subject_abbreviation = $5) LIMIT 1',
         [normalizedLevel, normalizedStream, 'NA', yearNum, subject_code]
       );
-      if (subjRes.rows.length > 0 && (subjRes.rows[0].subject_code || subjRes.rows[0].subject_abbreviation)) {
+      if (subjRes.rows.length > 0 && subjRes.rows[0] && (subjRes.rows[0].subject_code || subjRes.rows[0].subject_abbreviation)) {
         subjectCodesToSearch = [subjRes.rows[0].subject_code, subjRes.rows[0].subject_abbreviation].filter(Boolean);
       }
     } catch (_) {}
     const codesCondition = subjectCodesToSearch.length === 1
       ? 'subject_code = $6'
       : subjectCodesToSearch.map((_, i) => `subject_code = $${6 + i}`).join(' OR ');
-    const scoreParams = [normalizedLevel, normalizedStream, 'NA', yearNum, month, ...subjectCodesToSearch];
-    const scoresResult = await query(
-      `SELECT adm_no, score FROM individual_scores WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND (${codesCondition})`,
-      scoreParams
-    );
+
+    let scoresResult;
+    if (normalizedStream === 'ALL') {
+      // Together mode: fetch scores from all streams
+      if (subjectCodesToSearch.length === 1) {
+        scoresResult = await query(
+          `SELECT adm_no, score FROM individual_scores WHERE level = $1 AND year = $2 AND month = $3 AND subject_code = $4`,
+          [normalizedLevel, yearNum, month, subjectCodesToSearch[0]]
+        );
+      } else {
+        scoresResult = await query(
+          `SELECT adm_no, score FROM individual_scores WHERE level = $1 AND year = $2 AND month = $3 AND (${codesCondition})`,
+          [normalizedLevel, yearNum, month, ...subjectCodesToSearch]
+        );
+      }
+    } else {
+      // Single stream mode: filter by specific stream
+      const scoreParams = [normalizedLevel, normalizedStream, 'NA', yearNum, month, ...subjectCodesToSearch];
+      scoresResult = await query(
+        `SELECT adm_no, score FROM individual_scores WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND (${codesCondition})`,
+        scoreParams
+      );
+    }
     const scoresByAdm = {};
     (scoresResult.rows || []).forEach((r) => { scoresByAdm[r.adm_no] = parseFloat(r.score); });
 
@@ -391,13 +642,28 @@ router.post('/scores/bulk-upload', csvUpload.single('file'), async (req, res) =>
     const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
     const isAdmin = ['admin', 'superadmin'].includes(userRole);
     if (!isAdmin && req.user && req.user.permissions) {
-      const perms = typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions;
+      let perms = req.user.permissions;
+      try {
+        perms = typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions;
+      } catch (e) {
+        perms = {};
+      }
       const allowedMonths = perms.score_entry_months;
       if (Array.isArray(allowedMonths) && allowedMonths.length > 0) {
         const monthNorm = String(month).trim();
         if (!allowedMonths.includes(monthNorm)) {
           return res.status(403).json({ message: 'You are not allowed to enter scores for this month.' });
         }
+      }
+    }
+
+    // Restrict non-admin to subjects they are allocated to
+    if (!isAdmin && req.user && req.user.username) {
+      const isAllocated = await isUserAllocatedToSubject(req.user.username, level, stream, year, subject_code);
+      if (!isAllocated) {
+        return res.status(403).json({
+          message: 'You are not allocated to this subject. Contact an administrator to assign subjects.',
+        });
       }
     }
 
@@ -422,7 +688,8 @@ router.post('/scores/bulk-upload', csvUpload.single('file'), async (req, res) =>
       return res.status(400).json({ message: 'CSV must contain columns: Adm No and Score' });
     }
     const isFormVOrVI = level === 'FORM V' || level === 'FORM VI';
-    const subjectLookupStream = isFormVOrVI ? normalizedStream : 'A';
+    // For together mode (stream=ALL), don't filter by stream in subject lookup
+    const subjectLookupStream = (isFormVOrVI && normalizedStream === 'ALL') ? 'A' : (isFormVOrVI ? normalizedStream : 'A');
     let scoreSubjectCode = subject_code;
     try {
       if (/^\d+$/.test(String(subject_code).trim())) {
@@ -430,7 +697,7 @@ router.post('/scores/bulk-upload', csvUpload.single('file'), async (req, res) =>
           'SELECT subject_abbreviation FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 AND subject_code = $4 LIMIT 1',
           [level, subjectLookupStream, yearNum, subject_code]
         );
-        if (subjRes.rows.length > 0 && subjRes.rows[0].subject_abbreviation) {
+        if (subjRes.rows.length > 0 && subjRes.rows[0] && subjRes.rows[0].subject_abbreviation) {
           scoreSubjectCode = subjRes.rows[0].subject_abbreviation;
         }
       }
@@ -455,7 +722,13 @@ router.post('/scores/bulk-upload', csvUpload.single('file'), async (req, res) =>
 
     let studentsInClass;
     const isFormIVBulk = /^FORM\s+(I|II|III|IV)$/i.test(level);
-    if (isFormIVBulk && (normalizedStream === 'A' || normalizedStream === 'NA')) {
+    if (normalizedStream === 'ALL') {
+      // Together mode: fetch students from all streams
+      studentsInClass = await query(
+        'SELECT adm_no, stream FROM students WHERE level = $1 AND year = $2',
+        [level, yearNum]
+      );
+    } else if (isFormIVBulk && (normalizedStream === 'A' || normalizedStream === 'NA')) {
       studentsInClass = await query(
         'SELECT adm_no FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4',
         [level, 'A', 'NA', yearNum]
@@ -486,12 +759,24 @@ router.post('/scores/bulk-upload', csvUpload.single('file'), async (req, res) =>
       }
       if (scoreRaw === '' || isNaN(scoreNum)) continue;
       try {
+        // For together mode, look up the student's actual stream
+        let actualStream = normalizedStream;
+        if (normalizedStream === 'ALL' && isFormVOrVI) {
+          const studentResult = await query(
+            'SELECT stream FROM students WHERE adm_no = $1 AND level = $2 AND year = $3',
+            [admNo, level, yearNum]
+          );
+          if (studentResult.rows.length > 0 && studentResult.rows[0] && studentResult.rows[0].stream) {
+            actualStream = studentResult.rows[0].stream;
+          }
+        }
+
         await query(
           `INSERT INTO individual_scores (level, stream, year, month, subject_code, adm_no, score)
            VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT (level, stream, year, month, subject_code, adm_no)
            DO UPDATE SET score = EXCLUDED.score, updated_at = NOW()`,
-          [level, normalizedStream, yearNum, String(month).trim(), scoreSubjectCode, admNo, scoreNum]
+          [level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, admNo, scoreNum]
         );
         saved++;
       } catch (err) {
@@ -509,7 +794,7 @@ router.post('/scores/bulk-upload', csvUpload.single('file'), async (req, res) =>
 // NOTE: These routes MUST come BEFORE router.get('/:admNo') to avoid route conflicts
 
 // Get marks config
-router.get('/marks-config', async (req, res) => {
+router.get('/marks-config', cacheRoutes.marksConfig, async (req, res) => {
   try {
     const result = await query('SELECT * FROM marks_config ORDER BY month');
     
@@ -568,13 +853,26 @@ router.get('/class-grades', async (req, res) => {
       return res.status(400).json({ message: 'level, stream, year, and term are required' });
     }
     const normalizedStream = normalizeStream(stream);
-    const getMonthsForTerm = (t) => (t === 'Term I' || t === 'Term 1' ? ['February', 'March', 'April', 'May'] : ['August', 'September', 'October', 'November']);
+    const isFormVOrVI = level === 'FORM V' || level === 'FORM VI';
+    // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
+    // Form I-IV: Term I: Feb-May, Term II: Aug-Nov
+    const getMonthsForTerm = (t) => {
+      if (isFormVOrVI) {
+        return (t === 'Term I' || t === 'Term 1') 
+          ? ['August', 'September', 'October', 'November'] 
+          : ['February', 'March', 'April', 'May'];
+      } else {
+        return (t === 'Term I' || t === 'Term 1') 
+          ? ['February', 'March', 'April', 'May'] 
+          : ['August', 'September', 'October', 'November'];
+      }
+    };
     const months = getMonthsForTerm(term);
 
     let marksConfig = { month_weights: { February: 40, March: 0, April: 40, May: 20, August: 40, September: 0, October: 40, November: 20 } };
     try {
       const mc = await query('SELECT * FROM marks_config WHERE id = 1');
-      if (mc.rows.length > 0) {
+      if (mc.rows.length > 0 && mc.rows[0]) {
         const c = mc.rows[0];
         marksConfig = { month_weights: { February: parseFloat(c.february_weight) || 40, March: parseFloat(c.march_weight) || 0, April: parseFloat(c.april_weight) || 40, May: parseFloat(c.may_weight) || 20, August: parseFloat(c.august_weight) || 40, September: parseFloat(c.september_weight) || 0, October: parseFloat(c.october_weight) || 40, November: parseFloat(c.november_weight) || 20 } };
       }
@@ -691,21 +989,50 @@ router.get('/:admNo', async (req, res) => {
 // Create student
 router.post('/', async (req, res) => {
   try {
-    const { adm_no, first_name, middle_name, surname, sex, level, stream, year, status } = req.body;
-    
+    const { adm_no, first_name, middle_name, surname, sex, level, stream, year, term, status, com } = req.body;
+
     if (!adm_no || !first_name || !surname || !sex || !level || !stream || !year) {
       return res.status(400).json({ message: 'Required fields: adm_no, first_name, surname, sex, level, stream, year' });
     }
-    
-    const result = await query(
-      `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (adm_no, level, stream, year) 
-       DO UPDATE SET first_name = EXCLUDED.first_name, middle_name = EXCLUDED.middle_name,
-                     surname = EXCLUDED.surname, sex = EXCLUDED.sex, status = EXCLUDED.status
-       RETURNING *`,
-      [adm_no, first_name, middle_name || null, surname, sex, level, stream, parseInt(year), status || 'PENDING']
-    );
+
+    // Auto-calculate com if not provided
+    let calculatedCom = com;
+    if (!calculatedCom) {
+      calculatedCom = await calculateComForStudent(adm_no, level, stream, year);
+    }
+
+    let result;
+    try {
+      // Primary insert (requires students.com column)
+      result = await query(
+        `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, term, com, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (adm_no, level, stream, year, term)
+         DO UPDATE SET first_name = EXCLUDED.first_name, middle_name = EXCLUDED.middle_name,
+                       surname = EXCLUDED.surname, sex = EXCLUDED.sex,
+                       com = COALESCE(EXCLUDED.com, students.com),
+                       status = EXCLUDED.status
+         RETURNING *`,
+        [adm_no, first_name, middle_name || null, surname, sex, level, stream, parseInt(year), term || 'First Term', calculatedCom || null, status || 'PENDING']
+      );
+    } catch (error) {
+      // Backward compatibility if DB column `com` isn't present yet.
+      // Error 42703 = undefined_column in Postgres.
+      const msg = String(error?.message || '').toLowerCase();
+      const isMissingCom = error?.code === '42703' || (msg.includes('column') && msg.includes('com'));
+      if (!isMissingCom) throw error;
+
+      result = await query(
+        `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, term, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         ON CONFLICT (adm_no, level, stream, year, term)
+         DO UPDATE SET first_name = EXCLUDED.first_name, middle_name = EXCLUDED.middle_name,
+                       surname = EXCLUDED.surname, sex = EXCLUDED.sex,
+                       status = EXCLUDED.status
+         RETURNING *`,
+        [adm_no, first_name, middle_name || null, surname, sex, level, stream, parseInt(year), term || 'First Term', status || 'PENDING']
+      );
+    }
     
     // Log activity
     if (req.user?.username) {
@@ -717,7 +1044,7 @@ router.post('/', async (req, res) => {
       });
     }
     
-    res.status(201).json({ student: result.rows[0], message: 'Student created successfully' });
+    res.status(201).json({ student: result.rows.length > 0 ? result.rows[0] : null, message: 'Student created successfully' });
   } catch (error) {
     if (error.code === '23505') {
       return res.status(400).json({ message: 'Student already exists for this class and year' });
@@ -730,8 +1057,19 @@ router.post('/', async (req, res) => {
 router.put('/:admNo', async (req, res) => {
   try {
     const { admNo } = req.params;
-    const { level, stream, year } = req.query;
-    const { first_name, middle_name, surname, sex, status } = req.body;
+    let { level, stream, year } = req.query;
+    const { first_name, middle_name, surname, sex, status, com } = req.body;
+
+    // Normalize level to match how GET endpoint compares it.
+    if (level) {
+      level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    }
+    
+    // Auto-calculate com if not provided
+    let calculatedCom = com;
+    if (calculatedCom === undefined && level && stream && year) {
+      calculatedCom = await calculateComForStudent(admNo, level, stream, year);
+    }
     
     let queryText = 'UPDATE students SET';
     const updates = [];
@@ -758,6 +1096,11 @@ router.put('/:admNo', async (req, res) => {
       updates.push(`status = $${paramCount++}`);
       params.push(status);
     }
+
+    if (calculatedCom !== undefined) {
+      updates.push(`com = $${paramCount++}`);
+      params.push(calculatedCom);
+    }
     
     if (updates.length === 0) {
       return res.status(400).json({ message: 'No fields to update' });
@@ -771,8 +1114,20 @@ router.put('/:admNo', async (req, res) => {
       params.push(level);
     }
     if (stream) {
-      queryText += ` AND stream = $${paramCount++}`;
-      params.push(stream);
+      // Backward compatible stream filtering:
+      // - For legacy rows, DB might store `NA` while we normalize to `A`.
+      // - For `A` updates, check both `A` and `NA`.
+      const normalizedStream = normalizeStream(String(stream).trim());
+      const streamsToCheck = normalizedStream === 'A' ? ['A', 'NA'] : [normalizedStream];
+      const uniqueStreams = [...new Set(streamsToCheck)];
+
+      if (uniqueStreams.length === 1) {
+        queryText += ` AND stream = $${paramCount++}`;
+        params.push(uniqueStreams[0]);
+      } else {
+        queryText += ` AND stream IN ($${paramCount++}, $${paramCount++})`;
+        params.push(uniqueStreams[0], uniqueStreams[1]);
+      }
     }
     if (year) {
       queryText += ` AND year = $${paramCount++}`;
@@ -787,7 +1142,7 @@ router.put('/:admNo', async (req, res) => {
       return res.status(404).json({ message: 'Student not found' });
     }
     
-    res.json({ student: result.rows[0], message: 'Student updated successfully' });
+    res.json({ student: result.rows.length > 0 ? result.rows[0] : null, message: 'Student updated successfully' });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -844,7 +1199,7 @@ router.delete('/parishes', async (req, res) => {
     }
     
     // Use the actual stream from the found record for the update
-    const actualStream = existing.rows[0].stream || normalizedStream;
+    const actualStream = existing.rows.length > 0 && existing.rows[0] ? (existing.rows[0].stream || normalizedStream) : normalizedStream;
     
     // Update parish_name to empty string instead of deleting the record
     const result = await query(
@@ -1096,7 +1451,7 @@ router.delete('/:admNo', async (req, res) => {
 // Get student photos for a class
 router.get('/photos/list', async (req, res) => {
   try {
-    let { level, stream, year } = req.query;
+    let { level, stream, year, term } = req.query;
     
     // Normalize level to uppercase and handle URL encoding
     if (level) {
@@ -1112,10 +1467,17 @@ router.get('/photos/list', async (req, res) => {
       return res.status(400).json({ message: 'level, stream, and year are required' });
     }
     
-    const result = await query(
-      `SELECT * FROM student_photos WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY student_index`,
-      [level, stream, parseInt(year)]
-    );
+    let queryText = `SELECT * FROM student_photos WHERE level = $1 AND stream = $2 AND year = $3`;
+    const params = [level, stream, parseInt(year)];
+    
+    if (term && term.trim()) {
+      queryText += ` AND term = $4`;
+      params.push(term.trim());
+    }
+    
+    queryText += ` ORDER BY student_index`;
+    
+    const result = await query(queryText, params);
     res.setHeader('Cache-Control', 'private, max-age=60');
     res.json({ photos: result.rows });
   } catch (error) {
@@ -1142,7 +1504,7 @@ router.get('/:admNo/photo', async (req, res) => {
       return res.status(404).json({ message: 'Photo not found' });
     }
     
-    res.json({ photo: result.rows[0] });
+    res.json({ photo: result.rows.length > 0 ? result.rows[0] : null });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -1153,78 +1515,113 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
   try {
     const { admNo } = req.params;
     let { level, stream, year, student_index } = req.body;
-    
+
     if (!req.file) {
       return res.status(400).json({ message: 'No photo uploaded' });
     }
-    
+
     if (!level || !stream || !year || (student_index == null || student_index === '')) {
       return res.status(400).json({ message: 'level, stream, year, and student_index are required' });
     }
-    
+
     // Normalize level and stream to match students table and photos/list
     level = String(level).trim().toUpperCase();
     stream = normalizeStream(String(stream).trim()).toUpperCase();
-    
+
+    // Validate file size
+    if (req.file.size > STUDENT_PHOTO_UPLOAD_MAX_BYTES) {
+      await fs.unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ message: `File size exceeds ${STUDENT_PHOTO_UPLOAD_MAX_BYTES / (1024 * 1024)}MB limit` });
+    }
+
+    // Compress and resize photo
+    await enforceStudentPhotoSpec(req.file);
+
+    // Try Cloudinary upload with fallback to local storage
+    let photoUrl, cloudinaryPublicId, source;
+    try {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'student-photos',
+        transformation: [
+          { width: STUDENT_PHOTO_TARGET_WIDTH, height: STUDENT_PHOTO_TARGET_HEIGHT, crop: 'fit', background: 'white' },
+          { quality: 'auto:good', fetch_format: 'auto' }
+        ]
+      });
+      photoUrl = result.secure_url;
+      cloudinaryPublicId = result.public_id;
+      source = 'cloudinary';
+      console.log(`✅ Photo uploaded to Cloudinary: ${cloudinaryPublicId}`);
+    } catch (cloudinaryError) {
+      console.warn(`⚠️  Cloudinary upload failed, using local storage:`, cloudinaryError.message);
+      // Fallback to local storage
+      const relativePath = `uploads/photos/${path.basename(req.file.path)}`;
+      photoUrl = `/static/${relativePath}`;
+      cloudinaryPublicId = null;
+      source = 'local';
+    }
+
+    // Clean up temp file
+    try {
+      await fs.unlink(req.file.path).catch(() => {});
+    } catch (_) {}
+
     // Check if photo already exists for this student_index
     const existingPhoto = await query(
-      `SELECT id FROM student_photos 
+      `SELECT id, photo_filename, cloudinary_public_id FROM student_photos
        WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4`,
       [level, stream, parseInt(year), parseInt(student_index)]
     );
-    
+
+    // Delete old photo from Cloudinary if it exists and is different
+    if (existingPhoto.rows.length > 0 && existingPhoto.rows[0]?.cloudinary_public_id && existingPhoto.rows[0].cloudinary_public_id !== cloudinaryPublicId) {
+      try {
+        await cloudinary.uploader.destroy(existingPhoto.rows[0].cloudinary_public_id);
+      } catch (deleteError) {
+        console.warn('Failed to delete old photo from Cloudinary:', deleteError.message);
+      }
+    }
+
     if (existingPhoto.rows.length > 0) {
       // Update existing photo record
       await query(
-        `UPDATE student_photos 
-         SET photo_filename = $1, created_at = CURRENT_TIMESTAMP
-         WHERE level = $2 AND stream = $3 AND year = $4 AND student_index = $5`,
-        [req.file.filename, level, stream, parseInt(year), parseInt(student_index)]
+        `UPDATE student_photos
+         SET photo_filename = $1, cloudinary_public_id = $2, created_at = CURRENT_TIMESTAMP
+         WHERE level = $3 AND stream = $4 AND year = $5 AND student_index = $6`,
+        [photoUrl, cloudinaryPublicId, level, stream, parseInt(year), parseInt(student_index)]
       );
     } else {
-      // Insert new photo record
-      // Use a transaction-like approach: sync sequence, then insert
+      // Insert new photo record with retry logic
       let retries = 0;
       const maxRetries = 3;
-      
+
       while (retries < maxRetries) {
         try {
-          // Always sync sequence before insert to prevent conflicts
           const maxResult = await query('SELECT COALESCE(MAX(id), 0) as max_id FROM student_photos');
-          const maxId = parseInt(maxResult.rows[0].max_id) || 0;
-          
-          // Set sequence to max_id + 1, marking it as used
+          const maxId = maxResult.rows.length > 0 ? parseInt(maxResult.rows[0].max_id) || 0 : 0;
           await query(`SELECT setval('student_photos_id_seq', $1, true)`, [maxId + 1]);
-          
-          // Insert new record
+
           await query(
-            `INSERT INTO student_photos (level, stream, year, student_index, photo_filename)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO student_photos (level, stream, year, student_index, photo_filename, cloudinary_public_id)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (level, stream, year, student_index)
-             DO UPDATE SET photo_filename = EXCLUDED.photo_filename`,
-            [level, stream, parseInt(year), parseInt(student_index), req.file.filename]
+             DO UPDATE SET photo_filename = EXCLUDED.photo_filename, cloudinary_public_id = EXCLUDED.cloudinary_public_id`,
+            [level, stream, parseInt(year), parseInt(student_index), photoUrl, cloudinaryPublicId]
           );
-          
-          // Success - break out of retry loop
           break;
         } catch (insertError) {
-          // If duplicate key error on id, sync sequence and retry
           if (insertError.code === '23505' && insertError.constraint === 'student_photos_pkey') {
             retries++;
             if (retries >= maxRetries) {
-              // Final attempt: force sequence to a safe value
               const maxResult = await query('SELECT COALESCE(MAX(id), 0) as max_id FROM student_photos');
-              const maxId = parseInt(maxResult.rows[0].max_id) || 0;
-              // Set sequence to a value higher than max to ensure no conflicts
+              const maxId = maxResult.rows.length > 0 && maxResult.rows[0] ? parseInt(maxResult.rows[0].max_id) || 0 : 0;
               await query(`SELECT setval('student_photos_id_seq', $1, true)`, [maxId + 10]);
-              
-              // Final insert attempt
+
               await query(
-                `INSERT INTO student_photos (level, stream, year, student_index, photo_filename)
-                 VALUES ($1, $2, $3, $4, $5)
+                `INSERT INTO student_photos (level, stream, year, student_index, photo_filename, cloudinary_public_id)
+                 VALUES ($1, $2, $3, $4, $5, $6)
                  ON CONFLICT (level, stream, year, student_index)
-                 DO UPDATE SET photo_filename = EXCLUDED.photo_filename`,
-                [level, stream, parseInt(year), parseInt(student_index), req.file.filename]
+                 DO UPDATE SET photo_filename = EXCLUDED.photo_filename, cloudinary_public_id = EXCLUDED.cloudinary_public_id`,
+                [level, stream, parseInt(year), parseInt(student_index), photoUrl, cloudinaryPublicId]
               );
             } else {
               // Wait a bit before retrying (in case of race condition)
@@ -1238,10 +1635,14 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
         }
       }
     }
-    
-    res.json({ message: 'Photo uploaded successfully', filename: req.file.filename });
+
+    res.json({ message: 'Photo uploaded successfully', url: photoUrl, source });
   } catch (error) {
     console.error('Error uploading photo:', error);
+    // Clean up temp file if error occurred
+    if (req.file?.path) {
+      try { await fs.unlink(req.file.path).catch(() => {}); } catch (_) {}
+    }
     return sendError(res, error, 500);
   }
 });
@@ -1251,42 +1652,54 @@ router.delete('/:admNo/photo', async (req, res) => {
   try {
     const { admNo } = req.params;
     let { level, stream, year, student_index } = req.query;
-    
+
     if (!level || !stream || !year || (student_index == null || student_index === '')) {
       return res.status(400).json({ message: 'level, stream, year, and student_index are required' });
     }
-    
+
     level = String(level).trim().toUpperCase();
     stream = normalizeStream(String(stream).trim()).toUpperCase();
-    
-    // Get photo filename before deleting
+
+    // Get photo filename and cloudinary_public_id before deleting
     const photoResult = await query(
-      `SELECT photo_filename FROM student_photos WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4`,
+      `SELECT photo_filename, cloudinary_public_id FROM student_photos WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4`,
       [level, stream, parseInt(year), parseInt(student_index)]
     );
-    
+
     if (photoResult.rows.length === 0) {
       // Idempotent: no photo to delete — return success so client can refresh UI
       return res.json({ message: 'No photo to delete' });
     }
-    
-    const photoFilename = photoResult.rows[0].photo_filename;
-    
+
+    const photoFilename = photoResult.rows[0]?.photo_filename;
+    const cloudinaryPublicId = photoResult.rows[0]?.cloudinary_public_id;
+
     // Delete from database
     await query(
       `DELETE FROM student_photos WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4`,
       [level, stream, parseInt(year), parseInt(student_index)]
     );
-    
-    // Delete file from filesystem
+
+    // Delete from storage (Cloudinary or local)
     try {
-      const filePath = path.join(photosUploadDir, photoFilename);
-      await fs.unlink(filePath);
+      if (cloudinaryPublicId) {
+        // Use the stored cloudinary_public_id for reliable deletion
+        await cloudinary.uploader.destroy(cloudinaryPublicId);
+      } else if (photoFilename.startsWith('http')) {
+        // Legacy: Cloudinary URL without stored public_id - extract from URL
+        const publicId = photoFilename.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(`student-photos/${publicId}`);
+      } else {
+        // Local file - delete from filesystem
+        const photosUploadDir = path.join(__dirname, '..', 'static', 'uploads', 'photos');
+        const filePath = path.join(photosUploadDir, photoFilename);
+        await fs.unlink(filePath);
+      }
     } catch (fileError) {
-      // Log but don't fail if file doesn't exist
+      // Log but don't fail if file deletion fails
       console.warn('Could not delete photo file:', fileError.message);
     }
-    
+
     res.json({ message: 'Photo deleted successfully' });
   } catch (error) {
     return sendError(res, error, 500);
@@ -1296,24 +1709,24 @@ router.delete('/:admNo/photo', async (req, res) => {
 // Download Photo Entry Form PDF
 router.get('/photo-entry-form/pdf', async (req, res) => {
   try {
-    const { level, stream, year, month } = req.query;
-    
+    const { level, stream, year, month, term } = req.query;
+
     if (!level || !stream || !year) {
       return res.status(400).json({ message: 'level, stream, and year are required' });
     }
-    
+
     // Normalize level to uppercase
     const normalizedLevel = level.trim().toUpperCase();
     const yearNum = parseInt(year);
-    
+
     if (isNaN(yearNum) || yearNum <= 0) {
       return res.status(400).json({ message: 'Invalid year' });
     }
-    
-    const pdfBuffer = await generatePhotoEntryFormPDF(normalizedLevel, stream, yearNum, month || null);
-    
+
+    const pdfBuffer = await generatePhotoEntryFormPDF(normalizedLevel, stream, yearNum, month || null, term || null);
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="photo_entry_form_${normalizedLevel.replace(/\s+/g, '_')}_${stream}_${yearNum}${month ? '_' + month : ''}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="photo_entry_form_${normalizedLevel.replace(/\s+/g, '_')}_${stream}_${yearNum}${month ? '_' + month : ''}${term ? '_' + term.replace(/\s+/g, '_') : ''}.pdf"`);
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Error generating Photo Entry Form PDF:', error);
@@ -1324,7 +1737,7 @@ router.get('/photo-entry-form/pdf', async (req, res) => {
 // Get student parishes for a class
 router.get('/parishes/list', requireAuth, async (req, res) => {
   try {
-    let { level, stream, year } = req.query;
+    let { level, stream, year, term } = req.query;
     
     // Normalize level to uppercase and handle URL encoding
     if (level) {
@@ -1343,28 +1756,26 @@ router.get('/parishes/list', requireAuth, async (req, res) => {
     const streamsToCheck = normalizedStream === 'A' ? ['A', 'NA'] : [normalizedStream];
     const uniqueStreams = [...new Set(streamsToCheck)];
     
-    console.log('[PARISHES] Request:', { level, stream, normalizedStream, year, uniqueStreams });
-    
     // Query parishes for both streams
     let queryText, queryParams;
     if (uniqueStreams.length === 1) {
       queryText = `SELECT * FROM student_parishes 
-                   WHERE level = $1 AND stream = $2 AND year = $3 
-                   ORDER BY student_index`;
+                   WHERE level = $1 AND stream = $2 AND year = $3`;
       queryParams = [level, uniqueStreams[0], parseInt(year)];
     } else {
       queryText = `SELECT * FROM student_parishes 
-                   WHERE level = $1 AND stream IN ($2, $3) AND year = $4 
-                   ORDER BY student_index`;
+                   WHERE level = $1 AND stream IN ($2, $3) AND year = $4`;
       queryParams = [level, uniqueStreams[0], uniqueStreams[1], parseInt(year)];
     }
     
-    console.log('[PARISHES] Query:', queryText);
-    console.log('[PARISHES] Params:', queryParams);
+    if (term && term.trim()) {
+      queryText += ` AND term = $${queryParams.length + 1}`;
+      queryParams.push(term.trim());
+    }
+    
+    queryText += ` ORDER BY student_index`;
     
     const result = await query(queryText, queryParams);
-    
-    console.log('[PARISHES] Found:', result.rows.length, 'parishes');
     
     res.json({ parishes: result.rows });
   } catch (error) {
@@ -1452,7 +1863,7 @@ router.post('/parishes', async (req, res) => {
     }
     
     let result;
-    if (existing.rows.length > 0) {
+    if (existing.rows.length > 0 && existing.rows[0]) {
       // Update existing record - use the actual stream from the found record
       const actualStream = existing.rows[0].stream || normalizedStream;
       result = await query(
@@ -1493,7 +1904,7 @@ router.post('/parishes', async (req, res) => {
       }
     }
     
-    res.status(201).json({ parish: result.rows[0], message: 'Parish assigned successfully' });
+    res.status(201).json({ parish: result.rows.length > 0 ? result.rows[0] : null, message: 'Parish assigned successfully' });
   } catch (error) {
     console.error('Error saving parish:', error);
     
@@ -1531,7 +1942,7 @@ router.post('/parishes', async (req, res) => {
           );
         }
         
-        return res.status(201).json({ parish: result.rows[0], message: 'Parish assigned successfully' });
+        return res.status(201).json({ parish: result.rows.length > 0 ? result.rows[0] : null, message: 'Parish assigned successfully' });
       } catch (retryError) {
         console.error('Error retrying after sequence fix:', retryError);
         return sendError(res, retryError, 500);
@@ -1542,33 +1953,151 @@ router.post('/parishes', async (req, res) => {
   }
 });
 
+// Bulk save or update student parishes (for CSV upload)
+// Body: { level, stream, year, parishes: [{ student_index, parish_name }, ...] }
+router.post('/parishes/bulk', async (req, res) => {
+  try {
+    let { level, stream, year, parishes } = req.body;
+
+    if (level) {
+      level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    }
+
+    if (!level || !stream || !year || !Array.isArray(parishes)) {
+      return res.status(400).json({ message: 'level, stream, year, and parishes array are required' });
+    }
+
+    const normalizedStream = normalizeStream(stream);
+    const yearNum = parseInt(year, 10);
+    if (isNaN(yearNum) || yearNum <= 0) {
+      return res.status(400).json({ message: 'Invalid year' });
+    }
+
+    let saved = 0;
+    const errors = [];
+
+    // Best-effort sequence sync (avoids extra work unless sequence is actually out of sync)
+    try {
+      await fixStudentParishesSequence();
+    } catch (e) {
+      // Ignore; per-item insert can still retry on sequence-related constraint errors.
+    }
+
+    for (const item of parishes) {
+      const studentIndexRaw = item?.student_index;
+      const parishNameRaw = item?.parish_name;
+
+      const studentIndexNum = parseInt(studentIndexRaw, 10);
+      const parishName = String(parishNameRaw ?? '').trim();
+
+      if (studentIndexNum === undefined || Number.isNaN(studentIndexNum) || parishName.length === 0) {
+        errors.push({
+          student_index: studentIndexRaw,
+          message: 'student_index and non-empty parish_name are required'
+        });
+        continue;
+      }
+
+      const streamsToCheck = normalizedStream === 'A' ? ['A', 'NA'] : [normalizedStream];
+      const uniqueStreams = [...new Set(streamsToCheck)];
+
+      try {
+        let existing;
+        if (uniqueStreams.length === 1) {
+          existing = await query(
+            `SELECT id, stream
+             FROM student_parishes
+             WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4
+             LIMIT 1`,
+            [level, uniqueStreams[0], yearNum, studentIndexNum]
+          );
+        } else {
+          existing = await query(
+            `SELECT id, stream
+             FROM student_parishes
+             WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND student_index = $5
+             LIMIT 1`,
+            [level, uniqueStreams[0], uniqueStreams[1], yearNum, studentIndexNum]
+          );
+        }
+
+        if (existing.rows.length > 0 && existing.rows[0]) {
+          const actualStream = existing.rows[0].stream || normalizedStream;
+          await query(
+            `UPDATE student_parishes
+             SET parish_name = $1
+             WHERE level = $2 AND stream = $3 AND year = $4 AND student_index = $5`,
+            [parishName, level, actualStream, yearNum, studentIndexNum]
+          );
+        } else {
+          try {
+            await query(
+              `INSERT INTO student_parishes (level, stream, year, student_index, parish_name)
+               VALUES ($1, $2, $3, $4, $5)`,
+              [level, normalizedStream, yearNum, studentIndexNum, parishName]
+            );
+          } catch (insertError) {
+            // If insert fails due to sequence out-of-sync, fix and retry once.
+            if (insertError.code === '23505' && insertError.constraint === 'student_parishes_pkey') {
+              await fixStudentParishesSequence();
+              await query(
+                `INSERT INTO student_parishes (level, stream, year, student_index, parish_name)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [level, normalizedStream, yearNum, studentIndexNum, parishName]
+              );
+            } else {
+              throw insertError;
+            }
+          }
+        }
+
+        saved++;
+      } catch (e) {
+        errors.push({
+          student_index: studentIndexRaw,
+          message: e.message || 'Failed to save parish'
+        });
+      }
+    }
+
+    return res.json({
+      message: 'Bulk parishes saved',
+      saved,
+      failed: errors.length,
+      errors: errors.length ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error saving bulk parishes:', error);
+    return sendError(res, error, 500);
+  }
+});
+
 // Get student scores
 router.get('/:admNo/scores', async (req, res) => {
   try {
     const { admNo } = req.params;
     let { level, stream, year, month } = req.query;
-    
+
     // Normalize level to uppercase and handle URL encoding
     if (level) {
       level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
     }
-    
+
     // Normalize stream: NA -> A (all NA stream values have been normalized to A)
-    if (stream) {
-      stream = normalizeStream(stream);
-    }
-    
+    const normalizedStream = stream ? normalizeStream(stream) : null;
+
     let queryText = 'SELECT * FROM individual_scores WHERE adm_no = $1';
     const params = [admNo];
     let paramCount = 2;
-    
+
     if (level) {
       queryText += ` AND level = $${paramCount++}`;
       params.push(level);
     }
     if (stream) {
-      queryText += ` AND stream = $${paramCount++}`;
-      params.push(stream);
+      // Use stream IN ($X, $Y) for backward compatibility with 'NA' values
+      queryText += ` AND stream IN ($${paramCount++}, $${paramCount++})`;
+      params.push(normalizedStream, 'NA');
     }
     if (year) {
       queryText += ` AND year = $${paramCount++}`;
@@ -1578,12 +2107,103 @@ router.get('/:admNo/scores', async (req, res) => {
       queryText += ` AND month = $${paramCount++}`;
       params.push(month);
     }
-    
+
     queryText += ' ORDER BY year DESC, month DESC';
-    
+
     const result = await query(queryText, params);
     res.json({ scores: result.rows });
   } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Clear all scores for a specific class, month, and subject
+router.delete('/scores/clear', async (req, res) => {
+  try {
+    let { level, stream, year, month, subject_code, admNos } = req.query;
+    
+    if (!level || !stream || !year || !month || !subject_code) {
+      return res.status(400).json({ message: 'level, stream, year, month, and subject_code are required' });
+    }
+
+    // Restrict non-admin to allowed score-entry months (admin setting)
+    const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
+    const isAdmin = ['admin', 'superadmin'].includes(userRole);
+    if (!isAdmin && req.user && req.user.permissions) {
+      let perms = req.user.permissions;
+      try {
+        perms = typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions;
+      } catch (e) {
+        perms = {};
+      }
+      const allowedMonths = perms.score_entry_months;
+      if (Array.isArray(allowedMonths) && allowedMonths.length > 0) {
+        const monthNorm = String(month).trim();
+        if (!allowedMonths.includes(monthNorm)) {
+          return res.status(403).json({
+            message: 'You are not allowed to clear scores for this month.',
+          });
+        }
+      }
+    }
+
+    // Restrict non-admin to subjects they are allocated to
+    if (!isAdmin && req.user && req.user.username) {
+      const isAllocated = await isUserAllocatedToSubject(req.user.username, level, stream, year, subject_code);
+      if (!isAllocated) {
+        return res.status(403).json({
+          message: 'You are not allocated to this subject. Contact an administrator to assign subjects.',
+        });
+      }
+    }
+    
+    // Normalize level and stream
+    level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    subject_code = decodeURIComponent(String(subject_code).replace(/\+/g, ' ')).trim();
+    const normalizedStream = normalizeStream(stream.trim());
+    const yearNum = parseInt(year, 10);
+    
+    // Parse admission numbers if provided
+    let admNoList = [];
+    if (admNos) {
+      try {
+        admNoList = JSON.parse(admNos);
+      } catch (e) {
+        admNoList = admNos.split(',').map(s => s.trim());
+      }
+    }
+    
+    // Build query to delete scores
+    let queryText;
+    let queryParams;
+    
+    if (admNoList.length > 0) {
+      // Clear scores for specific students only
+      const baseParamCount = normalizedStream === 'ALL' ? 4 : 6;
+      const admNoPlaceholders = admNoList.map((_, i) => `$${baseParamCount + 1 + i}`).join(', ');
+      if (normalizedStream === 'ALL') {
+        queryText = `DELETE FROM individual_scores WHERE level = $1 AND year = $2 AND month = $3 AND subject_code = $4 AND adm_no IN (${admNoPlaceholders})`;
+        queryParams = [level, yearNum, month, subject_code, ...admNoList];
+      } else {
+        queryText = `DELETE FROM individual_scores WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND subject_code = $6 AND adm_no IN (${admNoPlaceholders})`;
+        queryParams = [level, normalizedStream, 'NA', yearNum, month, subject_code, ...admNoList];
+      }
+    } else {
+      // Clear all scores for the class/subject/month (backward compatibility)
+      if (normalizedStream === 'ALL') {
+        queryText = `DELETE FROM individual_scores WHERE level = $1 AND year = $2 AND month = $3 AND subject_code = $4`;
+        queryParams = [level, yearNum, month, subject_code];
+      } else {
+        queryText = `DELETE FROM individual_scores WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND subject_code = $6`;
+        queryParams = [level, normalizedStream, 'NA', yearNum, month, subject_code];
+      }
+    }
+    
+    const result = await query(queryText, queryParams);
+    
+    res.json({ message: `Cleared ${result.rowCount} scores successfully`, count: result.rowCount });
+  } catch (error) {
+    console.error('Error clearing scores:', error);
     return sendError(res, error, 500);
   }
 });
@@ -1602,7 +2222,12 @@ router.post('/:admNo/scores', async (req, res) => {
     const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
     const isAdmin = ['admin', 'superadmin'].includes(userRole);
     if (!isAdmin && req.user && req.user.permissions) {
-      const perms = typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions;
+      let perms = req.user.permissions;
+      try {
+        perms = typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions;
+      } catch (e) {
+        perms = {};
+      }
       const allowedMonths = perms.score_entry_months;
       if (Array.isArray(allowedMonths) && allowedMonths.length > 0) {
         const monthNorm = String(month).trim();
@@ -1611,6 +2236,16 @@ router.post('/:admNo/scores', async (req, res) => {
             message: 'You are not allowed to enter scores for this month. Contact an administrator to assign score entry months.',
           });
         }
+      }
+    }
+
+    // Restrict non-admin to subjects they are allocated to
+    if (!isAdmin && req.user && req.user.username) {
+      const isAllocated = await isUserAllocatedToSubject(req.user.username, level, stream, year, subject_code);
+      if (!isAllocated) {
+        return res.status(403).json({
+          message: 'You are not allocated to this subject. Contact an administrator to assign subjects.',
+        });
       }
     }
     
@@ -1625,38 +2260,63 @@ router.post('/:admNo/scores', async (req, res) => {
       return res.status(400).json({ message: 'Invalid year' });
     }
     
-    const scoreNum = parseFloat(score);
-    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
-      return res.status(400).json({ message: 'Score must be a number between 0 and 100' });
+    // Allow dash (-) or empty space to indicate 'not registered' for this subject
+    const scoreStr = String(score).trim();
+    const isNotRegistered = scoreStr === '-' || scoreStr === '' || scoreStr === ' ';
+    let scoreNum = null;
+
+    if (!isNotRegistered) {
+      scoreNum = parseFloat(score);
+      if (isNaN(scoreNum)) {
+        return res.status(400).json({ message: 'Score must be a number between 0 and 100, or dash (-) for not registered' });
+      }
+      // Clamp score to 0-100 range to ensure it never exceeds limits
+      scoreNum = Math.max(0, Math.min(100, scoreNum));
     }
     
     // Resolve subject code: if a numeric code is provided, get the abbreviation used in scores
     // For FORM I-IV, subjects are stored with stream='A'; for FORM V-VI use actual stream
     const isFormVOrVI = level === 'FORM V' || level === 'FORM VI';
-    const subjectLookupStream = isFormVOrVI ? normalizedStream : 'A';
+    const subjectLookupStream = (isFormVOrVI && normalizedStream === 'ALL') ? 'A' : (isFormVOrVI ? normalizedStream : 'A');
     let scoreSubjectCode = subject_code;
-    
+
     try {
       if (/^\d+$/.test(String(subject_code).trim())) {
         const subjectResult = await query(
           'SELECT subject_abbreviation FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 AND subject_code = $4 LIMIT 1',
           [level, subjectLookupStream, yearNum, subject_code]
         );
-        
+
         if (subjectResult.rows.length > 0 && subjectResult.rows[0].subject_abbreviation) {
           scoreSubjectCode = subjectResult.rows[0].subject_abbreviation;
         }
       }
     } catch (subjectError) {
-      console.log('Could not resolve subject code, using provided:', subject_code);
+      // If subject lookup fails, just use the provided subject_code
     }
-    
+
+    // For together mode (stream=ALL), look up the student's actual stream to save scores correctly
+    let actualStream = normalizedStream;
+    if (normalizedStream === 'ALL' && isFormVOrVI) {
+      try {
+        const studentResult = await query(
+          'SELECT stream FROM students WHERE adm_no = $1 AND level = $2 AND year = $3 LIMIT 1',
+          [admNo, level, yearNum]
+        );
+        if (studentResult.rows.length > 0 && studentResult.rows[0].stream) {
+          actualStream = studentResult.rows[0].stream;
+        }
+      } catch (studentError) {
+        // If student lookup fails, use normalizedStream
+      }
+    }
+
     const insertScore = () => query(
       `INSERT INTO individual_scores (level, stream, year, month, subject_code, adm_no, score)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (level, stream, year, month, subject_code, adm_no)
        DO UPDATE SET score = EXCLUDED.score, updated_at = NOW()`,
-      [level, normalizedStream, yearNum, String(month).trim(), scoreSubjectCode, admNo, scoreNum]
+      [level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, admNo, scoreNum]
     );
     
     try {
@@ -1697,7 +2357,12 @@ router.get('/scores/list', async (req, res) => {
     const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
     const isAdmin = ['admin', 'superadmin'].includes(userRole);
     if (!isAdmin && req.user && req.user.permissions) {
-      const perms = typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions;
+      let perms = req.user.permissions;
+      try {
+        perms = typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions;
+      } catch (e) {
+        perms = {};
+      }
       const allowedMonths = perms.score_entry_months;
       if (Array.isArray(allowedMonths) && allowedMonths.length > 0) {
         const monthNorm = String(month).trim();
@@ -1707,6 +2372,17 @@ router.get('/scores/list', async (req, res) => {
             scores: {},
           });
         }
+      }
+    }
+
+    // Restrict non-admin to subjects they are allocated to
+    if (!isAdmin && req.user && req.user.username) {
+      const isAllocated = await isUserAllocatedToSubject(req.user.username, level, stream, year, subject_code);
+      if (!isAllocated) {
+        return res.status(403).json({
+          message: 'You are not allocated to this subject. Contact an administrator to assign subjects.',
+          scores: {},
+        });
       }
     }
     
@@ -1723,14 +2399,21 @@ router.get('/scores/list', async (req, res) => {
     let subjectCodesToSearch = [subject_code];
     
     try {
-      // Check both normalized stream and 'NA' for backward compatibility
-      const subjectResult = await query(
-        'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND (subject_code = $5 OR subject_abbreviation = $5) LIMIT 1',
-        [level, normalizedStream, 'NA', parseInt(year), subject_code]
-      );
+      // For together mode (stream=ALL), don't filter by stream to find the subject
+      // Otherwise check both normalized stream and 'NA' for backward compatibility
+      let subjectQuery, subjectParams;
+      if (normalizedStream === 'ALL') {
+        subjectQuery = 'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND year = $2 AND (subject_code = $3 OR subject_abbreviation = $3) LIMIT 1';
+        subjectParams = [level, parseInt(year), subject_code];
+      } else {
+        subjectQuery = 'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND (subject_code = $5 OR subject_abbreviation = $5) LIMIT 1';
+        subjectParams = [level, normalizedStream, 'NA', parseInt(year), subject_code];
+      }
+      
+      const subjectResult = await query(subjectQuery, subjectParams);
       
       if (subjectResult.rows.length > 0) {
-        const subject = subjectResult.rows[0];
+        const subject = subjectResult.rows[0] || null;
         // Search for scores using both the code and abbreviation
         subjectCodesToSearch = [
           subject.subject_code,
@@ -1739,26 +2422,39 @@ router.get('/scores/list', async (req, res) => {
       }
     } catch (subjectError) {
       // If subject lookup fails, just use the provided subject_code
-      console.log('Could not lookup subject, using provided code:', subject_code);
     }
     
     // Query scores - try both subject code and abbreviation
-    // Check both normalized stream and 'NA' for backward compatibility
+    // For "ALL" stream mode (together mode), remove stream filter to get scores from all streams
+    // Otherwise check both normalized stream and 'NA' for backward compatibility
     // Build query with OR conditions for multiple subject codes
     let queryText;
     let queryParams;
-    
-    if (subjectCodesToSearch.length === 1) {
-      // Single subject code - simpler query
-      queryText = `SELECT adm_no, score FROM individual_scores 
-                   WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND subject_code = $6`;
-      queryParams = [level, normalizedStream, 'NA', parseInt(year), month, subjectCodesToSearch[0]];
+
+    if (normalizedStream === 'ALL') {
+      // Together mode: fetch scores from all streams for this level, year, month, and subject
+      if (subjectCodesToSearch.length === 1) {
+        queryText = `SELECT adm_no, score FROM individual_scores 
+                     WHERE level = $1 AND year = $2 AND month = $3 AND subject_code = $4`;
+        queryParams = [level, parseInt(year), month, subjectCodesToSearch[0]];
+      } else {
+        const codeConditions = subjectCodesToSearch.map((_, idx) => `subject_code = $${4 + idx}`).join(' OR ');
+        queryText = `SELECT adm_no, score FROM individual_scores 
+                     WHERE level = $1 AND year = $2 AND month = $3 AND (${codeConditions})`;
+        queryParams = [level, parseInt(year), month, ...subjectCodesToSearch];
+      }
     } else {
-      // Multiple subject codes - use OR conditions (more compatible than ANY array)
-      const codeConditions = subjectCodesToSearch.map((_, idx) => `subject_code = $${6 + idx}`).join(' OR ');
-      queryText = `SELECT adm_no, score FROM individual_scores 
-                   WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND (${codeConditions})`;
-      queryParams = [level, normalizedStream, 'NA', parseInt(year), month, ...subjectCodesToSearch];
+      // Single stream mode: filter by specific stream
+      if (subjectCodesToSearch.length === 1) {
+        queryText = `SELECT adm_no, score FROM individual_scores 
+                     WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND subject_code = $6`;
+        queryParams = [level, normalizedStream, 'NA', parseInt(year), month, subjectCodesToSearch[0]];
+      } else {
+        const codeConditions = subjectCodesToSearch.map((_, idx) => `subject_code = $${6 + idx}`).join(' OR ');
+        queryText = `SELECT adm_no, score FROM individual_scores 
+                     WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5 AND (${codeConditions})`;
+        queryParams = [level, normalizedStream, 'NA', parseInt(year), month, ...subjectCodesToSearch];
+      }
     }
     
     const result = await query(queryText, queryParams);
@@ -1768,8 +2464,6 @@ router.get('/scores/list', async (req, res) => {
     result.rows.forEach(row => {
       scoreMap[row.adm_no] = row.score;
     });
-    
-    console.log(`Fetched ${result.rows.length} scores for ${level}, stream ${normalizedStream}, ${month}, subject ${subject_code} (searched: ${subjectCodesToSearch.join(', ')})`);
     
     res.json({ scores: scoreMap });
   } catch (error) {
@@ -1792,14 +2486,19 @@ router.get('/scores/batch', async (req, res) => {
       return res.status(400).json({ message: 'level, stream, year, and month are required' });
     }
     
-    // Normalize stream: NA -> A
+    // Normalize stream: NA -> A, and ALL -> ALL
     const normalizedStream = normalizeStream(stream);
-    
+
     // Get all subjects for the class to map codes to abbreviations
-    const subjectsResult = await query(
-      'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4',
-      [level, normalizedStream, 'NA', parseInt(year)]
-    );
+    const subjectsResult = normalizedStream === 'ALL'
+      ? await query(
+        'SELECT DISTINCT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND year = $2 ORDER BY subject_code',
+        [level, parseInt(year)]
+      )
+      : await query(
+        'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4',
+        [level, normalizedStream, 'NA', parseInt(year)]
+      );
     
     // Create mapping: subject_code -> subject_abbreviation (or code if no abbreviation)
     const subjectCodeToAbbr = {};
@@ -1813,12 +2512,19 @@ router.get('/scores/batch', async (req, res) => {
     });
     
     // Get all scores for the class and month
-    const scoresResult = await query(
-      `SELECT adm_no, subject_code, score 
-       FROM individual_scores 
-       WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
-      [level, normalizedStream, 'NA', parseInt(year), month]
-    );
+    const scoresResult = normalizedStream === 'ALL'
+      ? await query(
+        `SELECT adm_no, subject_code, score
+         FROM individual_scores
+         WHERE level = $1 AND year = $2 AND month = $3`,
+        [level, parseInt(year), month]
+      )
+      : await query(
+        `SELECT adm_no, subject_code, score 
+         FROM individual_scores 
+         WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
+        [level, normalizedStream, 'NA', parseInt(year), month]
+      );
     
     // Convert to nested object: {adm_no: {subject_key: score}}
     // Use abbreviation as key (matching Flask template behavior)
@@ -1834,8 +2540,6 @@ router.get('/scores/batch', async (req, res) => {
       scoresMap[row.adm_no][row.subject_code] = row.score; // Also keep original code for backward compatibility
     });
     
-    console.log(`Fetched ${scoresResult.rows.length} scores for ${level}, stream ${normalizedStream}, ${month} (${Object.keys(scoresMap).length} students)`);
-    
     res.json({ scores: scoresMap });
   } catch (error) {
     console.error('Error fetching batch scores:', error);
@@ -1847,41 +2551,286 @@ router.get('/scores/batch', async (req, res) => {
 router.get('/subjects/list', async (req, res) => {
   try {
     let { level, stream, year } = req.query;
-    
+
     // Normalize level to uppercase and handle URL encoding
     if (level) {
       level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
     }
-    
+
     if (!level || !year) {
       return res.status(400).json({ message: 'level and year are required' });
     }
-    
+
+    // Check if user is admin
+    const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
+    const isAdmin = ['admin', 'superadmin'].includes(userRole);
+
     // For FORM I-IV, subjects may be stored with stream='A' or stream='NA' (legacy data)
     // For FORM V-VI, use the actual stream (normalized)
     const isFormVOrVI = level === 'FORM V' || level === 'FORM VI';
-    
+
     let result;
     if (isFormVOrVI) {
-      // For FORM V-VI, stream is required and use as-is (normalized, but only NA -> A conversion)
+      // For FORM V-VI, stream is required (except for combined/together mode where stream=ALL).
       if (!stream) {
         return res.status(400).json({ message: 'stream is required for FORM V and FORM VI' });
       }
       const normalizedStream = normalizeStream(stream); // Only converts NA -> A, leaves PCB/PCM/etc as-is
-      result = await query(
-        'SELECT * FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY subject_code',
-        [level, normalizedStream, parseInt(year)]
-      );
+
+      if (normalizedStream === 'ALL') {
+        // Combined/together mode: return the union of subjects across all streams for this level/year
+        
+        if (isAdmin) {
+          // Admin sees all subjects
+          result = await query(
+            'SELECT DISTINCT ON (subject_code) * FROM subjects WHERE level = $1 AND year = $2 ORDER BY subject_code',
+            [level, parseInt(year)]
+          );
+        } else {
+          // Non-admin only sees subjects they are allocated to based on permissions
+          if (!req.user || !req.user.user_id) {
+            return res.status(403).json({ message: 'User not authenticated' });
+          }
+          
+          // Fetch user permissions from users table
+          const userResult = await query(
+            'SELECT permissions FROM users WHERE username = $1',
+            [req.user.user_id]
+          );
+          
+          if (userResult.rows.length === 0) {
+            return res.status(403).json({ message: 'User not found' });
+          }
+          
+          // Parse permissions
+          let permissions = {};
+          try {
+            permissions = userResult.rows[0] && typeof userResult.rows[0].permissions === 'string'
+              ? JSON.parse(userResult.rows[0].permissions)
+              : (userResult.rows[0]?.permissions || {});
+          } catch (err) {
+            permissions = {};
+          }
+          
+          // Collect all allowed subject codes from class_subjects permissions
+          const allowedSubjects = new Set();
+          let hasClassAccess = false;
+          
+          if (permissions.class_subjects && typeof permissions.class_subjects === 'object') {
+            Object.keys(permissions.class_subjects).forEach(className => {
+              // Check if this class is for the current level (FORM V or FORM VI)
+              if (className.startsWith(level)) {
+                const subjects = permissions.class_subjects[className];
+                if (Array.isArray(subjects)) {
+                  subjects.forEach(subj => {
+                    if (typeof subj === 'string') {
+                      allowedSubjects.add(subj);
+                    } else if (subj && typeof subj === 'object' && subj.name) {
+                      allowedSubjects.add(subj.name);
+                    }
+                  });
+                }
+              }
+            });
+          }
+          
+          // Check if user has class-level access (should grant all subjects for that class)
+          if (permissions.classes && Array.isArray(permissions.classes)) {
+            permissions.classes.forEach(className => {
+              if (className.startsWith(level)) {
+                hasClassAccess = true;
+              }
+            });
+          }
+          
+          // Fetch all subjects for this level/year
+          const allSubjectsResult = await query(
+            'SELECT DISTINCT ON (subject_code) * FROM subjects WHERE level = $1 AND year = $2 ORDER BY subject_code',
+            [level, parseInt(year)]
+          );
+          
+          // Filter subjects by user's permissions
+          if (allowedSubjects.size > 0) {
+            result = {
+              rows: allSubjectsResult.rows.filter(s => allowedSubjects.has(s.subject_name))
+            };
+          } else if (hasClassAccess) {
+            // User has class-level access but no specific subject restrictions - show all subjects
+            result = allSubjectsResult;
+          } else {
+            // No subject permissions - return empty list
+            result = { rows: [] };
+          }
+        }
+      } else {
+        if (isAdmin) {
+          // Admin sees all subjects for the stream
+          result = await query(
+            'SELECT * FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY subject_code',
+            [level, normalizedStream, parseInt(year)]
+          );
+        } else {
+          // Non-admin only sees subjects they are allocated to based on permissions
+          if (!req.user || !req.user.user_id) {
+            return res.status(403).json({ message: 'User not authenticated' });
+          }
+          
+          // Fetch user permissions from users table
+          const userResult = await query(
+            'SELECT permissions FROM users WHERE username = $1',
+            [req.user.user_id]
+          );
+          
+          if (userResult.rows.length === 0) {
+            return res.status(403).json({ message: 'User not found' });
+          }
+          
+          // Parse permissions
+          let permissions = {};
+          try {
+            permissions = userResult.rows[0] && typeof userResult.rows[0].permissions === 'string'
+              ? JSON.parse(userResult.rows[0].permissions)
+              : (userResult.rows[0]?.permissions || {});
+          } catch (err) {
+            permissions = {};
+          }
+          
+          // Collect all allowed subject names from class_subjects permissions
+          const allowedSubjects = new Set();
+          let hasClassAccess = false;
+          const streamClass = `${level} ${normalizedStream}`;
+          
+          if (permissions.class_subjects && typeof permissions.class_subjects === 'object') {
+            Object.keys(permissions.class_subjects).forEach(className => {
+              // Check if this class matches the current level/stream
+              if (className === streamClass || className === level) {
+                const subjects = permissions.class_subjects[className];
+                if (Array.isArray(subjects)) {
+                  subjects.forEach(subj => {
+                    if (typeof subj === 'string') {
+                      allowedSubjects.add(subj);
+                    } else if (subj && typeof subj === 'object' && subj.name) {
+                      allowedSubjects.add(subj.name);
+                    }
+                  });
+                }
+              }
+            });
+          }
+          
+          // Check if user has class-level access (should grant all subjects for that class)
+          if (permissions.classes && Array.isArray(permissions.classes)) {
+            if (permissions.classes.includes(streamClass) || permissions.classes.includes(level)) {
+              hasClassAccess = true;
+            }
+          }
+          
+          // Fetch all subjects for this level/year/stream
+          const allSubjectsResult = await query(
+            'SELECT * FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY subject_code',
+            [level, normalizedStream, parseInt(year)]
+          );
+          
+          // Filter subjects by user's permissions
+          if (allowedSubjects.size > 0) {
+            result = {
+              rows: allSubjectsResult.rows.filter(s => allowedSubjects.has(s.subject_name))
+            };
+          } else if (hasClassAccess) {
+            // User has class-level access but no specific subject restrictions - show all subjects
+            result = allSubjectsResult;
+          } else {
+            // No subject permissions - return empty list
+            result = { rows: [] };
+          }
+        }
+      }
     } else {
       // For FORM I-IV, normalize stream: NA -> A (default to 'A' if not provided)
       const normalizedStream = normalizeStream(stream || 'A');
-      // Check both 'A' and 'NA' to handle legacy data
-      result = await query(
-        'SELECT * FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
-        [level, 'A', 'NA', parseInt(year)]
-      );
+      
+      if (isAdmin) {
+        // Admin sees all subjects
+        result = await query(
+          'SELECT * FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
+          [level, 'A', 'NA', parseInt(year)]
+        );
+      } else {
+        // Non-admin only sees subjects they are allocated to based on permissions
+        if (!req.user || !req.user.user_id) {
+          return res.status(403).json({ message: 'User not authenticated' });
+        }
+        
+        // Fetch user permissions from users table
+        const userResult = await query(
+          'SELECT permissions FROM users WHERE username = $1',
+          [req.user.user_id]
+        );
+        
+        if (userResult.rows.length === 0) {
+          return res.status(403).json({ message: 'User not found' });
+        }
+        
+        // Parse permissions
+        let permissions = {};
+        try {
+          permissions = userResult.rows[0] && typeof userResult.rows[0].permissions === 'string'
+            ? JSON.parse(userResult.rows[0].permissions)
+            : (userResult.rows[0]?.permissions || {});
+        } catch (err) {
+          permissions = {};
+        }
+        
+        // Collect all allowed subject names from class_subjects permissions
+        const allowedSubjects = new Set();
+        let hasClassAccess = false;
+        
+        if (permissions.class_subjects && typeof permissions.class_subjects === 'object') {
+          Object.keys(permissions.class_subjects).forEach(className => {
+            // Check if this class matches the current level
+            if (className === level) {
+              const subjects = permissions.class_subjects[className];
+              if (Array.isArray(subjects)) {
+                subjects.forEach(subj => {
+                  if (typeof subj === 'string') {
+                    allowedSubjects.add(subj);
+                  } else if (subj && typeof subj === 'object' && subj.name) {
+                    allowedSubjects.add(subj.name);
+                  }
+                });
+              }
+            }
+          });
+        }
+        
+        // Check if user has class-level access (should grant all subjects for that class)
+        if (permissions.classes && Array.isArray(permissions.classes)) {
+          if (permissions.classes.includes(level)) {
+            hasClassAccess = true;
+          }
+        }
+        
+        // Fetch all subjects for this level/year/stream
+        const allSubjectsResult = await query(
+          'SELECT * FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
+          [level, 'A', 'NA', parseInt(year)]
+        );
+        
+        // Filter subjects by user's permissions
+        if (allowedSubjects.size > 0) {
+          result = {
+            rows: allSubjectsResult.rows.filter(s => allowedSubjects.has(s.subject_name))
+          };
+        } else if (hasClassAccess) {
+          // User has class-level access but no specific subject restrictions - show all subjects
+          result = allSubjectsResult;
+        } else {
+          // No subject permissions - return empty list
+          result = { rows: [] };
+        }
+      }
     }
-    
+
     res.json({ subjects: result.rows });
   } catch (error) {
     console.error('Error fetching subjects:', error);
@@ -1914,7 +2863,7 @@ router.post('/subjects', async (req, res) => {
       [level, queryStream, parseInt(year), subject_code, subject_name, subject_abbreviation || null]
     );
     
-    res.status(201).json({ subject: result.rows[0], message: 'Subject saved successfully' });
+    res.status(201).json({ subject: result.rows.length > 0 ? result.rows[0] : null, message: 'Subject saved successfully' });
   } catch (error) {
     if (error.code === '23505') {
       return res.status(400).json({ message: 'Subject already exists for this class and year' });
@@ -2026,14 +2975,13 @@ router.post('/teachers', async (req, res) => {
           [level, queryStream, parseInt(year), subject_code]
         );
         
-        if (subjectResult.rows.length > 0 && subjectResult.rows[0].subject_abbreviation) {
+        if (subjectResult.rows.length > 0 && subjectResult.rows[0] && subjectResult.rows[0].subject_abbreviation) {
           // Use the abbreviation that's actually stored in subject_teachers
           teacherSubjectCode = subjectResult.rows[0].subject_abbreviation;
         }
       }
     } catch (subjectError) {
       // If lookup fails, use the provided subject_code as-is
-      console.log('Could not resolve subject code, using provided:', subject_code);
     }
     
     const result = await query(
@@ -2045,7 +2993,7 @@ router.post('/teachers', async (req, res) => {
       [level, queryStream, parseInt(year), teacherSubjectCode, teacher_name, teacher_signature || null]
     );
     
-    res.status(201).json({ teacher: result.rows[0], message: 'Teacher assigned successfully' });
+    res.status(201).json({ teacher: result.rows.length > 0 ? result.rows[0] : null, message: 'Teacher assigned successfully' });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -2295,15 +3243,15 @@ router.post('/tabia-mwenendo', async (req, res) => {
     const validGrades = ['A', 'B', 'C', 'D', 'F'];
     const validCriteria = ['901', '902', '903', '904', '905', '906', '907', '908', '909', '910', '911'];
     
-    for (const eval of evaluations) {
-      if (!eval.student_index || !eval.criterion || !eval.evaluation) {
+    for (const evaluation of evaluations) {
+      if (!evaluation.student_index || !evaluation.criterion || !evaluation.evaluation) {
         return res.status(400).json({ message: 'Each evaluation must have student_index, criterion, and evaluation' });
       }
-      if (!validCriteria.includes(eval.criterion)) {
-        return res.status(400).json({ message: `Invalid criterion: ${eval.criterion}. Must be 901-911` });
+      if (!validCriteria.includes(evaluation.criterion)) {
+        return res.status(400).json({ message: `Invalid criterion: ${evaluation.criterion}. Must be 901-911` });
       }
-      if (!validGrades.includes(eval.evaluation)) {
-        return res.status(400).json({ message: `Invalid evaluation: ${eval.evaluation}. Must be A, B, C, D, or F` });
+      if (!validGrades.includes(evaluation.evaluation)) {
+        return res.status(400).json({ message: `Invalid evaluation: ${evaluation.evaluation}. Must be A, B, C, D, or F` });
       }
     }
     
@@ -2317,7 +3265,6 @@ router.post('/tabia-mwenendo', async (req, res) => {
     }
     const deduped = [...seen.values()];
 
-    console.log('[tabia-mwenendo] scope', { level, stream: normalizedStream, year, term: normalizedTerm, replaceScope, evaluationsCount: evaluations.length, dedupedCount: deduped.length });
     const insertKeys = deduped.map((e) => `${normIdx(e.student_index)}:${e.criterion}`);
     const duplicateKeys = insertKeys.filter((k, i) => insertKeys.indexOf(k) !== i);
     if (duplicateKeys.length > 0) {
@@ -2342,21 +3289,19 @@ router.post('/tabia-mwenendo', async (req, res) => {
           .filter((r) => levelSet.has(normLevel(r.level)) && (norm(r.stream) === 'A' || norm(r.stream) === 'NA'))
           .map((r) => r.id)
           .filter((id) => id != null);
-        console.log('[tabia-mwenendo] replaceScope: year+term rows', selectResult?.rows?.length ?? 0, 'after level/stream filter', idsToDelete.length, 'sample row', selectResult?.rows?.[0]);
 
         if (idsToDelete.length > 0) {
           await client.query(`DELETE FROM tabia_mwenendo WHERE id = ANY($1::int[])`, [idsToDelete]);
         }
         // Single multi-row INSERT (no ON CONFLICT needed; we just deleted everything for this scope).
         if (deduped.length > 0) {
-          console.log('[tabia-mwenendo] INSERT count', deduped.length, 'sample keys', insertKeys.slice(0, 10));
           const cols = 'level, stream, year, term, student_index, criterion, evaluation';
           const placeholders = [];
           const params = [];
-          deduped.forEach((eval, i) => {
+          deduped.forEach((evaluation, i) => {
             const base = i * 7;
             placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`);
-            params.push(level, normalizedStream, yearInt, normalizedTerm, normIdx(eval.student_index), eval.criterion, eval.evaluation);
+            params.push(level, normalizedStream, yearInt, normalizedTerm, normIdx(evaluation.student_index), evaluation.criterion, evaluation.evaluation);
           });
           await client.query(
             `INSERT INTO tabia_mwenendo (${cols}) VALUES ${placeholders.join(', ')}`,
@@ -2364,13 +3309,13 @@ router.post('/tabia-mwenendo', async (req, res) => {
           );
         }
       } else {
-        for (const eval of deduped) {
+        for (const evaluation of deduped) {
           await client.query(
             `INSERT INTO tabia_mwenendo (level, stream, year, term, student_index, criterion, evaluation)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (level, stream, year, term, student_index, criterion)
              DO UPDATE SET evaluation = EXCLUDED.evaluation, updated_at = NOW()`,
-            [level, normalizedStream, yearInt, normalizedTerm, String(eval.student_index), eval.criterion, eval.evaluation]
+            [level, normalizedStream, yearInt, normalizedTerm, String(evaluation.student_index), evaluation.criterion, evaluation.evaluation]
           );
         }
       }
@@ -2452,55 +3397,130 @@ router.get('/monthly-results/list', async (req, res) => {
 // Calculate monthly results automatically from individual scores
 router.post('/monthly-results/calculate', async (req, res) => {
   try {
-    let { level, stream, year, month } = req.body;
-    
+    let { level, stream, year, month, term } = req.body;
+
     if (!level || !stream || !year || !month) {
       return res.status(400).json({ message: 'level, stream, year, and month are required' });
     }
-    
+
     // Normalize level to uppercase and handle URL encoding
     if (level) {
       level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
     }
-    
+
     // Normalize stream for queries
     const normalizedStreamForQuery = normalizeStream(stream);
-    
+
     // Check if this is FORM I-IV (which may have students with stream 'A' or 'NA')
     const isFormIV = /^FORM\s+(I|II|III|IV)$/i.test(level);
-    
+    const isFormVOrVI = /^FORM\s+(V|VI)$/i.test(level);
+
+    // Normalize term to match database format
+    const normalizeTerm = (termParam) => {
+      if (!termParam) return null;
+      const t = termParam.trim();
+      if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t)) return 'First Term';
+      if (/^Term\s+II$/i.test(t) || /^Term\s+2$/i.test(t)) return 'Second Term';
+      if (/^First\s+Term$/i.test(t)) return 'First Term';
+      if (/^Second\s+Term$/i.test(t)) return 'Second Term';
+      return t;
+    };
+
+    const normalizedTerm = normalizeTerm(term);
+
     // Get all students for the class
-    // For FORM I-IV, check both 'A' and 'NA' streams since students may have either
+    // For Form V/VI, filter by term. For Form I-IV, include all students for the year.
     let studentsResult;
-    if (isFormIV && (normalizedStreamForQuery === 'A' || normalizedStreamForQuery === 'NA')) {
-      studentsResult = await query(
-        'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY adm_no',
-        [level, 'A', 'NA', parseInt(year)]
-      );
+    let studentsQuery;
+    let studentsParams;
+
+    if (normalizedStreamForQuery === 'ALL') {
+      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND year = $2';
+      studentsParams = [level, parseInt(year)];
+
+      if (isFormVOrVI && normalizedTerm) {
+        studentsQuery += ' AND term = $3';
+        studentsParams.push(normalizedTerm);
+      }
+
+      studentsQuery += ' ORDER BY adm_no';
+    } else if (isFormIV && (normalizedStreamForQuery === 'A' || normalizedStreamForQuery === 'NA')) {
+      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4';
+      studentsParams = [level, 'A', 'NA', parseInt(year)];
+
+      if (isFormVOrVI && normalizedTerm) {
+        studentsQuery += ' AND term = $5';
+        studentsParams.push(normalizedTerm);
+      }
+
+      studentsQuery += ' ORDER BY adm_no';
     } else {
-      studentsResult = await query(
-        'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
-        [level, normalizedStreamForQuery, parseInt(year)]
-      );
+      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND stream = $2 AND year = $3';
+      studentsParams = [level, normalizedStreamForQuery, parseInt(year)];
+
+      if (isFormVOrVI && normalizedTerm) {
+        studentsQuery += ' AND term = $4';
+        studentsParams.push(normalizedTerm);
+      }
+
+      studentsQuery += ' ORDER BY adm_no';
     }
+
+    studentsResult = await query(studentsQuery, studentsParams);
     
     if (studentsResult.rows.length === 0) {
       return res.json({ results: {}, message: 'No students found for this class' });
     }
     
     // Get all individual scores for the month (check both normalized stream and NA for backward compatibility)
-    const scoresResult = await query(
-      `SELECT adm_no, subject_code, score 
-       FROM individual_scores 
-       WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
-      [level, normalizedStreamForQuery, 'NA', parseInt(year), month]
-    );
+    // For Form V/VI, filter by term by joining with students table
+    let scoresResult;
+    if (normalizedStreamForQuery === 'ALL') {
+      if (isFormVOrVI && normalizedTerm) {
+        scoresResult = await query(
+          `SELECT i.adm_no, i.subject_code, i.score
+           FROM individual_scores i
+           INNER JOIN students s ON i.adm_no = s.adm_no
+           WHERE i.level = $1 AND i.year = $2 AND i.month = $3 AND s.term = $4`,
+          [level, parseInt(year), month, normalizedTerm]
+        );
+      } else {
+        scoresResult = await query(
+          `SELECT adm_no, subject_code, score
+           FROM individual_scores
+           WHERE level = $1 AND year = $2 AND month = $3`,
+          [level, parseInt(year), month]
+        );
+      }
+    } else {
+      if (isFormVOrVI && normalizedTerm) {
+        scoresResult = await query(
+          `SELECT i.adm_no, i.subject_code, i.score
+           FROM individual_scores i
+           INNER JOIN students s ON i.adm_no = s.adm_no
+           WHERE i.level = $1 AND i.stream IN ($2, $3) AND i.year = $4 AND i.month = $5 AND s.term = $6`,
+          [level, normalizedStreamForQuery, 'NA', parseInt(year), month, normalizedTerm]
+        );
+      } else {
+        scoresResult = await query(
+          `SELECT adm_no, subject_code, score
+           FROM individual_scores
+           WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
+          [level, normalizedStreamForQuery, 'NA', parseInt(year), month]
+        );
+      }
+    }
     
     // Get subjects for the class (check both normalized stream and NA for backward compatibility)
-    const subjectsResult = await query(
-      'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4',
-      [level, normalizedStreamForQuery, 'NA', parseInt(year)]
-    );
+    const subjectsResult = normalizedStreamForQuery === 'ALL'
+      ? await query(
+        'SELECT DISTINCT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND year = $2 ORDER BY subject_code',
+        [level, parseInt(year)]
+      )
+      : await query(
+        'SELECT subject_code, subject_abbreviation FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4',
+        [level, normalizedStreamForQuery, 'NA', parseInt(year)]
+      );
     
     // Create mapping: subject_code -> [subject_code, abbreviation] (for flexible lookup)
     const subjectCodeToKeys = {};
@@ -2576,13 +3596,30 @@ router.post('/monthly-results/calculate', async (req, res) => {
         total_marks: totalMarks,
         average: average,
         grade: grade,
+        first_name: student.first_name,
+        middle_name: student.middle_name,
+        surname: student.surname,
         remarks: remarks,
       });
     });
     
-    // Calculate positions (sort by total marks descending)
-    studentsWithTotals.sort((a, b) => b.total_marks - a.total_marks);
-    
+    // Calculate positions:
+    // Rank by AVR (average) desc with tie-breaker by TOT (total marks) desc.
+    // If still tied, fall back to alphabetical by student name.
+    studentsWithTotals.sort((a, b) => {
+      const avgDiff = b.average - a.average;
+      if (avgDiff !== 0) return avgDiff;
+
+      const totDiff = Number(b.total_marks || 0) - Number(a.total_marks || 0);
+      if (totDiff !== 0) return totDiff;
+
+      if (a.first_name !== b.first_name) return String(a.first_name || '').localeCompare(String(b.first_name || ''));
+      if ((a.middle_name || '') !== (b.middle_name || '')) {
+        return String(a.middle_name || '').localeCompare(String(b.middle_name || ''));
+      }
+      return String(a.surname || '').localeCompare(String(b.surname || ''));
+    });
+
     studentsWithTotals.forEach((student, index) => {
       calculatedResults[student.student_index].position = index + 1;
     });
@@ -2702,8 +3739,6 @@ router.get('/monthly-results/pdf', async (req, res) => {
       return res.status(400).json({ message: 'level, stream, year, and month are required' });
     }
     
-    console.log('Generating PDF for:', { level, stream, year, month });
-    
     const pdfBuffer = await generateMonthlyResultsPDF(level, stream, year, month);
     
     // Validate PDF buffer
@@ -2728,8 +3763,6 @@ router.get('/monthly-results/pdf', async (req, res) => {
       console.error('Invalid PDF buffer received. First bytes:', buffer.slice(0, 20).toString('hex'));
       throw new Error('Generated file is not a valid PDF');
     }
-    
-    console.log(`Sending PDF: ${buffer.length} bytes`);
     
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
@@ -2756,8 +3789,6 @@ router.get('/fees-announcements/list', async (req, res) => {
   try {
     let { level, stream, year, term } = req.query;
     
-    console.log('[FEES ANNOUNCEMENTS] Request params:', { level, stream, year, term });
-    
     if (!level || !stream || !year) {
       return res.status(400).json({ message: 'level, stream, and year are required' });
     }
@@ -2769,7 +3800,6 @@ router.get('/fees-announcements/list', async (req, res) => {
     const normalizedStream = normalizeStream(stream);
     
     const normalizedTerm = term ? decodeURIComponent(term) : 'Term I';
-    console.log('[FEES ANNOUNCEMENTS] Normalized values:', { level, stream: normalizedStream, year, term: normalizedTerm });
     
     // Check if term column exists, if not use old query (backward compatibility)
     let result;
@@ -2779,20 +3809,16 @@ router.get('/fees-announcements/list', async (req, res) => {
          WHERE UPPER(TRIM(level)) = UPPER(TRIM($1)) AND stream IN ($2, $3) AND year = $4 AND term = $5 ORDER BY announcement_index`,
         [level, normalizedStream, 'NA', parseInt(year), normalizedTerm]
       );
-      console.log('[FEES ANNOUNCEMENTS] Query with term returned', result.rows.length, 'rows');
-    } catch (error) {
-      console.log('[FEES ANNOUNCEMENTS] Error with term query:', error.message);
+    } catch (e) {
       // If term column doesn't exist, fall back to old query
-      if (error.message.includes('column') && error.message.includes('term')) {
-        console.log('[FEES ANNOUNCEMENTS] Falling back to query without term');
+      if (e.message.includes('column') && e.message.includes('term')) {
         result = await query(
           `SELECT announcement_index, announcement_text FROM fees_announcements 
            WHERE UPPER(TRIM(level)) = UPPER(TRIM($1)) AND stream IN ($2, $3) AND year = $4 ORDER BY announcement_index`,
           [level, normalizedStream, 'NA', parseInt(year)]
         );
-        console.log('[FEES ANNOUNCEMENTS] Fallback query returned', result.rows.length, 'rows');
       } else {
-        throw error;
+        throw e;
       }
     }
     
@@ -2802,10 +3828,8 @@ router.get('/fees-announcements/list', async (req, res) => {
       announcementsMap[row.announcement_index] = row.announcement_text;
     });
     
-    console.log('[FEES ANNOUNCEMENTS] Returning announcements map:', Object.keys(announcementsMap).length, 'keys');
     res.json({ announcements: announcementsMap });
   } catch (error) {
-    console.error('[FEES ANNOUNCEMENTS] Error:', error);
     return sendError(res, error, 500);
   }
 });
@@ -2819,6 +3843,9 @@ router.post('/fees-announcements', async (req, res) => {
       return res.status(400).json({ message: 'level, stream, year, and announcements object are required' });
     }
     
+    // Normalize level and stream for consistency with GET endpoint
+    const normalizedLevel = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    const normalizedStream = normalizeStream(stream);
     const normalizedTerm = term || 'Term I';
     
     await withTransaction(async (client) => {
@@ -2843,12 +3870,12 @@ router.post('/fees-announcements', async (req, res) => {
           if (hasTermColumn) {
             await client.query(
               'DELETE FROM fees_announcements WHERE level = $1 AND stream = $2 AND year = $3 AND term = $4 AND announcement_index = $5',
-              [level, stream, parseInt(year), normalizedTerm, announcementIndex]
+              [normalizedLevel, normalizedStream, parseInt(year), normalizedTerm, announcementIndex]
             );
           } else {
             await client.query(
               'DELETE FROM fees_announcements WHERE level = $1 AND stream = $2 AND year = $3 AND announcement_index = $4',
-              [level, stream, parseInt(year), announcementIndex]
+              [normalizedLevel, normalizedStream, parseInt(year), announcementIndex]
             );
           }
         } else {
@@ -2858,7 +3885,7 @@ router.post('/fees-announcements', async (req, res) => {
                VALUES ($1, $2, $3, $4, $5, $6)
                ON CONFLICT (level, stream, year, term, announcement_index)
                DO UPDATE SET announcement_text = EXCLUDED.announcement_text, updated_at = NOW()`,
-              [level, stream, parseInt(year), normalizedTerm, announcementIndex, announcementText.trim()]
+              [normalizedLevel, normalizedStream, parseInt(year), normalizedTerm, announcementIndex, announcementText.trim()]
             );
           } else {
             await client.query(
@@ -2866,7 +3893,7 @@ router.post('/fees-announcements', async (req, res) => {
                VALUES ($1, $2, $3, $4, $5)
                ON CONFLICT (level, stream, year, announcement_index)
                DO UPDATE SET announcement_text = EXCLUDED.announcement_text, updated_at = NOW()`,
-              [level, stream, parseInt(year), announcementIndex, announcementText.trim()]
+              [normalizedLevel, normalizedStream, parseInt(year), announcementIndex, announcementText.trim()]
             );
           }
         }
@@ -2884,8 +3911,6 @@ router.get('/debt/list', async (req, res) => {
   try {
     let { level, stream, year } = req.query;
     
-    console.log('[DEBT LIST] Request params:', { level, stream, year });
-    
     if (!level || !stream || !year) {
       return res.status(400).json({ message: 'level, stream, and year are required' });
     }
@@ -2896,16 +3921,12 @@ router.get('/debt/list', async (req, res) => {
     // Normalize stream: NA -> A (for FORM I-IV)
     const normalizedStream = normalizeStream(stream);
     
-    console.log('[DEBT LIST] Normalized values:', { level, stream: normalizedStream, year });
-    
     const result = await query(
       `SELECT student_index, amount, description, due_date, status 
        FROM individual_debt 
        WHERE UPPER(TRIM(level)) = UPPER(TRIM($1)) AND stream IN ($2, $3) AND year = $4`,
       [level, normalizedStream, 'NA', parseInt(year)]
     );
-    
-    console.log('[DEBT LIST] Query returned', result.rows.length, 'rows');
     
     // Convert to object mapping student_index to debt data
     const debtMap = {};
@@ -2918,7 +3939,6 @@ router.get('/debt/list', async (req, res) => {
       };
     });
     
-    console.log('[DEBT LIST] Returning debt map with', Object.keys(debtMap).length, 'keys');
     res.json({ debt: debtMap });
   } catch (error) {
     console.error('[DEBT LIST] Error:', error);
@@ -2961,6 +3981,118 @@ router.post('/debt', async (req, res) => {
     
     res.json({ message: 'Debt record saved successfully' });
   } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Bulk save or update individual debt records (for CSV upload)
+// Body: { level, stream, year, debts: [{ student_index, amount, description }, ...] }
+router.post('/debt/bulk', async (req, res) => {
+  try {
+    let { level, stream, year, debts } = req.body;
+
+    if (level) {
+      level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    }
+
+    if (!level || !stream || !year || !Array.isArray(debts)) {
+      return res.status(400).json({ message: 'level, stream, year, and debts array are required' });
+    }
+
+    const normalizedStream = normalizeStream(stream);
+    const yearNum = parseInt(year, 10);
+
+    if (isNaN(yearNum) || yearNum <= 0) {
+      return res.status(400).json({ message: 'Invalid year' });
+    }
+
+    let saved = 0;
+    const errors = [];
+
+    // For FORM I-IV, debt may exist under either stream 'A' or 'NA'
+    const streamsToCheck = normalizedStream === 'A' ? ['A', 'NA'] : [normalizedStream];
+    const uniqueStreams = [...new Set(streamsToCheck)];
+
+    for (const item of debts) {
+      const studentIndexRaw = item?.student_index;
+      const descriptionRaw = item?.description ?? '';
+      const amountRaw = item?.amount;
+
+      const studentIndexNum = parseInt(studentIndexRaw, 10);
+      const amountFloat = parseFloat(amountRaw);
+      const description = String(descriptionRaw).trim();
+
+      if (Number.isNaN(studentIndexNum) || amountFloat === undefined || amountFloat === null || Number.isNaN(amountFloat)) {
+        errors.push({
+          student_index: studentIndexRaw,
+          message: 'student_index and amount are required'
+        });
+        continue;
+      }
+
+      if (amountFloat < 0) {
+        errors.push({
+          student_index: studentIndexRaw,
+          message: 'amount must be non-negative'
+        });
+        continue;
+      }
+
+      try {
+        let existing;
+        if (uniqueStreams.length === 1) {
+          existing = await query(
+            `SELECT id, stream
+             FROM individual_debt
+             WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4
+             LIMIT 1`,
+            [level, uniqueStreams[0], yearNum, studentIndexNum]
+          );
+        } else {
+          existing = await query(
+            `SELECT id, stream
+             FROM individual_debt
+             WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND student_index = $5
+             LIMIT 1`,
+            [level, uniqueStreams[0], uniqueStreams[1], yearNum, studentIndexNum]
+          );
+        }
+
+        if (existing.rows.length > 0) {
+          const actualStream = existing.rows[0].stream || normalizedStream;
+          await query(
+            `UPDATE individual_debt
+             SET amount = $1,
+                 description = $2,
+                 updated_at = NOW()
+             WHERE level = $3 AND stream = $4 AND year = $5 AND student_index = $6`,
+            [amountFloat, description, level, actualStream, yearNum, studentIndexNum]
+          );
+        } else {
+          await query(
+            `INSERT INTO individual_debt (level, stream, year, student_index, amount, description, due_date, status)
+             VALUES ($1, $2, $3, $4, $5, $6, '', 'Outstanding')`,
+            [level, normalizedStream, yearNum, studentIndexNum, amountFloat, description]
+          );
+        }
+
+        saved++;
+      } catch (e) {
+        errors.push({
+          student_index: studentIndexRaw,
+          message: e.message || 'Failed to save debt'
+        });
+      }
+    }
+
+    return res.json({
+      message: 'Bulk debts saved',
+      saved,
+      failed: errors.length,
+      errors: errors.length ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error saving bulk debts:', error);
     return sendError(res, error, 500);
   }
 });
@@ -3204,6 +4336,22 @@ router.post('/bulk-upload', csvUpload.single('file'), async (req, res) => {
         console.error('Error deleting uploaded file:', unlinkError);
       }
     }
+    return sendError(res, error, 500);
+  }
+});
+
+// Migration route: Update all DIV scores to A/DIV (no auth required for temporary migration)
+router.post('/migrate-div-to-adiv', async (req, res) => {
+  try {
+    const result = await query(
+      "UPDATE individual_scores SET subject_code = 'A/DIV' WHERE subject_code = 'DIV'"
+    );
+    res.json({ 
+      message: `Migration completed successfully`, 
+      updatedRows: result.rowCount 
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
     return sendError(res, error, 500);
   }
 });

@@ -56,7 +56,7 @@ const ParishFormVVIYearSelection = ({ formLevel }) => {
             <div className="parish-year-selection-grid">
               {years.map((yearObj) => (
                 <Link
-                  key={yearObj.year}
+                  key={`${yearObj.year}-${yearObj.isEndYear ? 'end' : 'start'}`}
                   to={getParishManagementPath(yearObj.year)}
                   className="parish-year-selection-card-item"
                   aria-label={`${yearObj.displayRange} Student Parishes`}

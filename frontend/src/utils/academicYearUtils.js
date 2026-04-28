@@ -19,17 +19,17 @@ export const requiresSpecialAcademicYearLogic = (formLevel) => {
  * @returns {object} - Object containing startYear, endYear, and display range
  */
 export const getAcademicYearRange = (year) => {
-  // For Form V/VI, the academic year runs from June to June
-  // Students who start in June 2025 (First Term) continue through June 2026 (Second Term)
+  // For Form V/VI, the academic year runs from July to June
+  // Students who start in July 2025 (First Term) continue through June 2026 (Second Term)
   const startYear = year;
   const endYear = year + 1;
-  
+
   return {
     startYear,
     endYear,
     displayRange: `${startYear} - ${endYear}`,
-    fullDisplay: `June ${startYear} to June ${endYear}`,
-    firstTerm: `June ${startYear} to December ${startYear}`,
+    fullDisplay: `July ${startYear} to June ${endYear}`,
+    firstTerm: `July ${startYear} to December ${startYear}`,
     secondTerm: `January ${endYear} to June ${endYear}`
   };
 };
@@ -85,18 +85,18 @@ export const getFormVVIYears = () => {
 export const getCurrentTerm = (date = new Date()) => {
   const month = date.getMonth() + 1; // 1-12
   const year = date.getFullYear();
-  
-  // June to December = First Term
+
+  // July to December = First Term
   // January to June = Second Term
-  if (month >= 6 && month <= 12) {
+  if (month >= 7 && month <= 12) {
     return {
       term: 'First Term',
       termNumber: 1,
       academicYearStart: year,
       academicYearEnd: year + 1,
       displayRange: `${year} - ${year + 1}`,
-      description: `June ${year} to December ${year} (First Term)`,
-      period: `June ${year} - December ${year}`,
+      description: `July ${year} to December ${year} (First Term)`,
+      period: `July ${year} - December ${year}`,
       academicYear: year // Students in this term belong to academic year starting this year
     };
   } else {
@@ -174,8 +174,8 @@ export const getStudentAcademicYear = (registrationYear, formLevel) => {
   
   const currentTerm = getCurrentTerm();
   const registrationAcademicYear = getAcademicYearRange(registrationYear);
-  
-  // If student was registered in First Term (June-Dec), they belong to that academic year
+
+  // If student was registered in First Term (Jul-Dec), they belong to that academic year
   // If student was registered in Second Term (Jan-June), they belong to previous academic year's start
   if (currentTerm.termNumber === 2) {
     // We're in Second Term (Jan-June)

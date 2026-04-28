@@ -162,3 +162,80 @@
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .marks-config-student-selection-page-container {
+    padding: 1rem;
+  }
+
+  .loading-state,
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+
+  .empty-state i {
+    font-size: 2.5rem;
+  }
+
+  .empty-state h3 {
+    font-size: 1.125rem;
+  }
+
+  .empty-state p {
+    font-size: 0.875rem;
+  }
+
+  .students-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .student-card {
+    padding: 0.875rem;
+  }
+
+  .student-avatar {
+    width: 45px;
+    height: 45px;
+    font-size: 1.75rem;
+    margin-right: 0.875rem;
+  }
+
+  .student-info h4 {
+    font-size: 0.9375rem;
+  }
+
+  .student-adm,
+  .student-sex {
+    font-size: 0.8125rem;
+  }
+
+  .student-arrow {
+    font-size: 1.25rem;
+  }
+
+  .excel-card-header {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .excel-card-body {
+    padding: 1rem;
+  }
+
+  .excel-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem 1rem;
+  }
+
+  .excel-btn.small {
+    padding: 0.625rem 0.875rem;
+  }
+}

@@ -1,0 +1,67 @@
+/**
+ * App-wide: sharp corners for real <table> elements and table-like layouts.
+ * Loaded after index.css so these rules win over scattered per-page styles.
+ */
+table,
+table caption,
+thead,
+tbody,
+tfoot,
+tr,
+th,
+td {
+  border-radius: 0 !important;
+}
+
+/* Cards that wrap tables use overflow:hidden + radius — square the whole card when it contains a table */
+.excel-card:has(table),
+.excel-card:has(.table-container),
+.excel-card:has(.table-responsive),
+.excel-card:has(.results-table-container),
+.excel-card:has(.data-table-container) {
+  border-radius: 0 !important;
+}
+
+.table-container,
+.table-container:has(table),
+.table-responsive,
+.table-responsive:has(table),
+.results-table-container,
+.results-table-wrapper,
+.report-scores-table-wrap,
+.students-table-container,
+.photos-mgmt-table-container,
+.parish-mgmt-table-container,
+.data-table-container,
+.data-table-wrapper,
+.year-table-container,
+.year-table,
+.year-table-row,
+.year-table-cell,
+.registered-table,
+.compact-results-table,
+.results-table,
+.report-scores-table,
+.excel-table,
+.announcements-table,
+.photos-mgmt-table,
+.parish-mgmt-table,
+.academic-table,
+.tabia-table,
+.grade-table,
+.subject-teachers-mgmt-table,
+.subjects-mgmt-table,
+.comprehensive-marks-table,
+.info-table,
+.summary-table,
+.comments-table,
+.behavior-table,
+.maoni-table,
+.data-table {
+  border-radius: 0 !important;
+}
+
+/* Table loading skeleton: match sharp table look */
+.skeleton-table .skeleton-line {
+  border-radius: 0 !important;
+}

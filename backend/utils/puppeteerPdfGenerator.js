@@ -125,6 +125,21 @@ async function generateIndividualReportPDFWithPuppeteer(
     }
     
     const page = await browser.newPage();
+
+    // Collect useful diagnostics for debugging missing images in PDF.
+    page.on('console', (msg) => {
+      // Avoid noisy logs; focus on warnings/errors.
+      if (['warning', 'error'].includes(msg.type())) {
+        console.log('[PUPPETEER][console]', msg.type(), msg.text());
+      }
+    });
+    page.on('pageerror', (err) => {
+      console.error('[PUPPETEER][pageerror]', err.message);
+    });
+    page.on('requestfailed', (req) => {
+      const failure = req.failure();
+      console.warn('[PUPPETEER][requestfailed]', req.url(), failure?.errorText || 'unknown');
+    });
     
     // Set viewport for consistent rendering - wider to match screen view
     await page.setViewport({
@@ -155,8 +170,49 @@ async function generateIndividualReportPDFWithPuppeteer(
       throw new Error(`Failed to load HTML content: ${contentError.message}`);
     }
     
-    // Wait for any images/fonts to load (using Promise-based delay instead of deprecated waitForTimeout)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait for student photo (if present) to fully load before generating the PDF.
+    // Some iPhone/safari-like environments defer image load events; this avoids capturing a blank slot.
+    try {
+      await page.waitForFunction(() => {
+        const img = document.querySelector('.student-photo img.photo');
+        if (!img) return true; // No photo element rendered
+        return img.complete && img.naturalWidth > 0;
+      }, { timeout: 10000 });
+    } catch {
+      // If it times out, still generate the PDF with whatever is rendered.
+    }
+
+    // Log final image state for debugging.
+    try {
+      const photoState = await page.evaluate(() => {
+        const img = document.querySelector('.student-photo img.photo');
+        if (!img) return null;
+        return {
+          src: img.currentSrc || img.src,
+          complete: img.complete,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+        };
+      });
+      if (photoState) {
+        console.log('[PUPPETEER] Student photo render state:', photoState);
+
+        if (!photoState.complete || !(photoState.naturalWidth > 0)) {
+          const screenshotPath = `debug_student_photo_${Date.now()}.png`;
+          try {
+            await page.screenshot({ path: screenshotPath, fullPage: true });
+            console.warn('[PUPPETEER] Photo not loaded (or has zero naturalWidth). Saved screenshot:', screenshotPath);
+          } catch (ssErr) {
+            console.warn('[PUPPETEER] Could not take screenshot:', ssErr.message);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[PUPPETEER] Could not read photo render state:', e.message);
+    }
+    
+    // Small grace period for layout/render stability.
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Verify page loaded correctly
     const pageTitle = await page.title();

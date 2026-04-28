@@ -12,6 +12,41 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
+
+// Validate Cloudinary credentials on startup
+async function validateCloudinaryCredentials() {
+  const missing = [];
+  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push('CLOUDINARY_CLOUD_NAME');
+  if (!process.env.CLOUDINARY_API_KEY) missing.push('CLOUDINARY_API_KEY');
+  if (!process.env.CLOUDINARY_API_SECRET) missing.push('CLOUDINARY_API_SECRET');
+
+  if (missing.length > 0) {
+    console.error('❌ CLOUDINARY ERROR: Missing required environment variables:');
+    missing.forEach(v => console.error(`   - ${v}`));
+    console.error('⚠️  Photo uploads will fail. Set these variables in Railway or your .env file.');
+    return false;
+  }
+
+  // Test Cloudinary connection
+  try {
+    await cloudinary.api.ping();
+    console.log('✅ Cloudinary connected successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ CLOUDINARY ERROR: Failed to connect to Cloudinary:', error.message);
+    console.error('⚠️  Photo uploads will fail. Check your Cloudinary credentials.');
+    return false;
+  }
+}
 
 // Placeholder SVG for missing uploads (avoids 404s; shows a simple person icon)
 const PLACEHOLDER_IMAGE = Buffer.from(
@@ -23,14 +58,96 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || (process.env.NODE_ENV === 'production' ? [] : [
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:5173',
       'http://localhost:5174'
-    ],
+    ]),
     methods: ['GET', 'POST']
   }
+});
+
+// Lightweight schema guards for development convenience.
+// Ensures new columns exist without requiring a manual initDatabase run.
+const { query } = require('./config/database');
+
+async function ensureStudentsComColumn() {
+  try {
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'students'
+            AND column_name = 'com'
+        ) THEN
+          ALTER TABLE students ADD COLUMN com VARCHAR(50);
+        END IF;
+      END $$;
+    `);
+  } catch (error) {
+    // Don't crash the server; schema might already exist or user might not have privileges.
+    console.warn('[schema] ensure students.com failed:', error.message);
+  }
+}
+
+async function ensureStudentPhotosCloudinaryPublicIdColumn() {
+  try {
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'student_photos'
+            AND column_name = 'cloudinary_public_id'
+        ) THEN
+          ALTER TABLE student_photos ADD COLUMN cloudinary_public_id VARCHAR(255);
+        END IF;
+      END $$;
+    `);
+  } catch (error) {
+    console.warn('[schema] ensure student_photos.cloudinary_public_id failed:', error.message);
+  }
+}
+
+async function ensureStaffProfilesCloudinaryPublicIdColumn() {
+  try {
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'staff_profiles'
+            AND column_name = 'cloudinary_public_id'
+        ) THEN
+          ALTER TABLE staff_profiles ADD COLUMN cloudinary_public_id VARCHAR(255);
+        END IF;
+      END $$;
+    `);
+  } catch (error) {
+    console.warn('[schema] ensure staff_profiles.cloudinary_public_id failed:', error.message);
+  }
+}
+
+// Run once at startup.
+setImmediate(() => {
+  ensureStudentsComColumn().catch((e) => console.warn('[schema] ensureStudentsComColumn fatal:', e.message));
+  ensureStudentPhotosCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureStudentPhotosCloudinaryPublicIdColumn fatal:', e.message));
+  ensureStaffProfilesCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureStaffProfilesCloudinaryPublicIdColumn fatal:', e.message));
+  validateCloudinaryCredentials().catch((e) => console.warn('[cloudinary] Validation failed:', e.message));
+  
+  // Migration: Update all DIV scores to A/DIV
+  query("UPDATE individual_scores SET subject_code = 'A/DIV' WHERE subject_code = 'DIV'")
+    .then(result => {
+      if (result.rowCount > 0) {
+        console.log(`[migration] Updated ${result.rowCount} rows from DIV to A/DIV`);
+      }
+    })
+    .catch(err => console.warn('[migration] DIV to A/DIV migration failed:', err.message));
 });
 
 // Middleware
@@ -39,24 +156,24 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || (process.env.NODE_ENV === 'production' ? [] : [
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173',
     'http://localhost:5174'
-  ],
+  ]),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: '16mb' }));
-app.use(express.urlencoded({ extended: true, limit: '16mb' }));
+app.use(express.json({ limit: '1mb' })); // Reduced from 16MB to prevent memory exhaustion
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Rate limiting - tuned for ~200 users/sec (set RATE_LIMIT_MAX in .env if needed)
+// Rate limiting - production-appropriate limits to prevent DDoS attacks
 const rateLimitMax = process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX, 10) : null;
 const defaultMax = process.env.NODE_ENV === 'production'
-  ? (rateLimitMax || 200000)   // 200 req/s * 900s ≈ 180k per 15 min; override with RATE_LIMIT_MAX
-  : 5000;
+  ? (rateLimitMax || 500)   // Production: 500 requests per 15 minutes per IP (reasonable limit)
+  : 5000;                    // Development: 5000 requests per 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: defaultMax,
@@ -122,17 +239,29 @@ app.get('/health', async (req, res) => {
   try {
     const { query } = require('./config/database');
     await query('SELECT 1');
-    res.json({ 
-      status: 'healthy', 
+
+    // Check Cloudinary status
+    let cloudinaryStatus = 'unknown';
+    try {
+      await cloudinary.api.ping();
+      cloudinaryStatus = 'connected';
+    } catch (error) {
+      cloudinaryStatus = 'disconnected';
+    }
+
+    res.json({
+      status: 'healthy',
       database: 'connected',
-      timestamp: new Date().toISOString() 
+      cloudinary: cloudinaryStatus,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(503).json({ 
-      status: 'unhealthy', 
+    res.status(503).json({
+      status: 'unhealthy',
       database: 'disconnected',
+      cloudinary: 'unknown',
       error: error.message,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -156,8 +285,9 @@ app.get('/api/health/database', async (req, res) => {
     
     for (const table of keyTables) {
       try {
-        const countResult = await query(`SELECT COUNT(*) as count FROM ${table}`);
-        tableCounts[table] = parseInt(countResult.rows[0].count);
+        // Use parameterized query to prevent SQL injection (even though table names are from trusted array)
+        const countResult = await query('SELECT COUNT(*) as count FROM "' + table + '"');
+        tableCounts[table] = countResult.rows.length > 0 && countResult.rows[0] ? parseInt(countResult.rows[0].count) : 0;
       } catch (err) {
         tableCounts[table] = 'error';
       }
@@ -166,9 +296,9 @@ app.get('/api/health/database', async (req, res) => {
     res.json({
       status: 'connected',
       database: {
-        current_time: result.rows[0].current_time,
-        version: result.rows[0].pg_version.split(',')[0],
-        table_count: parseInt(tablesResult.rows[0].count),
+        current_time: result.rows.length > 0 ? result.rows[0].current_time : null,
+        version: result.rows.length > 0 ? result.rows[0].pg_version.split(',')[0] : 'unknown',
+        table_count: tablesResult.rows.length > 0 ? parseInt(tablesResult.rows[0].count) : 0,
         record_counts: tableCounts
       },
       timestamp: new Date().toISOString()
@@ -201,9 +331,37 @@ app.use('/api/students', studentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  const jwt = require('jsonwebtoken');
+  const { JWT_SECRET } = require('./middleware/auth');
+
+  if (!token) {
+    return next(new Error('Authentication error: No token provided'));
+  }
+
+  // Remove 'Bearer ' prefix if present
+  const actualToken = token.replace('Bearer ', '');
+
+  try {
+    const decoded = jwt.verify(actualToken, JWT_SECRET);
+    socket.user = decoded;
+    next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return next(new Error('Authentication error: Token expired'));
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return next(new Error('Authentication error: Invalid token'));
+    }
+    return next(new Error('Authentication error'));
+  }
+});
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log('Client connected:', socket.id, 'User:', socket.user?.username);
   
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);

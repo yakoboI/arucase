@@ -17,6 +17,9 @@ function normalizeStream(stream) {
   if (trimmed === 'NA') {
     return 'A';
   }
+  if (trimmed === 'ALL') {
+    return 'ALL';
+  }
   
   return stream.trim();
 }

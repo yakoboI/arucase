@@ -14,6 +14,16 @@ const MonthlyResults = () => {
     { id: 'FORM IV', label: 'FORM IV', path: '/admin/results/monthly/form-iv/years' },
     { id: 'FORM V', label: 'FORM V', path: '/admin/results/monthly/form-v/streams' },
     { id: 'FORM VI', label: 'FORM VI', path: '/admin/results/monthly/form-vi/streams' },
+    {
+      id: 'FORM V COMBINED',
+      label: 'FORM V COMBINED',
+      path: '/admin/results/monthly/form-v/streams?combined=1',
+    },
+    {
+      id: 'FORM VI COMBINED',
+      label: 'FORM VI COMBINED',
+      path: '/admin/results/monthly/form-vi/streams?combined=1',
+    },
   ];
 
   return (

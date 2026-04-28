@@ -1,0 +1,406 @@
+.admissions-apply-page {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1rem 0 2rem;
+  /* Arial for all apply-page text; form controls/buttons need explicit family */
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.admissions-apply-page button,
+.admissions-apply-page input,
+.admissions-apply-page select,
+.admissions-apply-page textarea {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.admissions-apply-topbar {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #1a5490;
+  font-weight: 700;
+  padding: 0.75rem 0.25rem;
+  min-height: 44px;
+}
+
+.ghost-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #1a5490;
+  font-weight: 900;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.ghost-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.logout-link {
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  font-weight: 800;
+  padding: 0.75rem 0.25rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.apply-card {
+  max-width: 1200px;
+  margin: 0.75rem auto 0;
+  background: #fff;
+  border-radius: 0;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem;
+}
+
+.apply-hero {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.apply-hero-title h1 {
+  margin: 0;
+}
+
+.apply-card h1 {
+  color: #0f2f52;
+  font-size: clamp(1.4rem, 5.8vw, 2rem);
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+}
+
+.subtitle {
+  color: #4b5563;
+  line-height: 1.7;
+  margin: 0 0 1rem;
+}
+
+.steps {
+  display: grid;
+  gap: 0.5rem;
+}
+
+@media (min-width: 720px) {
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.step.active {
+  border-color: rgba(26, 84, 144, 0.35);
+  background: #eff6ff;
+}
+
+.step.done {
+  border-color: rgba(6, 95, 70, 0.25);
+  background: #ecfdf5;
+}
+
+.step-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: #1a5490;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.step.done .step-dot {
+  background: #065f46;
+}
+
+.step-text {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.step-title {
+  font-weight: 900;
+  color: #111827;
+}
+
+.step-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  background: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 0;
+  margin: 1rem 0;
+}
+
+.mode-tabs button {
+  border: none;
+  background: transparent;
+  padding: 0.85rem 0.75rem;
+  min-height: 44px;
+  border-radius: 0;
+  font-weight: 900;
+  color: #374151;
+  cursor: pointer;
+}
+
+.mode-tabs button.active {
+  background: #ffffff;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.07);
+  color: #1a5490;
+}
+
+.form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.field-hint {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.form input,
+.form select,
+.form textarea {
+  width: 100%;
+  padding: 0.9rem 0.95rem;
+  border-radius: 0;
+  border: 1px solid #e5e7eb;
+  outline: none;
+  font-size: 1rem;
+  background: #fff;
+}
+
+.input-with-action {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.input-action {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0;
+  padding: 0.8rem 0.85rem;
+  min-height: 48px;
+  font-weight: 900;
+  color: #1a5490;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.input-action:active {
+  transform: scale(0.99);
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.25);
+}
+
+.linkish {
+  border: none;
+  background: transparent;
+  color: #1a5490;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.primary {
+  border: none;
+  border-radius: 0;
+  min-height: 48px;
+  padding: 0.95rem 1rem;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9, #1a5490);
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(26, 84, 144, 0.22);
+}
+
+.primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.hint {
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+}
+
+@media (min-width: 720px) {
+  .apply-card {
+    padding: 1.75rem 2rem;
+  }
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.logged-in-as {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  margin: 0.75rem 0 1rem;
+  background: #f9fafb;
+}
+
+@media (min-width: 720px) {
+  .logged-in-as {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: center;
+  }
+}
+
+.logged-in-as .label {
+  color: #6b7280;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.logged-in-as .value {
+  color: #111827;
+  font-weight: 900;
+  margin-top: 0.15rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0;
+  font-weight: 900;
+  font-size: 0.85rem;
+  width: fit-content;
+}
+
+.status-pending {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.status-approved {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.status-rejected {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.checkbox-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-weight: 900;
+}
+
+.checkbox-row input {
+  width: 20px;
+  height: 20px;
+}
+
+.feedback-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  padding: 0.9rem;
+  margin: 0.5rem 0 1rem;
+  background: #eff6ff;
+}
+
+.feedback-title {
+  font-weight: 900;
+  color: #1a5490;
+  margin-bottom: 0.35rem;
+}
+
+.feedback-text {
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+/* Full width utilization on mobile */
+@media (max-width: 768px) {
+  .admissions-apply-page {
+    padding: 0;
+  }
+
+  .admissions-apply-topbar {
+    padding: 0.75rem;
+  }
+
+  .apply-card {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1rem;
+  }
+}
+

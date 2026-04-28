@@ -72,7 +72,7 @@ const ScoreEntryFormVVIYearSelection = ({ formLevel }) => {
               <div className="year-selection-grid">
                 {years.map((year) => (
                   <Link
-                    key={year}
+                    key={`${year}-score`}
                     to={getYearDetailPath(year)}
                     className="year-selection-card-item"
                     aria-label={`${year} Score Entry`}

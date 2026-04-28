@@ -20,14 +20,14 @@
   font-size: 1rem;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   width: max-content;
   max-width: calc(100vw - 2rem);
 }
@@ -35,8 +35,8 @@
 .back-button:hover {
   background: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.5);
-  transform: translateX(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateX(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .back-button i {
@@ -45,8 +45,9 @@
 
 .login-container {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  box-shadow: none;
+  border: 1px solid #d1d5db;
   padding: 2rem;
   width: 100%;
   max-width: 400px;
@@ -59,7 +60,7 @@
 }
 
 .login-header h1 {
-  color: #1a5490;
+  color: #01a72b;
   margin-bottom: 0.5rem;
   font-size: 1.75rem;
 }
@@ -87,23 +88,43 @@
   font-size: 0.9rem;
 }
 
-.form-group input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.form-group input:focus {
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #9ca3af;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.input-with-icon-field {
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-with-icon-field:focus {
   outline: none;
-  border-color: #1a5490;
+  border-color: #01a72b;
+}
+
+.input-with-icon:focus-within .input-icon {
+  color: #01a72b;
 }
 
 .btn {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -111,12 +132,12 @@
 }
 
 .btn-primary {
-  background-color: #1a5490;
+  background-color: #01a72b;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #154075;
+  background-color: #028a23;
 }
 
 .btn-primary:disabled {

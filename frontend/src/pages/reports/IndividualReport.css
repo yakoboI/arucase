@@ -1,13 +1,14 @@
 /**
- * Individual Student Report Styles
+ * Individual Student Report Styles - Mobile Optimized
  */
 .individual-report-page {
-  padding: 2rem;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
+  min-height: 100vh;
 }
 
 .breadcrumb {
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
+  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
   color: #6b7280;
 }
 
@@ -24,60 +25,64 @@
 .excel-card {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  margin-bottom: 0.75rem;
 }
 
 .excel-card-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 1.5rem;
-  font-size: 1.125rem;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
+  font-size: clamp(0.8rem, 2vw, 1rem);
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.375rem;
+  flex-wrap: wrap;
 }
 
 .excel-card-body {
-  padding: 2rem;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 /* Forms Grid */
 .forms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .form-card {
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 2rem;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
+  min-height: 100px;
+  justify-content: center;
 }
 
 .form-card:hover {
   border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
 }
 
 .form-card .individual-student-report-hover-tick {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 0.5rem;
+  right: 0.5rem;
   color: #10b981;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .form-card:hover .individual-student-report-hover-tick {
@@ -85,86 +90,88 @@
 }
 
 .form-icon {
-  font-size: 3rem;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
   color: #3b82f6;
 }
 
 .form-info h3 {
   margin: 0;
   color: #111827;
-  font-size: 1.25rem;
+  font-size: clamp(0.875rem, 2vw, 1.125rem);
 }
 
 .form-info p {
-  margin: 0.5rem 0 0 0;
+  margin: 0.125rem 0 0 0;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.8rem);
 }
 
 .form-arrow {
   color: #9ca3af;
-  font-size: 1.5rem;
+  font-size: clamp(0.875rem, 2vw, 1.25rem);
 }
 
 /* Form with Streams */
 .form-card-with-streams {
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 1.5rem;
-  grid-column: span 2;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  grid-column: span 1;
 }
 
 .form-card-header {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .form-card-header h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.125rem 0;
   color: #111827;
-  font-size: 1.25rem;
+  font-size: clamp(0.875rem, 2vw, 1.125rem);
 }
 
 .form-card-header p {
   margin: 0;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.8rem);
 }
 
 .streams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: clamp(0.375rem, 1vw, 0.75rem);
 }
 
 .stream-card {
   background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 1rem;
+  padding: clamp(0.5rem, 1.5vw, 0.875rem);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
+  min-height: 65px;
+  justify-content: center;
 }
 
 .stream-card:hover {
   border-color: #3b82f6;
   background: #eff6ff;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .stream-card .individual-student-report-hover-tick {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.375rem;
+  right: 0.375rem;
   color: #10b981;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .stream-card:hover .individual-student-report-hover-tick {
@@ -172,56 +179,58 @@
 }
 
 .stream-icon {
-  font-size: 2rem;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
   color: #3b82f6;
 }
 
 .stream-info h4 {
   margin: 0;
   color: #111827;
-  font-size: 1rem;
+  font-size: clamp(0.75rem, 1.8vw, 0.9rem);
 }
 
 .stream-info p {
-  margin: 0.25rem 0 0 0;
+  margin: 0 0 0 0;
   color: #6b7280;
-  font-size: 0.75rem;
+  font-size: clamp(0.6rem, 1.2vw, 0.7rem);
 }
 
 /* Year Grid */
 .year-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+  margin-bottom: clamp(0.75rem, 2vw, 1.5rem);
 }
 
 .year-card {
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.375rem;
+  min-height: 85px;
+  justify-content: center;
 }
 
 .year-card:hover {
   border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
 }
 
 .year-status-icon {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  font-size: 1.25rem;
+  top: 0.25rem;
+  right: 0.25rem;
+  font-size: clamp(0.75rem, 1.8vw, 1rem);
 }
 
 .year-status-icon.year-current {
@@ -233,67 +242,69 @@
 }
 
 .year-icon {
-  font-size: 2.5rem;
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
   color: #3b82f6;
 }
 
 .year-title {
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
   font-weight: 600;
   color: #111827;
 }
 
 .year-subtitle {
-  font-size: 0.875rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.8rem);
   color: #6b7280;
 }
 
 /* Term Grid */
 .term-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+  margin-bottom: clamp(0.75rem, 2vw, 1.5rem);
 }
 
 .term-card {
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 2rem;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.375rem;
+  min-height: 100px;
+  justify-content: center;
 }
 
 .term-card:hover {
   border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
 }
 
 .term-icon {
-  font-size: 3rem;
+  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
   color: #3b82f6;
 }
 
 .term-title {
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
   font-weight: 600;
   color: #111827;
 }
 
 .term-subtitle {
-  font-size: 1rem;
+  font-size: clamp(0.75rem, 1.8vw, 0.9rem);
   color: #6b7280;
 }
 
 .term-period {
-  font-size: 0.875rem;
+  font-size: clamp(0.6rem, 1.5vw, 0.75rem);
   color: #9ca3af;
 }
 
@@ -301,13 +312,14 @@
 .excel-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
+  margin-top: clamp(0.5rem, 1.5vw, 0.75rem);
   background: white;
+  font-size: clamp(0.65rem, 1.5vw, 0.8rem);
 }
 
 .excel-table th,
 .excel-table td {
-  padding: 0.75rem;
+  padding: clamp(0.375rem, 1vw, 0.5rem);
   text-align: left;
   border: 1px solid #e5e7eb;
 }
@@ -326,14 +338,17 @@
   background: #3b82f6;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: clamp(0.375rem, 1vw, 0.5rem) clamp(0.625rem, 1.5vw, 0.875rem);
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.8rem);
   transition: background 0.2s ease;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 32px;
+  white-space: nowrap;
 }
 
 .excel-btn:hover {
@@ -341,55 +356,171 @@
 }
 
 .excel-btn.small {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
+  padding: 0.25rem 0.5rem;
+  font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+  min-height: 28px;
 }
 
 .instruction-text {
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.8rem);
 }
 
 .empty-state {
   text-align: center;
-  padding: 3rem;
+  padding: clamp(1rem, 3vw, 2rem);
   color: #9ca3af;
 }
 
 .empty-state i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  margin-bottom: clamp(0.375rem, 1vw, 0.75rem);
   display: block;
 }
 
 .action-buttons,
 .promotion-select-actions {
-  margin-top: 2rem;
+  margin-top: clamp(0.75rem, 2vw, 1.5rem);
   display: flex;
-  gap: 1rem;
+  gap: clamp(0.375rem, 1vw, 0.75rem);
 }
 
 .mt-20 {
-  margin-top: 1.25rem;
+  margin-top: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  .individual-report-page {
+    padding: 0.375rem;
+  }
+
   .forms-grid {
     grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .form-card {
+    padding: 0.75rem;
+    min-height: 85px;
   }
 
   .form-card-with-streams {
     grid-column: span 1;
+    padding: 0.75rem;
   }
 
   .streams-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.375rem;
+  }
+
+  .stream-card {
+    padding: 0.5rem;
+    min-height: 55px;
   }
 
   .year-grid,
   .term-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .year-card,
+  .term-card {
+    padding: 0.625rem;
+    min-height: 75px;
+  }
+
+  .action-buttons,
+  .promotion-select-actions {
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .action-buttons .excel-btn,
+  .promotion-select-actions .excel-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .individual-report-page {
+    padding: 0.25rem;
+  }
+
+  .forms-grid {
+    gap: 0.375rem;
+  }
+
+  .form-card {
+    padding: 0.5rem;
+    min-height: 75px;
+  }
+
+  .form-icon {
+    font-size: 1.5rem;
+  }
+
+  .form-info h3 {
+    font-size: 0.875rem;
+  }
+
+  .form-info p {
+    font-size: 0.65rem;
+  }
+
+  .streams-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.25rem;
+  }
+
+  .stream-card {
+    padding: 0.375rem;
+    min-height: 50px;
+  }
+
+  .stream-icon {
+    font-size: 1rem;
+  }
+
+  .stream-info h4 {
+    font-size: 0.75rem;
+  }
+
+  .stream-info p {
+    font-size: 0.6rem;
+  }
+
+  .year-grid,
+  .term-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.375rem;
+  }
+
+  .year-card,
+  .term-card {
+    padding: 0.5rem;
+    min-height: 65px;
+  }
+
+  .year-icon,
+  .term-icon {
+    font-size: 1.25rem;
+  }
+
+  .year-title,
+  .term-title {
+    font-size: 0.875rem;
+  }
+
+  .year-subtitle,
+  .term-subtitle {
+    font-size: 0.65rem;
+  }
+
+  .term-period {
+    font-size: 0.6rem;
   }
 }

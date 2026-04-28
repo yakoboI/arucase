@@ -8,6 +8,10 @@ const path = require('path');
 const sharp = require('sharp');
 const { normalizeStream } = require('../utils/streamNormalizer');
 const {
+  dedupeCommentRowsByTypePreferA,
+  dedupeTabiaRowsByCriterionPreferA
+} = require('./reportCommentDedupe');
+const {
   calculateGrade,
   getSwahiliRemarks,
   calculateOLevelDivisionPoint,
@@ -39,13 +43,19 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       const student = studentResult.rows[0];
       const formCode = decodedForm.replace('FORM ', '').trim();
       const isForm5Or6 = ['V', 'VI', '5', '6'].includes(formCode);
-      
+
       // Get months based on term
+      // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
+      // Form I-IV: Term I: Feb-May, Term II: Aug-Nov
       const getMonthsForTerm = (termParam) => {
-        if (termParam === 'Term I' || termParam === 'Term 1') {
-          return ['February', 'March', 'April', 'May'];
+        if (isForm5Or6) {
+          return (termParam === 'Term I' || termParam === 'Term 1')
+            ? ['August', 'September', 'October', 'November']
+            : ['February', 'March', 'April', 'May'];
         } else {
-          return ['August', 'September', 'October', 'November'];
+          return (termParam === 'Term I' || termParam === 'Term 1')
+            ? ['February', 'March', 'April', 'May']
+            : ['August', 'September', 'October', 'November'];
         }
       };
       const months = getMonthsForTerm(decodedTerm);
@@ -58,21 +68,13 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
         }
       };
       try {
-        const marksConfigResult = await query('SELECT * FROM marks_config WHERE id = 1');
+        const marksConfigResult = await query('SELECT month, weight FROM marks_config');
         if (marksConfigResult.rows.length > 0) {
-          const config = marksConfigResult.rows[0];
-          marksConfig = {
-            month_weights: {
-              February: parseFloat(config.february_weight || 40.0),
-              March: parseFloat(config.march_weight || 0.0),
-              April: parseFloat(config.april_weight || 40.0),
-              May: parseFloat(config.may_weight || 20.0),
-              August: parseFloat(config.august_weight || 40.0),
-              September: parseFloat(config.september_weight || 0.0),
-              October: parseFloat(config.october_weight || 40.0),
-              November: parseFloat(config.november_weight || 20.0)
-            }
-          };
+          const monthWeights = {};
+          marksConfigResult.rows.forEach(row => {
+            monthWeights[row.month] = parseFloat(row.weight);
+          });
+          marksConfig = { month_weights: monthWeights };
         }
       } catch (e) {
         console.log('Marks config table not found, using defaults');
@@ -153,26 +155,84 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       
       const overallRank = sortedOverall.find((item) => item.adm_no === admNo)?.rank || '-';
       
-      // Get student index for comments
-      const sortedStudents = allStudentsResult.rows.map(s => s.adm_no).sort();
-      const studentIndex = sortedStudents.indexOf(admNo).toString();
-      
-      // Get comments
-      const commentsResult = await query(
-        'SELECT * FROM comments WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4 AND term = $5',
-        [studentIndex, decodedForm, stream, parseInt(year), decodedTerm]
+      // Get student index for comments/photos.
+      // Must match PhotoManagement sorting exactly (JS localeCompare) and FORM I-IV stream behavior (A + NA).
+      const isFormIToIV = ['I', 'II', 'III', 'IV', '1', '2', '3', '4'].includes(formCode.toUpperCase());
+      const sortStudentsByName = (students) => {
+        return [...students].sort((a, b) => {
+          const firstNameA = String(a.first_name || '').toLowerCase().trim();
+          const firstNameB = String(b.first_name || '').toLowerCase().trim();
+          const firstNameCompare = firstNameA.localeCompare(firstNameB, undefined, { sensitivity: 'base' });
+          if (firstNameCompare !== 0) return firstNameCompare;
+
+          const middleNameA = String(a.middle_name || '').toLowerCase().trim();
+          const middleNameB = String(b.middle_name || '').toLowerCase().trim();
+          const middleNameCompare = middleNameA.localeCompare(middleNameB, undefined, { sensitivity: 'base' });
+          if (middleNameCompare !== 0) return middleNameCompare;
+
+          const surnameA = String(a.surname || '').toLowerCase().trim();
+          const surnameB = String(b.surname || '').toLowerCase().trim();
+          return surnameA.localeCompare(surnameB, undefined, { sensitivity: 'base' });
+        });
+      };
+
+      const studentIndexStudentsQuery = (isFormIToIV && normalizedStream === 'A')
+        ? `SELECT adm_no, first_name, middle_name, surname
+           FROM students
+           WHERE level = $1 AND stream IN ($2, $3) AND year = $4
+           ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC
+           LIMIT 500`
+        : `SELECT adm_no, first_name, middle_name, surname
+           FROM students
+           WHERE level = $1 AND stream = $2 AND year = $3
+           ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC
+           LIMIT 500`;
+
+      const studentIndexStudentsParams = (isFormIToIV && normalizedStream === 'A')
+        ? [decodedForm, 'A', 'NA', parseInt(year)]
+        : [decodedForm, normalizedStream, parseInt(year)];
+
+      const studentIndexStudentsResult = await query(studentIndexStudentsQuery, studentIndexStudentsParams);
+
+      const sortedStudentsByName = sortStudentsByName(studentIndexStudentsResult.rows);
+      const studentIndexPos = sortedStudentsByName.findIndex(
+        (s) => String(s.adm_no) === String(admNo)
       );
+      const studentIndex = (studentIndexPos >= 0 ? studentIndexPos : -1).toString();
       
-      // Get tabia mwenendo
-      const tabiaResult = await query(
-        'SELECT * FROM tabia_mwenendo WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4 AND term = $5',
-        [studentIndex, decodedForm, stream, parseInt(year), decodedTerm]
-      );
+      // Get comments (FORM I–IV: rows may be stored as stream A or NA — match bulk report / comments list)
+      let commentsResult;
+      if (isFormIToIV && normalizedStream === 'A') {
+        const cr = await query(
+          `SELECT * FROM comments WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5 AND term = $6`,
+          [studentIndex, decodedForm, 'A', 'NA', parseInt(year), decodedTerm]
+        );
+        commentsResult = { rows: dedupeCommentRowsByTypePreferA(cr.rows) };
+      } else {
+        commentsResult = await query(
+          'SELECT * FROM comments WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4 AND term = $5',
+          [studentIndex, decodedForm, normalizedStream, parseInt(year), decodedTerm]
+        );
+      }
+      
+      let tabiaResult;
+      if (isFormIToIV && normalizedStream === 'A') {
+        const tr = await query(
+          `SELECT * FROM tabia_mwenendo WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5 AND term = $6`,
+          [studentIndex, decodedForm, 'A', 'NA', parseInt(year), decodedTerm]
+        );
+        tabiaResult = { rows: dedupeTabiaRowsByCriterionPreferA(tr.rows) };
+      } else {
+        tabiaResult = await query(
+          'SELECT * FROM tabia_mwenendo WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4 AND term = $5',
+          [studentIndex, decodedForm, normalizedStream, parseInt(year), decodedTerm]
+        );
+      }
       
       // Get subject teacher signatures
       const subjectTeachersResult = await query(
         'SELECT subject_code, teacher_signature FROM subject_teachers WHERE level = $1 AND stream = $2 AND year = $3',
-        [decodedForm, stream, parseInt(year)]
+        [decodedForm, normalizedStream, parseInt(year)]
       );
       const subjectTeacherSignatures = {};
       subjectTeachersResult.rows.forEach((row) => {
@@ -187,10 +247,16 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       // Get student parish
       let studentParish = 'Not specified';
       try {
-        const parishResult = await query(
-          'SELECT parish_name FROM student_parishes WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
-          [studentIndex, decodedForm, stream, parseInt(year)]
-        );
+        const parishResult = (isFormIToIV && normalizedStream === 'A')
+          ? await query(
+              `SELECT parish_name FROM student_parishes WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5
+               ORDER BY CASE WHEN stream = $3 THEN 0 ELSE 1 END LIMIT 1`,
+              [studentIndex, decodedForm, 'A', 'NA', parseInt(year)]
+            )
+          : await query(
+              'SELECT parish_name FROM student_parishes WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
+              [studentIndex, decodedForm, normalizedStream, parseInt(year)]
+            );
         if (parishResult.rows.length > 0) {
           studentParish = parishResult.rows[0].parish_name || student.parish || 'Not specified';
         } else {
@@ -203,10 +269,16 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       // Get student fees debt
       let studentFeesDebt = '0.00';
       try {
-        const debtResult = await query(
-          'SELECT amount, description FROM individual_debt WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
-          [studentIndex, decodedForm, stream, parseInt(year)]
-        );
+        const debtResult = (isFormIToIV && normalizedStream === 'A')
+          ? await query(
+              `SELECT amount, description FROM individual_debt WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5
+               ORDER BY CASE WHEN stream = $3 THEN 0 ELSE 1 END LIMIT 1`,
+              [studentIndex, decodedForm, 'A', 'NA', parseInt(year)]
+            )
+          : await query(
+              'SELECT amount, description FROM individual_debt WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
+              [studentIndex, decodedForm, normalizedStream, parseInt(year)]
+            );
         if (debtResult.rows.length > 0) {
           const debt = debtResult.rows[0];
           if (debt.amount && debt.description) {
@@ -222,10 +294,19 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       // Get student photo
       let studentPhoto = null;
       try {
-        const photoResult = await query(
-          'SELECT photo_filename FROM student_photos WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
-          [studentIndex, decodedForm, stream, parseInt(year)]
-        );
+        // Some deployments may have mixed stream values in student_photos for FORM I-IV.
+        const photoStreamsToCheck = (isFormIToIV && normalizedStream === 'A') ? ['A', 'NA'] : [normalizedStream];
+
+        const photoResult = (photoStreamsToCheck.length === 2)
+          ? await query(
+              'SELECT photo_filename FROM student_photos WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5',
+              [studentIndex, decodedForm, photoStreamsToCheck[0], photoStreamsToCheck[1], parseInt(year)]
+            )
+          : await query(
+              'SELECT photo_filename FROM student_photos WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
+              [studentIndex, decodedForm, photoStreamsToCheck[0], parseInt(year)]
+            );
+
         if (photoResult.rows.length > 0) {
           studentPhoto = photoResult.rows[0].photo_filename;
         }
@@ -691,6 +772,16 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       doc.fontSize(7).font('Helvetica');
       doc.text('KEY: Jrb1 = Jaribio 1, Robo = Robo Muhula, Jrb2 = Jaribio 2, Nusu = Nusu Muhula, Muh = Muhula', marginX, currentY);
       currentY += 10;
+
+      // Grading scale legend (only for Form V/VI)
+      if (isForm5Or6) {
+        checkNewPage(20);
+        doc.fontSize(7).font('Helvetica');
+        doc.text('ALAMA: A = 85+, Bora Sana, B = 75+, Vizuri Sana, C = 65+, Vizuri, D = 55+, Dhaifu, E = 45+, Wastani, S = 40+, Kidogo, F = 0 – 39, Feli', marginX, currentY);
+        currentY += 10;
+        doc.text('TABIA: A, Vizuri Sana, B, Vizuri, C, Wastani, D, Dhaifu, F, Mbaya', marginX, currentY);
+        currentY += 10;
+      }
       
       // MAJUMUISHO YA KITAALUMA - normalize widths
       checkNewPage(30);
@@ -818,14 +909,14 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       let maoniX = marginX;
       drawCell(maoniX, currentY, maoniColWidths[0], maoniRowHeight, 'Mwalimu wa Taaluma:', { bold: true, fontSize: 7 });
       maoniX += maoniColWidths[0];
-      const mwalimuComment = getCommentValue('mwalimu_taaluma') || 'No comment entered for ' + decodedTerm;
+      const mwalimuComment = getCommentValue('mwalimu_taaluma') || '';
       drawCell(maoniX, currentY, maoniColWidths[1], maoniRowHeight, mwalimuComment, { fontSize: 7, align: 'right' });
       currentY += maoniRowHeight;
       
       maoniX = marginX;
       drawCell(maoniX, currentY, maoniColWidths[0], maoniRowHeight, 'Maoni ya Mkuu wa Shule:', { bold: true, fontSize: 7 });
       maoniX += maoniColWidths[0];
-      const headComment = getCommentValue('mkuu_shule') || 'No comment entered for ' + decodedTerm;
+      const headComment = getCommentValue('mkuu_shule') || '';
       drawCell(maoniX, currentY, maoniColWidths[1], maoniRowHeight, headComment, { fontSize: 7, align: 'right' });
       currentY += maoniRowHeight;
       
@@ -863,7 +954,7 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
         if (index === 5) {
           value = studentFeesDebt;
         } else {
-          value = getCommentValue(maoniKeys[index]) || 'No comment entered for ' + decodedTerm;
+          value = getCommentValue(maoniKeys[index]) || '';
         }
         drawCell(maoniX, currentY, maoniColWidths[1], maoniRowHeight, value, { fontSize: 7, align: 'right' });
         currentY += maoniRowHeight;
@@ -1009,21 +1100,21 @@ async function fileExists(filePath) {
   }
 }
 
-async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
+async function generatePhotoEntryFormPDF(level, stream, year, month = null, term = null) {
   return new Promise(async (resolve, reject) => {
     try {
       // Normalize stream for FORM I-IV: NA -> A
       const { normalizeStream } = require('../utils/streamNormalizer');
       const normalizedStream = normalizeStream(stream);
-      
+
       // For FORM I-IV, check both stream 'A' and 'NA' (students may have either)
       const isFormIV = level && /^FORM\s+(I|II|III|IV)$/.test(level);
-      
-      let studentsQuery = `SELECT * FROM students 
+
+      let studentsQuery = `SELECT * FROM students
          WHERE level = $1`;
       const studentsParams = [level];
       let paramCount = 2;
-      
+
       if (isFormIV && (normalizedStream === 'A' || stream === 'NA')) {
         // Check both 'A' and 'NA' for FORM I-IV
         studentsQuery += ` AND (stream = $${paramCount} OR stream = $${paramCount + 1})`;
@@ -1034,9 +1125,18 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
         studentsParams.push(normalizedStream);
         paramCount++;
       }
-      
+
       studentsQuery += ` AND year = $${paramCount}`;
       studentsParams.push(parseInt(year));
+      paramCount++;
+
+      // Add term filtering for Form V/VI
+      if (term && term.trim()) {
+        studentsQuery += ` AND term = $${paramCount}`;
+        studentsParams.push(term.trim());
+        paramCount++;
+      }
+
       studentsQuery += ` ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC`;
       
       // Get all students for the class, sorted by name: first_name, then middle_name, then surname
@@ -1048,11 +1148,11 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
       
       // Get all photos for the class
       // For FORM I-IV, check both stream 'A' and 'NA'
-      let photosQuery = `SELECT * FROM student_photos 
+      let photosQuery = `SELECT * FROM student_photos
          WHERE level = $1`;
       const photosParams = [level];
       paramCount = 2;
-      
+
       if (isFormIV && (normalizedStream === 'A' || stream === 'NA')) {
         // Check both 'A' and 'NA' for FORM I-IV
         photosQuery += ` AND (stream = $${paramCount} OR stream = $${paramCount + 1})`;
@@ -1063,24 +1163,21 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
         photosParams.push(normalizedStream);
         paramCount++;
       }
-      
+
       photosQuery += ` AND year = $${paramCount}`;
       photosParams.push(parseInt(year));
+      // Note: Not filtering photos by term because student_index is position-based
+      // and changes when students are filtered. Students are already filtered by term.
       
       const photosResult = await query(photosQuery, photosParams);
-      
-      // Create photo lookup map: student_index -> photo_filename
-      // student_index corresponds to the position in the sorted list (0-based)
+
+      // Create photo lookup map: adm_no -> photo_filename
+      // Use adm_no instead of student_index for reliable matching
       const photoMap = {};
       photosResult.rows.forEach(photo => {
-        photoMap[photo.student_index] = photo.photo_filename;
-      });
-      
-      // Create a mapping from adm_no to sorted index position
-      // This allows us to find the correct photo for each student
-      const admNoToIndexMap = {};
-      studentsResult.rows.forEach((student, index) => {
-        admNoToIndexMap[student.adm_no] = index.toString();
+        if (photo.adm_no) {
+          photoMap[photo.adm_no] = photo.photo_filename;
+        }
       });
       
       // Get school logo if available
@@ -1124,9 +1221,17 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
       
       // Class, Month, Year information
       const currentMonth = month || new Date().toLocaleString('en-US', { month: 'long' }).toUpperCase();
-      doc.fontSize(12).font('Helvetica').text(`CLASS: ${level} ${stream}`, { align: 'left', y: headerY + 80 });
-      doc.text(`MONTH: ${currentMonth}`, { align: 'left', y: headerY + 100 });
-      doc.text(`YEAR: ${year}`, { align: 'left', y: headerY + 120 });
+      // Keep CLASS/MONTH/YEAR in one row to match the printable template.
+      const classMonthYearLine = `CLASS: ${level} ${stream}    MONTH: ${currentMonth}    YEAR: ${year}`;
+      doc
+        .fontSize(12)
+        .font('Helvetica')
+        .text(classMonthYearLine, {
+          align: 'left',
+          y: headerY + 80,
+          // Provide a width so it can wrap naturally if the text is too long.
+          width: doc.page.width - 60,
+        });
       
       // Draw a line separator
       doc.moveTo(30, headerY + 140).lineTo(doc.page.width - 30, headerY + 140).stroke();
@@ -1136,8 +1241,11 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
       const photosPerRow = 4;
       const pageWidth = doc.page.width - 60; // Total usable width (30px margin on each side)
       const cellWidth = pageWidth / photosPerRow;
-      const photoSize = 50; // Photo size in points (approximately 35mm passport size)
-      const cellHeight = photoSize + 60; // Height for photo + text below + signature line
+      // Photos are stored as 132x185 portrait; using a square (50x50) box scales them down too much.
+      // Render them in a portrait bounding box instead.
+      const photoWidth = Math.max(55, Math.floor(cellWidth * 0.5)); // keep some minimum
+      const photoHeight = Math.floor((photoWidth * 185) / 132); // preserve 132x185 aspect ratio
+      const cellHeight = photoHeight + 70; // Height for photo + text below + signature line
       const photoMargin = 5; // Margin around photo in cell
       
       let currentY = gridStartY;
@@ -1145,19 +1253,18 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
       
       // Helper function to draw a student card
       const drawStudentCard = async (student, index, x, y) => {
-        // Get student_index (position in sorted list) for this student
-        const studentIndexForPhoto = admNoToIndexMap[student.adm_no];
-        const photoFilename = photoMap[studentIndexForPhoto];
+        // Get photo filename by adm_no
+        const photoFilename = photoMap[student.adm_no];
         
         // Draw cell border
         doc.rect(x, y, cellWidth, cellHeight).stroke();
         
         // Photo area (centered in cell)
-        const photoX = x + (cellWidth - photoSize) / 2;
+        const photoX = x + (cellWidth - photoWidth) / 2;
         const photoY = y + photoMargin;
         
         // Draw photo placeholder border
-        doc.rect(photoX, photoY, photoSize, photoSize).stroke();
+        doc.rect(photoX, photoY, photoWidth, photoHeight).stroke();
         
         if (photoFilename) {
           try {
@@ -1199,8 +1306,8 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
                 const ext = path.extname(photoFilename).toLowerCase();
                 if (ext === '.jpg' || ext === '.jpeg' || ext === '.png' || ext === '.gif') {
                   // Try using file path - PDFKit will attempt to read and detect format
-                  doc.image(photoPath, photoX, photoY, { 
-                    fit: [photoSize, photoSize]
+                doc.image(photoPath, photoX, photoY, { 
+                    fit: [photoWidth, photoHeight]
                   });
                   return; // Exit early if using file path
                 } else {
@@ -1210,12 +1317,12 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
               
               // Use the (possibly converted) buffer with PDFKit
               doc.image(finalImageBuffer, photoX, photoY, { 
-                fit: [photoSize, photoSize]
+                fit: [photoWidth, photoHeight]
               });
             } else {
               // Placeholder if photo not found
-              doc.fontSize(7).text('No Photo', photoX + 5, photoY + photoSize / 2 - 3, {
-                width: photoSize - 10,
+              doc.fontSize(7).text('No Photo', photoX + 5, photoY + photoHeight / 2 - 3, {
+                width: photoWidth - 10,
                 align: 'center'
               });
             }
@@ -1224,15 +1331,15 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
             console.error('Photo filename:', photoFilename);
             console.error('Photo path:', path.join(__dirname, '../static/uploads/photos', photoFilename));
             // Show placeholder instead of error text
-            doc.fontSize(7).text('No Photo', photoX + 5, photoY + photoSize / 2 - 3, {
-              width: photoSize - 10,
+            doc.fontSize(7).text('No Photo', photoX + 5, photoY + photoHeight / 2 - 3, {
+              width: photoWidth - 10,
               align: 'center'
             });
           }
         } else {
           // Placeholder if no photo
-          doc.fontSize(7).text('No Photo', photoX + 5, photoY + photoSize / 2 - 3, {
-            width: photoSize - 10,
+          doc.fontSize(7).text('No Photo', photoX + 5, photoY + photoHeight / 2 - 3, {
+            width: photoWidth - 10,
             align: 'center'
           });
         }
@@ -1241,7 +1348,7 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
         doc.fontSize(8).font('Helvetica-Bold').text((index + 1).toString(), x + 3, y + 3);
         
         // Admission number (below photo, centered)
-        const textY = photoY + photoSize + 5;
+        const textY = photoY + photoHeight + 5;
         doc.fontSize(8).font('Helvetica-Bold');
         const admNoText = student.adm_no || '';
         doc.text(admNoText, x + 3, textY, { width: cellWidth - 6, align: 'center' });
@@ -1347,6 +1454,7 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null) {
 async function generateMonthlyResultsPDF(level, stream, year, month) {
   const puppeteer = require('puppeteer');
   const { calculateGrade, getSwahiliRemarks } = require('./calculations');
+  const bwipjs = require('bwip-js');
   let browser = null;
   
   try {
@@ -1364,15 +1472,21 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     
     // Get students
     // For FORM I-IV, check both 'A' and 'NA' streams since students may have either
+    // For combined mode, stream=ALL includes all streams for this level/year
     let studentsResult;
-    if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
+    if (normalizedStream === 'ALL') {
       studentsResult = await query(
-        'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY adm_no',
+        'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND year = $2 ORDER BY adm_no',
+        [normalizedLevel, normalizedYear]
+      );
+    } else if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
+      studentsResult = await query(
+        'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY adm_no',
         [normalizedLevel, 'A', 'NA', normalizedYear]
       );
     } else {
       studentsResult = await query(
-        'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
+        'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
         [normalizedLevel, normalizedStream, normalizedYear]
       );
     }
@@ -1382,18 +1496,33 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     }
     
     // Get subjects
-    const subjectsResult = await query(
-      'SELECT subject_code, subject_abbreviation, subject_name FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
-      [normalizedLevel, normalizedStream, 'NA', normalizedYear]
-    );
+    let subjectsResult;
+    if (normalizedStream === 'ALL') {
+      subjectsResult = await query(
+        'SELECT DISTINCT subject_code, subject_abbreviation, subject_name FROM subjects WHERE level = $1 AND year = $2 ORDER BY subject_code',
+        [normalizedLevel, normalizedYear]
+      );
+    } else {
+      subjectsResult = await query(
+        'SELECT subject_code, subject_abbreviation, subject_name FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
+        [normalizedLevel, normalizedStream, 'NA', normalizedYear]
+      );
+    }
     
     // Get scores
-    const scoresResult = await query(
-      `SELECT adm_no, subject_code, score 
-       FROM individual_scores 
-       WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
-      [normalizedLevel, normalizedStream, 'NA', normalizedYear, normalizedMonth]
-    );
+    const scoresResult = normalizedStream === 'ALL'
+      ? await query(
+        `SELECT adm_no, subject_code, score
+         FROM individual_scores
+         WHERE level = $1 AND year = $2 AND month = $3`,
+        [normalizedLevel, normalizedYear, normalizedMonth]
+      )
+      : await query(
+        `SELECT adm_no, subject_code, score 
+         FROM individual_scores 
+         WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
+        [normalizedLevel, normalizedStream, 'NA', normalizedYear, normalizedMonth]
+      );
     
     // Get monthly results (for totals, averages, grades, positions, remarks)
     // For FORM I-IV, check both 'A' and 'NA' streams since results may be stored with either
@@ -1477,7 +1606,33 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     };
-    
+
+    // Barcode text should standardize on PDF generation date.
+    // Using YYYY-MM-DD makes it deterministic per generation day.
+    const generationDateISO = new Date().toISOString().slice(0, 10);
+    const barcodeText = `RESULTS-${generationDateISO}`;
+    let barcodeSvg = '';
+    try {
+      // Use Code128 so we can encode the standardized date string.
+      barcodeSvg = bwipjs.toSVG({
+        bcid: 'code128',
+        text: barcodeText,
+        scale: 3,
+        height: 22,
+        includetext: false,
+        padding: 0,
+        rotate: 'N'
+      });
+    } catch (e) {
+      console.warn('Failed to generate barcode SVG:', e.message);
+      barcodeSvg = '';
+    }
+
+    // Single horizontal barcode to print after the last student row.
+    const barcodeBottomHtml = barcodeSvg
+      ? `<div class="barcode-bottom" aria-label="Results generation barcode">${barcodeSvg}</div>`
+      : '';
+
     // Build HTML
     let html = `<!DOCTYPE html>
 <html>
@@ -1496,10 +1651,15 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
       color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
+    html, body {
+      height: 100%;
+    }
     body {
       font-family: 'Times New Roman', Times, serif;
       font-size: 12px;
       background: white;
+      display: flex;
+      flex-direction: column;
     }
     .report-header-section {
       background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
@@ -1612,6 +1772,22 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     .grade-row-C-low { background: #fecaca !important; color: #7f1d1d !important; }
     .grade-row-D, .grade-row-E, .grade-row-S, .grade-row-F { background: #fecaca !important; color: #7f1d1d !important; }
     .a-level.grade-row-D { background: #fef9c3 !important; color: #713f12 !important; }
+
+    /* Horizontal barcode printed after the results table */
+    .barcode-bottom {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: auto; /* push to bottom of page */
+      padding-bottom: 4mm;
+      page-break-inside: avoid;
+    }
+    .barcode-bottom svg {
+      height: 18mm;
+      width: auto;
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -1647,24 +1823,50 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
         <th class="text-left">M.Name</th>
         <th class="text-left">Surname</th>`;
     
+    const isALevel = normalizedLevel.includes('FORM V') || normalizedLevel.includes('FORM VI');
+    const formatALevelSubjectHeader = (label) => {
+      const s = String(label || '').trim();
+      if (!s) return s;
+
+      // Database may store A-level advanced subjects with prefixes like "A/BIO"
+      // but printed results expect: BIO, CHE, ACOM, DIV, HTM, MAT, PHY.
+      const m1 = s.match(/^A\/(BIO|CHE|COM|DIV|HTM|MAT|PHY)$/i);
+      if (m1) {
+        const code = m1[1].toUpperCase();
+        return code === 'COM' ? 'ACOM' : code;
+      }
+
+      const m2 = s.match(/^A_(BIO|CHE|COM|DIV|HTM|MAT|PHY)$/i);
+      if (m2) {
+        const code = m2[1].toUpperCase();
+        return code === 'COM' ? 'ACOM' : code;
+      }
+
+      return s;
+    };
+
     // Add subject columns
     subjectsResult.rows.forEach(subject => {
-      const abbrev = subject.subject_abbreviation || subject.subject_code;
+      const rawAbbrev = subject.subject_abbreviation || subject.subject_code;
+      const abbrev = isALevel ? formatALevelSubjectHeader(rawAbbrev) : rawAbbrev;
       html += `<th>${escapeHtml(abbrev)}</th>`;
     });
-    
+    // Always show COM column between POS and REMARKS.
+    // O-Level uses Sc/Ss/Ui; A-Level uses combination shortforms like PCM/HGE/HGL.
+    const shouldShowCom = true;
+
     html += `
         <th>TOT</th>
         <th>AVR</th>
         <th>GRD</th>
         <th>POS</th>
+        ${shouldShowCom ? '<th>COM</th>' : ''}
         <th class="text-left">REMARKS</th>
       </tr>
     </thead>
     <tbody>`;
     
     // Sort students: by position if results exist, otherwise alphabetically
-    const isALevel = normalizedLevel.includes('FORM V') || normalizedLevel.includes('FORM VI');
     const studentsWithResults = studentsResult.rows.map((student, idx) => {
       const studentIndex = idx.toString();
       return {
@@ -1677,33 +1879,60 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     studentsWithResults.sort((a, b) => {
       const resultA = a.result;
       const resultB = b.result;
-      
-      // If both have positions, sort by position (ascending)
-      if (resultA?.position !== null && resultA?.position !== undefined && 
-          resultB?.position !== null && resultB?.position !== undefined) {
-        return resultA.position - resultB.position;
+
+      // Sort by AVR (average) desc only.
+      const avgA = resultA?.average !== null && resultA?.average !== undefined ? Number(resultA.average) : null;
+      const avgB = resultB?.average !== null && resultB?.average !== undefined ? Number(resultB.average) : null;
+
+      const aHasAvg = avgA !== null && Number.isFinite(avgA);
+      const bHasAvg = avgB !== null && Number.isFinite(avgB);
+      if (aHasAvg && bHasAvg && avgA !== avgB) return avgB - avgA;
+      if (aHasAvg && !bHasAvg) return -1;
+      if (!aHasAvg && bHasAvg) return 1;
+
+      // If AVR ties, rank by TOT desc so POS is chronological.
+      if (aHasAvg && bHasAvg && avgA === avgB) {
+        const totA = resultA?.total_marks !== null && resultA?.total_marks !== undefined ? Number(resultA.total_marks) : null;
+        const totB = resultB?.total_marks !== null && resultB?.total_marks !== undefined ? Number(resultB.total_marks) : null;
+        const aHasTot = totA !== null && Number.isFinite(totA);
+        const bHasTot = totB !== null && Number.isFinite(totB);
+        if (aHasTot && bHasTot && totA !== totB) return totB - totA;
       }
-      
-      // If only one has position, prioritize it
-      if (resultA?.position !== null && resultA?.position !== undefined) return -1;
-      if (resultB?.position !== null && resultB?.position !== undefined) return 1;
-      
-      // If neither has position, sort alphabetically
-      if (a.first_name !== b.first_name) {
-        return a.first_name.localeCompare(b.first_name);
-      }
-      if ((a.middle_name || '') !== (b.middle_name || '')) {
-        return (a.middle_name || '').localeCompare(b.middle_name || '');
-      }
+
+      // If averages missing, sort alphabetically
+      if (a.first_name !== b.first_name) return a.first_name.localeCompare(b.first_name);
+      if ((a.middle_name || '') !== (b.middle_name || '')) return (a.middle_name || '').localeCompare(b.middle_name || '');
       return a.surname.localeCompare(b.surname);
     });
-    
+
     // Add student rows
     studentsWithResults.forEach((student, index) => {
       const monthlyResult = student.result;
       const studentScores = scoreLookup[student.adm_no] || {};
       const grade = monthlyResult.grade || '';
       const avgValue = monthlyResult.average ? parseFloat(monthlyResult.average) : null;
+
+      const formatComDisplay = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw) return '-';
+        const code = raw.toLowerCase();
+        if (code === 'sc') return 'Science';
+        if (code === 'ss') return 'Art';
+        if (code === 'ui') return 'Under investigation';
+        // A-Level: store combination shortform like PCM/HGE/HGL
+        return raw.toUpperCase();
+      };
+
+      // Format numbers consistently (remove trailing ".00")
+      const formatScore = (value) => {
+        if (value === undefined || value === null || value === '') return '-';
+        const num = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(num)) return String(value);
+        if (Math.abs(num - Math.round(num)) < 1e-9) return String(Math.round(num));
+        return String(num)
+          .replace(/(\.\d*?[1-9])0+$/, '$1')
+          .replace(/\.0+$/, '');
+      };
       
       // Grade C-low only applies to O-Level when average < 55
       let gradeClass = '';
@@ -1726,17 +1955,11 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
       subjectsResult.rows.forEach(subject => {
         const subjectKey = subject.subject_abbreviation || subject.subject_code;
         const score = studentScores[subjectKey] || studentScores[subject.subject_code];
-        const scoreDisplay = score !== undefined && score !== null && score !== '' 
-          ? parseFloat(score).toFixed(2) 
-          : '-';
+        const scoreDisplay = formatScore(score);
         html += `<td>${escapeHtml(scoreDisplay)}</td>`;
       });
       
-      const totalMarks = monthlyResult.total_marks !== null && monthlyResult.total_marks !== undefined 
-        ? (monthlyResult.total_marks === Math.floor(monthlyResult.total_marks) 
-            ? Math.floor(monthlyResult.total_marks) 
-            : monthlyResult.total_marks)
-        : '-';
+      const totalMarks = formatScore(monthlyResult.total_marks);
       
       const average = monthlyResult.average !== null && monthlyResult.average !== undefined 
         ? Math.round(monthlyResult.average)
@@ -1747,6 +1970,9 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
         <td>${escapeHtml(String(average))}</td>
         <td>${escapeHtml(grade || '-')}</td>
         <td>${escapeHtml(String(monthlyResult.position || '-'))}</td>
+        ${shouldShowCom
+          ? `<td>${escapeHtml(formatComDisplay(isALevel ? (student.com || student.stream) : student.com))}</td>`
+          : ''}
         <td class="text-left">${escapeHtml(monthlyResult.remarks || '-')}</td>
       </tr>`;
     });
@@ -1754,6 +1980,7 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     html += `
     </tbody>
   </table>
+  ${barcodeBottomHtml || ''}
 </body>
 </html>`;
     

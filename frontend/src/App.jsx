@@ -9,11 +9,13 @@ import NetworkStatusBanner from './components/common/NetworkStatusBanner';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Loading from './components/common/Loading';
 import logger from './utils/logger';
+import './styles/tables-sharp.css';
 
 // Public Pages (lazy)
 const HomePage = lazy(() => import('./pages/public/HomePage'));
 const About = lazy(() => import('./pages/public/About'));
 const Admissions = lazy(() => import('./pages/public/Admissions'));
+const AdmissionsApply = lazy(() => import('./pages/public/AdmissionsApply'));
 const Staff = lazy(() => import('./pages/public/Staff'));
 const StudentLife = lazy(() => import('./pages/public/StudentLife'));
 const StudentReport = lazy(() => import('./pages/public/StudentReport'));
@@ -42,6 +44,8 @@ const PublicPages = lazy(() => import('./pages/admin/PublicPages'));
 const NECTAUrls = lazy(() => import('./pages/admin/NECTAUrls'));
 const AdminDepartmentContacts = lazy(() => import('./pages/admin/DepartmentContacts'));
 const AIMatters = lazy(() => import('./pages/admin/AIMatters'));
+const AdmissionApplications = lazy(() => import('./pages/admin/AdmissionApplications'));
+const StaffProfiles = lazy(() => import('./pages/admin/StaffProfiles'));
 
 // Student Management (lazy)
 const StudentRegistration = lazy(() => import('./pages/students/StudentRegistration'));
@@ -81,6 +85,9 @@ const ScoreEntryFormVVIYearSelection = lazy(() => import('./pages/academic/Score
 const ScoreEntrySubjectSelection = lazy(() => import('./pages/academic/ScoreEntrySubjectSelection'));
 const ScoreEntryMonthSelection = lazy(() => import('./pages/academic/ScoreEntryMonthSelection'));
 const ScoreEntryEnter = lazy(() => import('./pages/academic/ScoreEntryEnter'));
+const ScoreEntryFormVVIYearSelectionTogether = lazy(() => import('./pages/academic/ScoreEntryFormVVIYearSelectionTogether'));
+const ScoreEntrySubjectSelectionTogether = lazy(() => import('./pages/academic/ScoreEntrySubjectSelectionTogether'));
+const ScoreEntryMonthSelectionTogether = lazy(() => import('./pages/academic/ScoreEntryMonthSelectionTogether'));
 const Teachers = lazy(() => import('./pages/academic/Teachers'));
 const TeachersYearSelection = lazy(() => import('./pages/academic/TeachersYearSelection'));
 const TeachersStreamSelection = lazy(() => import('./pages/academic/TeachersStreamSelection'));
@@ -163,6 +170,7 @@ const BulkReportGenerate = lazy(() => import('./pages/reports/BulkReportGenerate
 // Shared (not lazy)
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PageSEO from './components/common/PageSEO';
+import SoundInitializer from './components/common/SoundInitializer';
 
 // Defer route location so lazy components don't suspend during synchronous input (fixes "suspended while responding to synchronous input")
 function DeferredRoutes({ children }) {
@@ -175,6 +183,7 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <SoundInitializer />
         <SocketProvider>
           <BrowserRouter
           future={{
@@ -191,6 +200,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<About />} />
             <Route path="/admissions" element={<Admissions />} />
+            <Route path="/admissions/apply" element={<AdmissionsApply />} />
             <Route path="/staff" element={<Staff />} />
             <Route path="/student-life" element={<StudentLife />} />
             <Route path="/student-report" element={<StudentReport />} />
@@ -220,6 +230,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminUsers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/admission-applications"
+              element={
+                <ProtectedRoute requiredAdmin>
+                  <AdmissionApplications />
                 </ProtectedRoute>
               }
             />
@@ -300,6 +318,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminDepartmentContacts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/staff-profiles"
+              element={
+                <ProtectedRoute>
+                  <StaffProfiles />
                 </ProtectedRoute>
               }
             />
@@ -446,7 +472,23 @@ function App() {
             />
             {/* Action Selection Routes for Form V-VI */}
             <Route
-              path="/admin/students/registration/form-v/stream/:stream/year/:year/actions"
+              path="/admin/students/registration/form-v/stream/:stream/year/:year/terms"
+              element={
+                <ProtectedRoute requiredModule="student_registration">
+                  <CommentsTermSelection formLevel="form-v" moduleName="students" basePath="/admin/students/registration" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students/registration/form-vi/stream/:stream/year/:year/terms"
+              element={
+                <ProtectedRoute requiredModule="student_registration">
+                  <CommentsTermSelection formLevel="form-vi" moduleName="students" basePath="/admin/students/registration" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students/registration/form-v/stream/:stream/year/:year/term/:term/actions"
               element={
                 <ProtectedRoute requiredModule="student_registration">
                   <ActionSelectionVVI formLevel="FORM V" />
@@ -454,7 +496,7 @@ function App() {
               }
             />
             <Route
-              path="/admin/students/registration/form-vi/stream/:stream/year/:year/actions"
+              path="/admin/students/registration/form-vi/stream/:stream/year/:year/term/:term/actions"
               element={
                 <ProtectedRoute requiredModule="student_registration">
                   <ActionSelectionVVI formLevel="FORM VI" />
@@ -495,7 +537,7 @@ function App() {
               }
             />
             <Route
-              path="/admin/students/registration/form-v/stream/:stream/year/:year"
+              path="/admin/students/registration/form-v/stream/:stream/year/:year/term/:term"
               element={
                 <ProtectedRoute requiredModule="student_registration">
                   <RegistrationForm />
@@ -503,7 +545,7 @@ function App() {
               }
             />
             <Route
-              path="/admin/students/registration/form-vi/stream/:stream/year/:year"
+              path="/admin/students/registration/form-vi/stream/:stream/year/:year/term/:term"
               element={
                 <ProtectedRoute requiredModule="student_registration">
                   <RegistrationForm />
@@ -659,7 +701,23 @@ function App() {
               }
             />
             <Route
-              path="/admin/students/photos/form-v/stream/:stream/year/:year"
+              path="/admin/students/photos/form-v/stream/:stream/year/:year/terms"
+              element={
+                <ProtectedRoute>
+                  <CommentsTermSelection formLevel="form-v" moduleName="students/photos" basePath="/admin/students/photos" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students/photos/form-vi/stream/:stream/year/:year/terms"
+              element={
+                <ProtectedRoute>
+                  <CommentsTermSelection formLevel="form-vi" moduleName="students/photos" basePath="/admin/students/photos" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students/photos/form-v/stream/:stream/year/:year/term/:term"
               element={
                 <ProtectedRoute>
                   <PhotoManagement formLevel="form-v" />
@@ -667,7 +725,7 @@ function App() {
               }
             />
             <Route
-              path="/admin/students/photos/form-vi/stream/:stream/year/:year"
+              path="/admin/students/photos/form-vi/stream/:stream/year/:year/term/:term"
               element={
                 <ProtectedRoute>
                   <PhotoManagement formLevel="form-vi" />
@@ -1206,6 +1264,39 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* FORM V-VI Together Mode Score Entry Routes */}
+            <Route
+              path="/admin/score-entry/:formLevel/together/years"
+              element={
+                <ProtectedRoute>
+                  <ScoreEntryFormVVIYearSelectionTogether />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/score-entry/:formLevel/together/year/:year/subjects"
+              element={
+                <ProtectedRoute>
+                  <ScoreEntrySubjectSelectionTogether />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/score-entry/:formLevel/together/year/:year/subject/:subjectCode/months"
+              element={
+                <ProtectedRoute>
+                  <ScoreEntryMonthSelectionTogether />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/score-entry/:formLevel/together/year/:year/subject/:subjectCode/month/:month/enter"
+              element={
+                <ProtectedRoute>
+                  <ScoreEntryEnter />
+                </ProtectedRoute>
+              }
+            />
             {/* Academic Management - Teachers Routes */}
             <Route
               path="/admin/teachers"
@@ -1314,7 +1405,23 @@ function App() {
               }
             />
             <Route
-              path="/admin/teachers/form-v/stream/:stream/year/:year"
+              path="/admin/teachers/form-v/stream/:stream/year/:year/terms"
+              element={
+                <ProtectedRoute>
+                  <CommentsTermSelection formLevel="form-v" moduleName="teachers" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/teachers/form-vi/stream/:stream/year/:year/terms"
+              element={
+                <ProtectedRoute>
+                  <CommentsTermSelection formLevel="form-vi" moduleName="teachers" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/teachers/form-v/stream/:stream/year/:year/term/:term"
               element={
                 <ProtectedRoute>
                   <TeachersManagement formLevel="form-v" />
@@ -1322,7 +1429,7 @@ function App() {
               }
             />
             <Route
-              path="/admin/teachers/form-vi/stream/:stream/year/:year"
+              path="/admin/teachers/form-vi/stream/:stream/year/:year/term/:term"
               element={
                 <ProtectedRoute>
                   <TeachersManagement formLevel="form-vi" />
@@ -1982,6 +2089,8 @@ function App() {
             <Route path="/admin/debts/form-vi/streams" element={<ProtectedRoute><CommentsStreamSelection formLevel="FORM VI" moduleName="debts" isFormVOrVI={true} /></ProtectedRoute>} />
             <Route path="/admin/debts/form-v/stream/:stream/years" element={<ProtectedRoute><CommentsFormVVIYearSelection formLevel="FORM V" moduleName="debts" /></ProtectedRoute>} />
             <Route path="/admin/debts/form-vi/stream/:stream/years" element={<ProtectedRoute><CommentsFormVVIYearSelection formLevel="FORM VI" moduleName="debts" /></ProtectedRoute>} />
+            <Route path="/admin/debts/form-v/stream/:stream/year/:year/terms" element={<ProtectedRoute><CommentsTermSelection formLevel="form-v" moduleName="debts" /></ProtectedRoute>} />
+            <Route path="/admin/debts/form-vi/stream/:stream/year/:year/terms" element={<ProtectedRoute><CommentsTermSelection formLevel="form-vi" moduleName="debts" /></ProtectedRoute>} />
             <Route path="/admin/debts/form-i/year/:year/streams" element={<ProtectedRoute><CommentsStreamSelection formLevel="FORM I" moduleName="debts" /></ProtectedRoute>} />
             <Route path="/admin/debts/form-ii/year/:year/streams" element={<ProtectedRoute><CommentsStreamSelection formLevel="FORM II" moduleName="debts" /></ProtectedRoute>} />
             <Route path="/admin/debts/form-iii/year/:year/streams" element={<ProtectedRoute><CommentsStreamSelection formLevel="FORM III" moduleName="debts" /></ProtectedRoute>} />
@@ -1990,8 +2099,8 @@ function App() {
             <Route path="/admin/debts/form-ii/year/:year/stream/:stream" element={<ProtectedRoute><DebtsManagement formLevel="form-ii" /></ProtectedRoute>} />
             <Route path="/admin/debts/form-iii/year/:year/stream/:stream" element={<ProtectedRoute><DebtsManagement formLevel="form-iii" /></ProtectedRoute>} />
             <Route path="/admin/debts/form-iv/year/:year/stream/:stream" element={<ProtectedRoute><DebtsManagement formLevel="form-iv" /></ProtectedRoute>} />
-            <Route path="/admin/debts/form-v/stream/:stream/year/:year" element={<ProtectedRoute><DebtsManagement formLevel="form-v" /></ProtectedRoute>} />
-            <Route path="/admin/debts/form-vi/stream/:stream/year/:year" element={<ProtectedRoute><DebtsManagement formLevel="form-vi" /></ProtectedRoute>} />
+            <Route path="/admin/debts/form-v/stream/:stream/year/:year/term/:term" element={<ProtectedRoute><DebtsManagement formLevel="form-v" /></ProtectedRoute>} />
+            <Route path="/admin/debts/form-vi/stream/:stream/year/:year/term/:term" element={<ProtectedRoute><DebtsManagement formLevel="form-vi" /></ProtectedRoute>} />
 
             {/* School Branding Routes */}
             <Route path="/admin/branding/logo" element={<ProtectedRoute><Logo /></ProtectedRoute>} />
@@ -2056,4 +2165,5 @@ function App() {
 }
 
 export default App;
+
 

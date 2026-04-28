@@ -336,13 +336,17 @@ function getALevelDivision(divisionPoint) {
  */
 function calculateWeightedTotal(scores, months, monthWeights) {
   let total = 0;
-  
+
   months.forEach((month) => {
-    const rawScore = scores[month] || 0;
+    const rawScore = scores[month];
+    // Skip NULL/not registered scores (dash or empty space)
+    if (rawScore === null || rawScore === undefined || rawScore === '') {
+      return;
+    }
     const weight = (monthWeights[month] || 0) / 100;
     total += parseFloat(rawScore) * weight;
   });
-  
+
   return total;
 }
 
@@ -354,14 +358,17 @@ function calculateWeightedTotal(scores, months, monthWeights) {
 function calculateOverallAverage(subjectsData) {
   let totalMarks = 0;
   let validSubjects = 0;
-  
+
   for (const subjectCode in subjectsData) {
     const subjectData = subjectsData[subjectCode];
     const weightedTotal = subjectData.weighted_total || 0;
-    totalMarks += weightedTotal;
-    validSubjects++;
+    // Only count subjects with valid scores (weighted_total > 0)
+    if (weightedTotal > 0) {
+      totalMarks += weightedTotal;
+      validSubjects++;
+    }
   }
-  
+
   return validSubjects > 0 ? totalMarks / validSubjects : 0;
 }
 

@@ -12,11 +12,11 @@ const BulkReportStreamSelection = () => {
   const streams = ['PCB', 'PCM', 'CBG', 'HGL', 'HKL', 'EGM', 'HGE', 'PGM'];
 
   const handleStreamClick = (selectedStream) => {
-    navigate(`/reports/bulk/${form}/${selectedStream}/${year}/${term}/generate`);
+    navigate(`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(selectedStream)}/${encodeURIComponent(year)}/${encodeURIComponent(term)}/generate`);
   };
 
   const handleAllStreamsClick = () => {
-    navigate(`/reports/bulk/${form}/all/${year}/${term}/generate`);
+    navigate(`/reports/bulk/${encodeURIComponent(form)}/all/${encodeURIComponent(year)}/${encodeURIComponent(term)}/generate`);
   };
 
   return (
@@ -24,8 +24,8 @@ const BulkReportStreamSelection = () => {
       <div className="bulk-report-page">
         <div className="breadcrumb">
           <Link to="/reports/bulk">Bulk Student Report</Link> &gt;{' '}
-          <Link to={`/reports/bulk/${form}/${stream}/year`}>{form}</Link> &gt;{' '}
-          <Link to={`/reports/bulk/${form}/${stream}/${year}/term`}>{year}</Link> &gt; {term}
+          <Link to={`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/year`}>{form}</Link> &gt;{' '}
+          <Link to={`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/${encodeURIComponent(year)}/term`}>{year}</Link> &gt; {term}
         </div>
 
         <div className="excel-card">
@@ -44,6 +44,7 @@ const BulkReportStreamSelection = () => {
             <div className="stream-grid">
               {/* All Streams Option */}
               <button
+                type="button"
                 onClick={handleAllStreamsClick}
                 className="stream-card all-streams"
               >
@@ -57,6 +58,7 @@ const BulkReportStreamSelection = () => {
               {/* Individual Streams */}
               {streams.map((s) => (
                 <button
+                  type="button"
                   key={s}
                   onClick={() => handleStreamClick(s)}
                   className="stream-card"
@@ -72,7 +74,7 @@ const BulkReportStreamSelection = () => {
             
             <div className="action-buttons mt-20">
               <Link
-                to={`/reports/bulk/${form}/${stream}/${year}/term`}
+                to={`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/${encodeURIComponent(year)}/term`}
                 className="excel-btn"
               >
                 <i className="fas fa-arrow-left"></i> Back to Term Selection

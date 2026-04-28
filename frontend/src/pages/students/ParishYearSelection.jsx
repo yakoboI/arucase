@@ -56,7 +56,7 @@ const ParishYearSelection = ({ formLevel }) => {
             <div className="parish-year-selection-grid">
               {years.map((year) => (
                 <Link
-                  key={year}
+                  key={`parish-${year}`}
                   to={getYearDetailPath(year)}
                   className="parish-year-selection-card-item"
                   aria-label={`${year} Student Parishes`}

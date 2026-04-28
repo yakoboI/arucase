@@ -5,15 +5,14 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import api from '../../services/api';
-import { requiresSpecialAcademicYearLogic, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './TeachersManagement.css';
 
 const TeachersManagement = ({ formLevel, stream: streamProp }) => {
-  const { year, stream: streamParam } = useParams();
+  const { year, stream: streamParam, term } = useParams();
   // For FORM I-IV, stream comes from prop; for FORM V-VI, it comes from URL params
   const stream = streamParam || streamProp || 'A';
   const queryClient = useQueryClient();
@@ -34,27 +33,23 @@ const TeachersManagement = ({ formLevel, stream: streamProp }) => {
   // Note: All "NA" stream values have been normalized to "A" in the database
   const normalizedStream = stream || 'A';
 
-  // For Form V-VI, convert display year to API year (academic year start year)
-  // Example: If user selects 2026, query for 2025 (academic year start)
-  const apiYear = (() => {
-    if (requiresSpecialAcademicYearLogic(normalizedLevel)) {
-      const yearNum = parseInt(year, 10);
-      if (!isNaN(yearNum)) {
-        return getApiYearForFormVVI(yearNum, normalizedLevel);
-      }
-    }
-    return year;
-  })();
+  // Use calendar year directly for Form V/VI (no academic year conversion)
+  // Form V First Term (Jul-Dec 2025) -> year 2025
+  // Form V Second Term (Jan-Jun 2026) -> year 2026
+  // Form VI First Term (Jul-Dec 2026) -> year 2026
+  // Form VI Second Term (Jan-Jun 2027) -> year 2027
+  const apiYear = parseInt(year, 10);
 
   // Fetch subjects for this class
   // For Form V-VI, use apiYear (academic year start) instead of display year
   const { data: subjects = [], isLoading: subjectsLoading } = useQuery({
-    queryKey: ['subjects', normalizedLevel, normalizedStream, apiYear],
+    queryKey: ['subjects', normalizedLevel, normalizedStream, apiYear, term],
     queryFn: async () => {
       const res = await studentsAPI.getSubjects({
         level: normalizedLevel,
         stream: normalizedStream,
         year: apiYear,
+        term: term || 'First Term',
       });
       return res.data.subjects || [];
     },
@@ -63,37 +58,27 @@ const TeachersManagement = ({ formLevel, stream: streamProp }) => {
   // Fetch teachers for this class
   // For Form V-VI, use apiYear (academic year start) instead of display year
   const { data: teachers = {}, isLoading: teachersLoading, error: teachersError } = useQuery({
-    queryKey: ['teachers', normalizedLevel, normalizedStream, apiYear],
+    queryKey: ['teachers', normalizedLevel, normalizedStream, apiYear, term],
     queryFn: async () => {
-      try {
-        const res = await studentsAPI.getTeachers({
-          level: normalizedLevel,
-          stream: normalizedStream,
-          year: apiYear,
-        });
-        
-        return res.data?.teachers || {};
-      } catch (error) {
-        console.error('TeachersManagement: Error fetching teachers', error);
-        throw error;
-      }
+      const res = await studentsAPI.getTeachers({
+        level: normalizedLevel,
+        stream: normalizedStream,
+        year: apiYear,
+        term: term || 'First Term',
+      });
+      
+      return res.data?.teachers || {};
     },
-    enabled: !!normalizedLevel && !!normalizedStream && !!apiYear,
     retry: false,
   });
 
   // Save teacher mutation
-  // For Form V-VI, use apiYear (academic year start) instead of display year
   const saveMutation = useMutation({
     mutationFn: async ({ subjectCode, data }) => {
-      const yearToUse = requiresSpecialAcademicYearLogic(normalizedLevel) 
-        ? parseInt(apiYear, 10) 
-        : parseInt(year, 10);
-      
       return api.post('/students/teachers', {
         level: normalizedLevel,
         stream: normalizedStream,
-        year: yearToUse,
+        year: apiYear,
         subject_code: subjectCode,
         ...data
       });
@@ -109,18 +94,13 @@ const TeachersManagement = ({ formLevel, stream: streamProp }) => {
   });
 
   // Delete teacher mutation
-  // For Form V-VI, use apiYear (academic year start) instead of display year
   const deleteMutation = useMutation({
     mutationFn: async (subjectCode) => {
-      const yearToUse = requiresSpecialAcademicYearLogic(normalizedLevel) 
-        ? parseInt(apiYear, 10) 
-        : parseInt(year, 10);
-      
       // Use studentsAPI.deleteTeacher which properly handles URL encoding
       return studentsAPI.deleteTeacher({
         level: normalizedLevel,
         stream: normalizedStream,
-        year: yearToUse,
+        year: apiYear,
         subject_code: subjectCode
       });
     },
@@ -247,10 +227,11 @@ const TeachersManagement = ({ formLevel, stream: streamProp }) => {
                 {Object.keys(teachers).length === 0 && !teachersLoading && (
                   <div className="info-state" style={{ padding: '15px', background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '4px', marginBottom: '20px' }}>
                     <i className="fas fa-info-circle" style={{ color: '#856404', marginRight: '10px' }}></i>
-                    <strong style={{ color: '#856404' }}>No Teachers Assigned Yet</strong>
+                    <strong style={{ color: '#856404' }}>No teacher names saved yet</strong>
                     <p style={{ margin: '10px 0 0 0', color: '#856404', fontSize: '14px' }}>
                       You have {subjects.length} subject{subjects.length !== 1 ? 's' : ''} for {normalizedLevel} {normalizedStream} {year}. 
-                      Click the <i className="fas fa-edit"></i> edit button next to any subject below to assign a teacher.
+                      This screen does <strong>not</strong> load a list of staff from elsewhere — you enter each teacher&apos;s name yourself when you assign them to a subject.
+                      Click <i className="fas fa-edit"></i> on a row, type the name (and optional signature), then save. After at least one subject has a teacher, this notice disappears.
                     </p>
                   </div>
                 )}

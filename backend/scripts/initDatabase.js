@@ -36,6 +36,64 @@ async function initDatabase() {
       )
     `);
     console.log('✅ Users table created');
+
+    // Admissions applicants (public registration for admissions)
+    await query(`
+      CREATE TABLE IF NOT EXISTS admission_applicants (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        phone VARCHAR(50) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        status VARCHAR(50) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_admission_applicants_email ON admission_applicants(email)');
+    await query('CREATE INDEX IF NOT EXISTS idx_admission_applicants_phone ON admission_applicants(phone)');
+    console.log('✅ Admission applicants table created');
+
+    // Admissions applications (submitted by applicants; reviewed by admin)
+    await query(`
+      CREATE TABLE IF NOT EXISTS admission_applications (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        applicant_id UUID NOT NULL REFERENCES admission_applicants(id) ON DELETE CASCADE,
+        education_level VARCHAR(50) NOT NULL,
+        is_transfer BOOLEAN DEFAULT FALSE,
+        previous_school VARCHAR(255),
+        desired_entry VARCHAR(100) NOT NULL,
+        region VARCHAR(100),
+        district VARCHAR(100),
+        message TEXT,
+        documents JSONB,
+        status VARCHAR(50) DEFAULT 'pending',
+        admin_feedback TEXT,
+        application_no INTEGER DEFAULT 1,
+        is_reapplication BOOLEAN DEFAULT FALSE,
+        previous_application_id UUID,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    // Drop old unique constraint if upgrading an existing DB
+    await query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint
+          WHERE conrelid = 'admission_applications'::regclass
+            AND contype = 'u'
+            AND conname = 'admission_applications_applicant_id_key'
+        ) THEN
+          ALTER TABLE admission_applications DROP CONSTRAINT admission_applications_applicant_id_key;
+        END IF;
+      END $$;
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_admission_applications_status ON admission_applications(status)');
+    await query('CREATE INDEX IF NOT EXISTS idx_admission_applications_submitted_at ON admission_applications(submitted_at DESC)');
+    await query('CREATE INDEX IF NOT EXISTS idx_admission_applications_applicant ON admission_applications(applicant_id, submitted_at DESC)');
+    console.log('✅ Admission applications table created');
     
     // Students table
     await query(`
@@ -48,6 +106,9 @@ async function initDatabase() {
         sex VARCHAR(10) NOT NULL,
         level VARCHAR(50) NOT NULL,
         stream VARCHAR(50) NOT NULL,
+        -- COM is used to represent the student's combination/track membership
+        -- for Form I-IV results (e.g. Sc, Ss, Ui).
+        com VARCHAR(50),
         year INTEGER NOT NULL,
         status VARCHAR(50) DEFAULT 'PENDING',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -55,6 +116,21 @@ async function initDatabase() {
       )
     `);
     console.log('✅ Students table created');
+
+    // Ensure COM column exists on existing deployments.
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'students'
+            AND column_name = 'com'
+        ) THEN
+          ALTER TABLE students ADD COLUMN com VARCHAR(50);
+        END IF;
+      END $$;
+    `);
     
     // Create indexes for students (scale: 2000+ students with photos/data across years)
     await query('CREATE INDEX IF NOT EXISTS idx_students_class ON students(level, stream, year)');
@@ -91,6 +167,7 @@ async function initDatabase() {
       )
     `);
     console.log('✅ Student parishes table created');
+    await query('CREATE INDEX IF NOT EXISTS idx_student_parishes_lookup ON student_parishes(level, stream, year, student_index)');
     
     // Comments table
     await query(`
@@ -109,6 +186,7 @@ async function initDatabase() {
       )
     `);
     console.log('✅ Comments table created');
+    await query('CREATE INDEX IF NOT EXISTS idx_comments_lookup ON comments(comment_type, level, stream, year, student_index)');
     
     // Subjects table
     await query(`
@@ -125,6 +203,7 @@ async function initDatabase() {
       )
     `);
     console.log('✅ Subjects table created');
+    await query('CREATE INDEX IF NOT EXISTS idx_subjects_class ON subjects(level, stream, year)');
     
     // Subject teachers table
     await query(`
@@ -142,6 +221,7 @@ async function initDatabase() {
       )
     `);
     console.log('✅ Subject teachers table created');
+    await query('CREATE INDEX IF NOT EXISTS idx_subject_teachers_class ON subject_teachers(level, stream, year)');
     
     // Individual scores table
     await query(`
@@ -571,6 +651,32 @@ async function initDatabase() {
       )
     `);
     console.log('✅ Administrators table created');
+
+    // Staff profiles table (teachers + non-teaching staff shown on public /staff page)
+    await query(`
+      CREATE TABLE IF NOT EXISTS staff_profiles (
+        id VARCHAR(100) PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        role_title VARCHAR(255) NOT NULL,
+        is_teaching BOOLEAN DEFAULT TRUE,
+        professional_subjects TEXT,
+        teaching_since_year INTEGER,
+        subjects_teaching TEXT,
+        class_teacher_for VARCHAR(100),
+        other_duties TEXT,
+        contact_phone VARCHAR(50),
+        contact_email VARCHAR(255),
+        photo_path VARCHAR(255),
+        profile_summary TEXT,
+        display_order INTEGER DEFAULT 0,
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_active_order ON staff_profiles(active, display_order, created_at DESC)');
+    await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_teaching ON staff_profiles(is_teaching, active)');
+    console.log('✅ Staff profiles table created');
     
     // Visitor stats table
     await query(`

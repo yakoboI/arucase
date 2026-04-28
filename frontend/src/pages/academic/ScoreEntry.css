@@ -2,10 +2,11 @@
  * Score Entry Styles - Mobile-First Responsive Design
  */
 .individual-score-page-container {
-  padding: clamp(1rem, 3vw, 2rem);
+  padding: clamp(0.5rem, 1.5vw, 1rem);
   width: 100%;
-  max-width: 100%;
+  max-width: 100vw;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .individual-score-card {
@@ -19,36 +20,36 @@
 .individual-score-card-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: clamp(1rem, 3vw, 1.5rem);
+  padding: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .individual-score-card-header-title {
-  font-size: clamp(1rem, 4vw, 1.25rem);
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  gap: 0.375rem;
+  margin-bottom: 0.25rem;
   flex-wrap: wrap;
 }
 
 .individual-score-card-header-title i {
-  font-size: clamp(1.25rem, 5vw, 1.5rem);
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
 }
 
 .individual-score-header-info {
-  font-size: clamp(0.875rem, 2.5vw, 0.875rem);
+  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
   opacity: 0.9;
 }
 
 .individual-score-card-body {
-  padding: clamp(1rem, 3vw, 2rem);
+  padding: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .individual-score-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: clamp(1rem, 3vw, 1.5rem);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .individual-score-form-card {
@@ -58,26 +59,26 @@
   justify-content: center;
   text-decoration: none;
   background: #ffffff;
-  border: 2px solid #000;
+  border: 1px solid #000;
   border-radius: 0;
-  padding: clamp(1.25rem, 4vw, 1.5rem) clamp(1rem, 3vw, 1.25rem);
+  padding: clamp(0.75rem, 2vw, 1rem) clamp(0.625rem, 1.5vw, 0.875rem);
   text-align: center;
   color: #000;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  min-height: clamp(120px, 25vw, 140px);
+  min-height: clamp(80px, 20vw, 100px);
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .individual-score-form-card:hover {
   background: #fff;
   border-color: #000;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
   text-decoration: none;
   color: #000;
 }
@@ -85,29 +86,68 @@
 .individual-score-form-card:active {
   transform: scale(0.98);
   background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   text-decoration: none;
   color: #000;
 }
 
+/* Together Card Styling */
+.individual-score-form-card.together-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+}
+
+.individual-score-form-card.together-card:hover {
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  border-color: #5a6fd6;
+  color: white;
+}
+
+.individual-score-form-card.together-card:active {
+  background: linear-gradient(135deg, #4e62c0 0%, #5e367e 100%);
+  color: white;
+}
+
+.individual-score-form-card.together-card .individual-score-form-icon {
+  color: white;
+}
+
+.individual-score-form-card.together-card .individual-score-form-content h3 {
+  color: white;
+}
+
+.individual-score-form-card.together-card .individual-score-form-content p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.section-subtitle {
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .individual-score-form-icon {
-  font-size: clamp(2rem, 8vw, 2.5rem);
-  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  margin-bottom: clamp(0.375rem, 1vw, 0.5rem);
   display: block;
   color: #000;
 }
 
 .individual-score-form-content h3 {
-  font-size: clamp(1.125rem, 5vw, 1.5rem);
+  font-size: clamp(0.875rem, 2.5vw, 1.125rem);
   font-weight: 700;
-  margin: 0 0 clamp(0.5rem, 1.5vw, 0.75rem) 0;
+  margin: 0 0 clamp(0.25rem, 0.75vw, 0.375rem) 0;
   color: #000;
   line-height: 1.2;
   text-decoration: none;
 }
 
 .individual-score-form-content p {
-  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
   font-weight: 500;
   margin: 0;
   color: #000;
@@ -117,33 +157,33 @@
 
 .empty-state {
   text-align: center;
-  padding: clamp(2rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem);
+  padding: clamp(1rem, 3vw, 2rem) clamp(0.5rem, 2vw, 1rem);
 }
 
 .empty-icon {
-  font-size: clamp(3rem, 12vw, 4rem);
+  font-size: clamp(2rem, 6vw, 3rem);
   color: #9ca3af;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.5rem, 1.5vw, 0.75rem);
   display: block;
 }
 
 .empty-state h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   color: #111827;
-  font-size: clamp(1.25rem, 5vw, 1.5rem);
+  font-size: clamp(0.875rem, 2.5vw, 1.125rem);
 }
 
 .empty-state p {
   margin: 0;
   color: #6b7280;
-  font-size: clamp(0.875rem, 3vw, 1rem);
+  font-size: clamp(0.7rem, 1.5vw, 0.875rem);
   line-height: 1.6;
 }
 
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   .individual-score-page-container {
-    padding: clamp(1rem, 4vw, 1.5rem);
+    padding: clamp(0.375rem, 1vw, 0.5rem);
   }
 
   .individual-score-card {
@@ -154,51 +194,56 @@
   }
 
   .individual-score-card-header {
-    padding: clamp(1rem, 4vw, 1.5rem);
+    padding: clamp(0.375rem, 1vw, 0.5rem);
   }
 
   .individual-score-card-body {
-    padding: clamp(1rem, 4vw, 1.5rem);
+    padding: clamp(0.375rem, 1vw, 0.5rem);
   }
 
   .individual-score-grid {
-    grid-template-columns: 1fr;
-    gap: clamp(0.75rem, 3vw, 1rem);
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(0.375rem, 1vw, 0.5rem);
   }
 
   .individual-score-form-card {
-    min-height: clamp(100px, 24vw, 120px);
-    padding: clamp(1.25rem, 5vw, 1.5rem) clamp(1rem, 4vw, 1.25rem);
-    border-width: 2px;
+    min-height: clamp(70px, 18vw, 90px);
+    padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.375rem, 1vw, 0.5rem);
+    border-width: 1px;
     -webkit-tap-highlight-color: transparent;
   }
 
   .individual-score-form-icon {
-    font-size: clamp(2.5rem, 10vw, 3rem);
-    margin-bottom: clamp(0.5rem, 2vw, 0.75rem);
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    margin-bottom: clamp(0.25rem, 0.75vw, 0.375rem);
   }
 
   .individual-score-form-content h3 {
-    font-size: clamp(1.25rem, 6vw, 1.5rem);
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
   }
 
   .individual-score-form-content p {
-    font-size: clamp(0.8125rem, 3vw, 0.875rem);
+    font-size: clamp(0.6rem, 1.25vw, 0.7rem);
   }
 }
 
 /* Small mobile devices */
 @media (max-width: 480px) {
   .individual-score-card-header-title {
-    font-size: clamp(0.9375rem, 4.5vw, 1.125rem);
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
   }
 
   .individual-score-header-info {
-    font-size: clamp(0.8125rem, 3vw, 0.875rem);
+    font-size: clamp(0.6rem, 1.5vw, 0.7rem);
   }
 
   .individual-score-form-card {
-    min-height: clamp(90px, 18vw, 110px);
+    min-height: clamp(60px, 16vw, 80px);
+    padding: clamp(0.375rem, 1vw, 0.5rem);
+  }
+
+  .individual-score-grid {
+    grid-template-columns: 1fr;
   }
 }
 

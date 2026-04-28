@@ -4,11 +4,112 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/database');
-const { updateVisitorStats } = require('../utils/visitorStats');
+const { updateVisitorStats, getVisitorStatKeys } = require('../utils/visitorStats');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { calculateGrade } = require('../utils/calculations');
+const {
+  calculateGrade,
+  calculateWeightedTotal,
+  calculateOverallAverage
+} = require('../utils/calculations');
+const { normalizeStream } = require('../utils/streamNormalizer');
 const { sendError } = require('../utils/safeError');
+const { cacheRoutes } = require('../middleware/cache');
+const { JWT_SECRET } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+function normalizeEmail(email) {
+  return (email || '').toString().trim().toLowerCase();
+}
+
+function normalizePhone(phone) {
+  return (phone || '').toString().trim();
+}
+
+function generateApplicantToken(applicant) {
+  const expiresIn = process.env.JWT_ACCESS_TOKEN_EXPIRES?.trim() || '7d';
+  return jwt.sign(
+    { user_id: applicant.id, role: 'applicant' },
+    JWT_SECRET,
+    { expiresIn }
+  );
+}
+
+function requireApplicantAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: 'Tafadhali ingia tena.' });
+    const token = authHeader.split(' ')[1] || authHeader;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded || decoded.role !== 'applicant' || !decoded.user_id) {
+      return res.status(401).json({ message: 'Kuingia si halali.' });
+    }
+    req.applicant = decoded;
+    next();
+  } catch (e) {
+    if (e.name === 'TokenExpiredError') return res.status(401).json({ message: 'Muda wa kuingia umeisha, ingia tena.' });
+    return res.status(401).json({ message: 'Kuingia si halali.' });
+  }
+}
+
+async function ensureAdmissionsTables() {
+  await query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+  await query(`
+    CREATE TABLE IF NOT EXISTS admission_applicants (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      full_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      phone VARCHAR(50) UNIQUE NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      status VARCHAR(50) DEFAULT 'active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await query(`
+    CREATE TABLE IF NOT EXISTS admission_applications (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      applicant_id UUID NOT NULL REFERENCES admission_applicants(id) ON DELETE CASCADE,
+      education_level VARCHAR(50) NOT NULL,
+      is_transfer BOOLEAN DEFAULT FALSE,
+      previous_school VARCHAR(255),
+      desired_entry VARCHAR(100) NOT NULL,
+      region VARCHAR(100),
+      district VARCHAR(100),
+      message TEXT,
+      documents JSONB,
+      status VARCHAR(50) DEFAULT 'pending',
+      admin_feedback TEXT,
+      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Migrate older schema (single application per applicant) -> allow multiple
+  // Drop UNIQUE(applicant_id) if it exists
+  await query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'admission_applications'::regclass
+          AND contype = 'u'
+          AND conname = 'admission_applications_applicant_id_key'
+      ) THEN
+        ALTER TABLE admission_applications DROP CONSTRAINT admission_applications_applicant_id_key;
+      END IF;
+    END $$;
+  `);
+
+  // Add re-application tracking fields
+  await query(`ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS application_no INTEGER DEFAULT 1`);
+  await query(`ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS is_reapplication BOOLEAN DEFAULT FALSE`);
+  await query(`ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS previous_application_id UUID`);
+
+  await query(`CREATE INDEX IF NOT EXISTS idx_admission_applications_applicant ON admission_applications(applicant_id, submitted_at DESC)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_admission_applications_status ON admission_applications(status)`);
+}
 
 // Homepage data
 router.get('/homepage', async (req, res) => {
@@ -20,12 +121,11 @@ router.get('/homepage', async (req, res) => {
     // Get school logo from school_logo table and add to settings
     try {
       const logoResult = await query('SELECT logo_image_path FROM school_logo WHERE id = 1');
-      if (logoResult.rows.length > 0 && logoResult.rows[0].logo_image_path) {
+      if (logoResult.rows.length > 0 && logoResult.rows[0] && logoResult.rows[0].logo_image_path) {
         settings.school_logo = logoResult.rows[0].logo_image_path;
       }
     } catch (logoError) {
       // If school_logo table doesn't exist or has no logo, use default or keep existing
-      console.log('[HOMEPAGE] Could not fetch school logo:', logoError.message);
     }
     
     // Get gallery photos (limit 12)
@@ -66,8 +166,189 @@ router.get('/homepage', async (req, res) => {
   }
 });
 
+// ========== ADMISSIONS (APPLICANT PORTAL) ==========
+
+// Register applicant (email + phone)
+router.post('/admissions/register', async (req, res) => {
+  try {
+    await ensureAdmissionsTables();
+    const { full_name, email, phone, password } = req.body || {};
+
+    const fullName = (full_name || '').toString().trim();
+    const emailNorm = normalizeEmail(email);
+    const phoneNorm = normalizePhone(phone);
+    const pass = (password || '').toString();
+
+    if (!fullName || !emailNorm || !phoneNorm || !pass) {
+      return res.status(400).json({ message: 'Jaza majina kamili, barua pepe, namba ya simu na nenosiri.' });
+    }
+    if (pass.length < 6) {
+      return res.status(400).json({ message: 'Nenosiri liwe angalau herufi 6.' });
+    }
+
+    const existing = await query(
+      'SELECT id FROM admission_applicants WHERE email = $1 OR phone = $2 LIMIT 1',
+      [emailNorm, phoneNorm]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'Barua pepe au namba hii ya simu tayari imesajiliwa.' });
+    }
+
+    const passwordHash = await bcrypt.hash(pass, 10);
+    const inserted = await query(
+      `INSERT INTO admission_applicants (full_name, email, phone, password_hash)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, full_name, email, phone, status, created_at`,
+      [fullName, emailNorm, phoneNorm, passwordHash]
+    );
+
+    const applicant = inserted.rows[0];
+    const token = generateApplicantToken(applicant);
+    res.status(201).json({ token, applicant });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Login applicant (email or phone)
+router.post('/admissions/login', async (req, res) => {
+  try {
+    await ensureAdmissionsTables();
+    const { identifier, password } = req.body || {};
+    const idVal = (identifier || '').toString().trim();
+    const pass = (password || '').toString();
+    if (!idVal || !pass) {
+      return res.status(400).json({ message: 'Andika barua pepe au namba ya simu pamoja na nenosiri.' });
+    }
+
+    const emailNorm = normalizeEmail(idVal);
+    const phoneNorm = normalizePhone(idVal);
+
+    const result = await query(
+      `SELECT id, full_name, email, phone, status, password_hash
+       FROM admission_applicants
+       WHERE email = $1 OR phone = $2
+       LIMIT 1`,
+      [emailNorm, phoneNorm]
+    );
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: 'Barua pepe, simu au nenosiri si sahihi.' });
+    }
+
+    const applicant = result.rows[0];
+    if ((applicant.status || 'active') !== 'active') {
+      return res.status(403).json({ message: 'Akaunti si hai.' });
+    }
+
+    const ok = await bcrypt.compare(pass, applicant.password_hash);
+    if (!ok) return res.status(401).json({ message: 'Barua pepe, simu au nenosiri si sahihi.' });
+
+    const token = generateApplicantToken(applicant);
+    const safeApplicant = {
+      id: applicant.id,
+      full_name: applicant.full_name,
+      email: applicant.email,
+      phone: applicant.phone,
+      status: applicant.status,
+    };
+    res.json({ token, applicant: safeApplicant });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Get my application (or null)
+router.get('/admissions/application/mine', requireApplicantAuth, async (req, res) => {
+  try {
+    await ensureAdmissionsTables();
+    const applicantId = req.applicant.user_id;
+    const r = await query(
+      `SELECT a.*, ap.full_name, ap.email, ap.phone
+       FROM admission_applications a
+       JOIN admission_applicants ap ON ap.id = a.applicant_id
+       WHERE a.applicant_id = $1
+       ORDER BY a.submitted_at DESC
+       LIMIT 1`,
+      [applicantId]
+    );
+    if (r.rows.length === 0) return res.json({ application: null });
+    return res.json({ application: r.rows[0] });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Create a new application each submission (re-application supported)
+router.post('/admissions/application', requireApplicantAuth, async (req, res) => {
+  try {
+    await ensureAdmissionsTables();
+    const applicantId = req.applicant.user_id;
+    const {
+      education_level,
+      is_transfer = false,
+      previous_school = null,
+      desired_entry,
+      region = null,
+      district = null,
+      message = null,
+      documents = null,
+    } = req.body || {};
+
+    const edu = (education_level || '').toString().trim().toUpperCase();
+    const desired = (desired_entry || '').toString().trim();
+    if (!edu || !desired) {
+      return res.status(400).json({ message: 'Chagua kiwango cha elimu na andika unataka kujiunga kidato/darasa gani.' });
+    }
+
+    const allowedEdu = new Set(['PRIMARY', 'FORM_IV', 'FORM_VI', 'OTHER']);
+    if (!allowedEdu.has(edu)) {
+      return res.status(400).json({ message: 'Kiwango cha elimu ulichochagua si halali.' });
+    }
+
+    const prev = await query(
+      `SELECT id, application_no
+       FROM admission_applications
+       WHERE applicant_id = $1
+       ORDER BY submitted_at DESC
+       LIMIT 1`,
+      [applicantId]
+    );
+    const previousApplicationId = prev.rows[0]?.id || null;
+    const previousNo = parseInt(prev.rows[0]?.application_no || 0, 10) || 0;
+    const nextNo = previousNo + 1;
+    const isReapplication = Boolean(previousApplicationId);
+
+    const inserted = await query(
+      `INSERT INTO admission_applications
+        (applicant_id, education_level, is_transfer, previous_school, desired_entry, region, district, message, documents,
+         status, admin_feedback, application_no, is_reapplication, previous_application_id, submitted_at, updated_at)
+       VALUES
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+         'pending', NULL, $10, $11, $12, NOW(), NOW())
+       RETURNING *`,
+      [
+        applicantId,
+        edu,
+        Boolean(is_transfer),
+        previous_school,
+        desired,
+        region,
+        district,
+        message,
+        documents,
+        nextNo,
+        isReapplication,
+        previousApplicationId,
+      ]
+    );
+    res.status(201).json({ message: 'Maombi yamewasilishwa.', application: inserted.rows[0] });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
 // Get announcements
-router.get('/announcements', async (req, res) => {
+router.get('/announcements', cacheRoutes.publicData, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const result = await query(
@@ -228,8 +509,29 @@ router.get('/administrators', async (req, res) => {
   }
 });
 
+// Public staff profiles (teachers + non-teaching)
+router.get('/staff-profiles', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT id, full_name, role_title, is_teaching, professional_subjects, teaching_since_year,
+              subjects_teaching, class_teacher_for, other_duties, contact_phone, contact_email,
+              photo_path, profile_summary, display_order
+       FROM staff_profiles
+       WHERE active = TRUE
+       ORDER BY is_teaching DESC, display_order ASC, created_at DESC`
+    );
+    res.json({ staff_profiles: result.rows || [] });
+  } catch (error) {
+    // Table may not exist yet on old DBs; fail soft for public page
+    if (error.code === '42P01') {
+      return res.json({ staff_profiles: [] });
+    }
+    return sendError(res, error, 500);
+  }
+});
+
 // Get public page (returns default empty page for known slugs when not in DB)
-const KNOWN_PAGE_SLUGS = ['school-fee', 'fees', 'about', 'contact', 'admissions', 'staff', 'student_life', 'student_report', 'privacy'];
+const KNOWN_PAGE_SLUGS = ['school-fee', 'fees', 'about', 'contact', 'admissions', 'staff', 'student-life', 'student_life', 'student_report', 'privacy'];
 router.get('/page/:pageName', async (req, res) => {
   try {
     const { pageName } = req.params;
@@ -301,8 +603,7 @@ router.post('/track-visitor', async (req, res) => {
 // Get visitor stats
 router.get('/visitor-stats', async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const week = `${new Date().getFullYear()}-W${getWeekNumber(new Date())}`;
+    const { today, week } = getVisitorStatKeys();
     
     const stats = {};
     
@@ -332,14 +633,6 @@ router.get('/visitor-stats', async (req, res) => {
   }
 });
 
-function getWeekNumber(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}
-
 // Get NECTA URL (check database first, fallback to generated)
 router.get('/necta-url/:examType/:year', async (req, res) => {
   try {
@@ -352,7 +645,7 @@ router.get('/necta-url/:examType/:year', async (req, res) => {
       [examType.toLowerCase(), yearInt]
     );
     
-    if (customUrlResult.rows.length > 0) {
+    if (customUrlResult.rows.length > 0 && customUrlResult.rows[0]) {
       return res.json({ url: customUrlResult.rows[0].url, source: 'custom' });
     }
     
@@ -406,7 +699,7 @@ router.post('/necta-results', async (req, res) => {
       [exam_type.toLowerCase(), yearInt]
     );
     
-    if (customUrlResult.rows.length > 0) {
+    if (customUrlResult.rows.length > 0 && customUrlResult.rows[0]) {
       url = customUrlResult.rows[0].url;
     } else {
       // Build URL - different format for 2020 and 2021, and different case sensitivity per exam type
@@ -614,6 +907,11 @@ router.get('/student/:admNo/months', async (req, res) => {
     }
     
     const student = studentResult.rows[0];
+
+    const yearsForStudent = await query(
+      'SELECT DISTINCT year FROM students WHERE adm_no = $1 ORDER BY year DESC',
+      [admNo]
+    );
     
     // Calculate student_index: position in sorted list of students (1-based)
     const allStudentsResult = await query(
@@ -707,7 +1005,8 @@ router.get('/student/:admNo/months', async (req, res) => {
       terms: Array.from(allTerms).sort((a, b) => {
         const order = { 'Term I': 1, 'Term II': 2, 'Term III': 3 };
         return (order[a] || 4) - (order[b] || 4);
-      })
+      }),
+      years: yearsForStudent.rows.map((r) => r.year)
     });
   } catch (error) {
     console.error('Get student months error:', error);
@@ -748,13 +1047,286 @@ router.get('/student/:admNo/photo', async (req, res) => {
       [level, stream, parseInt(year), studentIndex]
     );
     
-    if (photoResult.rows.length === 0 || !photoResult.rows[0].photo_filename) {
+    if (photoResult.rows.length === 0) {
+      return res.json({ photo: null });
+    }
+    
+    if (!photoResult.rows[0].photo_filename) {
       return res.json({ photo: null });
     }
     
     res.json({ photo: { photo_filename: photoResult.rows[0].photo_filename } });
   } catch (error) {
     console.error('Get student photo error:', error);
+    return sendError(res, error, 500);
+  }
+});
+
+function normalizeTermForReport(termRaw) {
+  const t = decodeURIComponent(String(termRaw || '').trim());
+  if (/^term\s*i$/i.test(t) || /^term\s*1$/i.test(t)) return 'Term I';
+  if (/^term\s*ii$/i.test(t) || /^term\s*2$/i.test(t)) return 'Term II';
+  return null;
+}
+
+function getReportMonthsForTerm(termNormalized, form) {
+  const isFormVOrVI = form && (form === 'FORM V' || form === 'FORM VI');
+  // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
+  // Form I-IV: Term I: Feb-May, Term II: Aug-Nov
+  if (isFormVOrVI) {
+    return (termNormalized === 'Term I' || termNormalized === 'Term 1')
+      ? ['August', 'September', 'October', 'November']
+      : ['February', 'March', 'April', 'May'];
+  } else {
+    return (termNormalized === 'Term I' || termNormalized === 'Term 1')
+      ? ['February', 'March', 'April', 'May']
+      : ['August', 'September', 'October', 'November'];
+  }
+}
+
+// Weighted term scores as used on the official student report (same logic as /reports/individual)
+router.get('/student/:admNo/report-scores', async (req, res) => {
+  try {
+    const { admNo } = req.params;
+    const { year, term } = req.query;
+
+    if (!year) {
+      return res.status(400).json({ message: 'year is required' });
+    }
+    if (!term) {
+      return res.status(400).json({ message: 'term is required (e.g. Term I or Term II)' });
+    }
+
+    const termNormalized = normalizeTermForReport(term);
+    if (!termNormalized) {
+      return res.status(400).json({ message: 'term must be Term I or Term II' });
+    }
+
+    const yearNum = parseInt(year, 10);
+    const studentResult = await query(
+      'SELECT * FROM students WHERE adm_no = $1 AND year = $2 LIMIT 1',
+      [admNo, yearNum]
+    );
+
+    if (studentResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found for this year' });
+    }
+
+    const student = studentResult.rows[0];
+    const form = student.level;
+    const normalizedStream = normalizeStream(student.stream);
+    const actualStream = student.stream;
+    const months = getReportMonthsForTerm(termNormalized, form);
+
+    let marksConfig = {
+      month_weights: {
+        February: 40.0,
+        March: 0.0,
+        April: 40.0,
+        May: 20.0,
+        August: 40.0,
+        September: 0.0,
+        October: 40.0,
+        November: 20.0
+      }
+    };
+
+    try {
+      const marksConfigResult = await query('SELECT * FROM marks_config WHERE id = 1');
+      if (marksConfigResult.rows.length > 0) {
+        const config = marksConfigResult.rows[0];
+        marksConfig = {
+          month_weights: {
+            February: parseFloat(config.february_weight || 40.0),
+            March: parseFloat(config.march_weight || 0.0),
+            April: parseFloat(config.april_weight || 40.0),
+            May: parseFloat(config.may_weight || 20.0),
+            August: parseFloat(config.august_weight || 40.0),
+            September: parseFloat(config.september_weight || 0.0),
+            October: parseFloat(config.october_weight || 40.0),
+            November: parseFloat(config.november_weight || 20.0)
+          }
+        };
+      }
+    } catch (e) {
+      // Marks config table not found, use defaults
+    }
+
+    const subjectStreams =
+      actualStream === 'NA' || normalizedStream === 'A' ? ['A', 'NA'] : [actualStream];
+    const uniqueSubjectStreams = [...new Set(subjectStreams)];
+
+    let subjectsResult;
+    if (uniqueSubjectStreams.length === 1) {
+      subjectsResult = await query(
+        'SELECT * FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY subject_code',
+        [form, uniqueSubjectStreams[0], yearNum]
+      );
+    } else {
+      subjectsResult = await query(
+        'SELECT * FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
+        [form, uniqueSubjectStreams[0], uniqueSubjectStreams[1], yearNum]
+      );
+    }
+
+    const monthlyResult = await query(
+      'SELECT * FROM individual_scores WHERE adm_no = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5 AND month = ANY($6::text[])',
+      [admNo, form, actualStream, normalizedStream, yearNum, months]
+    );
+
+    const allStudentsResult = await query(
+      'SELECT adm_no FROM students WHERE level = $1 AND stream IN ($2, $3) AND year = $4',
+      [form, actualStream, normalizedStream, yearNum]
+    );
+
+    const allMonthlyResults = await query(
+      'SELECT * FROM individual_scores WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = ANY($5::text[])',
+      [form, actualStream, normalizedStream, yearNum, months]
+    );
+
+    const subjectRankings = {};
+    subjectsResult.rows.forEach((subject) => {
+      const subjectTotals = {};
+      const subjectCodesToMatch = [subject.subject_code, subject.subject_abbreviation].filter(Boolean);
+
+      allStudentsResult.rows.forEach((s) => {
+        let total = 0;
+        let validMonths = 0;
+        months.forEach((month) => {
+          const result = allMonthlyResults.rows.find(
+            (r) => r.adm_no === s.adm_no && subjectCodesToMatch.includes(r.subject_code) && r.month === month
+          );
+          if (result) {
+            // Skip NULL/not registered scores
+            if (result.score === null || result.score === undefined || result.score === '' || result.score === '-') {
+              return;
+            }
+            const weight = marksConfig.month_weights[month] || 0;
+            total += parseFloat(result.score) * (weight / 100);
+            validMonths++;
+          }
+        });
+        // Use average per valid month for fair ranking
+        subjectTotals[s.adm_no] = validMonths > 0 ? total / validMonths : 0;
+      });
+
+      const sorted = Object.entries(subjectTotals)
+        .sort((a, b) => b[1] - a[1])
+        .map((entry, index) => ({ adm_no: entry[0], rank: index + 1 }));
+
+      subjectRankings[subject.subject_code] = {};
+      sorted.forEach((item) => {
+        subjectRankings[subject.subject_code][item.adm_no] = item.rank;
+      });
+    });
+
+    const overallTotals = {};
+    allStudentsResult.rows.forEach((s) => {
+      let grandTotal = 0;
+      let validSubjects = 0;
+      subjectsResult.rows.forEach((subject) => {
+        const subjectCodesToMatch = [subject.subject_code, subject.subject_abbreviation].filter(Boolean);
+        let subjectTotal = 0;
+        let validMonths = 0;
+        months.forEach((month) => {
+          const result = allMonthlyResults.rows.find(
+            (r) => r.adm_no === s.adm_no && subjectCodesToMatch.includes(r.subject_code) && r.month === month
+          );
+          if (result) {
+            // Skip NULL/not registered scores
+            if (result.score === null || result.score === undefined || result.score === '' || result.score === '-') {
+              return;
+            }
+            const weight = marksConfig.month_weights[month] || 0;
+            subjectTotal += parseFloat(result.score) * (weight / 100);
+            validMonths++;
+          }
+        });
+        // Only count subjects with valid scores
+        if (validMonths > 0) {
+          grandTotal += subjectTotal / validMonths;
+          validSubjects++;
+        }
+      });
+      // Use average per subject for fair ranking
+      overallTotals[s.adm_no] = validSubjects > 0 ? grandTotal / validSubjects : 0;
+    });
+
+    const sortedOverall = Object.entries(overallTotals)
+      .sort((a, b) => b[1] - a[1])
+      .map((entry, index) => ({ adm_no: entry[0], rank: index + 1 }));
+
+    const overallRank = sortedOverall.find((item) => item.adm_no === admNo)?.rank ?? null;
+    const totalStudents = allStudentsResult.rows.length;
+
+    const subjectsOut = [];
+    let totalMarks = 0;
+
+    subjectsResult.rows.forEach((subject) => {
+      const subjectCodesToMatch = [subject.subject_code, subject.subject_abbreviation].filter(Boolean);
+      const monthScores = {};
+      const monthContributions = {};
+
+      months.forEach((month) => {
+        const result = monthlyResult.rows.find(
+          (r) => subjectCodesToMatch.includes(r.subject_code) && r.month === month
+        );
+        // Skip NULL/not registered scores
+        if (result && (result.score === null || result.score === undefined || result.score === '' || result.score === '-')) {
+          monthScores[month] = null;
+          monthContributions[month] = 0;
+        } else {
+          const raw = result ? parseFloat(result.score) : null;
+          monthScores[month] = raw;
+          const w = (marksConfig.month_weights[month] || 0) / 100;
+          monthContributions[month] = raw !== null ? raw * w : 0;
+        }
+      });
+
+      const weightedTotal = calculateWeightedTotal(monthScores, months, marksConfig.month_weights || {});
+      const grade = calculateGrade(weightedTotal, form);
+      const rank = subjectRankings[subject.subject_code]?.[admNo] ?? null;
+
+      subjectsOut.push({
+        subject_code: subject.subject_code,
+        subject_name: subject.subject_name || subject.subject_code,
+        month_scores: monthScores,
+        month_weights: months.reduce((acc, m) => {
+          acc[m] = marksConfig.month_weights[m] ?? 0;
+          return acc;
+        }, {}),
+        month_contributions: monthContributions,
+        weighted_total: Math.round(weightedTotal * 100) / 100,
+        grade,
+        rank
+      });
+
+      totalMarks += weightedTotal;
+    });
+
+    const subjectsData = {};
+    subjectsOut.forEach((s) => {
+      subjectsData[s.subject_code] = { weighted_total: s.weighted_total };
+    });
+    const average = calculateOverallAverage(subjectsData);
+    const overallGrade = calculateGrade(average, form);
+
+    res.json({
+      term: termNormalized,
+      year: yearNum,
+      months,
+      marks_config: marksConfig,
+      subjects: subjectsOut,
+      summary: {
+        average: Math.round(average * 100) / 100,
+        overall_grade: overallGrade,
+        position: overallRank,
+        total_students: totalStudents,
+        subject_count: subjectsOut.length
+      }
+    });
+  } catch (error) {
+    console.error('Get student report-scores error:', error);
     return sendError(res, error, 500);
   }
 });
@@ -869,7 +1441,7 @@ router.get('/student/:admNo/results/:month', async (req, res) => {
        AND comment_type = ANY($6::text[])`,
       [studentIndex, student.level, student.stream, student.year, determinedTerm, commentTypes]
     );
-    
+
     const comments = {};
     commentsResult.rows.forEach(comment => {
       comments[comment.comment_type] = comment.comment_text || '';

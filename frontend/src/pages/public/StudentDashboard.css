@@ -19,7 +19,10 @@
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: clamp(1rem, 4vw, 2rem);
+  padding-top: clamp(1rem, 4vw, 2rem);
+  padding-bottom: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-bottom, 0px));
+  padding-left: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-right, 0px));
   box-sizing: border-box;
 }
 
@@ -142,6 +145,112 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+.report-year-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.report-year-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.report-year-select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  /* 16px+ prevents iOS zoom-on-focus */
+  font-size: max(16px, 0.9375rem);
+  color: #111827;
+  cursor: pointer;
+  min-width: 120px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.report-term-toggle {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.report-term-btn {
+  padding: 0.65rem 1.35rem;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.report-term-btn:hover {
+  border-color: #c7d2fe;
+  color: #667eea;
+}
+
+.report-term-btn.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.section-header-spaced {
+  margin-top: 2.75rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.report-summary-card {
+  margin-bottom: 1.25rem;
+}
+
+.report-scores-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 0.5rem;
+}
+
+.report-scores-table th {
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
+
+.report-scores-table .th-weight {
+  display: block;
+  font-weight: 500;
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+.report-scores-table .subject-code {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.empty-state-compact {
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
 }
 
 .section-header {
@@ -440,12 +549,32 @@
 .results-table-container {
   overflow-x: auto;
   margin-bottom: 1.5rem;
-  border-radius: 12px;
+  border-radius: 0;
   background: white;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  outline: none;
+}
+
+.results-table-container:focus-visible {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #667eea;
+}
+
+/* Wider term report: keep columns readable on small screens (horizontal scroll) */
+.report-scores-table {
+  min-width: 680px;
+}
+
+.table-scroll-hint {
+  display: none;
+}
+
+/* Term summary has 3 tiles (not 4) — keep a clean row on tablet/desktop */
+.report-summary-card.summary-card {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .position-card {
@@ -772,7 +901,10 @@
   }
 
   .dashboard-container {
-    padding: clamp(1rem, 4vw, 1.5rem);
+    padding-top: clamp(1rem, 4vw, 1.5rem);
+    padding-bottom: max(clamp(1rem, 4vw, 1.5rem), env(safe-area-inset-bottom, 0px));
+    padding-left: max(clamp(1rem, 4vw, 1.5rem), env(safe-area-inset-left, 0px));
+    padding-right: max(clamp(1rem, 4vw, 1.5rem), env(safe-area-inset-right, 0px));
     max-width: 100%;
     width: 100%;
   }
@@ -825,7 +957,7 @@
 
   .months-selection,
   .results-view {
-    padding: 1.25rem;
+    padding: 1rem max(1rem, env(safe-area-inset-left, 0px)) 1.25rem max(1rem, env(safe-area-inset-right, 0px));
     border-radius: 12px;
     margin-bottom: 1.5rem;
   }
@@ -942,7 +1074,7 @@
   .results-table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border-radius: 10px;
+    border-radius: 0;
   }
 
   .results-table {
@@ -1001,7 +1133,10 @@
   }
 
   .dashboard-container {
-    padding: clamp(1.5rem, 4vw, 2rem);
+    padding-top: clamp(1.5rem, 4vw, 2rem);
+    padding-bottom: max(clamp(1.5rem, 4vw, 2rem), env(safe-area-inset-bottom, 0px));
+    padding-left: max(clamp(1.5rem, 4vw, 2rem), env(safe-area-inset-left, 0px));
+    padding-right: max(clamp(1.5rem, 4vw, 2rem), env(safe-area-inset-right, 0px));
   }
 
   .dashboard-header {
@@ -1026,13 +1161,20 @@
   }
 
   .dashboard-container {
-    padding: clamp(2rem, 4vw, 2.5rem);
+    padding-top: clamp(2rem, 4vw, 2.5rem);
+    padding-bottom: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-bottom, 0px));
+    padding-left: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-left, 0px));
+    padding-right: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-right, 0px));
     max-width: 100%;
     width: 100%;
   }
 
   .summary-card {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .summary-card.report-summary-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .months-grid {
@@ -1051,7 +1193,10 @@
   }
 
   .dashboard-container {
-    padding: clamp(2rem, 4vw, 2.5rem);
+    padding-top: clamp(2rem, 4vw, 2.5rem);
+    padding-bottom: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-bottom, 0px));
+    padding-left: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-left, 0px));
+    padding-right: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-right, 0px));
   }
 
   .dashboard-header {
@@ -1111,11 +1256,118 @@
   }
 }
 
+/* Narrow screens / phones — term controls, table readability, horizontal scroll affordance */
+@media (max-width: 767px) {
+  .report-year-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .report-year-select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .report-term-toggle {
+    width: 100%;
+  }
+
+  .report-term-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-height: 48px;
+    padding: 0.75rem 0.5rem;
+    font-size: max(16px, 0.9375rem);
+  }
+
+  .table-scroll-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: max(15px, 0.8125rem);
+    line-height: 1.35;
+    color: #475569;
+    margin: 0 0 0.625rem 0;
+    padding: 0.625rem 0.75rem;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+  }
+
+  .table-scroll-hint i {
+    flex-shrink: 0;
+    opacity: 0.9;
+    font-size: 0.875rem;
+  }
+
+  .results-table-container .results-table thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: #f9fafb;
+    box-shadow: 4px 0 10px -4px rgba(0, 0, 0, 0.12);
+    border-right: 1px solid #e5e7eb;
+    min-width: 6.5rem;
+    max-width: 38vw;
+    white-space: normal;
+    vertical-align: bottom;
+  }
+
+  .results-table-container .results-table tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    box-shadow: 4px 0 10px -4px rgba(0, 0, 0, 0.1);
+    border-right: 1px solid #e5e7eb;
+    min-width: 6.5rem;
+    max-width: 38vw;
+    white-space: normal;
+    word-break: break-word;
+    vertical-align: top;
+  }
+
+  .results-table-container .results-table tbody tr:hover td:first-child {
+    background: #f9fafb;
+  }
+
+  .report-scores-table th,
+  .report-scores-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: max(15px, 0.8125rem);
+  }
+
+  .report-scores-table .subject-name {
+    display: block;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .report-scores-table .th-weight {
+    font-size: max(11px, 0.65rem);
+  }
+
+  .results-table th,
+  .results-table td {
+    font-size: max(15px, 0.8125rem);
+  }
+}
+
+@media (min-width: 480px) and (max-width: 639px) {
+  .summary-card.report-summary-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 /* Touch Device Optimizations */
 @media (hover: none) and (pointer: coarse) {
   .logout-button,
   .back-button,
   .month-card {
+    min-height: 48px;
+  }
+
+  .report-term-btn {
     min-height: 48px;
   }
 
@@ -1127,6 +1379,10 @@
 
   .tabia-item:active,
   .recommendation-item:active {
+    transform: scale(0.98);
+  }
+
+  .report-term-btn:active {
     transform: scale(0.98);
   }
 }

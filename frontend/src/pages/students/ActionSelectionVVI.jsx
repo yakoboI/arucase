@@ -5,17 +5,17 @@
  */
 import { Link, useParams } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { requiresSpecialAcademicYearLogic, getAcademicYearRange, getCurrentTerm, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './ActionSelection.css';
 
 const ActionSelectionVVI = ({ formLevel }) => {
-  const { stream, year } = useParams();
+  const { stream, year, term } = useParams();
   
-  // Get academic year information for Form V/VI
-  // If year is an end year (e.g., 2026), get the academic year range for the start year (e.g., 2025)
-  const apiYear = requiresSpecialAcademicYearLogic(formLevel) ? getApiYearForFormVVI(parseInt(year), formLevel) : parseInt(year);
-  const academicYearInfo = requiresSpecialAcademicYearLogic(formLevel) ? getAcademicYearRange(apiYear) : null;
-  const currentTermInfo = requiresSpecialAcademicYearLogic(formLevel) ? getCurrentTerm() : null;
+  // Use calendar year directly for Form V/VI (no academic year conversion)
+  // Form V First Term (Jul-Dec 2025) -> year 2025
+  // Form V Second Term (Jan-Jun 2026) -> year 2026
+  // Form VI First Term (Jul-Dec 2026) -> year 2026
+  // Form VI Second Term (Jan-Jun 2027) -> year 2027
+  const apiYear = parseInt(year);
   
   const formMap = {
     'FORM V': 'form-v',
@@ -29,7 +29,7 @@ const ActionSelectionVVI = ({ formLevel }) => {
   };
   
   const getNewStudentPath = () => {
-    return `/admin/students/registration/${formPath}/stream/${stream}/year/${year}`;
+    return `/admin/students/registration/${formPath}/stream/${stream}/year/${year}/term/${term}`;
   };
   
   const getRegisteredStudentsPath = () => {
@@ -45,15 +45,6 @@ const ActionSelectionVVI = ({ formLevel }) => {
             <i className="fas fa-tasks"></i>
             <span>
               {formLevel} {stream} {year} - Select Action
-              {academicYearInfo && (
-                <span className="academic-year-info">
-                  <br />
-                  <small>Academic Year: ({academicYearInfo.displayRange})</small>
-                  {currentTermInfo && (
-                    <><br /><small>Current Term: {currentTermInfo.term}</small></>
-                  )}
-                </span>
-              )}
             </span>
           </div>
           <div className="action-selection-card-body">

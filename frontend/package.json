@@ -11,6 +11,7 @@
     "chart.js": "^4.5.1",
     "chartjs-plugin-annotation": "^3.1.0",
     "date-fns": "^2.30.0",
+    "howler": "^2.2.4",
     "html2pdf.js": "^0.14.0",
     "prop-types": "^15.8.1",
     "puppeteer": "^24.34.0",

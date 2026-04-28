@@ -133,6 +133,8 @@ const AdminSidebar = () => {
         { path: '/admin/school-branding', label: 'School Branding', icon: 'fa-palette' },
         { path: '/admin/announcements', label: 'Announcements', icon: 'fa-bullhorn' },
         { path: '/admin/gallery', label: 'Gallery', icon: 'fa-images' },
+        { path: '/admin/admission-applications', label: 'Admissions Apps', icon: 'fa-file-signature' },
+        { path: '/admin/staff-profiles', label: 'Staff Profiles', icon: 'fa-id-badge' },
         { path: '/admin/pass-ids', label: 'Pass ID', icon: 'fa-key' },
         { path: '/admin/faqs', label: 'FAQs', icon: 'fa-question-circle' },
         { path: '/admin/department-contacts', label: 'Department Contacts', icon: 'fa-address-book' }

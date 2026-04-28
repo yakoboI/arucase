@@ -38,7 +38,7 @@ const FormVVIYearSelection = ({ formLevel }) => {
       'FORM V': 'form-v',
       'FORM VI': 'form-vi',
     };
-    return `/admin/students/registration/${formMap[formLevel]}/stream/${stream}/year/${year}/actions`;
+    return `/admin/students/registration/${formMap[formLevel]}/stream/${stream}/year/${year}/terms`;
   };
 
   return (
@@ -56,7 +56,7 @@ const FormVVIYearSelection = ({ formLevel }) => {
             <div className="year-selection-grid">
               {years.map((yearObj) => (
                 <Link
-                  key={yearObj.year}
+                  key={`${yearObj.year}-${yearObj.isEndYear ? 'end' : 'start'}`}
                   to={getYearDetailPath(yearObj.year)}
                   className="year-selection-card-item"
                   aria-label={`${yearObj.displayRange} Students`}

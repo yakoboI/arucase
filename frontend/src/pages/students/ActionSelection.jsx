@@ -2,15 +2,18 @@
  * Action Selection Page for Form I-IV
  * Shows options: New Student and Registered Students
  */
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import './ActionSelection.css';
 
 const ActionSelection = ({ formLevel }) => {
   const { year, stream } = useParams();
+  const navigate = useNavigate();
   
   // For Form I-IV, stream is always 'NA' in the URL but we use the actual stream from params
   const actualStream = stream || 'NA';
+  const normalizedStream = String(actualStream).toUpperCase();
   
   const formMap = {
     'FORM I': 'form-i',
@@ -20,14 +23,25 @@ const ActionSelection = ({ formLevel }) => {
   };
   
   const formPath = formMap[formLevel];
+  const backPath = `/admin/students/registration/${formPath}/year/${year}/streams`;
+
+  useEffect(() => {
+    // If someone manually opens /stream/ALL/actions for Form II-IV, redirect back.
+    const isFormIIToIV = ['FORM II', 'FORM III', 'FORM IV'].includes(formLevel);
+    const allowedStreams = ['A', 'B'];
+    if (isFormIIToIV && (normalizedStream === 'ALL' || !allowedStreams.includes(normalizedStream))) {
+      navigate(backPath, { replace: true });
+    }
+  }, [formLevel, normalizedStream, year, backPath, navigate]);
   
   const getBackPath = () => {
-    return `/admin/students/registration/${formPath}/year/${year}/streams`;
+    return backPath;
   };
   
   const getNewStudentPath = () => {
     return `/admin/students/registration/${formPath}/year/${year}/stream/${actualStream}`;
   };
+
   
   const getRegisteredStudentsPath = () => {
     // For Form I-IV, we can use the StudentList component with filters
@@ -40,7 +54,9 @@ const ActionSelection = ({ formLevel }) => {
         <div className="action-selection-card">
           <div className="action-selection-card-header">
             <i className="fas fa-tasks"></i>
-            <span>{formLevel} {actualStream} {year} - Select Action</span>
+            <span>
+              {formLevel} {actualStream} {year} - Select Action
+            </span>
           </div>
           <div className="action-selection-card-body">
             <div className="action-selection-grid">
@@ -66,7 +82,9 @@ const ActionSelection = ({ formLevel }) => {
                 <div className="action-selection-icon">
                   <i className="fas fa-list"></i>
                 </div>
-                <div className="action-selection-title">Registered Students</div>
+                <div className="action-selection-title">
+                  Registered Students
+                </div>
                 <div className="action-selection-description">
                   View and manage registered students
                 </div>

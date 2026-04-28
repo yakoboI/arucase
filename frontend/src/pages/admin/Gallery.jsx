@@ -3,7 +3,7 @@
  */
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './PublicWebsite.css';
@@ -11,6 +11,7 @@ import './PublicWebsite.css';
 const Gallery = () => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
+  const hasToken = Boolean(localStorage.getItem('token'));
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadData, setUploadData] = useState({
     category: 'general',
@@ -23,9 +24,17 @@ const Gallery = () => {
   const { data: photos = [], isLoading } = useQuery({
     queryKey: ['admin-gallery'],
     queryFn: async () => {
-      const res = await adminAPI.getGalleryPhotos();
-      return res.data.photos || [];
+      try {
+        const res = await adminAPI.getGalleryPhotos();
+        return res.data.photos || [];
+      } catch (error) {
+        // During auth/session transitions, avoid noisy unhandled object rejections.
+        if (error?.response?.status === 401) return [];
+        throw error;
+      }
     },
+    enabled: hasToken,
+    retry: false,
   });
 
   // Upload photos mutation
@@ -134,10 +143,10 @@ const Gallery = () => {
                 <button 
                   onClick={handleDeleteAll} 
                   className="excel-btn danger small"
-                  disabled={deleteAllMutation.isLoading}
+                  disabled={deleteAllMutation.isPending}
                   title="Delete all photos"
                 >
-                  <i className="fas fa-trash-alt"></i> {deleteAllMutation.isLoading ? 'Deleting...' : 'Delete All'}
+                  <i className="fas fa-trash-alt"></i> {deleteAllMutation.isPending ? 'Deleting...' : 'Delete All'}
                 </button>
               )}
               <button onClick={() => setShowUploadModal(true)} className="excel-btn primary small">
@@ -244,8 +253,8 @@ const Gallery = () => {
                           />
                         </div>
                         <div className="form-actions">
-                          <button type="submit" className="excel-btn primary" disabled={uploadMutation.isLoading}>
-                            <i className="fas fa-upload"></i> {uploadMutation.isLoading ? 'Uploading...' : 'Upload Photos'}
+                          <button type="submit" className="excel-btn primary" disabled={uploadMutation.isPending}>
+                            <i className="fas fa-upload"></i> {uploadMutation.isPending ? 'Uploading...' : 'Upload Photos'}
                           </button>
                           <button type="button" onClick={() => setShowUploadModal(false)} className="excel-btn secondary">
                             Cancel

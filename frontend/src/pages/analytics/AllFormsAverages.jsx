@@ -204,7 +204,7 @@ const AllFormsAverages = () => {
                 <i className="fas fa-exclamation-triangle error-icon"></i>
                 <h3>Error Loading Data</h3>
                 <p>{error?.message || 'An error occurred while loading forms averages'}</p>
-                <button onClick={() => refetch()} className="excel-btn">
+                <button type="button" onClick={() => refetch()} className="excel-btn">
                   <i className="fas fa-redo"></i> Retry
                 </button>
               </div>

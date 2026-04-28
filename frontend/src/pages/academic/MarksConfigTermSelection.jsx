@@ -14,11 +14,11 @@ const MarksConfigTermSelection = ({ formLevel }) => {
     const normalizedLevel = formLevel
       ? formLevel.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
       : '';
-    
+
     if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
       return `/admin/marks-config/${formLevel}/stream/${stream}/years`;
     } else {
-      return `/admin/marks-config/${formLevel}/years`;
+      return `/admin/marks-config/${formLevel}/year/${year}/streams`;
     }
   };
 

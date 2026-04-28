@@ -43,7 +43,7 @@ const SubjectsYearSelection = ({ formLevel }) => {
             <div className="subjects-year-selection-grid">
               {years.map((year) => (
                 <Link
-                  key={year}
+                  key={`subjects-${year}`}
                   to={getYearDetailPath(year)}
                   className="subjects-year-selection-card-item"
                   aria-label={`${year} Subjects`}

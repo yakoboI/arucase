@@ -12,8 +12,14 @@ const VisitorTracker = () => {
     // Only track once per session
     if (hasTracked.current) return;
     
-    // Check if visitor was already tracked in this session
-    const sessionKey = 'visitor_tracked';
+    // Track once per day (Africa/Dar_es_Salaam timezone) within current browser session/tab
+    const todayKey = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Dar_es_Salaam',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    const sessionKey = `visitor_tracked_${todayKey}`;
     if (sessionStorage.getItem(sessionKey)) {
       hasTracked.current = true;
       return;
@@ -26,6 +32,8 @@ const VisitorTracker = () => {
         // Mark as tracked in session storage
         sessionStorage.setItem(sessionKey, 'true');
         hasTracked.current = true;
+        // Notify listeners (e.g., footer stats) to refresh immediately.
+        window.dispatchEvent(new CustomEvent('visitor:tracked'));
       } catch (error) {
         // Silently fail - don't interrupt user experience
         console.error('Failed to track visitor:', error);

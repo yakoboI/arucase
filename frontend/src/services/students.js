@@ -32,11 +32,7 @@ export const studentsAPI = {
   },
   
   // Upload student photo
-  uploadPhoto: (admNo, formData) => {
-    return api.post(`/students/${admNo}/photo`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  },
+  uploadPhoto: (admNo, formData) => api.post(`/students/${admNo}/photo`, formData),
   
   // Get student scores
   getScores: (admNo, params) => {
@@ -66,10 +62,7 @@ export const studentsAPI = {
   },
 
   // Score entry CSV: bulk upload (FormData with file + level, stream, year, month, subject_code)
-  uploadScoresCsv: (formData) =>
-    api.post('/students/scores/bulk-upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  uploadScoresCsv: (formData) => api.post('/students/scores/bulk-upload', formData),
   
   // Get subjects
   getSubjects: (params) => {
@@ -109,6 +102,9 @@ export const studentsAPI = {
 
   // Save or update student parish
   saveParish: (data) => api.post('/students/parishes', data),
+
+  // Bulk save or update student parishes (for CSV upload)
+  saveParishesBulk: (data) => api.post('/students/parishes/bulk', data),
 
   // Delete student parish
   deleteParish: (params) => {
@@ -193,6 +189,9 @@ export const studentsAPI = {
   // Save individual debt
   saveDebt: (data) => api.post('/students/debt', data),
 
+  // Bulk save or update individual debt records (for CSV upload)
+  saveDebtsBulk: (data) => api.post('/students/debt/bulk', data),
+
   // Delete individual debt
   deleteDebt: (params) => {
     const queryString = new URLSearchParams(params).toString();
@@ -226,14 +225,10 @@ export const studentsAPI = {
   },
 
   // Bulk upload students from CSV
-  bulkUpload: (formData) => {
-    return api.post('/students/bulk-upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
+  bulkUpload: (formData) => api.post('/students/bulk-upload', formData),
 
   // Download Photo Entry Form PDF
-  downloadPhotoEntryFormPDF: (level, stream, year, month = null) => {
+  downloadPhotoEntryFormPDF: (level, stream, year, month = null, term = null) => {
     const params = new URLSearchParams();
     params.append('level', level);
     params.append('stream', stream);
@@ -241,9 +236,18 @@ export const studentsAPI = {
     if (month) {
       params.append('month', month);
     }
+    if (term) {
+      params.append('term', term);
+    }
     return api.get(`/students/photo-entry-form/pdf?${params.toString()}`, {
       responseType: 'blob',
     });
+  },
+
+  // Clear scores for specific students
+  clearScores: (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    return api.delete(`/students/scores/clear?${queryString}`);
   },
 };
 

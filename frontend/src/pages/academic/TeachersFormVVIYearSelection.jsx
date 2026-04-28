@@ -31,7 +31,7 @@ const TeachersFormVVIYearSelection = ({ formLevel }) => {
       'FORM V': 'form-v',
       'FORM VI': 'form-vi',
     };
-    return `/admin/teachers/${formMap[formLevel]}/stream/${stream}/year/${year}`;
+    return `/admin/teachers/${formMap[formLevel]}/stream/${stream}/year/${year}/terms`;
   };
 
   return (
@@ -46,7 +46,7 @@ const TeachersFormVVIYearSelection = ({ formLevel }) => {
             <div className="subjects-year-selection-grid">
               {years.map((year) => (
                 <Link
-                  key={year}
+                  key={`${year}-teachers`}
                   to={getTeachersManagementPath(year)}
                   className="subjects-year-selection-card-item"
                   aria-label={`${year} Teachers`}

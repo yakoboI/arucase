@@ -26,76 +26,76 @@ const Fees = () => {
   const fallbackContent = (
     <div className="fees-page">
       <Link to="/" className="home-button">
-        <i className="fas fa-home"></i> Back to Home
+        <i className="fas fa-home"></i> Rudi Nyumbani
       </Link>
 
       <div className="content-card">
-        <h1>Fees Structure</h1>
+        <h1>Muundo wa Ada</h1>
         
         <p>
-          <strong>Answer:</strong> Arusha Catholic Seminary fees include tuition, accommodation, meals, 
-          learning materials, medical care, spiritual formation programs, and co-curricular activities. 
-          Payment options include full payment, termly payment, or monthly installments.
+          <strong>Jibu:</strong> Ada za Seminari ya Kikatoliki Arusha zinajumuisha masomo, malazi, chakula,
+          vifaa vya kujifunzia, huduma za afya, programu za malezi ya kiroho, na shughuli za ziada.
+          Malipo yanaweza kufanywa kwa mara moja, kwa muhula, au kwa awamu za kila mwezi.
         </p>
         
-        <h2>Annual Fees</h2>
+        <h2>Ada ya Mwaka</h2>
         <p>
-          The seminary strives to maintain affordable fees while ensuring quality education and formation. 
-          Our fee structure covers:
+          Seminari inajitahidi kudumisha ada zinazomudu kwa wazazi huku ikihakikisha ubora wa elimu na malezi.
+          Muundo wa ada unahusisha:
         </p>
         <ul>
-          <li>Tuition and instruction</li>
-          <li>Accommodation (boarding)</li>
-          <li>Meals (three meals daily)</li>
-          <li>Learning materials</li>
-          <li>Medical care</li>
-          <li>Spiritual formation programs</li>
-          <li>Co-curricular activities</li>
+          <li>Masomo na ufundishaji</li>
+          <li>Malazi (bweni)</li>
+          <li>Chakula (milo mitatu kwa siku)</li>
+          <li>Vifaa vya kujifunzia</li>
+          <li>Huduma za afya</li>
+          <li>Programu za malezi ya kiroho</li>
+          <li>Shughuli za ziada</li>
         </ul>
 
-        <h3>Payment Schedule</h3>
-        <p>Fees can be paid according to the following schedule:</p>
+        <h3>Ratiba ya Malipo</h3>
+        <p>Ada zinaweza kulipwa kwa utaratibu ufuatao:</p>
         <ul>
-          <li><strong>Full Payment:</strong> At the beginning of the academic year (with small discount)</li>
-          <li><strong>Termly Payment:</strong> At the start of each term (3 installments)</li>
-          <li><strong>Monthly Payment:</strong> Monthly installments (arranged with bursar)</li>
+          <li><strong>Malipo yote kwa pamoja:</strong> Mwanzo wa mwaka wa masomo (kwa punguzo dogo)</li>
+          <li><strong>Malipo kwa muhula:</strong> Mwanzo wa kila muhula (awamu 3)</li>
+          <li><strong>Malipo ya mwezi:</strong> Kwa awamu za mwezi (kwa makubaliano na mhasibu)</li>
         </ul>
 
-        <h3>Payment Methods</h3>
+        <h3>Njia za Malipo</h3>
         <ul>
-          <li>Bank transfer to seminary account</li>
-          <li>Mobile money (M-Pesa, Tigo Pesa, Airtel Money)</li>
-          <li>Cash payment at bursar's office</li>
-          <li>Cheque (payable to Arusha Catholic Seminary)</li>
+          <li>Uhamisho wa benki kwenda akaunti ya seminari</li>
+          <li>Malipo ya simu (M-Pesa, Tigo Pesa, Airtel Money)</li>
+          <li>Fedha taslimu ofisini kwa mhasibu</li>
+          <li>Hundi (kwa jina la Arusha Catholic Seminary)</li>
         </ul>
 
-        <h3>Scholarships and Financial Aid</h3>
-        <p>The seminary offers scholarships and financial assistance to deserving students who demonstrate:</p>
+        <h3>Ufadhili wa Masomo na Msaada wa Kifedha</h3>
+        <p>Seminari hutoa ufadhili na msaada wa kifedha kwa wanafunzi wanaostahili wanaoonyesha:</p>
         <ul>
-          <li>Academic excellence</li>
-          <li>Financial need</li>
-          <li>Good conduct and discipline</li>
-          <li>Strong commitment to their vocation</li>
+          <li>Ubora wa kitaaluma</li>
+          <li>Mahitaji ya kifedha</li>
+          <li>Tabia njema na nidhamu</li>
+          <li>Kujitoa kwa dhati katika wito wao</li>
         </ul>
 
-        <h3>Additional Costs</h3>
-        <p>Students may incur additional costs for:</p>
+        <h3>Gharama za Ziada</h3>
+        <p>Wanafunzi wanaweza kuwa na gharama za ziada kwa:</p>
         <ul>
-          <li>School uniform and personal items</li>
-          <li>Examination fees (government exams)</li>
-          <li>Optional field trips and excursions</li>
-          <li>Personal medical expenses</li>
+          <li>Sare za shule na mahitaji binafsi</li>
+          <li>Ada za mitihani (mitihani ya serikali)</li>
+          <li>Ziara za masomo na matembezi ya hiari</li>
+          <li>Gharama binafsi za matibabu</li>
         </ul>
 
-        <h3>Fee Inquiries</h3>
+        <h3>Maulizo ya Ada</h3>
         <p>
-          For detailed fee information and payment arrangements, please contact:<br />
-          <strong>Email:</strong>{' '}
+          Kwa maelezo ya kina kuhusu ada na utaratibu wa malipo, tafadhali wasiliana nasi:<br />
+          <strong>Barua pepe:</strong>{' '}
           <a href={`mailto:${settings?.contact_email || 'info@arushacatholicseminary.co.tz'}`} className="contact-link">
             {settings?.contact_email || 'info@arushacatholicseminary.co.tz'}
           </a>
           <br />
-          <strong>Phone:</strong>{' '}
+          <strong>Simu:</strong>{' '}
           <a href={`tel:${settings?.contact_phone || '+255 123 456 789'}`} className="contact-link">
             {settings?.contact_phone || '+255 123 456 789'}
           </a>
@@ -120,7 +120,7 @@ const Fees = () => {
       {hasCustomContent ? (
         <div className="fees-page">
           <Link to="/" className="home-button">
-            <i className="fas fa-home"></i> Back to Home
+            <i className="fas fa-home"></i> Rudi Nyumbani
           </Link>
           <div 
             className="content-card"

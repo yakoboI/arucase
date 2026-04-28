@@ -9,26 +9,213 @@ const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { query, withTransaction } = require('../config/database');
+const { cacheRoutes, clearCachePattern } = require('../middleware/cache');
 const { saveUserActivity } = require('../utils/activityLogger');
 const bcrypt = require('bcryptjs');
 const { extractText } = require('../utils/documentParser');
 const { getClient, callClaude } = require('../utils/anthropic');
 const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
 const { sendError } = require('../utils/safeError');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 
 // All admin routes require authentication
 router.use(requireAuth);
 
-// Configure multer for file uploads
+async function ensureAdmissionsTables() {
+  await query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+  await query(`
+    CREATE TABLE IF NOT EXISTS admission_applicants (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      full_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      phone VARCHAR(50) UNIQUE NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      status VARCHAR(50) DEFAULT 'active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await query(`
+    CREATE TABLE IF NOT EXISTS admission_applications (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      applicant_id UUID NOT NULL REFERENCES admission_applicants(id) ON DELETE CASCADE,
+      education_level VARCHAR(50) NOT NULL,
+      is_transfer BOOLEAN DEFAULT FALSE,
+      previous_school VARCHAR(255),
+      desired_entry VARCHAR(100) NOT NULL,
+      region VARCHAR(100),
+      district VARCHAR(100),
+      message TEXT,
+      documents JSONB,
+      status VARCHAR(50) DEFAULT 'pending',
+      admin_feedback TEXT,
+      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Migrate older schema (single application per applicant) -> allow multiple
+  await query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'admission_applications'::regclass
+          AND contype = 'u'
+          AND conname = 'admission_applications_applicant_id_key'
+      ) THEN
+        ALTER TABLE admission_applications DROP CONSTRAINT admission_applications_applicant_id_key;
+      END IF;
+    END $$;
+  `);
+
+  await query(`ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS application_no INTEGER DEFAULT 1`);
+  await query(`ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS is_reapplication BOOLEAN DEFAULT FALSE`);
+  await query(`ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS previous_application_id UUID`);
+
+  await query(`CREATE INDEX IF NOT EXISTS idx_admission_applications_applicant ON admission_applications(applicant_id, submitted_at DESC)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_admission_applications_status ON admission_applications(status)`);
+}
+
+let staffProfilesTableReadyPromise = null;
+async function ensureStaffProfilesTable() {
+  if (staffProfilesTableReadyPromise) {
+    return staffProfilesTableReadyPromise;
+  }
+
+  staffProfilesTableReadyPromise = (async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS staff_profiles (
+        id VARCHAR(100) PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        role_title VARCHAR(255) NOT NULL,
+        is_teaching BOOLEAN DEFAULT TRUE,
+        professional_subjects TEXT,
+        teaching_since_year INTEGER,
+        subjects_teaching TEXT,
+        class_teacher_for VARCHAR(100),
+        other_duties TEXT,
+        contact_phone VARCHAR(50),
+        contact_email VARCHAR(255),
+        photo_path VARCHAR(255),
+        profile_summary TEXT,
+        display_order INTEGER DEFAULT 0,
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Backfill missing columns if table existed before this feature landed.
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS full_name VARCHAR(255)`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS role_title VARCHAR(255)`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS is_teaching BOOLEAN DEFAULT TRUE`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS professional_subjects TEXT`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS teaching_since_year INTEGER`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS subjects_teaching TEXT`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS class_teacher_for VARCHAR(100)`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS other_duties TEXT`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(50)`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS contact_email VARCHAR(255)`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS photo_path VARCHAR(255)`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS profile_summary TEXT`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+
+    await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_active_order ON staff_profiles(active, display_order, created_at DESC)');
+    await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_teaching ON staff_profiles(is_teaching, active)');
+  })().catch((error) => {
+    // Allow retry on next request when initialization fails.
+    staffProfilesTableReadyPromise = null;
+    throw error;
+  });
+
+  return staffProfilesTableReadyPromise;
+}
+
+// ========== ADMISSIONS APPLICATIONS (ADMIN REVIEW) ==========
+
+router.get('/admission-applications', requireRole('admin', 'superadmin'), async (req, res) => {
+  try {
+    await ensureAdmissionsTables();
+    const { status } = req.query;
+    const params = [];
+    let where = '';
+    if (status && ['pending', 'approved', 'rejected'].includes((status + '').toLowerCase())) {
+      params.push((status + '').toLowerCase());
+      where = `WHERE a.status = $${params.length}`;
+    }
+    const r = await query(
+      `SELECT 
+        a.*,
+        ap.full_name,
+        ap.email,
+        ap.phone
+       FROM admission_applications a
+       JOIN admission_applicants ap ON ap.id = a.applicant_id
+       ${where}
+       ORDER BY a.submitted_at DESC`,
+      params
+    );
+    res.json({ applications: r.rows || [] });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+router.post('/admission-applications/:id/status', requireRole('admin', 'superadmin'), async (req, res) => {
+  try {
+    await ensureAdmissionsTables();
+    const { id } = req.params;
+    const { status, feedback = null } = req.body || {};
+    const st = (status || '').toString().trim().toLowerCase();
+    if (!['pending', 'approved', 'rejected'].includes(st)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const upd = await query(
+      `UPDATE admission_applications
+       SET status = $1, admin_feedback = $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [st, feedback, id]
+    );
+    if (upd.rows.length === 0) return res.status(404).json({ message: 'Application not found' });
+    res.json({ message: 'Status updated', application: upd.rows[0] });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Configure Cloudinary storage for staff profile photos
+const staffPhotoStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'staff-photos',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [
+      { width: 400, height: 400, crop: 'fit', gravity: 'face' },
+      { quality: 'auto:good', fetch_format: 'auto' }
+    ],
+    public_id: (req, file) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      return `staff-${uniqueSuffix}`;
+    }
+  }
+});
+
+// Configure multer for file uploads (for non-photo uploads)
 // Use sync fs operations for multer destination to avoid async issues
 const fsSync = require('fs');
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: async (req, file, cb) => {
     try {
       const uploadPath = path.join(__dirname, '../static/uploads');
-      // Create directory synchronously - multer expects sync callback
-      fsSync.mkdirSync(uploadPath, { recursive: true });
+      // Create directory asynchronously for Multer 2.x compatibility
+      await fsSync.promises.mkdir(uploadPath, { recursive: true });
       cb(null, uploadPath);
     } catch (err) {
       console.error('Error creating upload directory:', err);
@@ -37,11 +224,50 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
-const upload = multer({ 
+// Helper function: Upload to Cloudinary with fallback to local storage
+async function uploadWithCloudinaryFallback(file, folder, transformation = {}) {
+  try {
+    // Try Cloudinary first
+    const result = await cloudinary.uploader.upload(file.path, {
+      folder: folder,
+      resource_type: 'image',
+      quality: 'auto',
+      fetch_format: 'auto',
+      ...transformation
+    });
+    return {
+      success: true,
+      url: result.secure_url,
+      public_id: result.public_id,
+      source: 'cloudinary'
+    };
+  } catch (cloudinaryError) {
+    console.warn(`⚠️  Cloudinary upload failed, falling back to local storage:`, cloudinaryError.message);
+    try {
+      // Fallback: Save to local filesystem
+      const relativePath = `uploads/${path.basename(file.path)}`;
+      const localUrl = `/static/${relativePath}`;
+      return {
+        success: true,
+        url: localUrl,
+        public_id: null,
+        source: 'local'
+      };
+    } catch (localError) {
+      console.error('❌ Local storage fallback also failed:', localError.message);
+      return {
+        success: false,
+        error: localError.message
+      };
+    }
+  }
+}
+
+const upload = multer({
   storage,
   limits: { fileSize: 16 * 1024 * 1024 }, // 16MB
   fileFilter: (req, file, cb) => {
@@ -55,6 +281,45 @@ const upload = multer({
     }
   }
 });
+
+// Cloudinary upload for staff profile photos
+const staffPhotoUpload = multer({
+  storage: staffPhotoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+// Staff profile upload: accept common field-name variants to avoid Multer "Unexpected field"
+const staffProfileUpload = (req, res, next) => {
+  const handler = staffPhotoUpload.fields([
+    { name: 'photo', maxCount: 1 },
+    { name: 'photo_file', maxCount: 1 },
+    { name: 'file', maxCount: 1 },
+  ]);
+
+  handler(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      return res.status(400).json({ message: 'File upload error' });
+    }
+
+    // Normalize file reference to req.file for downstream handlers
+    req.file = (req.files.photo && req.files.photo[0])
+      || (req.files.photo_file && req.files.photo_file[0])
+      || (req.files.file && req.files.file[0])
+      || null;
+    next();
+  });
+};
 
 // AI Matters: document uploads (PDF, CSV, DOCX)
 const aiMattersPath = path.join(__dirname, '../static/ai-matters');
@@ -88,7 +353,7 @@ const documentUpload = multer({
 // ========== DASHBOARD STATISTICS ==========
 
 // Get dashboard statistics
-router.get('/dashboard/stats', async (req, res) => {
+router.get('/dashboard/stats', cacheRoutes.dashboardStats, async (req, res) => {
   try {
     const userRole = req.user?.role || 'teacher';
     const isAdmin = ['admin', 'superadmin', 'rector', 'vice_rector', 'academic_master'].includes(userRole);
@@ -102,6 +367,16 @@ router.get('/dashboard/stats', async (req, res) => {
       form_v_students: 0,
       form_vi_students: 0,
       students_by_year: [], // [{ year: 2025, count: 56 }, { year: 2026, count: 55 }, ...]
+      students_by_year_and_form: [], // [{ year: 2025, form_i: 40, form_ii: 35, ... , total: 75 }, ...]
+      academic_by_form: {
+        form_i: { subjects: 0, photos: 0, parishes: 0 },
+        form_ii: { subjects: 0, photos: 0, parishes: 0 },
+        form_iii: { subjects: 0, photos: 0, parishes: 0 },
+        form_iv: { subjects: 0, photos: 0, parishes: 0 },
+        form_v: { subjects: 0, photos: 0, parishes: 0 },
+        form_vi: { subjects: 0, photos: 0, parishes: 0 }
+      },
+      academic_by_year: [], // [{ year, by_form: {form_i...}, totals: {subjects, photos, parishes, students} }]
       total_subjects: 0,
       total_photos: 0,
       monthly_results_count: 0,
@@ -113,18 +388,59 @@ router.get('/dashboard/stats', async (req, res) => {
     
     // Only calculate stats for admin users
     if (isAdmin) {
-      // Per-year student counts (for year cards: 2025=56, 2026=55, ...)
+      // Per-year student counts (for year summary: 2025=56, 2026=55, ...)
+      // Group by year and term to distinguish First Term vs Second Term students
       const studentsByYearResult = await query(`
-        SELECT year, COUNT(*) as count
+        SELECT year, term, COUNT(*) as count
         FROM students
-        GROUP BY year
-        ORDER BY year DESC
+        GROUP BY year, term
+        ORDER BY year DESC, term DESC
       `);
       if (studentsByYearResult.rows.length > 0) {
         stats.students_by_year = studentsByYearResult.rows.map(row => ({
           year: parseInt(row.year) || 0,
+          term: row.term || 'First Term',
           count: parseInt(row.count) || 0
         }));
+      }
+
+      // Per-year, per-form student counts (for detailed form/year distribution)
+      // Group by year and term to distinguish First Term vs Second Term students
+      const studentsByYearAndFormResult = await query(`
+        SELECT 
+          year,
+          term,
+          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM I' THEN 1 ELSE 0 END) AS form_i,
+          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM II' THEN 1 ELSE 0 END) AS form_ii,
+          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM III' THEN 1 ELSE 0 END) AS form_iii,
+          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM IV' THEN 1 ELSE 0 END) AS form_iv,
+          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM V' THEN 1 ELSE 0 END) AS form_v,
+          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM VI' THEN 1 ELSE 0 END) AS form_vi
+        FROM students
+        GROUP BY year, term
+        ORDER BY year DESC, term DESC
+      `);
+      if (studentsByYearAndFormResult.rows.length > 0) {
+        stats.students_by_year_and_form = studentsByYearAndFormResult.rows.map(row => {
+          const formI = parseInt(row.form_i) || 0;
+          const formII = parseInt(row.form_ii) || 0;
+          const formIII = parseInt(row.form_iii) || 0;
+          const formIV = parseInt(row.form_iv) || 0;
+          const formV = parseInt(row.form_v) || 0;
+          const formVI = parseInt(row.form_vi) || 0;
+          const total = formI + formII + formIII + formIV + formV + formVI;
+          return {
+            year: parseInt(row.year) || 0,
+            term: row.term || 'First Term',
+            form_i: formI,
+            form_ii: formII,
+            form_iii: formIII,
+            form_iv: formIV,
+            form_v: formV,
+            form_vi: formVI,
+            total
+          };
+        });
       }
 
       // Single query for all student counts by form level
@@ -154,7 +470,7 @@ router.get('/dashboard/stats', async (req, res) => {
       // Batch count queries for better performance
       const batchCountsResult = await query(`
         SELECT 
-          (SELECT COUNT(*) FROM subjects) as subjects,
+          (SELECT COUNT(DISTINCT subject_code) FROM subjects) as subjects,
           (SELECT COUNT(*) FROM student_photos) as photos,
           (SELECT COUNT(*) FROM monthly_results) as monthly_results,
           (SELECT COUNT(*) FROM individual_scores) as scores,
@@ -164,7 +480,7 @@ router.get('/dashboard/stats', async (req, res) => {
           (SELECT COUNT(*) FROM student_parishes) as parishes
       `);
       
-      if (batchCountsResult.rows.length > 0) {
+      if (batchCountsResult.rows.length > 0 && batchCountsResult.rows[0]) {
         const counts = batchCountsResult.rows[0];
         stats.total_subjects = parseInt(counts.subjects) || 0;
         stats.total_photos = parseInt(counts.photos) || 0;
@@ -174,6 +490,130 @@ router.get('/dashboard/stats', async (req, res) => {
         stats.debt_records = parseInt(counts.debts) || 0;
         stats.parishes_assigned = parseInt(counts.parishes) || 0;
       }
+
+      // Per-form academic breakdown (subjects/photos/parishes)
+      const [subjectsByFormResult, photosByFormResult, parishesByFormResult] = await Promise.all([
+        query(`
+          SELECT UPPER(TRIM(level)) AS level, COUNT(DISTINCT subject_code) AS count
+          FROM subjects
+          GROUP BY UPPER(TRIM(level))
+        `),
+        query(`
+          SELECT UPPER(TRIM(level)) AS level, COUNT(*) AS count
+          FROM student_photos
+          GROUP BY UPPER(TRIM(level))
+        `),
+        query(`
+          SELECT UPPER(TRIM(level)) AS level, COUNT(*) AS count
+          FROM student_parishes
+          GROUP BY UPPER(TRIM(level))
+        `)
+      ]);
+
+      const toFormKey = (level) => {
+        const map = {
+          'FORM I': 'form_i',
+          'FORM II': 'form_ii',
+          'FORM III': 'form_iii',
+          'FORM IV': 'form_iv',
+          'FORM V': 'form_v',
+          'FORM VI': 'form_vi'
+        };
+        return map[level] || null;
+      };
+
+      subjectsByFormResult.rows.forEach((row) => {
+        const key = toFormKey(row.level);
+        if (key) stats.academic_by_form[key].subjects = parseInt(row.count) || 0;
+      });
+      photosByFormResult.rows.forEach((row) => {
+        const key = toFormKey(row.level);
+        if (key) stats.academic_by_form[key].photos = parseInt(row.count) || 0;
+      });
+      parishesByFormResult.rows.forEach((row) => {
+        const key = toFormKey(row.level);
+        if (key) stats.academic_by_form[key].parishes = parseInt(row.count) || 0;
+      });
+
+      // Per-year academic breakdown (duplicate overview table per year with data)
+      const [subjectsByYearFormResult, photosByYearFormResult, parishesByYearFormResult, studentsByYearFormRawResult] = await Promise.all([
+        query(`
+          SELECT year, UPPER(TRIM(level)) AS level, COUNT(DISTINCT subject_code) AS count
+          FROM subjects
+          GROUP BY year, UPPER(TRIM(level))
+        `),
+        query(`
+          SELECT year, UPPER(TRIM(level)) AS level, COUNT(*) AS count
+          FROM student_photos
+          GROUP BY year, UPPER(TRIM(level))
+        `),
+        query(`
+          SELECT year, UPPER(TRIM(level)) AS level, COUNT(*) AS count
+          FROM student_parishes
+          GROUP BY year, UPPER(TRIM(level))
+        `),
+        query(`
+          SELECT year, UPPER(TRIM(level)) AS level, COUNT(*) AS count
+          FROM students
+          GROUP BY year, UPPER(TRIM(level))
+        `)
+      ]);
+
+      const formKeys = ['form_i', 'form_ii', 'form_iii', 'form_iv', 'form_v', 'form_vi'];
+      const makeEmptyByForm = () => ({
+        form_i: { subjects: 0, photos: 0, parishes: 0, students: 0 },
+        form_ii: { subjects: 0, photos: 0, parishes: 0, students: 0 },
+        form_iii: { subjects: 0, photos: 0, parishes: 0, students: 0 },
+        form_iv: { subjects: 0, photos: 0, parishes: 0, students: 0 },
+        form_v: { subjects: 0, photos: 0, parishes: 0, students: 0 },
+        form_vi: { subjects: 0, photos: 0, parishes: 0, students: 0 }
+      });
+
+      const byYearMap = new Map();
+      const ensureYear = (year) => {
+        if (!byYearMap.has(year)) {
+          byYearMap.set(year, { year, by_form: makeEmptyByForm() });
+        }
+        return byYearMap.get(year);
+      };
+
+      subjectsByYearFormResult.rows.forEach((row) => {
+        const year = parseInt(row.year) || 0;
+        const key = toFormKey(row.level);
+        if (!key || !year) return;
+        ensureYear(year).by_form[key].subjects = parseInt(row.count) || 0;
+      });
+      photosByYearFormResult.rows.forEach((row) => {
+        const year = parseInt(row.year) || 0;
+        const key = toFormKey(row.level);
+        if (!key || !year) return;
+        ensureYear(year).by_form[key].photos = parseInt(row.count) || 0;
+      });
+      parishesByYearFormResult.rows.forEach((row) => {
+        const year = parseInt(row.year) || 0;
+        const key = toFormKey(row.level);
+        if (!key || !year) return;
+        ensureYear(year).by_form[key].parishes = parseInt(row.count) || 0;
+      });
+      studentsByYearFormRawResult.rows.forEach((row) => {
+        const year = parseInt(row.year) || 0;
+        const key = toFormKey(row.level);
+        if (!key || !year) return;
+        ensureYear(year).by_form[key].students = parseInt(row.count) || 0;
+      });
+
+      stats.academic_by_year = Array.from(byYearMap.values())
+        .map((item) => {
+          const totals = formKeys.reduce((acc, key) => {
+            acc.subjects += item.by_form[key].subjects;
+            acc.photos += item.by_form[key].photos;
+            acc.parishes += item.by_form[key].parishes;
+            acc.students += item.by_form[key].students;
+            return acc;
+          }, { subjects: 0, photos: 0, parishes: 0, students: 0 });
+          return { ...item, totals };
+        })
+        .sort((a, b) => b.year - a.year);
     }
     
     // Log activity
@@ -212,15 +652,25 @@ router.get('/users', requireRole('admin', 'superadmin'), async (req, res) => {
       `SELECT id, username, full_name, role, status, permissions, email, phone, 
        profile_picture, bio, department, position, created_at, updated_at 
        FROM users 
-       WHERE role != 'SUPERADMIN' 
+       WHERE UPPER(role) != 'SUPERADMIN' 
        ORDER BY created_at DESC`
     );
     
-    // Parse permissions JSON
-    const users = result.rows.map(user => ({
-      ...user,
-      permissions: user.permissions ? JSON.parse(user.permissions) : null,
-    }));
+    // Parse permissions JSON with error handling
+    const users = result.rows.map(user => {
+      try {
+        return {
+          ...user,
+          permissions: user.permissions ? JSON.parse(user.permissions) : null,
+        };
+      } catch (parseError) {
+        console.error('Failed to parse permissions for user:', user.username, parseError);
+        return {
+          ...user,
+          permissions: null,
+        };
+      }
+    });
     
     res.json({ users });
   } catch (error) {
@@ -229,13 +679,24 @@ router.get('/users', requireRole('admin', 'superadmin'), async (req, res) => {
   }
 });
 
-// TODO: Add other admin routes here (public website, announcements, events, gallery, etc.)
+// Clear cache when users are created/updated
+router.post('/users', requireRole('admin', 'superadmin'), async (req, res, next) => {
+  // Clear cache after user creation
+  const originalSend = res.send;
+  res.send = function(data) {
+    if (res.statusCode < 400) {
+      clearCachePattern('dashboard');
+    }
+    return originalSend.call(this, data);
+  };
+  next();
+});
 
 // Get public announcements (admin view - all announcements)
 router.get('/announcements', async (req, res) => {
   try {
     const result = await query(
-      'SELECT * FROM public_announcements ORDER BY date DESC, created_at DESC'
+      'SELECT id, title, content, date, priority, type, active, created_at FROM public_announcements ORDER BY date DESC, created_at DESC'
     );
     res.json({ announcements: result.rows });
   } catch (error) {
@@ -287,6 +748,7 @@ router.delete('/announcements/:id', async (req, res) => {
     }
     
     res.json({ message: 'Announcement deleted successfully' });
+    clearCachePattern('public');
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -305,6 +767,55 @@ router.get('/announcements/generate-id', async (req, res) => {
 
 // ========== SCHOOL BRANDING ==========
 
+// Get school branding (text settings)
+router.get('/school-branding', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT school_name, tagline, banner_text FROM website_settings WHERE id = 1'
+    );
+    const row = result.rows[0] || {};
+    res.json({
+      branding: {
+        school_name: row.school_name || '',
+        tagline: row.tagline || '',
+        banner_text: row.banner_text || '',
+      },
+    });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Save school branding (text settings)
+router.post('/school-branding', async (req, res) => {
+  try {
+    const school_name = (req.body?.school_name ?? req.body?.schoolName ?? '').toString().trim();
+    const tagline = (req.body?.tagline ?? '').toString().trim();
+    const banner_text = (req.body?.banner_text ?? req.body?.bannerText ?? '').toString().trim();
+
+    if (!school_name) {
+      return res.status(400).json({ message: 'school_name is required' });
+    }
+
+    await query(
+      `INSERT INTO website_settings (id, school_name, tagline, banner_text)
+       VALUES (1, $1, $2, $3)
+       ON CONFLICT (id)
+       DO UPDATE SET
+         school_name = EXCLUDED.school_name,
+         tagline = EXCLUDED.tagline,
+         banner_text = EXCLUDED.banner_text,
+         updated_at = NOW()`,
+      [school_name, tagline, banner_text]
+    );
+
+    res.json({ message: 'School branding saved successfully' });
+    clearCachePattern('public');
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
 // Get school logo
 router.get('/school-logo', async (req, res) => {
   try {
@@ -317,8 +828,7 @@ router.get('/school-logo', async (req, res) => {
       );
     `);
     
-    if (!tableCheck.rows[0].exists) {
-      console.log('[SCHOOL LOGO] Table does not exist, returning null');
+    if (tableCheck.rows.length === 0 || !tableCheck.rows[0].exists) {
       return res.json({ logo: null });
     }
     
@@ -351,7 +861,6 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
     `);
     
     if (!tableCheck.rows[0].exists) {
-      console.log('[SCHOOL LOGO] Table does not exist, creating it...');
       // Create the table if it doesn't exist
       await query(`
         CREATE TABLE IF NOT EXISTS school_logo (
@@ -364,7 +873,6 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
           CONSTRAINT chk_logo_id CHECK (id = 1)
         )
       `);
-      console.log('[SCHOOL LOGO] Table created');
     }
 
     // Get old logo path (handle gracefully if query fails)
@@ -373,7 +881,7 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
       const oldLogoResult = await query('SELECT logo_image_path FROM school_logo WHERE id = 1');
       oldLogoPath = oldLogoResult.rows[0]?.logo_image_path;
     } catch (err) {
-      console.log('[SCHOOL LOGO] Could not fetch old logo:', err.message);
+      // Could not fetch old logo, continue
     }
 
     // Delete old logo if exists
@@ -381,9 +889,8 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
       try {
         const oldFilePath = path.join(__dirname, '../static', oldLogoPath);
         await fs.unlink(oldFilePath);
-        console.log('[SCHOOL LOGO] Old logo deleted:', oldLogoPath);
       } catch (err) {
-        console.log('[SCHOOL LOGO] Old logo file not found or already deleted');
+        // Old logo file not found or already deleted
       }
     }
 
@@ -404,10 +911,6 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
         // Check if source file exists
         await fs.access(req.file.path);
         await fs.rename(req.file.path, newFilePath);
-        console.log('[SCHOOL LOGO] File moved from', req.file.path, 'to', newFilePath);
-      } else {
-        // If file is already in the right place, just log it
-        console.log('[SCHOOL LOGO] File already in correct location:', newFilePath);
       }
     } catch (moveError) {
       console.error('[SCHOOL LOGO] Error moving file:', moveError);
@@ -415,15 +918,12 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
       try {
         await fs.copyFile(req.file.path, newFilePath);
         await fs.unlink(req.file.path); // Delete original
-        console.log('[SCHOOL LOGO] File copied to:', newFilePath);
       } catch (copyError) {
         console.error('[SCHOOL LOGO] Error copying file:', copyError);
         throw new Error(`Failed to save file: ${copyError.message}`);
       }
     }
     
-    console.log('[SCHOOL LOGO] File saved to:', newFilePath);
-
     // Save to database
     await query(
       `INSERT INTO school_logo (id, logo_image_path)
@@ -433,7 +933,6 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
       [relativePath]
     );
 
-    console.log('[SCHOOL LOGO] Logo saved to database:', relativePath);
     res.json({ message: 'Logo uploaded successfully', logo_path: relativePath });
   } catch (error) {
     console.error('[SCHOOL LOGO] Upload error:', error);
@@ -472,7 +971,7 @@ router.post('/school-stamp', upload.single('stamp_file'), async (req, res) => {
         const oldFilePath = path.join(__dirname, '../static', oldStampPath);
         await fs.unlink(oldFilePath);
       } catch (err) {
-        console.log('Old stamp file not found or already deleted');
+        // Old stamp file not found or already deleted
       }
     }
 
@@ -575,7 +1074,7 @@ router.post('/authority-data/upload-signature', upload.single('signature_file'),
         const oldFilePath = path.join(__dirname, '../static', oldSignaturePath);
         await fs.unlink(oldFilePath);
       } catch (err) {
-        console.log('Old signature file not found or already deleted');
+        // Old signature file not found or already deleted
       }
     }
 
@@ -633,7 +1132,7 @@ router.post('/authority-data/delete-signature', async (req, res) => {
         const filePath = path.join(__dirname, '../static', signaturePath);
         await fs.unlink(filePath);
       } catch (err) {
-        console.log('Signature file not found or already deleted');
+        // Signature file not found or already deleted
       }
 
       // Update database
@@ -680,7 +1179,7 @@ router.post('/patron-saint-image', upload.single('patron_saint_file'), async (re
         const oldFilePath = path.join(__dirname, '../static', oldImagePath);
         await fs.unlink(oldFilePath);
       } catch (err) {
-        console.log('Old patron saint image file not found or already deleted');
+        // Old patron saint image file not found or already deleted
       }
     }
 
@@ -699,16 +1198,12 @@ router.post('/patron-saint-image', upload.single('patron_saint_file'), async (re
       if (req.file.path && req.file.path !== newFilePath) {
         await fs.access(req.file.path);
         await fs.rename(req.file.path, newFilePath);
-        console.log('[PATRON SAINT] File moved from', req.file.path, 'to', newFilePath);
-      } else {
-        console.log('[PATRON SAINT] File already in correct location:', newFilePath);
       }
     } catch (moveError) {
       console.error('[PATRON SAINT] Error moving file:', moveError);
       try {
         await fs.copyFile(req.file.path, newFilePath);
         await fs.unlink(req.file.path);
-        console.log('[PATRON SAINT] File copied to:', newFilePath);
       } catch (copyError) {
         console.error('[PATRON SAINT] Error copying file:', copyError);
         throw new Error(`Failed to save file: ${copyError.message}`);
@@ -735,7 +1230,6 @@ router.post('/patron-saint-image', upload.single('patron_saint_file'), async (re
       );
     }
 
-    console.log('[PATRON SAINT] Image saved to database:', relativePath);
     res.json({ message: 'Patron saint image uploaded successfully', patron_saint_image_path: relativePath });
   } catch (error) {
     console.error('[PATRON SAINT] Upload error:', error);
@@ -744,7 +1238,7 @@ router.post('/patron-saint-image', upload.single('patron_saint_file'), async (re
 });
 
 // Get user by ID
-router.get('/users/:id', async (req, res) => {
+router.get('/users/:id', requireRole('admin', 'superadmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const result = await query(
@@ -757,7 +1251,13 @@ router.get('/users/:id', async (req, res) => {
     }
     
     const user = result.rows[0];
-    user.permissions = user.permissions ? JSON.parse(user.permissions) : null;
+    // Parse permissions JSON with error handling
+    try {
+      user.permissions = user.permissions ? JSON.parse(user.permissions) : null;
+    } catch (parseError) {
+      console.error('Failed to parse permissions for user:', user.username, parseError);
+      user.permissions = null;
+    }
     
     res.json({ user });
   } catch (error) {
@@ -766,7 +1266,7 @@ router.get('/users/:id', async (req, res) => {
 });
 
 // Save user (create or update)
-router.post('/users', async (req, res) => {
+router.post('/users', requireRole('admin', 'superadmin'), async (req, res) => {
   try {
     const { id, username, full_name, password, role, status, permissions, email, phone, bio, department, position } = req.body;
     
@@ -774,33 +1274,73 @@ router.post('/users', async (req, res) => {
       return res.status(400).json({ message: 'username, full_name, and role are required' });
     }
     
+    // Validate role
+    const validRoles = ['admin', 'superadmin', 'teacher', 'secretary', 'priest', 'discipline', 'rector', 'vice_rector', 'academic_master', 'accountant', 'librarian', 'discipline_master', 'sports_master'];
+    const normalizedRole = role.toLowerCase();
+    if (!validRoles.includes(normalizedRole)) {
+      return res.status(400).json({ message: `Invalid role. Valid roles are: ${validRoles.join(', ')}` });
+    }
+    
+    // Check if current user is trying to assign a higher role than their own
+    const currentUserRole = req.user?.role?.toLowerCase();
+    if (normalizedRole === 'superadmin' && currentUserRole !== 'superadmin') {
+      return res.status(403).json({ message: 'Only superadmin can assign superadmin role' });
+    }
+    
+    // Use normalized role
+    const finalRole = normalizedRole;
+    
     // Check if username exists (for new users or if username changed)
     if (!id) {
       const existingUser = await query('SELECT id FROM users WHERE username = $1', [username]);
       if (existingUser.rows.length > 0) {
         return res.status(400).json({ message: 'Username already exists' });
       }
+    } else {
+      // Check if username is being changed to one that already exists
+      const currentUser = await query('SELECT username FROM users WHERE id = $1', [id]);
+      if (currentUser.rows.length > 0 && currentUser.rows[0].username !== username) {
+        const existingUser = await query('SELECT id FROM users WHERE username = $1 AND id != $2', [username, id]);
+        if (existingUser.rows.length > 0) {
+          return res.status(400).json({ message: 'Username already exists' });
+        }
+      }
     }
     
     // Hash password if provided
     let passwordHash = null;
     if (password) {
-      const bcrypt = require('bcryptjs');
-      passwordHash = await bcrypt.hash(password, 10);
+      try {
+        passwordHash = await bcrypt.hash(password, 10);
+      } catch (hashError) {
+        console.error('Error hashing password:', hashError);
+        return res.status(500).json({ message: 'Error processing password' });
+      }
     } else if (!id) {
       return res.status(400).json({ message: 'Password is required for new users' });
     }
     
     // Get existing password hash if updating without password
     if (id && !passwordHash) {
-      const existingUser = await query('SELECT password_hash FROM users WHERE id = $1', [id]);
-      if (existingUser.rows.length > 0) {
-        passwordHash = existingUser.rows[0].password_hash;
+      try {
+        const existingUser = await query('SELECT password_hash FROM users WHERE id = $1', [id]);
+        if (existingUser.rows.length > 0) {
+          passwordHash = existingUser.rows[0].password_hash;
+        }
+      } catch (queryError) {
+        console.error('Error fetching existing user:', queryError);
+        return res.status(500).json({ message: 'Error fetching user data' });
       }
     }
     
-    // Serialize permissions
-    const permissionsJson = permissions ? JSON.stringify(permissions) : null;
+    // Serialize permissions with error handling
+    let permissionsJson = null;
+    try {
+      permissionsJson = permissions ? JSON.stringify(permissions) : null;
+    } catch (stringifyError) {
+      console.error('Failed to stringify permissions:', stringifyError);
+      return res.status(400).json({ message: 'Invalid permissions format' });
+    }
     
     if (id) {
       // Update existing user
@@ -809,37 +1349,53 @@ router.post('/users', async (req, res) => {
          SET username = $1, full_name = $2, password_hash = $3, role = $4, status = $5, 
          permissions = $6, email = $7, phone = $8, bio = $9, department = $10, position = $11, updated_at = NOW()
          WHERE id = $12`,
-        [username, full_name, passwordHash, role, status || 'active', permissionsJson, email || null, phone || null, bio || null, department || null, position || null, id]
+        [username, full_name, passwordHash, finalRole, status || 'active', permissionsJson, email || null, phone || null, bio || null, department || null, position || null, id]
       );
     } else {
       // Create new user
       await query(
         `INSERT INTO users (username, password_hash, full_name, role, status, permissions, email, phone, bio, department, position)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [username, passwordHash, full_name, role, status || 'active', permissionsJson, email || null, phone || null, bio || null, department || null, position || null]
+        [username, passwordHash, full_name, finalRole, status || 'active', permissionsJson, email || null, phone || null, bio || null, department || null, position || null]
       );
     }
     
     res.json({ message: `User ${id ? 'updated' : 'created'} successfully` });
   } catch (error) {
+    console.error('Error in POST /users:', error);
     return sendError(res, error, 500);
   }
 });
 
 // Delete user
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', requireRole('admin', 'superadmin'), async (req, res) => {
   try {
     const { id } = req.params;
+    const currentUserId = req.user?.id;
     
-    // Check if user is protected
+    // Prevent deleting self
+    if (id === currentUserId) {
+      return res.status(400).json({ message: 'Cannot delete your own account' });
+    }
+    
+    // Check if user exists
     const userResult = await query('SELECT role FROM users WHERE id = $1', [id]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
     
     const role = userResult.rows[0].role;
-    if (role === 'admin' || role === 'superadmin' || role === 'SUPERADMIN') {
+    const normalizedRole = role?.toUpperCase();
+    
+    // Check if user is protected (admin or superadmin)
+    if (normalizedRole === 'ADMIN' || normalizedRole === 'SUPERADMIN') {
       return res.status(400).json({ message: 'Cannot delete admin or superadmin users' });
+    }
+    
+    // Check if current user has sufficient privileges
+    const currentUserRole = req.user?.role?.toUpperCase();
+    if (currentUserRole !== 'SUPERADMIN' && currentUserRole !== 'ADMIN') {
+      return res.status(403).json({ message: 'Insufficient privileges' });
     }
     
     await query('DELETE FROM users WHERE id = $1', [id]);
@@ -888,40 +1444,48 @@ router.get('/promotion/preview', async (req, res) => {
     if (!level || !stream || !year) {
       return res.status(400).json({ message: 'level, stream, and year are required' });
     }
+
+    // Normalize case to match DB values consistently.
+    const normalizedLevel = level.toString().trim().toUpperCase();
+    const normalizedStream = stream.toString().trim().toUpperCase();
     
     // Get students from source class
     const studentsResult = await query(
       'SELECT * FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
-      [level, stream, parseInt(year)]
+      [normalizedLevel, normalizedStream, parseInt(year)]
     );
     
     // Determine next level and stream
     const getNextLevel = (currentLevel) => {
       const progression = {
-        'FORM I': { next: 'FORM II', stream: 'NA', requiresSelection: false },
-        'FORM II': { next: 'FORM III', stream: 'NA', requiresSelection: false },
-        'FORM III': { next: 'FORM IV', stream: 'NA', requiresSelection: false },
+        // Carry forward the stream for FORM I-III.
+        // UI selects A/B for these levels, and the students table is expected to store A/B streams.
+        'FORM I': { next: 'FORM II', stream: normalizedStream, requiresSelection: false },
+        'FORM II': { next: 'FORM III', stream: normalizedStream, requiresSelection: false },
+        'FORM III': { next: 'FORM IV', stream: normalizedStream, requiresSelection: false },
         'FORM IV': { next: 'FORM V', stream: null, requiresSelection: true },
-        'FORM V': { next: 'FORM VI', stream: stream, requiresSelection: false },
-        'FORM VI': { next: 'GRADUATED', stream: 'NA', requiresSelection: false },
+        'FORM V': { next: 'FORM VI', stream: normalizedStream, requiresSelection: false },
+        // Normalize: keep A/B (or current stream) instead of forcing 'NA'
+        // so the students table always has a real stream value.
+        'FORM VI': { next: 'GRADUATED', stream: normalizedStream, requiresSelection: false },
       };
-      return progression[currentLevel] || { next: null, stream: 'NA', requiresSelection: false };
+      return progression[currentLevel] || { next: null, stream: normalizedStream, requiresSelection: false };
     };
     
-    const nextLevelInfo = getNextLevel(level);
+    const nextLevelInfo = getNextLevel(normalizedLevel);
     const nextYear = parseInt(year) + 1;
     
     // Get excluded students
     const exclusionsResult = await query(
       'SELECT adm_no FROM promotion_exclusions WHERE level = $1 AND stream = $2 AND year = $3',
-      [level, stream, parseInt(year)]
+      [normalizedLevel, normalizedStream, parseInt(year)]
     );
     const excludedAdmNos = exclusionsResult.rows.map(row => row.adm_no);
     
     // Check if promotion already executed
     const existingPromotion = await query(
       'SELECT * FROM promotion_sessions WHERE from_level = $1 AND from_stream = $2 AND from_year = $3 LIMIT 1',
-      [level, stream, parseInt(year)]
+      [normalizedLevel, normalizedStream, parseInt(year)]
     );
     
     res.json({
@@ -946,11 +1510,16 @@ router.post('/promotion/execute', async (req, res) => {
     if (!from_level || !from_stream || !from_year || !to_level || !to_stream || !to_year) {
       return res.status(400).json({ message: 'All promotion parameters are required' });
     }
+
+    const normalizedFromLevel = from_level.toString().trim().toUpperCase();
+    const normalizedFromStream = from_stream.toString().trim().toUpperCase();
+    const normalizedToLevel = to_level.toString().trim().toUpperCase();
+    const normalizedToStream = to_stream.toString().trim().toUpperCase();
     
     // Check if promotion already executed
     const existingPromotion = await query(
       'SELECT * FROM promotion_sessions WHERE from_level = $1 AND from_stream = $2 AND from_year = $3 LIMIT 1',
-      [from_level, from_stream, parseInt(from_year)]
+      [normalizedFromLevel, normalizedFromStream, parseInt(from_year)]
     );
     
     if (existingPromotion.rows.length > 0) {
@@ -960,7 +1529,7 @@ router.post('/promotion/execute', async (req, res) => {
     // Get all students from source class
     const studentsResult = await query(
       'SELECT * FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
-      [from_level, from_stream, parseInt(from_year)]
+      [normalizedFromLevel, normalizedFromStream, parseInt(from_year)]
     );
     
     const allStudents = studentsResult.rows;
@@ -969,167 +1538,126 @@ router.post('/promotion/execute', async (req, res) => {
     let promotedCount = 0;
     let failedCount = 0;
     
-    // Promote each student (one transaction per student)
-    for (const student of studentsToPromote) {
-      try {
-        await withTransaction(async (client) => {
-          // Save student to new class
-          await client.query(
-            `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             ON CONFLICT (adm_no, level, stream, year)
-             DO UPDATE SET 
-               first_name = EXCLUDED.first_name,
-               middle_name = EXCLUDED.middle_name,
-               surname = EXCLUDED.surname,
-               sex = EXCLUDED.sex,
-               status = EXCLUDED.status`,
-            [student.adm_no, student.first_name, student.middle_name || null, student.surname, student.sex, to_level, to_stream, parseInt(to_year), 'PENDING']
-          );
-
-          const newClassStudents = await client.query(
-            'SELECT adm_no FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
-            [to_level, to_stream, parseInt(to_year)]
-          );
-          const newStudentIndex = newClassStudents.rows.findIndex(s => s.adm_no === student.adm_no);
-
-          if (newStudentIndex >= 0) {
-            const oldClassStudents = await client.query(
-              'SELECT adm_no FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
-              [from_level, from_stream, parseInt(from_year)]
-            );
-            const oldStudentIndex = oldClassStudents.rows.findIndex(s => s.adm_no === student.adm_no);
-
-            if (oldStudentIndex >= 0) {
-              const oldPhoto = await client.query(
-                'SELECT photo_filename FROM student_photos WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4',
-                [from_level, from_stream, parseInt(from_year), oldStudentIndex]
-              );
-              if (oldPhoto.rows.length > 0) {
-                await client.query(
-                  `INSERT INTO student_photos (level, stream, year, student_index, photo_filename)
-                   VALUES ($1, $2, $3, $4, $5)
-                   ON CONFLICT (level, stream, year, student_index)
-                   DO UPDATE SET photo_filename = EXCLUDED.photo_filename`,
-                  [to_level, to_stream, parseInt(to_year), newStudentIndex, oldPhoto.rows[0].photo_filename]
-                );
-              }
-
-              const oldParish = await client.query(
-                'SELECT parish_name FROM student_parishes WHERE level = $1 AND stream = $2 AND year = $3 AND student_index = $4',
-                [from_level, from_stream, parseInt(from_year), oldStudentIndex]
-              );
-              if (oldParish.rows.length > 0) {
-                await client.query(
-                  `INSERT INTO student_parishes (level, stream, year, student_index, parish_name)
-                   VALUES ($1, $2, $3, $4, $5)
-                   ON CONFLICT (level, stream, year, student_index)
-                   DO UPDATE SET parish_name = EXCLUDED.parish_name`,
-                  [to_level, to_stream, parseInt(to_year), newStudentIndex, oldParish.rows[0].parish_name]
-                );
-              }
-
-              const existingSubjects = await client.query(
-                'SELECT subject_code FROM subjects WHERE level = $1 AND stream = $2 AND year = $3',
-                [to_level, to_stream, parseInt(to_year)]
-              );
-              const existingSubjectCodes = existingSubjects.rows.map(s => s.subject_code);
-              const oldSubjects = await client.query(
-                'SELECT subject_code, subject_name, subject_abbreviation FROM subjects WHERE level = $1 AND stream = $2 AND year = $3',
-                [from_level, from_stream, parseInt(from_year)]
-              );
-              for (const oldSubject of oldSubjects.rows) {
-                if (!existingSubjectCodes.includes(oldSubject.subject_code)) {
-                  await client.query(
-                    `INSERT INTO subjects (level, stream, year, subject_code, subject_name, subject_abbreviation)
-                     VALUES ($1, $2, $3, $4, $5, $6)
-                     ON CONFLICT (level, stream, year, subject_code)
-                     DO UPDATE SET subject_name = EXCLUDED.subject_name, subject_abbreviation = EXCLUDED.subject_abbreviation`,
-                    [to_level, to_stream, parseInt(to_year), oldSubject.subject_code, oldSubject.subject_name, oldSubject.subject_abbreviation]
-                  );
-                }
-              }
-
-              const existingTeachers = await client.query(
-                'SELECT subject_code FROM subject_teachers WHERE level = $1 AND stream = $2 AND year = $3',
-                [to_level, to_stream, parseInt(to_year)]
-              );
-              const existingTeacherSubjectCodes = existingTeachers.rows.map(t => t.subject_code);
-              const oldTeachers = await client.query(
-                'SELECT subject_code, teacher_name, teacher_signature FROM subject_teachers WHERE level = $1 AND stream = $2 AND year = $3',
-                [from_level, from_stream, parseInt(from_year)]
-              );
-              for (const oldTeacher of oldTeachers.rows) {
-                if (!existingTeacherSubjectCodes.includes(oldTeacher.subject_code)) {
-                  await client.query(
-                    `INSERT INTO subject_teachers (level, stream, year, subject_code, teacher_name, teacher_signature)
-                     VALUES ($1, $2, $3, $4, $5, $6)
-                     ON CONFLICT (level, stream, year, subject_code)
-                     DO UPDATE SET teacher_name = EXCLUDED.teacher_name, teacher_signature = EXCLUDED.teacher_signature`,
-                    [to_level, to_stream, parseInt(to_year), oldTeacher.subject_code, oldTeacher.teacher_name, oldTeacher.teacher_signature || null]
-                  );
-                }
-              }
-
-              const hudumaComments = await client.query(
-                'SELECT term, comment_text FROM comments WHERE comment_type = $1 AND level = $2 AND stream = $3 AND year = $4 AND student_index = $5',
-                ['Huduma', from_level, from_stream, parseInt(from_year), oldStudentIndex.toString()]
-              );
-              for (const comment of hudumaComments.rows) {
-                await client.query(
-                  `INSERT INTO comments (comment_type, level, stream, year, term, student_index, comment_text)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7)
-                   ON CONFLICT (comment_type, level, stream, year, term, student_index)
-                   DO UPDATE SET comment_text = EXCLUDED.comment_text`,
-                  ['Huduma', to_level, to_stream, parseInt(to_year), comment.term, newStudentIndex.toString(), comment.comment_text]
-                );
-              }
-
-              const michezoComments = await client.query(
-                'SELECT term, comment_text FROM comments WHERE comment_type = $1 AND level = $2 AND stream = $3 AND year = $4 AND student_index = $5',
-                ['Michezo', from_level, from_stream, parseInt(from_year), oldStudentIndex.toString()]
-              );
-              for (const comment of michezoComments.rows) {
-                await client.query(
-                  `INSERT INTO comments (comment_type, level, stream, year, term, student_index, comment_text)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7)
-                   ON CONFLICT (comment_type, level, stream, year, term, student_index)
-                   DO UPDATE SET comment_text = EXCLUDED.comment_text`,
-                  ['Michezo', to_level, to_stream, parseInt(to_year), comment.term, newStudentIndex.toString(), comment.comment_text]
-                );
-              }
-            }
-          }
-
-          await client.query(
-            `INSERT INTO student_history (adm_no, full_name, current_level, current_stream, current_year, previous_level, previous_stream, previous_year, promoted_by)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             ON CONFLICT (adm_no, current_level, current_stream, current_year)
-             DO UPDATE SET 
-               previous_level = EXCLUDED.previous_level,
-               previous_stream = EXCLUDED.previous_stream,
-               previous_year = EXCLUDED.previous_year,
-               promotion_date = NOW(),
-               promoted_by = EXCLUDED.promoted_by`,
-            [
-              student.adm_no,
-              `${student.first_name} ${student.middle_name || ''} ${student.surname}`.trim(),
-              to_level,
-              to_stream,
-              parseInt(to_year),
-              from_level,
-              from_stream,
-              parseInt(from_year),
-              req.user?.username || 'system'
-            ]
-          );
-        });
-        promotedCount++;
-      } catch (error) {
-        console.error(`Failed to promote student ${student.adm_no}:`, error);
-        failedCount++;
+    // OPTIMIZED: Use batch operations instead of sequential loops
+    await withTransaction(async (client) => {
+      // Build index mappings in memory (no DB queries needed)
+      const oldIndexMap = {};
+      allStudents.forEach((s, i) => {
+        oldIndexMap[s.adm_no] = i;
+      });
+      
+      // Batch insert all students to new class
+      for (const student of studentsToPromote) {
+        await client.query(
+          `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (adm_no, level, stream, year) DO NOTHING`,
+          [student.adm_no, student.first_name, student.middle_name || null, student.surname, student.sex,
+           normalizedToLevel, normalizedToStream, parseInt(to_year), 'PENDING']
+        );
       }
-    }
+      
+      // Get new class students to build new index mapping
+      const newClassStudents = await client.query(
+        'SELECT adm_no FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
+        [normalizedToLevel, normalizedToStream, parseInt(to_year)]
+      );
+      const newIndexMap = {};
+      newClassStudents.rows.forEach((s, i) => {
+        newIndexMap[s.adm_no] = i;
+      });
+      
+      // Batch copy photos using INSERT...SELECT with index mapping
+      for (const student of studentsToPromote) {
+        const oldIndex = oldIndexMap[student.adm_no];
+        const newIndex = newIndexMap[student.adm_no];
+        
+        if (oldIndex !== undefined && newIndex !== undefined) {
+          await client.query(
+            `INSERT INTO student_photos (level, stream, year, student_index, photo_filename)
+             SELECT $1, $2, $3, $4, photo_filename
+             FROM student_photos
+             WHERE level = $5 AND stream = $6 AND year = $7 AND student_index = $8`,
+            [normalizedToLevel, normalizedToStream, parseInt(to_year), newIndex, 
+             normalizedFromLevel, normalizedFromStream, parseInt(from_year), oldIndex]
+          );
+          
+          // Batch copy parish
+          await client.query(
+            `INSERT INTO student_parishes (level, stream, year, student_index, parish_name)
+             SELECT $1, $2, $3, $4, parish_name
+             FROM student_parishes
+             WHERE level = $5 AND stream = $6 AND year = $7 AND student_index = $8`,
+            [normalizedToLevel, normalizedToStream, parseInt(to_year), newIndex,
+             normalizedFromLevel, normalizedFromStream, parseInt(from_year), oldIndex]
+          );
+          
+          // Batch copy comments (Huduma and Michezo)
+          await client.query(
+            `INSERT INTO comments (comment_type, level, stream, year, term, student_index, comment_text)
+             SELECT comment_type, $1, $2, $3, term, $4, comment_text
+             FROM comments
+             WHERE comment_type IN ('Huduma', 'Michezo') 
+               AND level = $5 AND stream = $6 AND year = $7 AND student_index = $8`,
+            [normalizedToLevel, normalizedToStream, parseInt(to_year), newIndex.toString(),
+             normalizedFromLevel, normalizedFromStream, parseInt(from_year), oldIndex.toString()]
+          );
+        }
+      }
+      
+      // Batch copy subjects (class-level, not per-student)
+      await client.query(
+        `INSERT INTO subjects (level, stream, year, subject_code, subject_name, subject_abbreviation)
+         SELECT $1, $2, $3, subject_code, subject_name, subject_abbreviation
+         FROM subjects
+         WHERE level = $4 AND stream = $5 AND year = $6`,
+        [normalizedToLevel, normalizedToStream, parseInt(to_year),
+         normalizedFromLevel, normalizedFromStream, parseInt(from_year)]
+      );
+      
+      // Batch copy teachers (class-level, not per-student)
+      await client.query(
+        `INSERT INTO subject_teachers (level, stream, year, subject_code, teacher_name, teacher_signature)
+         SELECT $1, $2, $3, subject_code, teacher_name, teacher_signature
+         FROM subject_teachers
+         WHERE level = $4 AND stream = $5 AND year = $6`,
+        [normalizedToLevel, normalizedToStream, parseInt(to_year),
+         normalizedFromLevel, normalizedFromStream, parseInt(from_year)]
+      );
+      
+      // Batch insert history records
+      for (const student of studentsToPromote) {
+        await client.query(
+          `INSERT INTO student_history (adm_no, full_name, current_level, current_stream, current_year, previous_level, previous_stream, previous_year, promoted_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            student.adm_no,
+            `${student.first_name} ${student.middle_name || ''} ${student.surname}`.trim(),
+            normalizedToLevel,
+            normalizedToStream,
+            parseInt(to_year),
+            normalizedFromLevel,
+            normalizedFromStream,
+            parseInt(from_year),
+            req.user?.username || 'system'
+          ]
+        );
+      }
+      
+      promotedCount = studentsToPromote.length;
+    }).catch((error) => {
+      console.error('Promotion batch operation failed:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+        hint: error.hint,
+        stack: error.stack
+      });
+      failedCount = studentsToPromote.length;
+      promotedCount = 0;
+      throw error;
+    });
     
     // Save promotion session
     const sessionId = uuidv4();
@@ -1139,11 +1667,11 @@ router.post('/promotion/execute', async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         sessionId,
-        from_level,
-        from_stream,
+        normalizedFromLevel,
+        normalizedFromStream,
         parseInt(from_year),
-        to_level,
-        to_stream,
+        normalizedToLevel,
+        normalizedToStream,
         parseInt(to_year),
         allStudents.length,
         promotedCount,
@@ -1226,6 +1754,159 @@ router.delete('/promotion/exclusions', async (req, res) => {
 
 // ========== PUBLIC WEBSITE MANAGEMENT ==========
 
+// ========== STAFF PROFILES ==========
+router.get('/staff-profiles', async (req, res) => {
+  try {
+    await ensureStaffProfilesTable();
+    const result = await query(
+      `SELECT * FROM staff_profiles
+       ORDER BY is_teaching DESC, display_order ASC, created_at DESC`
+    );
+    res.json({ staff_profiles: result.rows || [] });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+router.post('/staff-profiles', staffProfileUpload, async (req, res) => {
+  try {
+    await ensureStaffProfilesTable();
+    const {
+      id,
+      full_name,
+      role_title,
+      is_teaching = 'true',
+      professional_subjects = '',
+      teaching_since_year = null,
+      subjects_teaching = '',
+      class_teacher_for = '',
+      other_duties = '',
+      contact_phone = '',
+      contact_email = '',
+      profile_summary = '',
+      display_order = 0,
+      active = 'true',
+    } = req.body || {};
+
+    if (!full_name || !role_title) {
+      return res.status(400).json({ message: 'full_name and role_title are required' });
+    }
+
+    const profileId = id || uuidv4();
+    const asBool = (v) => v === true || v === 'true' || v === 1 || v === '1';
+    const activeBool = asBool(active);
+    const teachingBool = asBool(is_teaching);
+    const parsedYear = teaching_since_year ? parseInt(teaching_since_year, 10) : null;
+    const parsedOrder = parseInt(display_order, 10) || 0;
+
+    // Preserve existing photo and cloudinary_public_id when updating without a new upload
+    let photoPath = null;
+    let cloudinaryPublicId = null;
+    const existing = await query('SELECT photo_path, cloudinary_public_id FROM staff_profiles WHERE id = $1', [profileId]);
+    if (existing.rows.length > 0) {
+      photoPath = existing.rows[0].photo_path || null;
+      cloudinaryPublicId = existing.rows[0].cloudinary_public_id || null;
+    }
+
+    if (req.file) {
+      // Delete previous photo from Cloudinary if it exists
+      if (cloudinaryPublicId) {
+        try {
+          await cloudinary.uploader.destroy(cloudinaryPublicId);
+        } catch (_) {}
+      } else if (photoPath && !photoPath.startsWith('http')) {
+        // Delete legacy local photo
+        try {
+          const oldFilePath = path.join(__dirname, '../static', photoPath);
+          await fs.unlink(oldFilePath);
+        } catch (_) {}
+      }
+
+      // Cloudinary storage sets path to the URL and filename to the public_id
+      photoPath = req.file.path; // Cloudinary URL
+      cloudinaryPublicId = req.file.filename; // Cloudinary public_id
+    }
+
+    if (existing.rows.length > 0) {
+      await query(
+        `UPDATE staff_profiles SET
+         full_name = $1,
+         role_title = $2,
+         is_teaching = $3,
+         professional_subjects = $4,
+         teaching_since_year = $5,
+         subjects_teaching = $6,
+         class_teacher_for = $7,
+         other_duties = $8,
+         contact_phone = $9,
+         contact_email = $10,
+         photo_path = $11,
+         cloudinary_public_id = $12,
+         profile_summary = $13,
+         display_order = $14,
+         active = $15,
+         updated_at = NOW()
+         WHERE id = $16`,
+        [
+          full_name, role_title, teachingBool, professional_subjects || null, parsedYear,
+          subjects_teaching || null, class_teacher_for || null, other_duties || null,
+          contact_phone || null, contact_email || null, photoPath, cloudinaryPublicId, profile_summary || null,
+          parsedOrder, activeBool, profileId
+        ]
+      );
+    } else {
+      await query(
+        `INSERT INTO staff_profiles
+         (id, full_name, role_title, is_teaching, professional_subjects, teaching_since_year, subjects_teaching,
+          class_teacher_for, other_duties, contact_phone, contact_email, photo_path, cloudinary_public_id, profile_summary, display_order, active)
+         VALUES
+         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+        [
+          profileId, full_name, role_title, teachingBool, professional_subjects || null, parsedYear,
+          subjects_teaching || null, class_teacher_for || null, other_duties || null, contact_phone || null,
+          contact_email || null, photoPath, cloudinaryPublicId, profile_summary || null, parsedOrder, activeBool
+        ]
+      );
+    }
+
+    res.json({ message: `Staff profile ${existing.rows.length > 0 ? 'updated' : 'created'} successfully`, id: profileId });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+router.delete('/staff-profiles/:id', async (req, res) => {
+  try {
+    await ensureStaffProfilesTable();
+    const { id } = req.params;
+    const existing = await query('SELECT photo_path, cloudinary_public_id FROM staff_profiles WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ message: 'Staff profile not found' });
+    }
+
+    const photoPath = existing.rows[0]?.photo_path;
+    const cloudinaryPublicId = existing.rows[0]?.cloudinary_public_id;
+
+    // Delete from Cloudinary if cloudinary_public_id exists
+    if (cloudinaryPublicId) {
+      try {
+        await cloudinary.uploader.destroy(cloudinaryPublicId);
+      } catch (_) {}
+    } else if (photoPath && !photoPath.startsWith('http')) {
+      // Delete legacy local photo
+      try {
+        const filePath = path.join(__dirname, '../static', photoPath);
+        await fs.unlink(filePath);
+      } catch (_) {}
+    }
+
+    await query('DELETE FROM staff_profiles WHERE id = $1', [id]);
+    res.json({ message: 'Staff profile deleted successfully' });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
 // ========== EVENTS ==========
 
 // ========== EVENTS ==========
@@ -1272,63 +1953,66 @@ router.post('/gallery/upload', (req, res, next) => {
       return res.status(400).json({ message: 'No files uploaded' });
     }
     
-    console.log(`Processing ${req.files.length} file(s) for gallery upload`);
-    
     const { category = 'general', caption = '', date } = req.body;
+    const cloudinary = require('cloudinary').v2;
     
     const uploadedPhotos = [];
     const errors = [];
     
-    // Ensure photos directory exists
-    const photosDir = path.join(__dirname, '../static/uploads/photos');
-    try {
-      await fs.mkdir(photosDir, { recursive: true });
-    } catch (dirError) {
-      console.error('Error creating photos directory:', dirError);
-      return sendError(res, dirError, 500);
-    }
-    
     for (let i = 0; i < req.files.length; i++) {
       try {
         const file = req.files[i];
-        
+
         if (!file || !file.path) {
           errors.push({ file: file?.originalname || `File ${i}`, error: 'File path is missing' });
           continue;
         }
-        
-        const ext = path.extname(file.originalname).toLowerCase();
-        const filename = `${uuidv4()}${ext}`;
-        const relativePath = `uploads/photos/${filename}`;
-        const newFilePath = path.join(__dirname, '../static', relativePath);
-        
-        // Check if source file exists
-        try {
-          await fs.access(file.path);
-        } catch (accessError) {
-          errors.push({ file: file.originalname, error: `Source file not found: ${file.path}` });
+
+        // Validate file size (max 16MB)
+        const MAX_FILE_SIZE = 16 * 1024 * 1024;
+        if (file.size > MAX_FILE_SIZE) {
+          errors.push({ file: file.originalname, error: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit` });
+          try { await fs.unlink(file.path).catch(() => {}); } catch (_) {}
           continue;
         }
-        
-        // Move file from temp location to final location
-        try {
-          await fs.rename(file.path, newFilePath);
-        } catch (renameError) {
-          // If rename fails (e.g., cross-device), try copy then unlink
-          console.log(`Rename failed, trying copy: ${renameError.message}`);
-          await fs.copyFile(file.path, newFilePath);
-          await fs.unlink(file.path).catch(() => {}); // Ignore errors deleting temp file
+
+        // Validate file format
+        const allowedFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+        if (!allowedFormats.includes(ext)) {
+          errors.push({ file: file.originalname, error: `Invalid format. Allowed: ${allowedFormats.join(', ')}` });
+          try { await fs.unlink(file.path).catch(() => {}); } catch (_) {}
+          continue;
         }
-        
+
+        // Upload with Cloudinary fallback
+        const uploadResult = await uploadWithCloudinaryFallback(file, 'arucase-gallery', {
+          quality: 'auto',
+          fetch_format: 'auto'
+        });
+
+        if (!uploadResult.success) {
+          errors.push({ file: file.originalname, error: uploadResult.error });
+          try { await fs.unlink(file.path).catch(() => {}); } catch (_) {}
+          continue;
+        }
+
         const photoId = `photo_${Date.now()}_${i}`;
-        
+
         await query(
           `INSERT INTO gallery_photos (id, path, category, caption, date, uploaded_by)
            VALUES ($1, $2, $3, $4, $5, $6)`,
-          [photoId, relativePath, category, caption || null, date || new Date().toISOString().split('T')[0], req.user?.username || 'admin']
+          [photoId, uploadResult.url, category, caption || null, date || new Date().toISOString().split('T')[0], req.user?.username || 'admin']
         );
-        
-        uploadedPhotos.push({ id: photoId, path: relativePath });
+
+        uploadedPhotos.push({ id: photoId, path: uploadResult.url, source: uploadResult.source });
+
+        // Clean up temp file
+        try {
+          await fs.unlink(file.path).catch(() => {});
+        } catch (cleanupError) {
+          // Ignore cleanup errors
+        }
       } catch (fileError) {
         console.error(`Error processing file ${i} (${req.files[i]?.originalname}):`, fileError);
         errors.push({ file: req.files[i]?.originalname || `File ${i}`, error: fileError.message });
@@ -1369,42 +2053,46 @@ router.post('/gallery/upload', (req, res, next) => {
 // Delete all gallery photos (admin only)
 router.delete('/gallery/delete-all', requireRole('admin'), async (req, res) => {
   try {
-    console.log('🗑️  Deleting all gallery photos...');
+    const cloudinary = require('cloudinary').v2;
     
     // Step 1: Get all gallery photos from database
     const result = await query('SELECT id, path FROM gallery_photos');
     const photos = result.rows;
-    console.log(`   Found ${photos.length} photo(s) in database`);
     
-    // Step 2: Delete physical files
-    const photosDir = path.join(__dirname, '../static/uploads/photos');
+    // Step 2: Delete from Cloudinary or local storage
     let deletedFiles = 0;
     let failedFiles = [];
     
-    try {
-      const files = await fs.readdir(photosDir);
-      console.log(`   Found ${files.length} file(s) in photos directory`);
-      
-      for (const file of files) {
+    for (const photo of photos) {
+      if (photo.path.includes('cloudinary.com')) {
+        // Delete from Cloudinary
         try {
-          const filePath = path.join(photosDir, file);
+          const urlParts = photo.path.split('/');
+          const filename = urlParts[urlParts.length - 1].split('.')[0];
+          const folder = urlParts[urlParts.length - 2];
+          const publicId = `${folder}/${filename}`;
+          
+          await cloudinary.uploader.destroy(publicId);
+          deletedFiles++;
+        } catch (err) {
+          failedFiles.push({ path: photo.path, error: err.message });
+          console.error(`   ✗ Failed to delete from Cloudinary: ${err.message}`);
+        }
+      } else {
+        // Delete local file
+        try {
+          const filePath = path.join(__dirname, '../static', photo.path);
           await fs.unlink(filePath);
           deletedFiles++;
-          console.log(`   ✓ Deleted: ${file}`);
         } catch (err) {
-          failedFiles.push({ file, error: err.message });
-          console.error(`   ✗ Failed to delete ${file}: ${err.message}`);
+          failedFiles.push({ path: photo.path, error: err.message });
+          console.error(`   ✗ Failed to delete local file: ${err.message}`);
         }
-      }
-    } catch (err) {
-      if (err.code !== 'ENOENT') {
-        console.error(`   ✗ Error reading photos directory: ${err.message}`);
       }
     }
     
     // Step 3: Delete all records from database
     const deleteResult = await query('DELETE FROM gallery_photos');
-    console.log(`   ✓ Deleted ${deleteResult.rowCount} record(s) from database`);
     
     // Log activity
     await saveUserActivity(req.user.id, 'delete_all_gallery_photos', {
@@ -1413,7 +2101,7 @@ router.delete('/gallery/delete-all', requireRole('admin'), async (req, res) => {
     });
     
     res.json({
-      message: `Successfully deleted ${deleteResult.rowCount} photo(s) from database and ${deletedFiles} file(s) from disk`,
+      message: `Successfully deleted ${deleteResult.rowCount} photo(s) from database and ${deletedFiles} file(s) from storage`,
       deletedRecords: deleteResult.rowCount,
       deletedFiles: deletedFiles,
       failedFiles: failedFiles.length > 0 ? failedFiles : undefined
@@ -1428,6 +2116,7 @@ router.delete('/gallery/delete-all', requireRole('admin'), async (req, res) => {
 router.delete('/gallery/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const cloudinary = require('cloudinary').v2;
     
     const photoResult = await query('SELECT path FROM gallery_photos WHERE id = $1', [id]);
     if (photoResult.rows.length === 0) {
@@ -1435,14 +2124,31 @@ router.delete('/gallery/:id', async (req, res) => {
     }
     
     const photoPath = photoResult.rows[0].path;
-    const path = require('path');
-    const fs = require('fs').promises;
     
-    try {
-      const filePath = path.join(__dirname, '../static', photoPath);
-      await fs.unlink(filePath);
-    } catch (err) {
-      console.log('Photo file not found or already deleted');
+    // Delete from Cloudinary if it's a Cloudinary URL
+    if (photoPath.includes('cloudinary.com')) {
+      try {
+        // Extract public_id from Cloudinary URL
+        const urlParts = photoPath.split('/');
+        const filename = urlParts[urlParts.length - 1].split('.')[0];
+        const folder = urlParts[urlParts.length - 2];
+        const publicId = `${folder}/${filename}`;
+        
+        await cloudinary.uploader.destroy(publicId);
+      } catch (cloudinaryError) {
+        console.error('Error deleting from Cloudinary:', cloudinaryError);
+        // Continue with database deletion even if Cloudinary deletion fails
+      }
+    } else {
+      // Delete local file if it's not a Cloudinary URL
+      const path = require('path');
+      const fs = require('fs').promises;
+      try {
+        const filePath = path.join(__dirname, '../static', photoPath);
+        await fs.unlink(filePath);
+      } catch (err) {
+        // Photo file not found or already deleted
+      }
     }
     
     await query('DELETE FROM gallery_photos WHERE id = $1', [id]);
@@ -1526,14 +2232,14 @@ router.delete('/alumni/:id', async (req, res) => {
     const { id } = req.params;
     
     const alumniResult = await query('SELECT photo FROM alumni WHERE id = $1', [id]);
-    if (alumniResult.rows.length > 0 && alumniResult.rows[0].photo) {
+    if (alumniResult.rows.length > 0 && alumniResult.rows[0] && alumniResult.rows[0].photo) {
       const path = require('path');
       const fs = require('fs').promises;
       try {
         const filePath = path.join(__dirname, '../static', alumniResult.rows[0].photo);
         await fs.unlink(filePath);
       } catch (err) {
-        console.log('Photo file not found or already deleted');
+        // Photo file not found or already deleted
       }
     }
     
@@ -1695,9 +2401,21 @@ router.post('/faqs/bulk', async (req, res) => {
 
 // ========== DEPARTMENT CONTACTS ==========
 
+async function ensureDepartmentContactColumns() {
+  await query(`
+    ALTER TABLE website_settings
+    ADD COLUMN IF NOT EXISTS admissions_email VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS academics_email VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS bursar_email VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS alumni_email VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS parents_email VARCHAR(255)
+  `);
+}
+
 // Get department contacts (from website settings)
 router.get('/department-contacts', async (req, res) => {
   try {
+    await ensureDepartmentContactColumns();
     const result = await query('SELECT admissions_email, academics_email, bursar_email, alumni_email, parents_email FROM website_settings WHERE id = 1');
     
     if (result.rows.length === 0) {
@@ -1721,6 +2439,7 @@ router.get('/department-contacts', async (req, res) => {
 // Update department contacts
 router.post('/department-contacts', async (req, res) => {
   try {
+    await ensureDepartmentContactColumns();
     const { admissions_email, academics_email, bursar_email, alumni_email, parents_email } = req.body;
     
     // Check if settings exist
@@ -1814,6 +2533,29 @@ router.post('/public-pages', async (req, res) => {
     }
     
     res.json({ message: 'Page saved successfully' });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+// Delete public page content (falls back to hardcoded public page defaults)
+router.delete('/public-pages/:pageName', async (req, res) => {
+  try {
+    const { pageName } = req.params;
+    if (!pageName || !pageName.trim()) {
+      return res.status(400).json({ message: 'pageName is required' });
+    }
+
+    const result = await query(
+      'DELETE FROM public_pages WHERE page_name = $1 RETURNING page_name',
+      [pageName.trim()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Page content not found' });
+    }
+
+    res.json({ message: 'Page content deleted successfully', page_name: result.rows[0]?.page_name });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -2215,7 +2957,7 @@ router.post('/administrators', upload.single('photo'), async (req, res) => {
             const oldFilePath = path.join(__dirname, '../static', oldPhotoPath);
             await fs.unlink(oldFilePath);
           } catch (err) {
-            console.log('Old photo file not found or already deleted');
+            // Old photo file not found or already deleted
           }
         }
       }
@@ -2285,7 +3027,7 @@ router.delete('/administrators/:id', async (req, res) => {
         const filePath = path.join(__dirname, '../static', photoPath);
         await fs.unlink(filePath);
       } catch (err) {
-        console.log('Photo file not found or already deleted');
+        // Photo file not found or already deleted
       }
     }
     
@@ -2534,7 +3276,7 @@ router.delete('/ai-matters/documents/:id', async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ message: 'Invalid id' });
     const row = await query('SELECT file_path FROM ai_matters_documents WHERE id = $1', [id]);
     if (row.rows.length === 0) return res.status(404).json({ message: 'Document not found' });
-    const filePath = path.join(aiMattersPath, row.rows[0].file_path);
+    const filePath = path.join(aiMattersPath, row.rows[0]?.file_path);
     try { await fs.unlink(filePath); } catch (_) {}
     await query('DELETE FROM ai_matters_documents WHERE id = $1', [id]);
     res.json({ message: 'Document deleted' });

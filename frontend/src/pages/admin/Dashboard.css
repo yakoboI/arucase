@@ -3,6 +3,30 @@
    Supports both Admin and Non-Admin users
    =========================================== */
 
+/* Mute Toggle Button */
+.mute-toggle-btn {
+  background: #ffffff;
+  border: 2px solid #01a72b;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #01a72b;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mute-toggle-btn:hover {
+  background: #01a72b;
+  color: #ffffff;
+}
+
+.mute-toggle-btn:active {
+  transform: scale(0.95);
+}
+
 /* Loading & Error States */
 .dashboard-loading,
 .dashboard-error {
@@ -58,6 +82,10 @@
 }
 
 .welcome-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -167,6 +195,119 @@
 
 .stats-grid-academic {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* Yearly student table (exercise box style) */
+.year-table-container {
+  margin-bottom: 1.5rem;
+}
+
+.year-table-header {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2933;
+  margin-bottom: 0.5rem;
+}
+
+.year-table {
+  display: grid;
+  border: 2px solid #cbd2e1;
+  border-radius: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.year-table-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+}
+
+.year-table--forms .year-table-row {
+  grid-template-columns: 1.4fr repeat(var(--year-cols, 1), 1fr) 1.1fr;
+}
+
+.year-table--academic-grid .year-table-row {
+  grid-template-columns: 1.6fr repeat(6, 1fr) 1fr;
+}
+
+.year-table-row:nth-child(even):not(.year-table-row--head) {
+  background-color: #f8fafc;
+}
+
+.year-table-row--head {
+  background: #e3f7ea;
+  border-bottom: 2px solid #cbd2e1;
+}
+
+.year-table-cell {
+  padding: 0.6rem 0.75rem;
+  border-right: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.year-table-cell:last-child {
+  border-right: none;
+}
+
+.year-table-cell--head {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  color: #111827;
+}
+
+.year-table-cell--year {
+  font-weight: 600;
+  color: #111827;
+}
+
+.year-table-cell--count {
+  font-variant-numeric: tabular-nums;
+  justify-content: flex-end;
+  color: #047857;
+  font-weight: 600;
+}
+
+.year-table-cell--count::after {
+  content: ' students';
+  font-weight: 400;
+  color: #4b5563;
+  margin-left: 0.25rem;
+}
+
+.year-table-cell--count-no-suffix {
+  font-variant-numeric: tabular-nums;
+  justify-content: flex-end;
+  color: #047857;
+  font-weight: 600;
+}
+
+.year-table-row--footer {
+  background-color: #f3f4ff;
+  border-top: 2px solid #cbd2e1;
+}
+
+@media (max-width: 640px) {
+  .year-table-row {
+    grid-template-columns: 0.9fr 1.1fr;
+  }
+
+  .year-table--forms .year-table-row {
+    grid-template-columns: 1.2fr repeat(var(--year-cols, 1), minmax(60px, 1fr)) 1.1fr;
+    overflow-x: auto;
+  }
+
+  .year-table--academic-grid .year-table-row {
+    grid-template-columns: 1.2fr repeat(6, minmax(70px, 1fr)) minmax(80px, 1fr);
+    overflow-x: auto;
+  }
+
+  .year-table-cell {
+    padding: 0.5rem 0.6rem;
+  }
 }
 
 /* Stat Cards */
@@ -299,8 +440,8 @@
 
 /* Sky Background */
 .sky-background {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 160px;
+  background: linear-gradient(135deg, #028a23 0%, #01a72b 100%);
+  min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -308,7 +449,7 @@
   overflow: hidden;
   width: 100%;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .sky-background::before {
@@ -318,8 +459,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="60" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
-  opacity: 0.3;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
   z-index: 1;
 }
 
@@ -334,24 +474,22 @@
 }
 
 .welcome-title {
-  font-size: clamp(1.75rem, 6vw, 2.75rem);
-  font-weight: 700;
-  margin: 0 auto clamp(0.5rem, 2vw, 0.75rem) auto;
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 600;
+  margin: 0 auto 0.5rem auto;
   color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   text-align: center;
   display: block;
   width: 100%;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .welcome-subtitle {
-  font-size: clamp(1rem, 3vw, 1.375rem);
+  font-size: clamp(0.9375rem, 2.5vw, 1.125rem);
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.95);
-  line-height: 1.6;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
   text-align: center;
   display: block;
   width: 100%;
@@ -361,56 +499,65 @@
 /* Guidelines Section */
 .guidelines-section {
   background: #ffffff;
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   margin: 0;
   width: 100%;
-  max-width: 1400px;
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  border: 1px solid #d1d5db;
+  border-top: none;
 }
 
 .guidelines-header {
   color: #1e293b;
-  font-size: clamp(1.5rem, 5vw, 2rem);
-  font-weight: 700;
-  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
   text-align: left;
   display: flex;
   align-items: center;
-  gap: clamp(0.5rem, 2vw, 0.75rem);
-  line-height: 1.35;
+  gap: 0.75rem;
+  line-height: 1.3;
 }
 
 .guidelines-header i {
-  color: #667eea;
-  font-size: 1.1em;
+  color: #01a72b;
+  font-size: 1em;
+}
+
+.guidelines-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 .guidelines-intro {
-  color: #475569;
-  font-size: clamp(1rem, 3vw, 1.25rem);
-  margin-bottom: clamp(1.5rem, 4vw, 2rem);
+  color: #64748b;
+  font-size: clamp(0.9375rem, 2.5vw, 1.0625rem);
+  margin-bottom: 2rem;
   text-align: left;
-  line-height: 1.75;
-  max-width: 900px;
+  line-height: 1.6;
+  max-width: 800px;
 }
 
 .guidelines-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 0;
   width: 100%;
 }
 
 /* Guideline Cards */
 .guideline-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #d1d5db;
+  border-radius: 0;
+  padding: 1.5rem;
+  box-shadow: none;
+  transition: all 0.2s ease;
   text-align: left;
   display: block;
   position: relative;
@@ -423,17 +570,17 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  height: 3px;
+  background: #01a72b;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .guideline-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
-  border-color: #c7d2fe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #01a72b;
 }
 
 .guideline-card:hover::before {
@@ -441,49 +588,49 @@
 }
 
 .guideline-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  background: #01a72b;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.875rem;
+  margin-bottom: 1rem;
   color: #ffffff;
-  font-size: 1.25rem;
-  box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
-  transition: transform 0.3s ease;
+  font-size: 1.125rem;
+  box-shadow: none;
+  transition: transform 0.2s ease;
 }
 
 .guideline-card:hover .guideline-icon {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .guideline-card h3 {
-  font-size: clamp(1.125rem, 3.5vw, 1.375rem);
+  font-size: clamp(1rem, 3vw, 1.125rem);
   font-weight: 600;
   color: #1e293b;
-  margin: 0 0 clamp(0.5rem, 2vw, 0.75rem) 0;
+  margin: 0 0 0.625rem 0;
   line-height: 1.4;
 }
 
 .guideline-card p {
-  font-size: clamp(1rem, 3vw, 1.125rem);
+  font-size: clamp(0.875rem, 2.5vw, 0.9375rem);
   color: #64748b;
-  line-height: 1.75;
+  line-height: 1.6;
   margin: 0;
 }
 
 .guidelines-footer {
-  margin-top: 2rem;
+  margin-top: 2.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #e5e7eb;
   text-align: center;
 }
 
 .guidelines-footer p {
-  font-size: clamp(0.875rem, 1.8vw, 1rem);
-  color: #475569;
+  font-size: clamp(0.8125rem, 2vw, 0.875rem);
+  color: #64748b;
   margin: 0;
   display: flex;
   align-items: center;
@@ -493,12 +640,67 @@
 }
 
 .guidelines-footer i {
-  color: #f59e0b;
+  color: #01a72b;
 }
 
 /* ===========================================
    RESPONSIVE DESIGN
    =========================================== */
+
+/* Teacher Dashboard - Mobile First */
+@media (max-width: 480px) {
+  .sky-background {
+    min-height: 120px;
+    padding: 1rem;
+  }
+  
+  .welcome-title {
+    font-size: clamp(1.25rem, 6vw, 1.75rem);
+  }
+  
+  .welcome-subtitle {
+    font-size: clamp(0.8125rem, 3vw, 0.9375rem);
+  }
+  
+  .guidelines-section {
+    padding: 1.5rem 1rem;
+  }
+  
+  .guidelines-header {
+    font-size: clamp(1.125rem, 5vw, 1.375rem);
+  }
+  
+  .guidelines-intro {
+    font-size: clamp(0.8125rem, 3vw, 0.875rem);
+  }
+  
+  .guidelines-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .guideline-card {
+    padding: 1rem;
+  }
+  
+  .guideline-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+  }
+  
+  .guideline-card h3 {
+    font-size: clamp(0.875rem, 3.5vw, 0.9375rem);
+  }
+  
+  .guideline-card p {
+    font-size: clamp(0.75rem, 2.5vw, 0.8125rem);
+  }
+  
+  .guidelines-footer p {
+    font-size: clamp(0.75rem, 2.5vw, 0.8125rem);
+  }
+}
 
 @media (min-width: 768px) {
   .dashboard-main-grid {
@@ -511,6 +713,21 @@
   
   .stats-grid-students {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  
+  /* Teacher Dashboard - Tablet */
+  .sky-background {
+    min-height: 150px;
+    padding: 2rem;
+  }
+  
+  .guidelines-section {
+    padding: 2.5rem 2rem;
+  }
+  
+  .guidelines-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
   }
 }
 
@@ -528,7 +745,22 @@
   }
   
   .guidelines-grid {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  }
+  
+  /* Teacher Dashboard - Desktop */
+  .sky-background {
+    min-height: 160px;
+    padding: 2.5rem;
+  }
+  
+  .guidelines-section {
+    padding: 3rem 2.5rem;
+  }
+  
+  .guidelines-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 1.75rem;
   }
 }
 
@@ -541,62 +773,55 @@
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
   
-  /* Reduce font sizes on large screens */
-  .stat-number {
-    font-size: 1.75rem !important;
+  /* Teacher Dashboard - Large Desktop */
+  .sky-background {
+    min-height: 170px;
   }
   
-  .stat-number-primary {
-    font-size: 2rem !important;
+  .guidelines-section {
+    padding: 3.5rem 3rem;
   }
   
-  .stat-label {
-    font-size: 0.875rem !important;
+  .guidelines-grid {
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 2rem;
   }
   
-  .stat-description {
-    font-size: 0.75rem !important;
+  .guideline-card {
+    padding: 1.5rem;
   }
   
-  .stat-icon {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 1.125rem !important;
-  }
-  
-  .stat-card {
-    padding: 1rem !important;
-    min-height: 100px !important;
+  .guideline-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
   }
 }
 
-/* Extra large screens - further reduce sizes */
+/* Extra large screens */
 @media (min-width: 1536px) {
-  .stat-number {
-    font-size: 1.5rem !important;
+  /* Teacher Dashboard - Extra Large Desktop */
+  .sky-background {
+    min-height: 180px;
   }
   
-  .stat-number-primary {
-    font-size: 1.75rem !important;
+  .guidelines-section {
+    padding: 4rem 3.5rem;
   }
   
-  .stat-label {
-    font-size: 0.8125rem !important;
+  .guidelines-grid {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2.25rem;
   }
   
-  .stat-icon {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 1rem !important;
+  .guideline-card {
+    padding: 1.75rem;
   }
   
-  .stat-card {
-    padding: 0.875rem !important;
-    min-height: 95px !important;
-  }
-  
-  .section-title {
-    font-size: 1.25rem !important;
+  .guideline-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 1.375rem;
   }
 }
 
@@ -635,8 +860,12 @@
   }
   
   .guidelines-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+  }
+  
+  .guideline-card {
+    padding: 1.125rem;
   }
 }
 

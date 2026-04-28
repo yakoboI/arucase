@@ -3,7 +3,7 @@
  * or FORM V-VI (initial selection).
  * Non-admin users only see FORM V-VI streams (classes) allocated to them.
  */
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -21,7 +21,6 @@ const FORM_VVI_STREAMS = [
 
 const StreamSelection = ({ formLevel, isFormVOrVI = false }) => {
   const { year } = useParams();
-  const navigate = useNavigate();
   const { hasClass } = useAuth();
 
   const formVVIStreams = useMemo(() => {
@@ -70,7 +69,7 @@ const StreamSelection = ({ formLevel, isFormVOrVI = false }) => {
           <div className="stream-selection-card-header">
             <i className="fas fa-layer-group"></i>
             <span>
-              {formLevel} {year && `- ${year}`} - {isFormVOrVI ? 'Select Stream' : 'Select Stream'}
+              {formLevel} {year && `- ${year}`} - Select Stream
             </span>
           </div>
           <div className="stream-selection-card-body">

@@ -1,9 +1,11 @@
 /* Admin Sidebar Styles */
 .admin-sidebar {
-  position: fixed;
+  position: absolute;
   left: 0;
   top: 0;
-  height: 100vh;
+  bottom: 0;
+  height: auto;
+  min-height: 100%;
   width: 280px;
   background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%);
   color: white;
@@ -278,10 +280,20 @@
     display: block;
   }
 
-  /* Hide sidebar by default on mobile, show when menu is open */
+  /* Full-screen slide-in panel (not a narrow strip) */
   .admin-sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100%;
     transform: translateX(-100%);
-    width: 280px;
     z-index: 1001;
   }
 
@@ -289,12 +301,11 @@
     transform: translateX(0);
   }
 
-  /* Don't allow collapsing on mobile */
   .admin-sidebar.collapsed {
-    width: 280px;
+    width: 100%;
+    max-width: 100%;
   }
 
-  /* Hide desktop navigation, show mobile navigation */
   .sidebar-nav-desktop {
     display: none;
   }
@@ -303,32 +314,10 @@
     display: block;
   }
 
-  /* Hide sidebar toggle button on mobile */
   .sidebar-toggle {
     display: none;
   }
-}
 
-/* Ensure mobile elements are hidden on large screens */
-@media (min-width: 769px) {
-  .admin-mobile-menu-toggle {
-    display: none !important;
-  }
-
-  .admin-mobile-menu-overlay {
-    display: none !important;
-  }
-
-  .sidebar-nav-mobile {
-    display: none !important;
-  }
-
-  .admin-sidebar {
-    transform: translateX(0) !important;
-  }
-}
-
-  /* Mobile Navigation Items */
   .mobile-nav-items {
     list-style: none;
     padding: 0;
@@ -346,8 +335,8 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
     width: 100%;
-    min-height: 52px; /* Touch-friendly - larger than 48px standard */
-    touch-action: manipulation; /* Prevent double-tap zoom */
+    min-height: 52px;
+    touch-action: manipulation;
   }
 
   .mobile-nav-item:hover,
@@ -374,9 +363,11 @@
     word-wrap: break-word;
   }
 
-  /* Ensure sidebar is scrollable on mobile */
-  .sidebar-nav {
-    height: calc(100vh - 200px);
+  .admin-sidebar .sidebar-nav {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    max-height: none;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -385,38 +376,41 @@
     scroll-behavior: smooth;
   }
 
-  .sidebar-nav::-webkit-scrollbar {
+  .admin-sidebar .sidebar-nav::-webkit-scrollbar {
     width: 10px;
   }
 
-  .sidebar-nav::-webkit-scrollbar-track {
+  .admin-sidebar .sidebar-nav::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 5px;
   }
 
-  .sidebar-nav::-webkit-scrollbar-thumb {
+  .admin-sidebar .sidebar-nav::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.7);
     border-radius: 5px;
     border: 2px solid rgba(255, 255, 255, 0.2);
   }
 
-  .sidebar-nav::-webkit-scrollbar-thumb:hover {
+  .admin-sidebar .sidebar-nav::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.9);
   }
-
-/* Main Content Adjustment */
-.admin-main-content {
-  margin-left: 280px;
-  transition: margin-left 0.3s ease;
-  min-height: 100vh;
 }
 
-.admin-sidebar.collapsed ~ .admin-main-content {
-  margin-left: 70px;
-}
+/* Ensure mobile elements are hidden on large screens */
+@media (min-width: 769px) {
+  .admin-mobile-menu-toggle {
+    display: none !important;
+  }
 
-@media (max-width: 768px) {
-  .admin-main-content {
-    margin-left: 0;
+  .admin-mobile-menu-overlay {
+    display: none !important;
+  }
+
+  .sidebar-nav-mobile {
+    display: none !important;
+  }
+
+  .admin-sidebar {
+    transform: translateX(0) !important;
   }
 }

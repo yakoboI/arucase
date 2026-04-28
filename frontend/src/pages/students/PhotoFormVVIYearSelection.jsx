@@ -38,7 +38,7 @@ const PhotoFormVVIYearSelection = ({ formLevel }) => {
       'FORM V': 'form-v',
       'FORM VI': 'form-vi',
     };
-    return `/admin/students/photos/${formMap[formLevel]}/stream/${stream}/year/${year}`;
+    return `/admin/students/photos/${formMap[formLevel]}/stream/${stream}/year/${year}/terms`;
   };
 
   return (
@@ -56,7 +56,7 @@ const PhotoFormVVIYearSelection = ({ formLevel }) => {
             <div className="photo-year-selection-grid">
               {years.map((yearObj) => (
                 <Link
-                  key={yearObj.year}
+                  key={`${yearObj.year}-${yearObj.isEndYear ? 'end' : 'start'}`}
                   to={getPhotoManagementPath(yearObj.year)}
                   className="photo-year-selection-card-item"
                   aria-label={`${yearObj.displayRange} Student Photos`}

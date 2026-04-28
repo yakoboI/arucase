@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import api from '../../services/api';
@@ -26,44 +26,115 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
   const normalizedLevel = formLevel
     ? formLevel.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     : '';
-  
-  const normalizedStream = stream || 'NA';
-  const normalizedTerm = term || 'Term I';
 
-  // Helper function to sort students by name: first_name, then middle_name, then surname (A-Z)
-  const sortStudentsByName = (students) => {
-    return [...students].sort((a, b) => {
-      // Sort by first_name first
-      const firstNameA = String(a.first_name || '').toLowerCase().trim();
-      const firstNameB = String(b.first_name || '').toLowerCase().trim();
-      const firstNameCompare = firstNameA.localeCompare(firstNameB, undefined, { sensitivity: 'base' });
-      if (firstNameCompare !== 0) return firstNameCompare;
-      
-      // If first names are equal, sort by middle_name
-      const middleNameA = String(a.middle_name || '').toLowerCase().trim();
-      const middleNameB = String(b.middle_name || '').toLowerCase().trim();
-      const middleNameCompare = middleNameA.localeCompare(middleNameB, undefined, { sensitivity: 'base' });
-      if (middleNameCompare !== 0) return middleNameCompare;
-      
-      // If middle names are equal, sort by surname
-      const surnameA = String(a.surname || '').toLowerCase().trim();
-      const surnameB = String(b.surname || '').toLowerCase().trim();
-      return surnameA.localeCompare(surnameB, undefined, { sensitivity: 'base' });
-    });
+  // Check if this is Form V or VI
+  const isFormVOrVI = normalizedLevel.toUpperCase() === 'FORM V' || normalizedLevel.toUpperCase() === 'FORM VI';
+
+  // Don't normalize stream here - let backend handle it
+  const normalizedStream = stream || 'NA';
+
+  // Normalize term to match backend format (First Term/Second Term)
+  const normalizeTerm = (termParam) => {
+    if (!termParam) return 'Term I';
+    const t = termParam.trim();
+    if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t)) return 'First Term';
+    if (/^Term\s+II$/i.test(t) || /^Term\s+2$/i.test(t)) return 'Second Term';
+    if (/^First\s+Term$/i.test(t)) return 'First Term';
+    if (/^Second\s+Term$/i.test(t)) return 'Second Term';
+    return t; // Return as-is if no match
   };
 
-  // Fetch students for this class - sorted by name: first_name, then middle_name, then surname (A-Z)
+  const normalizedTerm = normalizeTerm(term);
+
+  console.log(`[COMMENT MGMT] URL params: stream=${stream}, normalizedStream=${normalizedStream}, level=${normalizedLevel}, year=${year}, term=${term}, normalizedTerm=${normalizedTerm}, isFormVOrVI=${isFormVOrVI}, commentType=${commentType}`);
+
+  // Grade to comment mapping for Mkuu comments
+  const getGradeComment = (grade) => {
+    if (commentType === 'mwalimu_taaluma') {
+      const mwalimuGradeMap = {
+        'A': 'Amefanya vizuri',
+        'B': 'Amefanya vizuri',
+        'C': 'Ufaulu wa wastani',
+        'D': 'Ufaulu dhaifu. Aongeze bidii katika masomo',
+        'E': 'Anahitaji kujitahidi zaidi',
+        'F': 'Amefeli',
+        'S': 'Kidogo. Anahitaji kuongeza juhudi'
+      };
+      return mwalimuGradeMap[grade?.toUpperCase()] || '';
+    } else {
+      const mkuuGradeMap = {
+        'A': 'Pongezi kwa matokeo haya mazuri; dumu katika kiwango hiki.',
+        'B': 'Amefanya vizuri,akazane kufikia kiwango cha juu zaidi.',
+        'C': 'Uwezo upo, ongeza umakini ili kupata matokeo bora zaidi.',
+        'D': 'Asikate tamaa; akiongeza juhudi atafanya vyema zaidi.',
+        'E': 'Masomo yanahitaji muda na bidii yake zaidi.',
+        'F': 'Ni lazima azingatie maelekezo ya walimu ili kufaulu.',
+        'S': 'Jitihada zake bado hazitoshi; azingatie masomo sasa hivi.'
+      };
+      return mkuuGradeMap[grade?.toUpperCase()] || '';
+    }
+  };
+
+  // Auto-fill comments based on grades (for Mkuu and Mwalimu comments)
+  const handleAutoFillComments = () => {
+    if (commentType !== 'mkuu_shule' && commentType !== 'mwalimu_taaluma') {
+      toast.warning('Auto-fill is only available for Mkuu and Mwalimu comments');
+      return;
+    }
+
+    if (Object.keys(classGrades).length === 0) {
+      toast.warning('Class grades not available. Please ensure grades are calculated.');
+      return;
+    }
+
+    const newComments = {};
+    students.forEach((student) => {
+      const studentIndex = getStudentIndex(student);
+      const grade = classGrades[student.adm_no];
+      if (grade) {
+        newComments[studentIndex] = getGradeComment(grade);
+      }
+    });
+
+    setComments(newComments);
+
+    // Save all auto-filled comments to database
+    Object.keys(newComments).forEach((studentIndex) => {
+      const commentText = newComments[studentIndex];
+      saveCommentMutation.mutate({ studentIndex, commentText });
+    });
+
+    toast.success('Comments auto-filled and saved based on grades');
+  };
+
+  // Helper function 
+
+  // Fetch students for this class 
+  // For FORM I-IV with stream 'A', fetch from BOTH streams to match report generation student_index calculation
+  const isFormIToIV = /^FORM\s+(I|II|III|IV)$/i.test(normalizedLevel);
   const { data: studentsData = [], isLoading: studentsLoading } = useQuery({
-    queryKey: ['students', normalizedLevel, normalizedStream, year],
+    queryKey: ['students', normalizedLevel, normalizedStream, year, ...(isFormVOrVI ? [normalizedTerm] : [])],
     queryFn: async () => {
       const res = await studentsAPI.getStudents({
+        // For Form I-IV, don't filter by term - show all students for the year
+        // For Form V/VI, filter by term
+        ...(isFormVOrVI ? { term: normalizedTerm } : {}),
         level: normalizedLevel,
         stream: normalizedStream,
         year: year,
       });
+      console.log(`[COMMENT MGMT] API call params:`, {
+        level: normalizedLevel,
+        stream: normalizedStream,
+        year: year,
+        term: isFormVOrVI ? normalizedTerm : 'not sent (Form I-IV)',
+        isFormVOrVI: isFormVOrVI
+      });
       const students = res.data.students || [];
-      // Sort students by name: first_name, then middle_name, then surname (A-Z)
-      return sortStudentsByName(students);
+      console.log(`[COMMENT MGMT] Fetched ${students.length} students for ${normalizedLevel} stream=${normalizedStream} year=${year}`);
+      console.log(`[COMMENT MGMT] Students:`, students.map(s => ({ adm_no: s.adm_no, name: `${s.first_name} ${s.middle_name || ''} ${s.surname}`, stream: s.stream })));
+      // Backend already sorts students by name (ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC)
+      return students;
     },
   });
   
@@ -204,16 +275,16 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
   }, [commentType, year, stream, term]);
 
   const getBackPath = () => {
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+    if (isFormVOrVI) {
       return `/admin/${moduleName}/${formLevel}/stream/${stream}/year/${year}/terms`;
     } else {
-      return `/admin/${moduleName}/${formLevel}/year/${year}/stream/${stream}/terms`;
+      return `/admin/${moduleName}/${formLevel}/year/${year}/streams`;
     }
   };
 
   const getOtherTermPath = () => {
-    const otherTerm = normalizedTerm === 'Term I' ? 'Term II' : 'Term I';
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+    const otherTerm = normalizedTerm === 'First Term' ? 'Second Term' : 'First Term';
+    if (isFormVOrVI) {
       return `/admin/${moduleName}/${formLevel}/stream/${stream}/year/${year}/term/${otherTerm}`;
     } else {
       return `/admin/${moduleName}/${formLevel}/year/${year}/stream/${stream}/term/${otherTerm}`;
@@ -221,10 +292,13 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
   };
 
   // Calculate student index (position in sorted list)
-  // Students are sorted by name: first_name, then middle_name, then surname (A-Z)
+  // Backend already sorts students by name (ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC)
   const getStudentIndex = (student, index) => {
-    const sortedStudents = sortStudentsByName(students);
-    return sortedStudents.findIndex(s => s.adm_no === student.adm_no).toString();
+    const studentIndex = students.findIndex(
+      (s) => String(s.adm_no) === String(student.adm_no)
+    ).toString();
+    console.log(`[COMMENT MGMT] Student ${student.adm_no}: student_index=${studentIndex}, total_students=${students.length}, stream=${normalizedStream}, level=${normalizedLevel}`);
+    return studentIndex;
   };
 
   // CSV: escape cell for CSV (quote if contains comma, newline, or quote)
@@ -416,6 +490,17 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
                 {uploading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-upload"></i>}
                 {uploading ? ' Uploading...' : ' Upload filled template'}
               </label>
+              {(commentType === 'mkuu_shule' || commentType === 'mwalimu_taaluma') && (
+                <button
+                  type="button"
+                  className="excel-btn small secondary"
+                  onClick={handleAutoFillComments}
+                  disabled={students.length === 0 || gradesLoading}
+                  title="Auto-fill comments based on student grades"
+                >
+                  <i className="fas fa-magic"></i> Auto-fill Comments
+                </button>
+              )}
               <Link to={getBackPath()} className="excel-btn small secondary">
                 <i className="fas fa-arrow-left"></i> Back
               </Link>
@@ -437,7 +522,7 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
               <>
                 <div className="action-buttons">
                   <Link to={getOtherTermPath()} className="excel-btn secondary switch-term-btn">
-                    <i className="fas fa-exchange-alt"></i> Switch to {normalizedTerm === 'Term I' ? 'Term II' : 'Term I'}
+                    <i className="fas fa-exchange-alt"></i> Switch to {normalizedTerm === 'First Term' ? 'Second Term' : 'First Term'}
                   </Link>
                 </div>
                 

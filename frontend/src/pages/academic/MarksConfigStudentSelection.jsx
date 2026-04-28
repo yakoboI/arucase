@@ -11,12 +11,12 @@ import './MarksConfigStudentSelection.css';
 
 const MarksConfigStudentSelection = ({ formLevel }) => {
   const { year, stream, term } = useParams();
-  
+
   // Normalize form level - convert to uppercase for database query
   const normalizedLevel = formLevel
     ? formLevel.split('-').map(w => w.toUpperCase()).join(' ')
     : '';
-  
+
   // Normalize stream: use 'A' as default for Form I-IV (previously 'NA')
   // For Form V/VI, use the actual stream value (e.g., "HKL", "PCM", etc.)
   const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
@@ -24,8 +24,8 @@ const MarksConfigStudentSelection = ({ formLevel }) => {
 
   // Calculate if query should be enabled (must be explicit boolean)
   const isQueryEnabled = Boolean(
-    normalizedLevel && 
-    year && 
+    normalizedLevel &&
+    year &&
     (!isFormVOrVI || (normalizedStream && normalizedStream.trim() !== ''))
   );
 
@@ -38,36 +38,39 @@ const MarksConfigStudentSelection = ({ formLevel }) => {
         console.warn('Missing required parameters:', { normalizedLevel, year });
         return [];
       }
-      
+
       // For Form V/VI, stream is required
       if (isFormVOrVI && !normalizedStream) {
         console.warn('Form V/VI requires stream:', { normalizedLevel, normalizedStream });
         return [];
       }
-      
+
       try {
-        console.log('Fetching students with params:', { 
-          level: normalizedLevel, 
-          stream: normalizedStream, 
-          year: year 
+        console.log('Fetching students with params:', {
+          level: normalizedLevel,
+          stream: normalizedStream,
+          year: year
         });
-        
+
         const res = await studentsAPI.getStudents({
           level: normalizedLevel,
           stream: normalizedStream,
           year: year,
+          // For Form I-IV, don't filter by term - show all students for the year
+          // For Form V/VI, filter by term
+          ...(isFormVOrVI ? { term: term } : {}),
         });
-        
+
         const students = res.data.students || [];
         console.log(`Found ${students.length} students for ${normalizedLevel} ${normalizedStream} ${year}`);
-        
+
         // Sort alphabetically by first name, then middle name
         return students.sort((a, b) => {
           const firstNameA = String(a.first_name || '').toLowerCase().trim();
           const firstNameB = String(b.first_name || '').toLowerCase().trim();
           const firstNameCompare = firstNameA.localeCompare(firstNameB);
           if (firstNameCompare !== 0) return firstNameCompare;
-          
+
           const middleNameA = String(a.middle_name || '').toLowerCase().trim();
           const middleNameB = String(b.middle_name || '').toLowerCase().trim();
           return middleNameA.localeCompare(middleNameB);
@@ -140,7 +143,7 @@ const MarksConfigStudentSelection = ({ formLevel }) => {
                 <p style={{ fontSize: '12px', marginTop: '8px', color: '#666' }}>
                   Search criteria: Level={normalizedLevel}, Stream={normalizedStream}, Year={year}
                 </p>
-                <Link 
+                <Link
                   to={`/admin/students/registration?level=${encodeURIComponent(normalizedLevel)}&stream=${encodeURIComponent(normalizedStream)}&year=${year}`}
                   className="excel-btn primary"
                   style={{ marginTop: '16px' }}

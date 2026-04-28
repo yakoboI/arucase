@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import { adminAPI } from '../../services/admin';
@@ -26,6 +26,20 @@ const MonthlyResultsManagement = ({ formLevel }) => {
     : '';
   
   const normalizedStream = stream || 'NA';
+
+  // Check if this is Form V or VI
+  const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
+
+  // Determine term from month
+  const getTermFromMonth = (month) => {
+    const firstTermMonths = ['January', 'February', 'March', 'April', 'May', 'June'];
+    const secondTermMonths = ['July', 'August', 'September', 'October', 'November', 'December'];
+    if (firstTermMonths.includes(month)) return 'First Term';
+    if (secondTermMonths.includes(month)) return 'Second Term';
+    return 'First Term'; // default
+  };
+
+  const currentTerm = getTermFromMonth(month);
 
   // Determine test type based on month
   const getTestType = (month, level) => {
@@ -53,13 +67,14 @@ const MonthlyResultsManagement = ({ formLevel }) => {
 
   // Fetch students for this class
   const { data: students = [], isLoading: studentsLoading } = useQuery({
-    queryKey: ['students', normalizedLevel, normalizedStream, year],
+    queryKey: ['students', normalizedLevel, normalizedStream, year, ...(isFormVOrVI ? [currentTerm] : [])],
     queryFn: async () => {
       try {
         const res = await studentsAPI.getStudents({
           level: normalizedLevel,
           stream: normalizedStream,
           year: year,
+          ...(isFormVOrVI ? { term: currentTerm } : {}),
         });
         return res.data.students || [];
       } catch (error) {
@@ -207,16 +222,48 @@ const MonthlyResultsManagement = ({ formLevel }) => {
     }
   }, [existingResults]);
 
+  // Combined mode (stream=ALL): ensure there is data to display.
+  // If the backend has no combined monthly_results yet, calculate once automatically.
+  const didAutoCalculateRef = useRef(false);
+  useEffect(() => {
+    const isCombinedAll = normalizedStream && normalizedStream.toUpperCase() === 'ALL';
+    if (!isCombinedAll) return;
+    if (!month) return;
+    if (!isAuthenticated) return;
+    if (didAutoCalculateRef.current) return;
+    if (studentsLoading || subjectsLoading || resultsLoading) return;
+    if (Object.keys(existingResults || {}).length > 0) return;
+
+    didAutoCalculateRef.current = true;
+    // Ensure rejections from the auto-calculate path are handled
+    // to prevent "Uncaught (in promise)" console noise.
+    calculateResultsMutation.mutateAsync().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    normalizedStream,
+    month,
+    isAuthenticated,
+    studentsLoading,
+    subjectsLoading,
+    resultsLoading,
+    existingResults,
+  ]);
+
   // Calculate results mutation
   const calculateResultsMutation = useMutation({
     mutationFn: async () => {
       try {
-        return await studentsAPI.calculateMonthlyResults({
+        const params = {
           level: normalizedLevel,
           stream: normalizedStream,
           year: parseInt(year),
           month: month,
-        });
+        };
+        // For Form V/VI, include term parameter
+        if (isFormVOrVI) {
+          params.term = currentTerm;
+        }
+        return await studentsAPI.calculateMonthlyResults(params);
       } catch (error) {
         console.error('Error calculating results:', error);
         throw error;
@@ -321,7 +368,7 @@ const MonthlyResultsManagement = ({ formLevel }) => {
   };
 
   const getBackPath = () => {
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+    if (isFormVOrVI) {
       return `/admin/results/monthly/${formLevel}/stream/${stream}/year/${year}/months`;
     } else {
       return `/admin/results/monthly/${formLevel}/year/${year}/stream/${stream}/months`;
@@ -334,24 +381,66 @@ const MonthlyResultsManagement = ({ formLevel }) => {
     return sortedStudents.findIndex(s => s.adm_no === student.adm_no).toString();
   };
 
+  // Format subject scores:
+  // - remove trailing ".00" (e.g. 12.00 -> 12)
+  // - keep real decimals when present (e.g. 12.50 -> 12.5)
+  const formatSubjectScore = (value) => {
+    if (value === undefined || value === null || value === '') return '-';
+    const num = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(num)) return String(value);
+    if (Math.abs(num - Math.round(num)) < 1e-9) return String(Math.round(num));
+    return String(num)
+      .replace(/(\.\d*?[1-9])0+$/, '$1')
+      .replace(/\.0+$/, '');
+  };
+
+  // Render COM display text (database stores Sc/Ss/Ui, UI shows requested labels)
+  const formatComDisplay = (value) => {
+    const code = String(value || '').trim();
+    if (!code) return '-';
+    if (code === 'Sc') return 'Science';
+    if (code === 'Ss') return 'Art';
+    if (code === 'Ui') return 'Under investigation';
+    return code; // fallback: show raw stored code
+  };
+
+  // A-Level (FORM V/VI): DB stores the registered combination as a shortform like PCM/HGE/HGL.
+  const formatComCombination = (value) => {
+    const code = String(value || '').trim().toUpperCase();
+    return code || '-';
+  };
+
   // Sort students: by position if results exist, otherwise alphabetically
   const sortedStudents = [...students].sort((a, b) => {
     const indexA = getStudentIndex(a);
     const indexB = getStudentIndex(b);
     const resultA = results[indexA];
     const resultB = results[indexB];
-    
-    // If both have positions, sort by position (ascending)
-    if (resultA?.position !== null && resultA?.position !== undefined && 
-        resultB?.position !== null && resultB?.position !== undefined) {
-      return resultA.position - resultB.position;
+
+    // Sort by AVR (average) desc only.
+    const avgA = resultA?.average !== null && resultA?.average !== undefined ? Number(resultA.average) : null;
+    const avgB = resultB?.average !== null && resultB?.average !== undefined ? Number(resultB.average) : null;
+
+    const aHasAvg = avgA !== null && Number.isFinite(avgA);
+    const bHasAvg = avgB !== null && Number.isFinite(avgB);
+
+    if (aHasAvg && bHasAvg && avgA !== avgB) return avgB - avgA;
+
+    // If AVR ties, rank by TOT desc so POS aligns chronologically.
+    // (Backend uses total_marks as tie-breaker for AVR ties.)
+    if (aHasAvg && bHasAvg && avgA === avgB) {
+      const totA = resultA?.total_marks !== null && resultA?.total_marks !== undefined ? Number(resultA.total_marks) : null;
+      const totB = resultB?.total_marks !== null && resultB?.total_marks !== undefined ? Number(resultB.total_marks) : null;
+
+      const aHasTot = totA !== null && Number.isFinite(totA);
+      const bHasTot = totB !== null && Number.isFinite(totB);
+
+      if (aHasTot && bHasTot && totA !== totB) return totB - totA;
     }
-    
-    // If only one has position, prioritize it
-    if (resultA?.position !== null && resultA?.position !== undefined) return -1;
-    if (resultB?.position !== null && resultB?.position !== undefined) return 1;
-    
-    // If neither has position, sort alphabetically by first_name, then middle_name, then surname
+    if (aHasAvg && !bHasAvg) return -1;
+    if (!aHasAvg && bHasAvg) return 1;
+
+    // If averages missing, sort alphabetically by first_name, then middle_name, then surname
     if (a.first_name !== b.first_name) {
       return a.first_name.localeCompare(b.first_name);
     }
@@ -364,6 +453,27 @@ const MonthlyResultsManagement = ({ formLevel }) => {
   const testType = getTestType(month, normalizedLevel);
   const className = `${normalizedLevel} ${normalizedStream} ${year}`;
   const isALevel = normalizedLevel.includes('FORM V') || normalizedLevel.includes('FORM VI');
+
+  const formatALevelSubjectHeader = (label) => {
+    const s = String(label || '').trim();
+    if (!s) return s;
+
+    // Database may store A-level advanced subjects with prefixes like "A/BIO"
+    // but printed results expect: BIO, CHE, ACOM, DIV, HTM, MAT, PHY.
+    const m1 = s.match(/^A\/(BIO|CHE|COM|DIV|HTM|MAT|PHY)$/i);
+    if (m1) {
+      const code = m1[1].toUpperCase();
+      return code === 'COM' ? 'ACOM' : code;
+    }
+
+    const m2 = s.match(/^A_(BIO|CHE|COM|DIV|HTM|MAT|PHY)$/i);
+    if (m2) {
+      const code = m2[1].toUpperCase();
+      return code === 'COM' ? 'ACOM' : code;
+    }
+
+    return s;
+  };
 
   // Generate PDF function - Using window.print() with CSS page breaks
   const handlePrint = async () => {
@@ -561,6 +671,7 @@ const MonthlyResultsManagement = ({ formLevel }) => {
             <i className="fas fa-chart-bar"></i> MONTHLY RESULTS MANAGEMENT
             <div className="header-actions">
               <button
+                type="button"
                 onClick={handleCalculate}
                 className="excel-btn primary small"
                 disabled={calculateResultsMutation.isLoading}
@@ -600,10 +711,10 @@ const MonthlyResultsManagement = ({ formLevel }) => {
         {!studentsLoading && !subjectsLoading && !resultsLoading && students.length > 0 && (
           <>
             <div className="print-button-container">
-              <button onClick={handlePrint} id="downloadResultsBtn" className="download-btn-monthly">
+              <button type="button" onClick={handlePrint} id="downloadResultsBtn" className="download-btn-monthly">
                 <i className="fas fa-file-pdf"></i> <span id="downloadBtnText">Download Result (PDF)</span>
               </button>
-              <button onClick={handleDownloadCSV} className="download-btn-monthly" style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)' }}>
+              <button type="button" onClick={handleDownloadCSV} className="download-btn-monthly" style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)' }}>
                 <i className="fas fa-file-csv"></i> Download CSV
               </button>
             </div>
@@ -688,13 +799,18 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                       <th className="sticky-col col-sname">Surname</th>
                       {subjects.map((subject) => (
                         <th key={subject.subject_code} className="subject-col">
-                          <div className="rotate-header">{subject.subject_abbreviation || subject.subject_code}</div>
+                          <div className="rotate-header">
+                            {isALevel
+                              ? formatALevelSubjectHeader(subject.subject_abbreviation || subject.subject_code)
+                              : (subject.subject_abbreviation || subject.subject_code)}
+                          </div>
                         </th>
                       ))}
                       <th className="result-col">TOT</th>
                       <th className="result-col">AVR</th>
                       <th className="result-col">GRD</th>
                       <th className="result-col">POS</th>
+                      <th className="comb-col">COM</th>
                       <th className="remarks-col">REMARKS</th>
                     </tr>
                   </thead>
@@ -723,16 +839,12 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                             const score = studentScores[subjectKey] || studentScores[subject.subject_code];
                             return (
                               <td key={subject.subject_code} className="subject-col">
-                                {score !== undefined && score !== null && score !== '' ? score : '-'}
+                                {formatSubjectScore(score)}
                               </td>
                             );
                           })}
                           <td className="result-col tot-col">
-                            {result.total_marks !== null && result.total_marks !== undefined 
-                              ? (result.total_marks === Math.floor(result.total_marks) 
-                                  ? Math.floor(result.total_marks) 
-                                  : result.total_marks)
-                              : '-'}
+                            {formatSubjectScore(result.total_marks)}
                           </td>
                           <td className="result-col">
                             {result.average !== null && result.average !== undefined 
@@ -741,6 +853,11 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                           </td>
                           <td className="result-col grd-col">{result.grade || '-'}</td>
                           <td className="result-col">{result.position || '-'}</td>
+                          <td className="comb-col">
+                            {isALevel
+                              ? formatComCombination(student.com || student.stream)
+                              : formatComDisplay(student.com)}
+                          </td>
                           <td className="remarks-col">{result.remarks || '-'}</td>
                         </tr>
                       );
@@ -756,7 +873,7 @@ const MonthlyResultsManagement = ({ formLevel }) => {
               <Link to={getBackPath()} className="excel-btn">
                 <i className="fas fa-arrow-left"></i> Back
               </Link>
-              <button onClick={handleDownloadCSV} className="excel-btn csv-btn">
+              <button type="button" onClick={handleDownloadCSV} className="excel-btn csv-btn">
                 <i className="fas fa-file-csv"></i> Download CSV
               </button>
             </div>

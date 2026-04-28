@@ -3,7 +3,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './PublicWebsite.css';
@@ -17,6 +17,32 @@ const DepartmentContacts = () => {
     alumni_email: '',
     parents_email: '',
   });
+  const [errors, setErrors] = useState({});
+
+  const emailFields = [
+    { key: 'admissions_email', label: 'Admissions' },
+    { key: 'academics_email', label: 'Academics' },
+    { key: 'bursar_email', label: 'Bursar' },
+    { key: 'alumni_email', label: 'Alumni' },
+    { key: 'parents_email', label: 'Parents' },
+  ];
+
+  const isValidEmail = (value) => {
+    if (!value) return true; // Empty is allowed
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  };
+
+  const validateForm = (data) => {
+    const nextErrors = {};
+    emailFields.forEach(({ key, label }) => {
+      const value = (data[key] || '').trim();
+      if (!isValidEmail(value)) {
+        nextErrors[key] = `${label} email is invalid`;
+      }
+    });
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   // Fetch department contacts
   const { data: contactsData, isLoading } = useQuery({
@@ -56,7 +82,21 @@ const DepartmentContacts = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!validateForm(formData)) {
+      toast.error('Please fix invalid email address(es) before saving');
+      return;
+    }
     saveMutation.mutate(formData);
+  };
+
+  const handleFieldChange = (key, value) => {
+    const next = { ...formData, [key]: value };
+    setFormData(next);
+
+    // Real-time validation for cleaner UX
+    if (errors[key]) {
+      validateForm(next);
+    }
   };
 
   return (
@@ -83,10 +123,13 @@ const DepartmentContacts = () => {
                     <input
                       type="email"
                       value={formData.admissions_email}
-                      onChange={(e) => setFormData({ ...formData, admissions_email: e.target.value })}
+                      onChange={(e) => handleFieldChange('admissions_email', e.target.value)}
                       className="excel-input"
                       placeholder="admissions@school.edu"
                     />
+                    {errors.admissions_email && (
+                      <small style={{ color: '#dc2626' }}>{errors.admissions_email}</small>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -94,10 +137,13 @@ const DepartmentContacts = () => {
                     <input
                       type="email"
                       value={formData.academics_email}
-                      onChange={(e) => setFormData({ ...formData, academics_email: e.target.value })}
+                      onChange={(e) => handleFieldChange('academics_email', e.target.value)}
                       className="excel-input"
                       placeholder="academics@school.edu"
                     />
+                    {errors.academics_email && (
+                      <small style={{ color: '#dc2626' }}>{errors.academics_email}</small>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -105,10 +151,13 @@ const DepartmentContacts = () => {
                     <input
                       type="email"
                       value={formData.bursar_email}
-                      onChange={(e) => setFormData({ ...formData, bursar_email: e.target.value })}
+                      onChange={(e) => handleFieldChange('bursar_email', e.target.value)}
                       className="excel-input"
                       placeholder="bursar@school.edu"
                     />
+                    {errors.bursar_email && (
+                      <small style={{ color: '#dc2626' }}>{errors.bursar_email}</small>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -116,10 +165,13 @@ const DepartmentContacts = () => {
                     <input
                       type="email"
                       value={formData.alumni_email}
-                      onChange={(e) => setFormData({ ...formData, alumni_email: e.target.value })}
+                      onChange={(e) => handleFieldChange('alumni_email', e.target.value)}
                       className="excel-input"
                       placeholder="alumni@school.edu"
                     />
+                    {errors.alumni_email && (
+                      <small style={{ color: '#dc2626' }}>{errors.alumni_email}</small>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -127,15 +179,29 @@ const DepartmentContacts = () => {
                     <input
                       type="email"
                       value={formData.parents_email}
-                      onChange={(e) => setFormData({ ...formData, parents_email: e.target.value })}
+                      onChange={(e) => handleFieldChange('parents_email', e.target.value)}
                       className="excel-input"
                       placeholder="parents@school.edu"
                     />
+                    {errors.parents_email && (
+                      <small style={{ color: '#dc2626' }}>{errors.parents_email}</small>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>Preview</label>
+                    <div className="content-preview">
+                      <p><strong>Admissions:</strong> {formData.admissions_email || '—'}</p>
+                      <p><strong>Academics:</strong> {formData.academics_email || '—'}</p>
+                      <p><strong>Bursar:</strong> {formData.bursar_email || '—'}</p>
+                      <p><strong>Alumni:</strong> {formData.alumni_email || '—'}</p>
+                      <p><strong>Parents:</strong> {formData.parents_email || '—'}</p>
+                    </div>
                   </div>
 
                   <div className="form-actions">
-                    <button type="submit" className="excel-btn primary" disabled={saveMutation.isLoading}>
-                      <i className="fas fa-save"></i> {saveMutation.isLoading ? 'Saving...' : 'Save Department Contacts'}
+                    <button type="submit" className="excel-btn primary" disabled={saveMutation.isPending}>
+                      <i className="fas fa-save"></i> {saveMutation.isPending ? 'Saving...' : 'Save Department Contacts'}
                     </button>
                   </div>
                 </div>

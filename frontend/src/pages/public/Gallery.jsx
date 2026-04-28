@@ -1,7 +1,7 @@
 /**
  * Public Gallery Page - Full Photo Gallery
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import PublicLayout from '../../components/layout/PublicLayout';
@@ -25,17 +25,32 @@ const Gallery = () => {
       const res = await publicAPI.getGallery(galleryLimit);
       return res.data.photos || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000 // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - increased for better caching
   });
 
   const photos = data || [];
+
+  const formatCategory = useCallback((category) => {
+    const value = (category || 'general').toString().trim().toLowerCase();
+    const map = {
+      all: 'Picha Zote',
+      general: 'Mengineyo',
+      events: 'Matukio',
+      students: 'Wanafunzi',
+      staff: 'Watumishi',
+      campus: 'Mazingira ya Shule',
+      worship: 'Ibada',
+      sports: 'Michezo',
+      academics: 'Masomo',
+    };
+    return map[value] || category;
+  }, []);
   
   // Get network-aware image loading strategy
   const imageStrategy = getImageLoadingStrategy();
 
   // Helper function to resolve image URLs
-  const getImageUrl = (path) => {
+  const getImageUrl = useCallback((path) => {
     if (!path) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     
@@ -51,35 +66,37 @@ const Gallery = () => {
     // In development, use relative URL (Vite proxy at /static forwards to backend)
     // The proxy is configured to forward /static to http://localhost:5000/static
     return `/${cleanPath}`;
-  };
+  }, []);
 
   // Get unique categories from photos
-  const categories = ['all', ...new Set(photos.map(photo => photo.category || 'general'))];
+  const categories = useMemo(() => ['all', ...new Set(photos.map(photo => photo.category || 'general'))], [photos]);
 
   // Filter photos by category
-  const filteredPhotos = selectedCategory === 'all' 
-    ? photos 
-    : photos.filter(photo => (photo.category || 'general') === selectedCategory);
+  const filteredPhotos = useMemo(() => {
+    return selectedCategory === 'all' 
+      ? photos 
+      : photos.filter(photo => (photo.category || 'general') === selectedCategory);
+  }, [photos, selectedCategory]);
 
   // Navigation functions for lightbox
-  const handlePrevious = (e) => {
+  const handlePrevious = useCallback((e) => {
     e.stopPropagation();
     const newIndex = currentIndex > 0 ? currentIndex - 1 : filteredPhotos.length - 1;
     setCurrentIndex(newIndex);
     setSelectedPhoto(filteredPhotos[newIndex]);
-  };
+  }, [currentIndex, filteredPhotos]);
 
-  const handleNext = (e) => {
+  const handleNext = useCallback((e) => {
     e.stopPropagation();
     const newIndex = currentIndex < filteredPhotos.length - 1 ? currentIndex + 1 : 0;
     setCurrentIndex(newIndex);
     setSelectedPhoto(filteredPhotos[newIndex]);
-  };
+  }, [currentIndex, filteredPhotos]);
 
-  const handlePhotoClick = (photo, index) => {
+  const handlePhotoClick = useCallback((photo, index) => {
     setCurrentIndex(index);
     setSelectedPhoto(photo);
-  };
+  }, []);
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -104,7 +121,7 @@ const Gallery = () => {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedPhoto, currentIndex, filteredPhotos]);
+  }, [selectedPhoto, currentIndex, filteredPhotos.length]);
 
   // Show skeleton loader instead of blocking page - better UX
   // Content will appear progressively as it loads
@@ -115,13 +132,13 @@ const Gallery = () => {
         <div className="gallery-page-container">
           <div className="error-message">
             <i className="fas fa-exclamation-circle"></i>
-            <p>Failed to load gallery photos. Check your connection and try again.</p>
+            <p>Imeshindikana kupakia picha za galeria. Angalia mtandao wako kisha ujaribu tena.</p>
             <button
               type="button"
               className="gallery-retry-btn"
               onClick={() => refetch()}
             >
-              <i className="fas fa-sync-alt"></i> Retry
+              <i className="fas fa-sync-alt"></i> Jaribu Tena
             </button>
           </div>
         </div>
@@ -135,9 +152,9 @@ const Gallery = () => {
         <div className="gallery-page-header">
           <h1>
             <i className="fas fa-images"></i>
-            Photo Gallery
+            Galeria ya Picha
           </h1>
-          <p>Explore our collection of photos showcasing life at Arusha Catholic Seminary</p>
+          <p>Tazama mkusanyiko wa picha zinazoonesha maisha ya Seminari ya Kikatoliki Arusha.</p>
         </div>
 
         {/* Category Filter */}
@@ -145,6 +162,7 @@ const Gallery = () => {
           <div className="gallery-filters">
             {categories.map((category) => (
               <button
+                type="button"
                 key={category}
                 className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
                 onClick={() => {
@@ -152,7 +170,7 @@ const Gallery = () => {
                   setSelectedPhoto(null);
                 }}
               >
-                {category === 'all' ? 'All Photos' : category.charAt(0).toUpperCase() + category.slice(1)}
+                {formatCategory(category)}
                 {category !== 'all' && (
                   <span className="filter-count">
                     ({photos.filter(p => (p.category || 'general') === category).length})
@@ -169,7 +187,14 @@ const Gallery = () => {
         ) : filteredPhotos.length === 0 ? (
           <div className="empty-gallery">
             <i className="fas fa-images"></i>
-            <p>No photos found in this category.</p>
+            <p>Hakuna picha zilizopatikana kwenye kundi hili.</p>
+            <button
+              type="button"
+              className="gallery-retry-btn"
+              onClick={() => setSelectedCategory('all')}
+            >
+              <i className="fas fa-layer-group"></i> Onesha Picha Zote
+            </button>
           </div>
         ) : (
           <div className="gallery-grid">
@@ -182,7 +207,7 @@ const Gallery = () => {
                 <div className="gallery-item-image-wrapper">
                   <LazyLoadImage
                     src={getImageUrl(photo.path)}
-                    alt={photo.caption || 'Gallery photo'}
+                    alt={photo.caption || 'Picha ya galeria'}
                     effect={imageStrategy.useBlur ? "blur" : undefined}
                     className="gallery-image"
                     threshold={imageStrategy.threshold}
@@ -201,7 +226,7 @@ const Gallery = () => {
                   <div className="gallery-item-overlay">
                     <div className="gallery-item-category-badge">
                       <i className="fas fa-tag"></i>
-                      {photo.category ? photo.category.charAt(0).toUpperCase() + photo.category.slice(1) : 'General'}
+                      {formatCategory(photo.category || 'general')}
                     </div>
                     <div className="gallery-item-view-icon">
                       <i className="fas fa-search-plus"></i>
@@ -218,7 +243,7 @@ const Gallery = () => {
                         <i className="fas fa-calendar-alt"></i>
                         {new Date(photo.date).toLocaleDateString('en-US', { 
                           year: 'numeric', 
-                          month: 'long', 
+                          month: 'long',
                           day: 'numeric' 
                         })}
                       </span>
@@ -233,8 +258,8 @@ const Gallery = () => {
         {/* Photo Count */}
         <div className="gallery-stats">
           <p>
-            Showing {filteredPhotos.length} {filteredPhotos.length === 1 ? 'photo' : 'photos'}
-            {selectedCategory !== 'all' && ` in ${selectedCategory}`}
+            Inaonesha picha {filteredPhotos.length}
+            {selectedCategory !== 'all' && ` katika ${formatCategory(selectedCategory)}`}
           </p>
         </div>
 
@@ -242,25 +267,28 @@ const Gallery = () => {
         {selectedPhoto && (
           <div className="lightbox" onClick={() => setSelectedPhoto(null)}>
             <button
+              type="button"
               className="lightbox-close"
               onClick={() => setSelectedPhoto(null)}
-              aria-label="Close"
+              aria-label="Funga"
             >
               <i className="fas fa-times"></i>
             </button>
             {filteredPhotos.length > 1 && (
               <>
                 <button
+                  type="button"
                   className="lightbox-nav lightbox-prev"
                   onClick={handlePrevious}
-                  aria-label="Previous photo"
+                  aria-label="Picha iliyopita"
                 >
                   <i className="fas fa-chevron-left"></i>
                 </button>
                 <button
+                  type="button"
                   className="lightbox-nav lightbox-next"
                   onClick={handleNext}
-                  aria-label="Next photo"
+                  aria-label="Picha inayofuata"
                 >
                   <i className="fas fa-chevron-right"></i>
                 </button>
@@ -269,7 +297,7 @@ const Gallery = () => {
             <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
               <img 
                 src={getImageUrl(selectedPhoto.path)} 
-                alt={selectedPhoto.caption || 'Gallery photo'}
+                alt={selectedPhoto.caption || 'Picha ya galeria'}
                 onError={(e) => {
                   e.target.style.display = 'none';
                   if (e.target.nextElementSibling) {
@@ -279,7 +307,7 @@ const Gallery = () => {
               />
               <div className="image-placeholder" style={{ display: 'none' }}>
                 <i className="fas fa-image"></i>
-                <p>Image not available</p>
+                <p>Picha haipatikani</p>
               </div>
               {(selectedPhoto.caption || selectedPhoto.date) && (
                 <div className="lightbox-info">

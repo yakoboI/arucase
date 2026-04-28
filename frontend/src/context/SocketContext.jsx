@@ -18,7 +18,8 @@ export const SocketProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated()) {
+    const token = localStorage.getItem('token');
+    if (isAuthenticated() && token) {
       // Use VITE_WS_URL if set, otherwise construct from VITE_API_URL or window.location
       let wsUrl = import.meta.env.VITE_WS_URL;
       if (!wsUrl) {
@@ -33,24 +34,28 @@ export const SocketProvider = ({ children }) => {
       }
       const newSocket = io(wsUrl, {
         transports: ['websocket'],
+        auth: { token: `Bearer ${token}` },
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 3,
       });
 
       newSocket.on('connect', () => {
-        console.log('Socket connected');
         setConnected(true);
       });
 
       newSocket.on('disconnect', () => {
-        console.log('Socket disconnected');
         setConnected(false);
       });
 
       newSocket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
         setConnected(false);
+        // Stop reconnect loop for auth-related socket failures.
+        if (error?.message?.toLowerCase?.().includes('unauthorized') || error?.message?.toLowerCase?.().includes('auth')) {
+          newSocket.io.opts.reconnection = false;
+          newSocket.close();
+        }
       });
 
       setSocket(newSocket);

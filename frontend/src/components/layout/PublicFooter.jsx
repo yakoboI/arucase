@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { publicAPI } from '../../services/public';
 import './PublicFooter.css';
 
@@ -11,20 +12,26 @@ const PublicFooter = () => {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: visitorStats } = useQuery({
+  const { data: visitorStats, refetch: refetchVisitorStats } = useQuery({
     queryKey: ['visitor-stats'],
     queryFn: () => publicAPI.getVisitorStats(),
     select: (res) => res.data,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  useEffect(() => {
+    const onTracked = () => {
+      refetchVisitorStats();
+    };
+    window.addEventListener('visitor:tracked', onTracked);
+    return () => window.removeEventListener('visitor:tracked', onTracked);
+  }, [refetchVisitorStats]);
+
   const settings = homepageData?.settings || {};
   const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
   const contactWhatsapp = settings?.contact_whatsapp || '255123456789';
   const socialLocation = settings?.social_location || 'https://maps.google.com/?q=Arusha+Catholic+Seminary+Tanzania';
   
-  const socialFacebook = settings?.social_facebook || 'https://facebook.com/arushacatholicseminary';
-  const socialInstagram = settings?.social_instagram || 'https://instagram.com/arushacatholicseminary';
   const socialYoutube = settings?.social_youtube || 'https://youtube.com/@arushacatholicseminary';
 
   // Format WhatsApp number (remove + and spaces)
@@ -49,7 +56,7 @@ const PublicFooter = () => {
       {/* Social Media Footer */}
       <footer className="social-footer">
         <div className="social-footer-content">
-          <span className="social-label">Connect With Us</span>
+          <span className="social-label">Ungana Nasi</span>
           <div className="social-icons">
             <a 
               href={socialYoutube} 
@@ -59,24 +66,6 @@ const PublicFooter = () => {
               title="YouTube"
             >
               <i className="fab fa-youtube"></i>
-            </a>
-            <a 
-              href={socialFacebook} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="facebook" 
-              title="Facebook"
-            >
-              <i className="fab fa-facebook-f"></i>
-            </a>
-            <a 
-              href={socialInstagram} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="instagram" 
-              title="Instagram"
-            >
-              <i className="fab fa-instagram"></i>
             </a>
             <a 
               href={`mailto:${contactEmail}`} 
@@ -111,19 +100,27 @@ const PublicFooter = () => {
       <footer className="copyright-footer">
         <div className="copyright-footer-container">
           <p className="copyright-text">
-            &copy; <span id="current-year">2026</span> Arusha Catholic Seminary. All rights reserved.
+            &copy; <span id="current-year">2026</span> Seminari ya Kikatoliki Arusha. Haki zote zimehifadhiwa.
             {' '}
             <Link to="/privacy-policy" className="privacy-link">
-              Privacy Policy
+              Sera ya Faragha
+            </Link>
+            {' | '}
+            <Link to="/privacy-policy#haki-zako" className="privacy-link">
+              Haki Zako
+            </Link>
+            {' | '}
+            <Link to="/privacy-policy#mawasiliano" className="privacy-link">
+              Mawasiliano
             </Link>
           </p>
           <p className="visitor-stats">
-            <span className="visitor-label">Visitors:</span>
-            <span className="visitor-value">Today: {displayStats.daily}</span>
+            <span className="visitor-label">Wageni:</span>
+            <span className="visitor-value">Leo: {displayStats.daily}</span>
             <span className="footer-separator">|</span>
-            <span className="visitor-value">This Week: {displayStats.weekly}</span>
+            <span className="visitor-value">Wiki Hii: {displayStats.weekly}</span>
             <span className="footer-separator">|</span>
-            <span className="visitor-total">Total: {displayStats.total}</span>
+            <span className="visitor-total">Jumla: {displayStats.total}</span>
           </p>
         </div>
       </footer>

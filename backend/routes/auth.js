@@ -6,6 +6,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { query } = require('../config/database');
+const { requireAuth, requireRole, requirePermission, JWT_SECRET } = require('../middleware/auth');
+const { validators } = require('../middleware/validation');
+const { protectByUsername, trackByUsername, clearFailedAttempts } = require('../middleware/bruteForceProtection');
 const { saveUserActivity } = require('../utils/activityLogger');
 const { sendError } = require('../utils/safeError');
 
@@ -31,21 +34,19 @@ const generateToken = (user) => {
     }
   }
   
-  console.log(`[Auth] Generating token with expiration: ${expiresIn}`);
-  
   return jwt.sign(
     {
       user_id: user.username,
       role: user.role,
       permissions: user.permissions || {}
     },
-    process.env.JWT_SECRET_KEY || 'dev-secret-key',
+    JWT_SECRET,
     { expiresIn }
   );
 };
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', protectByUsername, validators.login, trackByUsername, async (req, res) => {
   try {
     const { username, password } = req.body;
     
@@ -53,9 +54,9 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Username and password are required' });
     }
     
-    // Get user from database
+    // Get user from database (select only needed columns)
     const result = await query(
-      'SELECT * FROM users WHERE username = $1',
+      'SELECT id, username, full_name, role, status, permissions, email, profile_picture, password_hash FROM users WHERE username = $1',
       [username]
     );
     
@@ -140,6 +141,9 @@ router.post('/login', async (req, res) => {
       console.error('Error logging activity:', err);
     }
     
+    // Clear failed attempts on successful login
+    clearFailedAttempts(req.body.username);
+    
     res.json({
       token,
       user: userData
@@ -160,12 +164,12 @@ router.get('/me', async (req, res) => {
     
     const token = authHeader.split(' ')[1] || authHeader;
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'dev-secret-key');
+    const decoded = jwt.verify(token, JWT_SECRET);
     const username = decoded.user_id;
     
-    // Get user from database
+    // Get user from database (select only needed columns)
     const result = await query(
-      'SELECT * FROM users WHERE username = $1',
+      'SELECT id, username, full_name, role, status, permissions, email, phone, profile_picture, bio, department, position FROM users WHERE username = $1',
       [username]
     );
     
@@ -216,7 +220,7 @@ router.post('/logout', async (req, res) => {
     if (authHeader) {
       const token = authHeader.split(' ')[1] || authHeader;
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'dev-secret-key');
+        const decoded = jwt.verify(token, JWT_SECRET);
         const username = decoded.user_id;
         
         // Log logout

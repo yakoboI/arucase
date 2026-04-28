@@ -7,22 +7,32 @@ const { query } = require('../config/database');
 const { saveUserActivity } = require('../utils/activityLogger');
 
 // Log to database (app_logs table) - Non-blocking, fire and forget
+// DISABLED IN PRODUCTION to fix performance bottleneck
 const logToDatabase = async (logData) => {
+  // In production, skip database logging entirely for performance
+  // Only log errors to console
+  if (process.env.NODE_ENV === 'production') {
+    if (logData.level === 'ERROR' || logData.errorMessage) {
+      console.error(`[PROD ERROR] ${logData.method} ${logData.endpoint} - ${logData.errorMessage || logData.level} - ${logData.responseTime}ms`);
+    }
+    return;
+  }
+
   // Don't await - make it non-blocking
   setImmediate(async () => {
     try {
       // Skip logging response body for PDF/blob responses (too large and not useful)
-      const isBlobResponse = logData.contentType?.includes('application/pdf') || 
+      const isBlobResponse = logData.contentType?.includes('application/pdf') ||
                             logData.contentType?.includes('application/octet-stream') ||
                             logData.contentType?.includes('blob') ||
                             Buffer.isBuffer(logData.responseBody);
-      
+
       // Limit response body size (max 10KB) to prevent slow inserts
       let responseBodyToLog = null;
       if (!isBlobResponse && logData.responseBody) {
         try {
-          const bodyStr = typeof logData.responseBody === 'string' 
-            ? logData.responseBody 
+          const bodyStr = typeof logData.responseBody === 'string'
+            ? logData.responseBody
             : JSON.stringify(logData.responseBody);
           // Limit to 10KB
           if (bodyStr.length > 10000) {
@@ -36,7 +46,7 @@ const logToDatabase = async (logData) => {
       } else if (isBlobResponse) {
         responseBodyToLog = `[${logData.contentType || 'binary'} response - ${logData.responseSize || 'unknown size'}]`;
       }
-      
+
       // Limit request body size as well
       let requestBodyToLog = null;
       if (logData.requestBody) {
@@ -53,11 +63,11 @@ const logToDatabase = async (logData) => {
           requestBodyToLog = '[Unable to serialize request body]';
         }
       }
-      
+
       await query(
         `INSERT INTO app_logs (
-          username, level, method, endpoint, url, 
-          ip_address, user_agent, status_code, 
+          username, level, method, endpoint, url,
+          ip_address, user_agent, status_code,
           response_time_ms, request_body, response_body,
           error_message, activity_type, filters_applied,
           timestamp

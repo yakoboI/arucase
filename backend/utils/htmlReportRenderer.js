@@ -66,7 +66,20 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
 
   const formCode = form.replace('FORM ', '').trim();
   const isForm5Or6 = ['V', 'VI', '5', '6'].includes(formCode);
-  const months = reportMonths || ['February', 'March', 'April', 'May'];
+  // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
+  // Form I-IV: Term I: Feb-May, Term II: Aug-Nov
+  const getDefaultMonths = () => {
+    if (isForm5Or6) {
+      return (term === 'Term I' || term === 'Term 1')
+        ? ['August', 'September', 'October', 'November']
+        : ['February', 'March', 'April', 'May'];
+    } else {
+      return (term === 'Term I' || term === 'Term 1')
+        ? ['February', 'March', 'April', 'May']
+        : ['August', 'September', 'October', 'November'];
+    }
+  };
+  const months = reportMonths || getDefaultMonths();
 
   // Process monthly results
   const monthlyData = {};
@@ -111,8 +124,10 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
   };
 
   const getTabiaEvaluation = (code) => {
-    const tabia = tabia_mwenendo?.find((t) => t.code === code);
-    return tabia?.grade || 'C';
+    const tabia = tabia_mwenendo?.find(
+      (t) => String(t.criterion ?? t.code ?? '').trim() === String(code)
+    );
+    return tabia?.evaluation || tabia?.grade || 'C';
   };
 
   const getCommentValue = (key) => {
@@ -159,9 +174,9 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
     
     // Try to find scores using both code and abbreviation
     const getScore = (month) => {
-      return monthlyData[subjectKey]?.[month] || 
-             (subjectAbbr ? monthlyData[subjectAbbr]?.[month] : null) || 
-             0;
+      const score1 = monthlyData[subjectKey]?.[month];
+      const score2 = subjectAbbr ? monthlyData[subjectAbbr]?.[month] : null;
+      return score1 !== undefined && score1 !== null && score1 !== '' ? score1 : null;
     };
     
     const month1 = getScore(months[0]);
@@ -169,15 +184,23 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
     const month3 = getScore(months[2]);
     const month4 = getScore(months[3]);
     
+    // Check if all scores are null (no scores for this subject)
+    const allScoresNull = month1 === null && month2 === null && month3 === null && month4 === null;
+    
+    // Skip this subject if all scores are null
+    if (allScoresNull) {
+      return null;
+    }
+    
     const weight1 = (marks_config?.month_weights?.[months[0]] || 100) / 100;
     const weight2 = (marks_config?.month_weights?.[months[1]] || 0) / 100;
     const weight3 = (marks_config?.month_weights?.[months[2]] || 0) / 100;
     const weight4 = (marks_config?.month_weights?.[months[3]] || 0) / 100;
     
-    const test1 = month1 * weight1;
-    const midterm = month2 * weight2;
-    const test2 = month3 * weight3;
-    const exam = month4 * weight4;
+    const test1 = (month1 || 0) * weight1;
+    const midterm = (month2 || 0) * weight2;
+    const test2 = (month3 || 0) * weight3;
+    const exam = (month4 || 0) * weight4;
     const total = test1 + midterm + test2 + exam;
     
     const grade = getGrade(total);
@@ -198,7 +221,7 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
         <td class="teacher-signature">${subject_teacher_signatures?.[subject.subject_code] || subject_teacher_signatures?.[subject.subject_abbreviation] || ''}</td>
       </tr>
     `;
-  }).join('');
+  }).filter(row => row !== null).join('');
 
   // Build month header cells with percentage below text
   const monthHeaders = months.map((month, idx) => {
@@ -286,7 +309,11 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
         </div>
       </div>
       <div class="student-photo">
-        ${student.photo_path ? `<img src="${apiUrl}/api/students/${student.adm_no}/photo" alt="${student.first_name} ${student.surname}" class="photo" />` : '<div class="photo-placeholder"><i class="fas fa-user"></i></div>'}
+        ${
+          student.photo_path
+            ? `<img src="${getImageUrl(`uploads/photos/${student.photo_path}`)}" alt="${student.first_name} ${student.surname}" class="photo" />`
+            : '<div class="photo-placeholder"><i class="fas fa-user"></i></div>'
+        }
       </div>
     </div>
 
@@ -416,7 +443,12 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
       
       <!-- Grade Key/Legend -->
       <div class="grade-key-legend" style="margin-top: 8px; padding: 4px; font-size: 10.5px; line-height: 1.4; white-space: nowrap; overflow: visible;">
-        <strong>ALAMA:</strong> ${isForm5Or6 ? 'A = 85+, Bora Sana, B = 75+, Vizuri Sana, C = 65+, Vizuri, D = 55+, Dhaifu, E = 45+, Wastani, S = 40+, Kidogo, F = 0 – 39, Feli' : 'A = 85 – 100, Bora Sana, B = 70 – 84, Vizuri Sana, C = 50 – 69, Vizuri, D = 40 – 49, Dhaifu, F = 0 – 39, Feli'} | <strong>TABIA:</strong> A, Vizuri Sana, B, Vizuri, C, Wastani, D, Dhaifu, F, Mbaya
+        ${isForm5Or6 ? `
+          <strong>ALAMA:</strong> A = 85+, Bora Sana, B = 75+, Vizuri Sana, C = 65+, Vizuri, D = 55+, Dhaifu, E = 45+, Wastani, S = 40+, Kidogo, F = 0 – 39, Feli<br/>
+          <strong>TABIA:</strong> A, Vizuri Sana, B, Vizuri, C, Wastani, D, Dhaifu, F, Mbaya
+        ` : `
+          <strong>ALAMA:</strong> A = 85 – 100, Bora Sana, B = 70 – 84, Vizuri Sana, C = 50 – 69, Vizuri, D = 40 – 49, Dhaifu, F = 0 – 39, Feli | <strong>TABIA:</strong> A, Vizuri Sana, B, Vizuri, C, Wastani, D, Dhaifu, F, Mbaya
+        `}
       </div>
     </div>
 
@@ -426,11 +458,11 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
         <tbody>
           <tr>
             <td><strong>Mwalimu wa Taaluma:</strong></td>
-            <td colspan="3">${getCommentValue('mwalimu_taaluma') || `<em>No comment entered for ${term}</em>`}</td>
+            <td colspan="3">${getCommentValue('mwalimu_taaluma') || ''}</td>
           </tr>
           <tr>
             <td><strong>Maoni ya Mkuu wa Shule:</strong></td>
-            <td colspan="3">${getCommentValue('mkuu_shule') || `<em>No comment entered for ${term}</em>`}</td>
+            <td colspan="3">${getCommentValue('mkuu_shule') || ''}</td>
           </tr>
           <tr>
             <td><strong>SAHIHI YA MKUU WA SHULE:</strong></td>
@@ -452,23 +484,23 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
         <tbody>
           <tr class="maoni-taaluma-row">
             <td class="maoni-label"><strong>TAALUMA:</strong></td>
-            <td class="maoni-content">${getCommentValue('taaluma') || `<em>No comment entered for ${term}</em>`}</td>
+            <td class="maoni-content">${getCommentValue('taaluma') || ''}</td>
           </tr>
           <tr>
             <td class="maoni-label"><strong>HUDUMA:</strong></td>
-            <td class="maoni-content">${studentHuduma || `<em>No comment entered for ${term}</em>`}</td>
+            <td class="maoni-content">${studentHuduma || ''}</td>
           </tr>
           <tr>
             <td class="maoni-label"><strong>MICHEZO:</strong></td>
-            <td class="maoni-content">${getCommentValue('michezo') || `<em>No comment entered for ${term}</em>`}</td>
+            <td class="maoni-content">${getCommentValue('michezo') || ''}</td>
           </tr>
           <tr class="maoni-tabia-row">
             <td class="maoni-label"><strong>TABIA:</strong></td>
-            <td class="maoni-content">${getCommentValue('tabia') || `<em>No comment entered for ${term}</em>`}</td>
+            <td class="maoni-content">${getCommentValue('tabia') || ''}</td>
           </tr>
           <tr>
             <td class="maoni-label"><strong>SALA:</strong></td>
-            <td class="maoni-content">${getCommentValue('sala') || `<em>No comment entered for ${term}</em>`}</td>
+            <td class="maoni-content">${getCommentValue('sala') || ''}</td>
           </tr>
           <tr>
             <td class="maoni-label"><strong>FEDHA ANAYODAIWA:</strong></td>

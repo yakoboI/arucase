@@ -2,27 +2,45 @@
  * Individual Debt Management Page
  * Track and manage student debt records with CSV import/export
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import './DebtsManagement.css';
 
 const DebtsManagement = ({ formLevel }) => {
-  const { year, stream } = useParams();
+  const { year, stream, term } = useParams();
   const queryClient = useQueryClient();
   
   const [editingIndex, setEditingIndex] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Normalize form level to uppercase (consistent with backend and other components)
   const normalizedLevel = formLevel
     ? formLevel.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').toUpperCase()
     : '';
-  
+
   const normalizedStream = stream || 'NA';
+
+  // Normalize term to match backend format (First Term/Second Term)
+  const normalizeTerm = (termParam) => {
+    if (!termParam) return 'Term I';
+    const t = termParam.trim();
+    if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t)) return 'First Term';
+    if (/^Term\s+II$/i.test(t) || /^Term\s+2$/i.test(t)) return 'Second Term';
+    if (/^First\s+Term$/i.test(t)) return 'First Term';
+    if (/^Second\s+Term$/i.test(t)) return 'Second Term';
+    return t;
+  };
+
+  const normalizedTerm = normalizeTerm(term);
+
+  // Check if this is Form V or VI
+  const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
 
   // Helper function to sort students by name: first_name, then middle_name, then surname (A-Z)
   const sortStudentsByName = (students) => {
@@ -48,12 +66,15 @@ const DebtsManagement = ({ formLevel }) => {
 
   // Fetch students for this class - sorted by name: first_name, then middle_name, then surname (A-Z)
   const { data: studentsData = [], isLoading: studentsLoading, error: studentsError } = useQuery({
-    queryKey: ['students', normalizedLevel, normalizedStream, year],
+    queryKey: ['students', normalizedLevel, normalizedStream, year, term],
     queryFn: async () => {
       const res = await studentsAPI.getStudents({
-        level: normalizedLevel,
+        // For Form I-IV, don't filter by term - show all students for the year
+        // For Form V/VI, filter by term
+        ...(isFormVOrVI ? { term: normalizedTerm } : {}),
         stream: normalizedStream,
         year: year,
+        term: term || 'First Term',
       });
       const students = res.data.students || [];
       // Sort students by name: first_name, then middle_name, then surname (A-Z)
@@ -65,18 +86,20 @@ const DebtsManagement = ({ formLevel }) => {
 
   // Fetch existing debt records
   const { data: existingDebt = {}, isLoading: debtLoading, error: debtError } = useQuery({
-    queryKey: ['debt', normalizedLevel, normalizedStream, year],
+    queryKey: ['debt', normalizedLevel, normalizedStream, year, term],
     queryFn: async () => {
       console.log('[DebtsManagement] Fetching debt:', {
         level: normalizedLevel,
         stream: normalizedStream,
         year: year,
+        term: term || 'First Term',
       });
       try {
         const res = await studentsAPI.getDebt({
           level: normalizedLevel,
           stream: normalizedStream,
           year: year,
+          term: term || 'First Term',
         });
         console.log('[DebtsManagement] Received debt:', res.data.debt);
         return res.data.debt || {};
@@ -202,7 +225,204 @@ const DebtsManagement = ({ formLevel }) => {
   // Students are sorted by name: first_name, then middle_name, then surname (A-Z)
   const getStudentIndex = (student) => {
     const sortedStudents = sortStudentsByName(students);
-    return sortedStudents.findIndex(s => s.adm_no === student.adm_no).toString();
+    return sortedStudents.findIndex(
+      (s) => String(s.adm_no) === String(student.adm_no)
+    ).toString();
+  };
+
+  const csvEscape = (val) => {
+    const s = String(val ?? '').trim();
+    if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+
+  const parseLine = (line, delimiter = ',') => {
+    if (delimiter === '\t') {
+      return line.split('\t').map((cell) => String(cell).trim().replace(/^\uFEFF/, ''));
+    }
+    const out = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (inQuotes) {
+        cur += c;
+      } else if (c === delimiter) {
+        out.push(cur.trim().replace(/^\uFEFF/, ''));
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    out.push(cur.trim().replace(/^\uFEFF/, ''));
+    return out;
+  };
+
+  const normalizeHeader = (h) =>
+    String(h ?? '')
+      .trim()
+      .replace(/\uFEFF/g, '')
+      .replace(/\s/g, '')
+      .toLowerCase();
+
+  const findStudentByAdmNo = (admNoStr) => {
+    const a = String(admNoStr ?? '').trim();
+    if (!a) return null;
+    const byExact = students.find((s) => String(s.adm_no).trim() === a);
+    if (byExact) return byExact;
+    const aNum = Number(a);
+    if (!Number.isNaN(aNum)) {
+      return (
+        students.find((s) => Number(s.adm_no) === aNum) ||
+        students.find((s) => String(s.adm_no).trim() === String(aNum))
+      );
+    }
+    return null;
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ['AdmNumber', 'amount', 'description'];
+    const rows = students.map((s) => {
+      const studentIndex = getStudentIndex(s);
+      const debt = existingDebt[studentIndex] || {};
+      return [
+        csvEscape(s.adm_no),
+        csvEscape(debt.amount ?? 0),
+        csvEscape(debt.description ?? ''),
+      ].join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student_debt_template_${normalizedLevel}_${normalizedStream}_${year}.csv`.replace(/\s+/g, '_');
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Debt CSV template downloaded');
+  };
+
+  const handleDownloadFilledCSV = () => {
+    const headers = ['AdmNumber', 'amount', 'description'];
+    const rows = students.map((s) => {
+      const studentIndex = getStudentIndex(s);
+      const debt = existingDebt[studentIndex] || {};
+      return [
+        csvEscape(s.adm_no),
+        csvEscape(debt.amount ?? 0),
+        csvEscape(debt.description ?? ''),
+      ].join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student_debt_filled_${normalizedLevel}_${normalizedStream}_${year}.csv`.replace(/\s+/g, '_');
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Filled debt CSV downloaded');
+  };
+
+  const handleUploadFilled = (e) => {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploading(true);
+
+    const run = async () => {
+      try {
+        let text = await file.text();
+        text = text.replace(/^\uFEFF/, '');
+        const lines = text.split(/\r?\n/).filter((l) => l.trim());
+        if (lines.length < 2) {
+          toast.error('CSV must have a header row and at least one data row');
+          return;
+        }
+
+        const firstLine = lines[0];
+        const delimiter = firstLine.includes('\t') && firstLine.split('\t').length >= 2 ? '\t' : ',';
+        const rawHeaderCells = parseLine(firstLine, delimiter);
+        const header = rawHeaderCells.map(normalizeHeader);
+
+        const admNoIdx = header.findIndex((h) => h === 'admnumber' || h === 'adm_no' || h === 'admno' || h.startsWith('admission'));
+        const amountIdx = header.findIndex((h) => h === 'amount' || h === 'debtamount' || h === 'debt');
+        const descIdx = header.findIndex((h) => h === 'description' || h === 'desc');
+
+        if (admNoIdx === -1 || amountIdx === -1) {
+          toast.error('Upload rejected: CSV must include columns "AdmNumber" and "amount"');
+          return;
+        }
+
+        const payload = [];
+        let skipped = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const cells = parseLine(lines[i], delimiter);
+          const admNo = String(cells[admNoIdx] ?? '').trim();
+          if (!admNo) continue;
+
+          const student = findStudentByAdmNo(admNo);
+          if (!student) {
+            skipped++;
+            continue;
+          }
+
+          const studentIndex = getStudentIndex(student);
+          const amountRaw = String(cells[amountIdx] ?? '').trim();
+          const amount = amountRaw === '' ? 0 : parseFloat(amountRaw);
+          const description = descIdx >= 0 ? String(cells[descIdx] ?? '').trim() : '';
+
+          payload.push({
+            student_index: studentIndex,
+            amount: Number.isNaN(amount) ? 0 : amount,
+            description,
+          });
+        }
+
+        if (payload.length === 0) {
+          toast.warning('No valid rows found to upload');
+          return;
+        }
+
+        const res = await studentsAPI.saveDebtsBulk({
+          level: normalizedLevel,
+          stream: normalizedStream,
+          year: parseInt(year, 10),
+          debts: payload,
+        });
+
+        queryClient.invalidateQueries(['debt', normalizedLevel, normalizedStream, year]);
+
+        const failed = res.data?.failed ?? 0;
+        const saved = res.data?.saved ?? 0;
+        if (failed === 0) {
+          toast.success(`Upload complete: ${saved} debt record(s) saved.`);
+        } else {
+          toast.warning(`Upload complete with issues: ${saved} saved, ${failed} failed.`);
+        }
+
+        if (skipped > 0) {
+          console.log('[Debts CSV upload] skipped unknown adm_no rows:', skipped);
+        }
+      } catch (err) {
+        console.error('[Debts CSV upload] Failure:', err?.response?.data || err?.message || err);
+        toast.error(err?.response?.data?.message || err?.message || 'Upload failed');
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    setTimeout(run, 0);
   };
 
   return (
@@ -456,13 +676,34 @@ const DebtsManagement = ({ formLevel }) => {
                     Download template CSV, fill in debt amounts and descriptions, then upload to bulk update all student debt records.
                   </p>
                   <div className="csv-actions">
-                    <button className="excel-btn primary">
+                    <button
+                      className="excel-btn primary"
+                      onClick={handleDownloadTemplate}
+                      disabled={students.length === 0 || uploading}
+                    >
                       <i className="fas fa-download"></i> Download Template CSV
                     </button>
-                    <button className="excel-btn success">
-                      <i className="fas fa-upload"></i> Upload CSV
-                    </button>
-                    <button className="excel-btn secondary">
+
+                    <label
+                      className="excel-btn success"
+                      style={{ cursor: students.length === 0 ? 'not-allowed' : 'pointer', opacity: students.length === 0 ? 0.6 : 1 }}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv"
+                        onChange={handleUploadFilled}
+                        disabled={students.length === 0 || uploading}
+                        style={{ display: 'none' }}
+                      />
+                      <i className="fas fa-upload"></i> {uploading ? 'Uploading...' : 'Upload CSV'}
+                    </label>
+
+                    <button
+                      className="excel-btn secondary"
+                      onClick={handleDownloadFilledCSV}
+                      disabled={students.length === 0 || uploading}
+                    >
                       <i className="fas fa-download"></i> Download Filled CSV
                     </button>
                   </div>

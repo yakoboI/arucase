@@ -2,7 +2,7 @@
  * Homepage - Full Functionality with API Integration
  * Note: Announcements and Gallery sections have been removed from homepage
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
@@ -13,9 +13,10 @@ import './HomePage.css';
 const HomePage = () => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [failedImages, setFailedImages] = useState(new Set());
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
   
   // Helper function to resolve image URLs (moved to top to avoid reference error)
-  const getImageUrl = (path) => {
+  const getImageUrl = useCallback((path) => {
     if (!path) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     
@@ -40,7 +41,7 @@ const HomePage = () => {
     }
     
     return resolvedUrl;
-  };
+  }, []);
   
   // Fetch homepage data
   const { data, isLoading, error } = useQuery({
@@ -63,8 +64,7 @@ const HomePage = () => {
         };
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - increased for better caching
     retry: 1,
     retryOnMount: false,
     refetchOnWindowFocus: false
@@ -79,21 +79,25 @@ const HomePage = () => {
   const { settings, gallery_photos, faqs, administrators, announcements } = actualData;
 
   // Filter out failed images from carousel
-  const validGalleryPhotos = gallery_photos?.filter(photo => {
-    const imageUrl = getImageUrl(photo.path);
-    return !failedImages.has(imageUrl);
-  }) || [];
+  const validGalleryPhotos = useMemo(() => {
+    return gallery_photos?.filter(photo => {
+      const imageUrl = getImageUrl(photo.path);
+      return !failedImages.has(imageUrl);
+    }) || [];
+  }, [gallery_photos, failedImages, getImageUrl]);
 
   // Handle image load errors in carousel
-  const handleImageError = (imageUrl) => {
+  const handleImageError = useCallback((imageUrl) => {
     if (imageUrl) {
       setFailedImages(prev => new Set([...prev, imageUrl]));
     }
-  };
+  }, []);
 
   // Get rector statement from settings or use default
-  const rectorStatement = settings?.rector_statement || 
-    '"Let us make Our Seminary Great and Green Again" - Father Moses Peter Assey - The Rector';
+  const rectorStatement = useMemo(() => {
+    return settings?.rector_statement || 
+      '"Let us make Our Seminary Great and Green Again" - Father Moses Peter Assey - The Rector';
+  }, [settings?.rector_statement]);
 
   // Auto-rotate carousel (with error handling)
   useEffect(() => {
@@ -121,7 +125,19 @@ const HomePage = () => {
     } catch (err) {
       console.error('Error setting up carousel rotation:', err);
     }
-  }, [validGalleryPhotos]);
+  }, [validGalleryPhotos.length]);
+
+  // Close modal on Escape (VP-style "click to view")
+  useEffect(() => {
+    if (!selectedAdmin) return;
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedAdmin(null);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedAdmin]);
 
   return (
     <PublicLayout>
@@ -138,34 +154,39 @@ const HomePage = () => {
                   {validGalleryPhotos.slice(0, Math.min(10, validGalleryPhotos.length)).map((photo, index) => {
                     const imageUrl = getImageUrl(photo.path);
                     const isActive = index === carouselIndex;
+                    const shouldLoad = isActive || Math.abs(index - carouselIndex) <= 1; // Load current and adjacent images
                     return (
                       <div
                         key={photo.id || index}
                         className={`carousel-slide ${isActive ? 'active' : ''}`}
                         style={{
-                          backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
+                          backgroundImage: shouldLoad && imageUrl ? `url("${imageUrl}")` : 'none',
                           backgroundColor: imageUrl ? 'transparent' : 'transparent',
                         }}
-                        onError={() => handleImageError(imageUrl)}
                       >
-                        {/* Preload image to check if it exists - dimensions hint to reduce layout shift */}
-                        <img
-                          src={imageUrl}
-                          alt=""
-                          width={1200}
-                          height={600}
-                          style={{ display: 'none' }}
-                          onError={() => handleImageError(imageUrl)}
-                          onLoad={() => {
-                            // Image loaded successfully, remove from failed set if it was there
-                            setFailedImages(prev => {
-                              const newSet = new Set(prev);
-                              newSet.delete(imageUrl);
-                              return newSet;
-                            });
-                          }}
-                        />
-                        <div className="carousel-overlay"></div>
+                        {shouldLoad && imageUrl && (
+                          <>
+                            {/* Preload image to check if it exists - dimensions hint to reduce layout shift */}
+                            <img
+                              src={imageUrl}
+                              alt=""
+                              width={1200}
+                              height={600}
+                              style={{ display: 'none' }}
+                              loading={isActive ? 'eager' : 'lazy'}
+                              onError={() => handleImageError(imageUrl)}
+                              onLoad={() => {
+                                // Image loaded successfully, remove from failed set if it was there
+                                setFailedImages(prev => {
+                                  const newSet = new Set(prev);
+                                  newSet.delete(imageUrl);
+                                  return newSet;
+                                });
+                              }}
+                            />
+                            <div className="carousel-overlay"></div>
+                          </>
+                        )}
                       </div>
                     );
                   })}
@@ -212,7 +233,7 @@ const HomePage = () => {
         {/* Short intro for SEO and visitors */}
         <section className="home-intro" aria-label="About Arusha Catholic Seminary">
           <p className="home-intro-text">
-            Arusha Catholic Seminary (centre number S0171) is a Catholic secondary school in Arusha, Tanzania, offering O-Level and A-Level education from Form I to Form VI. We combine strong academic formation with spiritual and character development. Explore admissions, staff, NECTA examination results, school fees, and contact information on this site.
+            Seminari ya Kikatoliki Arusha (namba ya kituo S0171) ni shule ya sekondari ya Kikatoliki iliyopo Arusha, Tanzania, inayotoa elimu ya O-Level na A-Level kuanzia Kidato cha I hadi VI, huku ikikuza masomo bora, malezi ya kiroho, na tabia njema; tovuti hii ina taarifa za udahili, watumishi, matokeo ya NECTA, ada, na mawasiliano.
           </p>
         </section>
 
@@ -223,10 +244,10 @@ const HomePage = () => {
             <div className="administration-header">
               <h2 className="administration-title">
                 <i className="fas fa-user-tie administration-title-icon"></i>
-                SCHOOL ADMINISTRATION
+                Uongozi wa Shule
               </h2>
               <p className="administration-subtitle">
-                Meet our dedicated leadership team serving Arusha Catholic Seminary
+                Wafahamu viongozi wa Seminari ya Kikatoliki Arusha.
               </p>
             </div>
 
@@ -237,44 +258,38 @@ const HomePage = () => {
                   <div key={admin.id} className="admin-card">
                     {/* Photo */}
                     <div className="admin-photo-container">
-                      {admin.photo ? (
-                        <img 
-                          src={getImageUrl(admin.photo)} 
-                          alt={admin.name || 'Administrator photo'} 
-                          className="admin-photo" 
-                          loading="lazy"
-                          onError={(e) => {
-                            // Silently handle missing images - don't log to console
-                            e.target.style.display = 'none';
-                            const placeholder = e.target.nextElementSibling;
-                            if (placeholder) {
-                              placeholder.style.display = 'flex';
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div className="admin-photo-placeholder" style={{ display: admin.photo ? 'none' : 'flex' }}>
-                        <i className="fas fa-user admin-photo-placeholder-icon"></i>
-                      </div>
+                      <button
+                        type="button"
+                        className="admin-photo-button"
+                        onClick={() => setSelectedAdmin(admin)}
+                        aria-label={admin.name ? `View ${admin.name}` : 'View profile'}
+                      >
+                        <div className="admin-photo-frame">
+                          {admin.photo ? (
+                            <img
+                              src={getImageUrl(admin.photo)}
+                              alt={admin.name || 'Administrator photo'}
+                              className="admin-photo-inner"
+                              loading="lazy"
+                              onError={(e) => {
+                                // Silently handle missing images - don't log to console
+                                e.target.style.display = 'none';
+                                const placeholder = e.target.nextElementSibling;
+                                if (placeholder) {
+                                  placeholder.style.display = 'grid';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="admin-photo-inner admin-photo-placeholder"
+                            style={{ display: admin.photo ? 'none' : 'grid' }}
+                          >
+                            <i className="fas fa-user admin-photo-placeholder-icon"></i>
+                          </div>
+                        </div>
+                      </button>
                     </div>
-
-                    {/* Name */}
-                    <h3 className="admin-name">
-                      {admin.name || 'Name Not Available'}
-                    </h3>
-
-                    {/* Title */}
-                    <p className="admin-title">
-                      {admin.title || 'Title Not Available'}
-                    </p>
-
-                    {/* Year Started Badge */}
-                    {admin.year_started && (
-                      <div className="admin-year-badge">
-                        <i className="fas fa-calendar-alt admin-year-badge-icon"></i>
-                        <span className="admin-year-text">Since {admin.year_started}</span>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -285,6 +300,69 @@ const HomePage = () => {
             )}
           </div>
         </section>
+
+        {selectedAdmin && (
+          <div
+            className="admin-profile-modal"
+            onClick={() => setSelectedAdmin(null)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="admin-profile-modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="admin-profile-modal-close"
+                onClick={() => setSelectedAdmin(null)}
+                aria-label="Close"
+              >
+                <i className="fas fa-times" />
+              </button>
+
+              <div className="admin-photo-container admin-photo-container--modal">
+                <div className="admin-photo-frame">
+                  {selectedAdmin.photo ? (
+                    <img
+                      src={getImageUrl(selectedAdmin.photo)}
+                      alt={selectedAdmin.name || 'Administrator photo'}
+                      className="admin-photo-inner"
+                      loading="eager"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const placeholder = e.target.nextElementSibling;
+                        if (placeholder) placeholder.style.display = 'grid';
+                      }}
+                    />
+                  ) : null}
+
+                  <div
+                    className="admin-photo-inner admin-photo-placeholder"
+                    style={{ display: selectedAdmin.photo ? 'none' : 'grid' }}
+                  >
+                    <i className="fas fa-user admin-photo-placeholder-icon"></i>
+                  </div>
+                </div>
+              </div>
+
+              <h3 className="admin-name admin-name--modal">
+                {selectedAdmin.name || 'Name Not Available'}
+              </h3>
+
+              <p className="admin-title admin-title--modal">
+                {selectedAdmin.title || 'Title Not Available'}
+              </p>
+
+              {selectedAdmin.year_started && (
+                <div className="admin-year-badge admin-year-badge--modal">
+                  <i className="fas fa-calendar-alt admin-year-badge-icon"></i>
+                  <span className="admin-year-text">Since {selectedAdmin.year_started}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
     </PublicLayout>

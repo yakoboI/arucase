@@ -27,7 +27,7 @@ const DataTable = ({
   // Filter data
   const filteredData = useMemo(() => {
     if (!searchTerm) return data;
-    
+
     return data.filter(row =>
       columns.some(col => {
         const value = col.accessor ? col.accessor(row) : row[col.key];
@@ -36,24 +36,28 @@ const DataTable = ({
     );
   }, [data, searchTerm, columns]);
 
+  const getNestedValue = (obj, path) => {
+    return path.split('.').reduce((value, key) => value?.[key], obj);
+  };
+
   // Sort data
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return filteredData;
-    
+
     return [...filteredData].sort((a, b) => {
       const aValue = getNestedValue(a, sortConfig.key);
       const bValue = getNestedValue(b, sortConfig.key);
-      
+
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
-      
+
       if (typeof aValue === 'number' && typeof bValue === 'number') {
         return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
       }
-      
+
       const aStr = aValue.toString().toLowerCase();
       const bStr = bValue.toString().toLowerCase();
-      
+
       if (sortConfig.direction === 'asc') {
         return aStr.localeCompare(bStr);
       } else {
@@ -120,10 +124,6 @@ const DataTable = ({
     a.download = `${title || 'data'}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-  };
-
-  const getNestedValue = (obj, path) => {
-    return path.split('.').reduce((value, key) => value?.[key], obj);
   };
 
   return (

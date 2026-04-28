@@ -24,6 +24,7 @@ export const publicAPI = {
 
   // Get administrators
   getAdministrators: () => api.get('/public/administrators'),
+  getStaffProfiles: () => api.get('/public/staff-profiles'),
   
   // Get public page
   getPage: (pageName) => api.get(`/public/page/${pageName}`),
@@ -47,7 +48,17 @@ export const publicAPI = {
   // Student portal
   studentLogin: (credentials) => api.post('/public/student/login', credentials),
   getStudentMonths: (admNo, year) => api.get(`/public/student/${admNo}/months?year=${year}`),
+  getStudentReportScores: (admNo, year, term) =>
+    api.get(`/public/student/${admNo}/report-scores?year=${year}&term=${encodeURIComponent(term)}`),
   getStudentResults: (admNo, month, year) => api.get(`/public/student/${admNo}/results/${month}?year=${year}`),
-  getStudentPhoto: (admNo, level, stream, year) => api.get(`/public/student/${admNo}/photo?level=${encodeURIComponent(level)}&stream=${stream}&year=${year}`)
+  getStudentPhoto: (admNo, level, stream, year) => api.get(`/public/student/${admNo}/photo?level=${encodeURIComponent(level)}&stream=${stream}&year=${year}`),
+
+  // Admissions (Swahili applicant portal)
+  registerAdmissionApplicant: (data) => api.post('/public/admissions/register', data),
+  loginAdmissionApplicant: (data) => api.post('/public/admissions/login', data),
+  getMyAdmissionApplication: (token) =>
+    api.get('/public/admissions/application/mine', { headers: { Authorization: `Bearer ${token}` } }),
+  submitAdmissionApplication: (token, data) =>
+    api.post('/public/admissions/application', data, { headers: { Authorization: `Bearer ${token}` } }),
 };
 

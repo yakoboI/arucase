@@ -9,22 +9,31 @@ const BulkReportTermSelection = () => {
   const { form, stream, year } = useParams();
   const navigate = useNavigate();
 
-  const terms = [
-    { code: 'Term I', name: 'Term I', subtitle: 'First Term', months: 'January - June' },
-    { code: 'Term II', name: 'Term II', subtitle: 'Second Term', months: 'July - December' }
-  ];
+  // Determine months based on form level
+  const formCode = form.replace('FORM ', '').trim();
+  const isFormVOrVI = ['V', 'VI', '5', '6'].includes(formCode);
+
+  const terms = isFormVOrVI
+    ? [
+        { code: 'Term I', name: 'Term I', subtitle: 'First Term', months: 'July - December' },
+        { code: 'Term II', name: 'Term II', subtitle: 'Second Term', months: 'January - June' }
+      ]
+    : [
+        { code: 'Term I', name: 'Term I', subtitle: 'First Term', months: 'February - May' },
+        { code: 'Term II', name: 'Term II', subtitle: 'Second Term', months: 'August - November' }
+      ];
 
   const handleTermClick = (term) => {
     // Check if form has streams (V/VI)
     const formCode = form.replace('FORM ', '').trim();
     const hasStreams = ['V', 'VI', '5', '6'].includes(formCode);
-    
+
     if (hasStreams && stream && stream !== 'NA') {
       // Navigate to stream selection (to choose specific stream or all streams)
-      navigate(`/reports/bulk/${form}/${stream}/${year}/${term}/stream`);
+      navigate(`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/${encodeURIComponent(year)}/${encodeURIComponent(term)}/stream`);
     } else {
       // For Forms I-IV, go directly to generation
-      navigate(`/reports/bulk/${form}/${stream}/${year}/${term}/generate`);
+      navigate(`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/${encodeURIComponent(year)}/${encodeURIComponent(term)}/generate`);
     }
   };
 
@@ -33,7 +42,7 @@ const BulkReportTermSelection = () => {
       <div className="bulk-report-page">
         <div className="breadcrumb">
           <Link to="/reports/bulk">Bulk Student Report</Link> &gt;{' '}
-          <Link to={`/reports/bulk/${form}/${stream}/year`}>{form}</Link> &gt; {year}
+          <Link to={`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/year`}>{form}</Link> &gt; {year}
         </div>
 
         <div className="excel-card">
@@ -45,6 +54,7 @@ const BulkReportTermSelection = () => {
             <div className="term-grid">
               {terms.map((term) => (
                 <button
+                  type="button"
                   key={term.code}
                   onClick={() => handleTermClick(term.code)}
                   className="term-card"
@@ -60,7 +70,7 @@ const BulkReportTermSelection = () => {
             </div>
             <div className="action-buttons mt-20">
               <Link
-                to={`/reports/bulk/${form}/${stream}/year`}
+                to={`/reports/bulk/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/year`}
                 className="excel-btn"
               >
                 <i className="fas fa-arrow-left"></i> Back to Year Selection

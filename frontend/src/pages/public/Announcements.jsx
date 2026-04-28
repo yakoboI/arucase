@@ -2,13 +2,17 @@
  * Announcements Page - Data from server (publicAPI.getAnnouncements)
  */
 import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import { publicAPI } from '../../services/public';
 import './About.css';
+import './Announcements.css';
 
 const Announcements = () => {
+  const [search, setSearch] = useState('');
+  const [yearFilter, setYearFilter] = useState('all');
   const { data, isLoading, isError } = useQuery({
     queryKey: ['public-announcements'],
     queryFn: () => publicAPI.getAnnouncements(50),
@@ -17,13 +21,31 @@ const Announcements = () => {
   });
 
   const announcements = data || [];
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    announcements.forEach((ann) => {
+      if (ann.created_at) years.add(String(new Date(ann.created_at).getFullYear()));
+    });
+    return ['all', ...Array.from(years).sort((a, b) => Number(b) - Number(a))];
+  }, [announcements]);
+
+  const filteredAnnouncements = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return announcements.filter((ann) => {
+      const annYear = ann.created_at ? String(new Date(ann.created_at).getFullYear()) : '';
+      if (yearFilter !== 'all' && annYear !== yearFilter) return false;
+      if (!q) return true;
+      const hay = [ann.title, ann.content, ann.body].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }, [announcements, search, yearFilter]);
 
   if (isLoading) {
     return (
       <PublicLayout>
         <div className="about-page">
           <Link to="/" className="home-button">
-            <i className="fas fa-home"></i> Back to Home
+            <i className="fas fa-home"></i> Rudi Nyumbani
           </Link>
           <div className="content-card">
             <SkeletonLoader type="text" lines={1} width="40%" height="2rem" className="mb-3" />
@@ -43,31 +65,68 @@ const Announcements = () => {
     <PublicLayout>
       <div className="about-page">
         <Link to="/" className="home-button">
-          <i className="fas fa-home"></i> Back to Home
+          <i className="fas fa-home"></i> Rudi Nyumbani
         </Link>
 
         <div className="content-card">
-          <h1>Announcements</h1>
-          <p>Latest news and announcements from Arusha Catholic Seminary.</p>
+          <div className="announcements-hero">
+            <h1>Matangazo</h1>
+            <p>Habari na matangazo mapya kutoka Seminari ya Kikatoliki Arusha.</p>
+          </div>
+          <div className="announcements-filters">
+            <div className="announcement-input-wrap">
+              <i className="fas fa-magnifying-glass" aria-hidden="true" />
+              <input
+                type="text"
+                className="announcement-search"
+                placeholder="Tafuta tangazo..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Tafuta tangazo"
+              />
+            </div>
+            <div className="announcement-select-wrap">
+              <i className="fas fa-calendar" aria-hidden="true" />
+              <select
+                className="announcement-year-filter"
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                aria-label="Chuja kwa mwaka"
+              >
+                {availableYears.map((year) => (
+                  <option key={`announcement-${year}`} value={year}>
+                    {year === 'all' ? 'Miaka yote' : year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="announcements-toolbar-meta">
+            <span className="results-chip">
+              <i className="fas fa-list-ul" aria-hidden="true" /> Matokeo: {filteredAnnouncements.length}
+            </span>
+          </div>
 
           {isError ? (
-            <p className="text-muted">Unable to load announcements at this time. Please try again later.</p>
-          ) : announcements.length === 0 ? (
-            <p className="text-muted">No announcements at the moment. Check back later.</p>
+            <p className="text-muted">Imeshindikana kupakia matangazo kwa sasa. Tafadhali jaribu tena baadaye.</p>
+          ) : filteredAnnouncements.length === 0 ? (
+            <p className="text-muted">Hakuna matangazo kwa sasa. Tafadhali tembelea tena baadaye.</p>
           ) : (
-            <ul className="announcements-list" style={{ listStyle: 'none', padding: 0 }}>
-              {announcements.map((ann) => (
-                <li key={ann.id} style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #eee' }}>
-                  <strong>{ann.title || 'Announcement'}</strong>
-                  {ann.created_at ? (
-                    <span style={{ color: '#666', fontSize: '0.9rem', marginLeft: '0.5rem' }}>
-                      {new Date(ann.created_at).toLocaleDateString()}
-                    </span>
-                  ) : null}
+            <ul className="announcements-list">
+              {filteredAnnouncements.map((ann) => (
+                <li key={ann.id} className="announcement-card">
+                  <div className="announcement-head">
+                    <strong className="announcement-title">{ann.title || 'Tangazo'}</strong>
+                    {ann.created_at ? (
+                      <span className="announcement-date">
+                        {new Date(ann.created_at).toLocaleDateString('sw-TZ')}
+                      </span>
+                    ) : null}
+                  </div>
                   {ann.content ? (
-                    <div style={{ marginTop: '0.5rem' }} dangerouslySetInnerHTML={{ __html: ann.content }} />
+                    <div className="announcement-content" dangerouslySetInnerHTML={{ __html: ann.content }} />
                   ) : ann.body ? (
-                    <p style={{ marginTop: '0.5rem' }}>{ann.body}</p>
+                    <p className="announcement-content">{ann.body}</p>
                   ) : null}
                 </li>
               ))}

@@ -55,9 +55,7 @@ const ScoreEntryMonthSelection = ({ formLevel }) => {
   const getMonthDetailPath = (month) => {
     // Always encode the subject code to handle forward slashes and special characters
     // React Router decodes URL params, so we need to re-encode when building paths
-    // Use the decoded subjectCode and encode it, or encode subjectCodeParam if it exists
-    const decodedSubjectCode = subjectCodeParam ? decodeURIComponent(subjectCodeParam) : subjectCode;
-    const encodedSubjectCode = encodeURIComponent(decodedSubjectCode);
+    const encodedSubjectCode = encodeURIComponent(subjectCode);
     // URL encode month to handle any special characters (though month names are usually safe)
     const encodedMonth = encodeURIComponent(month);
     

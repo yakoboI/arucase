@@ -7,6 +7,26 @@ const { requireAuth } = require('../middleware/auth');
 const { query } = require('../config/database');
 const { normalizeStream } = require('../utils/streamNormalizer');
 const { sendError } = require('../utils/safeError');
+const { calculateGrade } = require('../utils/calculations');
+
+// Month ordering CASE statement for SQL queries (reused across multiple queries)
+const MONTH_ORDER_CASE = `
+  CASE month
+    WHEN 'Jrb1' THEN 1
+    WHEN 'Robo' THEN 2
+    WHEN 'Jrb2' THEN 3
+    WHEN 'Nusu' THEN 4
+    WHEN 'Muh' THEN 5
+    WHEN 'February' THEN 1
+    WHEN 'March' THEN 2
+    WHEN 'April' THEN 3
+    WHEN 'May' THEN 4
+    WHEN 'August' THEN 5
+    WHEN 'September' THEN 6
+    WHEN 'October' THEN 7
+    WHEN 'November' THEN 8
+    ELSE 9
+  END`;
 
 router.use(requireAuth);
 
@@ -133,9 +153,7 @@ router.get('/search-students', async (req, res) => {
     
     sql += ' ORDER BY first_name, middle_name, surname, adm_no LIMIT 20';
     
-    console.log(`[ANALYTICS SEARCH] Searching for: "${q}" in form: ${form || 'all'}`);
     const result = await query(sql, params);
-    console.log(`[ANALYTICS SEARCH] Found ${result.rows.length} students`);
     
     res.json({ students: result.rows });
   } catch (error) {
@@ -148,7 +166,7 @@ router.get('/search-students', async (req, res) => {
 router.get('/student/:admNo/performance', async (req, res) => {
   try {
     const { admNo } = req.params;
-    let { form, stream, year } = req.query;
+    let { form, stream, year, term } = req.query;
     
     // Normalize stream: NA -> A
     if (stream) {
@@ -246,33 +264,20 @@ router.get('/student/:admNo/performance', async (req, res) => {
       scoresParamCount++;
     }
     
-    if (isFormVOrVI && yearNum && yearNum > 2025 && yearNum !== studentYear) {
-      // Include scores from both academic year years (display year and student's actual year)
-      scoresQuery += ` AND (year = $${scoresParamCount} OR year = $${scoresParamCount + 1})`;
-      scoresParams.push(yearNum, studentYear);
-      scoresParamCount += 2;
-    } else if (isFormVOrVI) {
-      // For FORM V/VI, get scores from the academic year (student's year and next year)
-      scoresQuery += ` AND (year = $${scoresParamCount} OR year = $${scoresParamCount + 1})`;
-      scoresParams.push(studentYear, studentYear + 1);
-      scoresParamCount += 2;
-    } else if (year && !isNaN(yearNum) && yearNum > 0) {
+    // Use calendar year directly for all forms (no expansion logic)
+    if (year && !isNaN(yearNum) && yearNum > 0) {
       scoresQuery += ` AND year = $${scoresParamCount}`;
       scoresParams.push(yearNum);
       scoresParamCount++;
     }
+    if (term && term.trim()) {
+      scoresQuery += ` AND term = $${scoresParamCount}`;
+      scoresParams.push(term.trim());
+      scoresParamCount++;
+    }
     // If no year filter, get all scores
     
-    scoresQuery += ` ORDER BY year, 
-        CASE month
-          WHEN 'Jrb1' THEN 1
-          WHEN 'Robo' THEN 2
-          WHEN 'Jrb2' THEN 3
-          WHEN 'Nusu' THEN 4
-          WHEN 'Muh' THEN 5
-          ELSE 6
-        END, 
-        subject_code`;
+    scoresQuery += ` ORDER BY year, ${MONTH_ORDER_CASE}, subject_code`;
     
     const scoresResult = await query(scoresQuery, scoresParams);
     
@@ -337,8 +342,6 @@ router.get('/class/performance', async (req, res) => {
       ? [form, 'A', 'NA']
       : [form, stream];
     const yearParamIndex = streamParams.length + 1;
-    
-    console.log(`[CLASS PERFORMANCE] Querying for form: ${form}, stream: ${stream}${isFormIV ? ' (checking A and NA)' : ''}, year: ${year || 'all'}`);
     
     // First, get list of registered students for this class/year to filter scores
     let registeredStudentsSql = `SELECT DISTINCT adm_no FROM students WHERE level = $1 ${streamCondition}`;
@@ -412,8 +415,6 @@ router.get('/class/performance', async (req, res) => {
       monthlyParams
     );
     
-    console.log(`[CLASS PERFORMANCE] Found ${monthlyResult.rows.length} monthly averages for ${registeredAdmNos.length} registered students`);
-    
     // Get subject averages - only from registered students in the class
     let subjectSql = `SELECT 
         individual_scores.subject_code,
@@ -467,7 +468,7 @@ router.get('/class/performance', async (req, res) => {
     
     const studentIndexResult = await query(studentIndexSql, studentIndexParams);
     const registeredStudentIndexesSet = new Set(
-      studentIndexResult.rows.map(row => row.student_index.toString())
+      studentIndexResult.rows.map(row => row.student_index)
     );
     
     let gradeResult = { rows: [] };
@@ -485,13 +486,10 @@ router.get('/class/performance', async (req, res) => {
         FROM monthly_results
         WHERE monthly_results.level = $1 ${gradeStreamCondition} ${gradeYearFilter}
           AND monthly_results.average IS NOT NULL
-          AND monthly_results.student_index = ANY($${studentIndexArrayParamIndex}::text[])
+          AND CAST(monthly_results.student_index AS INTEGER) = ANY($${studentIndexArrayParamIndex}::int[])
         GROUP BY monthly_results.student_index`;
       
       const studentAveragesResult = await query(studentAveragesSql, studentAveragesParams);
-      
-      // Import calculateGrade function
-      const { calculateGrade } = require('../utils/calculations');
       
       // Calculate grade for each student based on their average of monthly averages
       const gradeCountMap = new Map();
@@ -514,8 +512,6 @@ router.get('/class/performance', async (req, res) => {
           return (gradeOrder[a.grade] || 99) - (gradeOrder[b.grade] || 99);
         })
       };
-      
-      console.log(`[CLASS PERFORMANCE] Found ${gradeResult.rows.length} grade categories for ${registeredStudentIndexesSet.size} registered students`);
     }
     
     res.json({
@@ -555,12 +551,10 @@ router.get('/subject/performance', async (req, res) => {
     
     // Decode subject_code in case it's URL encoded (e.g., A%2FCHE -> A/CHE)
     subject_code = decodeURIComponent(subject_code);
-    
+        
     // Determine if Form V/VI
     const isFormVOrVI = form.includes('FORM V') || form.includes('FORM VI');
-    
-    console.log(`[SUBJECT PERFORMANCE] Querying: form=${form}, stream=${stream || 'all'}, year=${year || 'all'}, subject_code=${subject_code}`);
-    
+        
     let sql = `
       SELECT 
         month,
@@ -570,7 +564,7 @@ router.get('/subject/performance', async (req, res) => {
       FROM individual_scores
       WHERE UPPER(TRIM(level)) = UPPER(TRIM($1)) AND subject_code = $2
     `;
-    
+        
     const params = [form, subject_code];
     
     if (stream && stream !== 'NA') {
@@ -591,31 +585,9 @@ router.get('/subject/performance', async (req, res) => {
     //   params.push(parseInt(year));
     // }
     
-    sql += ` GROUP BY month, year 
-             ORDER BY year, 
-               CASE month
-                 WHEN 'Jrb1' THEN 1
-                 WHEN 'Robo' THEN 2
-                 WHEN 'Jrb2' THEN 3
-                 WHEN 'Nusu' THEN 4
-                 WHEN 'Muh' THEN 5
-                 WHEN 'February' THEN 1
-                 WHEN 'March' THEN 2
-                 WHEN 'April' THEN 3
-                 WHEN 'May' THEN 4
-                 WHEN 'August' THEN 5
-                 WHEN 'September' THEN 6
-                 WHEN 'October' THEN 7
-                 WHEN 'November' THEN 8
-                 ELSE 6
-               END`;
-    
-    console.log(`[SUBJECT PERFORMANCE] SQL: ${sql}`);
-    console.log(`[SUBJECT PERFORMANCE] Params:`, params);
+    sql += ` GROUP BY month, year ORDER BY year, ${MONTH_ORDER_CASE}`;
     
     const monthlyResult = await query(sql, params);
-    
-    console.log(`[SUBJECT PERFORMANCE] Found ${monthlyResult.rows.length} monthly averages`);
     
     // Get score distribution
     const distributionParams = [form, subject_code];
@@ -662,12 +634,7 @@ router.get('/subject/performance', async (req, res) => {
     
     distributionSql += ' GROUP BY grade ORDER BY grade';
     
-    console.log(`[SUBJECT PERFORMANCE] Distribution SQL: ${distributionSql}`);
-    console.log(`[SUBJECT PERFORMANCE] Distribution Params:`, distributionParams);
-    
     const distributionResult = await query(distributionSql, distributionParams);
-    
-    console.log(`[SUBJECT PERFORMANCE] Grade distribution count: ${distributionResult.rows.length}`);
     
     res.json({
       monthly_averages: monthlyResult.rows.map(row => ({
@@ -689,157 +656,88 @@ router.get('/subject/performance', async (req, res) => {
   }
 });
 
-// Get all forms averages - monthly breakdown (matching Python version)
+// Get all forms averages - monthly breakdown (optimized)
 router.get('/all-forms-averages', async (req, res) => {
   try {
     const forms = ['FORM I', 'FORM II', 'FORM III', 'FORM IV', 'FORM V', 'FORM VI'];
     const formsData = {};
     
-    // Get monthly averages for each form from monthly_results table
-    for (const form of forms) {
+    // Process each form in parallel for better performance
+    const formPromises = forms.map(async (form) => {
       try {
-        console.log(`[ALL FORMS AVERAGES] Processing form: ${form}`);
-        
-        // First try to get from monthly_results (pre-calculated averages)
-        const monthlyResults = await query(`
-        SELECT 
-          year, 
-          month,
-          AVG(average) as class_average,
-          COUNT(*) as student_count,
-          COUNT(DISTINCT stream) as stream_count
-        FROM monthly_results
-        WHERE UPPER(TRIM(level)) = UPPER(TRIM($1))
-          AND average IS NOT NULL 
-          AND average > 0
-        GROUP BY year, month
-        HAVING COUNT(*) > 0 AND AVG(average) > 0
-        ORDER BY year, 
-          CASE month
-            WHEN 'Jrb1' THEN 1
-            WHEN 'Robo' THEN 2
-            WHEN 'Jrb2' THEN 3
-            WHEN 'Nusu' THEN 4
-            WHEN 'Muh' THEN 5
-            WHEN 'February' THEN 1
-            WHEN 'March' THEN 2
-            WHEN 'April' THEN 3
-            WHEN 'May' THEN 4
-            WHEN 'August' THEN 5
-            WHEN 'September' THEN 6
-            WHEN 'October' THEN 7
-            WHEN 'November' THEN 8
-            ELSE 9
-          END
-      `, [form]);
-      
-      console.log(`[ALL FORMS AVERAGES] Form: ${form}, Monthly results count: ${monthlyResults.rows.length}`);
-      
-      // Get all distinct months from individual_scores to ensure we don't miss any
-      const allMonthsFromIndividual = await query(`
-        SELECT DISTINCT 
-          year, 
-          month,
-          CASE month
-            WHEN 'Jrb1' THEN 1
-            WHEN 'Robo' THEN 2
-            WHEN 'Jrb2' THEN 3
-            WHEN 'Nusu' THEN 4
-            WHEN 'Muh' THEN 5
-            WHEN 'February' THEN 1
-            WHEN 'March' THEN 2
-            WHEN 'April' THEN 3
-            WHEN 'May' THEN 4
-            WHEN 'August' THEN 5
-            WHEN 'September' THEN 6
-            WHEN 'October' THEN 7
-            WHEN 'November' THEN 8
-            ELSE 9
-          END as month_order
-        FROM individual_scores
-        WHERE UPPER(TRIM(level)) = UPPER(TRIM($1))
-          AND score IS NOT NULL 
-          AND score >= 0
-        ORDER BY year, month_order
-      `, [form]);
-      
-      console.log(`[ALL FORMS AVERAGES] Form: ${form}, Found ${allMonthsFromIndividual.rows.length} distinct periods in individual_scores`);
-      
-      // Build a map of months from monthly_results
-      const monthlyResultsMap = new Map();
-      if (monthlyResults.rows.length > 0) {
-        monthlyResults.rows.forEach(row => {
-          const key = `${row.year}-${row.month}`;
-          monthlyResultsMap.set(key, {
-            year: parseInt(row.year),
-            month: row.month,
-            monthYear: `${row.month} ${row.year}`,
-            class_average: parseFloat(row.class_average) || 0,
-            student_count: parseInt(row.student_count) || 0,
-            stream_count: parseInt(row.stream_count) || 0,
-          });
-        });
-      }
-      
-      // Process all months from individual_scores, using monthly_results if available, otherwise calculate
-      const finalMonthlyData = [];
-      for (const period of allMonthsFromIndividual.rows) {
-        const year = parseInt(period.year);
-        const month = period.month;
-        const key = `${year}-${month}`;
-        
-        // If we have data from monthly_results, use it
-        if (monthlyResultsMap.has(key)) {
-          finalMonthlyData.push(monthlyResultsMap.get(key));
-        } else {
-          // Calculate from individual_scores
-          const studentAvgs = await query(`
-            SELECT adm_no, AVG(score) as student_avg, COUNT(*) as score_count
+        // Get all monthly averages in a single optimized query
+        // This combines the monthly_results lookup with fallback calculation
+        const monthlyData = await query(`
+          WITH monthly_results_data AS (
+            SELECT 
+              year,
+              month,
+              AVG(average) as class_average,
+              COUNT(*) as student_count,
+              COUNT(DISTINCT stream) as stream_count,
+              'monthly_results' as source
+            FROM monthly_results
+            WHERE UPPER(TRIM(level)) = UPPER(TRIM($1))
+              AND average IS NOT NULL 
+              AND average > 0
+            GROUP BY year, month
+          ),
+          individual_data AS (
+            SELECT 
+              year,
+              month,
+              AVG(score) as class_average,
+              COUNT(DISTINCT adm_no) as student_count,
+              1 as stream_count,
+              'individual' as source
             FROM individual_scores
             WHERE UPPER(TRIM(level)) = UPPER(TRIM($1))
-              AND year = $2 
-              AND month = $3
               AND score IS NOT NULL 
               AND score >= 0
-            GROUP BY adm_no
-            HAVING COUNT(*) > 0
-          `, [form, year, month]);
-          
-          if (studentAvgs.rows.length > 0) {
-            const validAvgs = studentAvgs.rows
-              .map(s => parseFloat(s.student_avg || 0))
-              .filter(avg => !isNaN(avg) && isFinite(avg));
-            
-            if (validAvgs.length > 0) {
-              const classAvg = validAvgs.reduce((sum, a) => sum + a, 0) / validAvgs.length;
-              finalMonthlyData.push({
-                year: year,
-                month: month,
-                monthYear: `${month} ${year}`,
-                class_average: classAvg || 0,
-                student_count: studentAvgs.rows.length,
-                stream_count: 1,
-              });
-            }
-          }
-        }
-      }
-      
-      formsData[form] = finalMonthlyData;
-      console.log(`[ALL FORMS AVERAGES] Form: ${form}, Final monthly data count: ${finalMonthlyData.length}, Months: ${finalMonthlyData.map(m => m.monthYear).join(', ')}`);
+            GROUP BY year, month
+            HAVING COUNT(*) > 0 AND AVG(score) > 0
+          ),
+          combined AS (
+            SELECT * FROM monthly_results_data
+            UNION ALL
+            SELECT * FROM individual_data
+            WHERE (year, month) NOT IN (SELECT year, month FROM monthly_results_data)
+          )
+          SELECT 
+            year,
+            month,
+            MAX(class_average) as class_average,
+            MAX(student_count) as student_count,
+            MAX(stream_count) as stream_count
+          FROM combined
+          GROUP BY year, month
+          ORDER BY year, ${MONTH_ORDER_CASE}
+        `, [form]);
+        
+        const finalMonthlyData = monthlyData.rows.map(row => ({
+          year: parseInt(row.year),
+          month: row.month,
+          monthYear: `${row.month} ${row.year}`,
+          class_average: parseFloat(row.class_average) || 0,
+          student_count: parseInt(row.student_count) || 0,
+          stream_count: parseInt(row.stream_count) || 0,
+        }));
+        
+        return { form, data: finalMonthlyData };
       } catch (formError) {
         console.error(`[ALL FORMS AVERAGES] Error processing form ${form}:`, formError);
-        formsData[form] = [];
+        return { form, data: [] };
       }
-    }
+    });
     
-    // Get subject-level averages for each form and month
-    const subjectAveragesData = {};
-    for (const form of forms) {
+    const monthlyResults = await Promise.all(formPromises);
+    monthlyResults.forEach(({ form, data }) => {
+      formsData[form] = data;
+    });
+    
+    // Get subject-level averages for each form and month (parallel processing)
+    const subjectPromises = forms.map(async (form) => {
       try {
-        console.log(`[ALL FORMS AVERAGES] Fetching subject averages for form: ${form}`);
-        
-        // Get subject averages grouped by month and year
         const subjectAverages = await query(`
           SELECT 
             year,
@@ -854,61 +752,48 @@ router.get('/all-forms-averages', async (req, res) => {
             AND score > 0
           GROUP BY year, month, subject_code
           HAVING COUNT(*) > 0 AND AVG(score) > 0
-          ORDER BY year, 
-            CASE month
-              WHEN 'Jrb1' THEN 1
-              WHEN 'Robo' THEN 2
-              WHEN 'Jrb2' THEN 3
-              WHEN 'Nusu' THEN 4
-              WHEN 'Muh' THEN 5
-              WHEN 'February' THEN 1
-              WHEN 'March' THEN 2
-              WHEN 'April' THEN 3
-              WHEN 'May' THEN 4
-              WHEN 'August' THEN 5
-              WHEN 'September' THEN 6
-              WHEN 'October' THEN 7
-              WHEN 'November' THEN 8
-              ELSE 9
-            END,
-            subject_code
+          ORDER BY year, ${MONTH_ORDER_CASE}, subject_code
         `, [form]);
         
-      // Organize by month/year, then by subject
-      const subjectDataByMonth = {};
-      if (subjectAverages && subjectAverages.rows && Array.isArray(subjectAverages.rows)) {
-        subjectAverages.rows.forEach(row => {
-          if (row && row.month && row.year && row.subject_code) {
-            const monthYear = `${row.month} ${row.year}`;
-            if (!subjectDataByMonth[monthYear]) {
-              subjectDataByMonth[monthYear] = {
-                month: row.month,
-                year: parseInt(row.year) || 0,
-                monthYear: monthYear,
-                subjects: {}
+        // Organize by month/year, then by subject
+        const subjectDataByMonth = {};
+        if (subjectAverages?.rows?.length) {
+          subjectAverages.rows.forEach(row => {
+            if (row?.month && row?.year && row?.subject_code) {
+              const monthYear = `${row.month} ${row.year}`;
+              if (!subjectDataByMonth[monthYear]) {
+                subjectDataByMonth[monthYear] = {
+                  month: row.month,
+                  year: parseInt(row.year) || 0,
+                  monthYear: monthYear,
+                  subjects: {}
+                };
+              }
+              subjectDataByMonth[monthYear].subjects[row.subject_code] = {
+                subject_code: row.subject_code,
+                average: parseFloat(row.avg_score) || 0,
+                student_count: parseInt(row.student_count) || 0,
+                score_count: parseInt(row.score_count) || 0,
               };
             }
-            subjectDataByMonth[monthYear].subjects[row.subject_code] = {
-              subject_code: row.subject_code,
-              average: parseFloat(row.avg_score) || 0,
-              student_count: parseInt(row.student_count) || 0,
-              score_count: parseInt(row.score_count) || 0,
-            };
-          }
-        });
-      }
-      
-      subjectAveragesData[form] = Object.values(subjectDataByMonth);
-      console.log(`[ALL FORMS AVERAGES] Form: ${form}, Subject averages count: ${subjectAveragesData[form].length}, Months: ${subjectAveragesData[form].map(m => m.monthYear).join(', ')}`);
+          });
+        }
+        
+        return { form, data: Object.values(subjectDataByMonth) };
       } catch (subjectError) {
         console.error(`[ALL FORMS AVERAGES] Error fetching subjects for ${form}:`, subjectError);
-        subjectAveragesData[form] = [];
+        return { form, data: [] };
       }
-    }
+    });
     
-    // Get distinct student counts for each form (more accurate)
-    const distinctStudentCounts = {};
-    for (const form of forms) {
+    const subjectResults = await Promise.all(subjectPromises);
+    const subjectAveragesData = {};
+    subjectResults.forEach(({ form, data }) => {
+      subjectAveragesData[form] = data;
+    });
+    
+    // Get distinct student counts for each form (parallel processing)
+    const studentCountPromises = forms.map(async (form) => {
       try {
         const distinctStudents = await query(`
           SELECT COUNT(DISTINCT adm_no) as total_students
@@ -918,34 +803,31 @@ router.get('/all-forms-averages', async (req, res) => {
             AND score >= 0
         `, [form]);
         
-        if (distinctStudents.rows.length > 0) {
-          distinctStudentCounts[form] = parseInt(distinctStudents.rows[0].total_students) || 0;
-        } else {
-          distinctStudentCounts[form] = 0;
-        }
+        const count = distinctStudents.rows.length > 0 && distinctStudents.rows[0]
+          ? parseInt(distinctStudents.rows[0].total_students) || 0 
+          : 0;
+        return { form, count };
       } catch (error) {
         console.error(`[ALL FORMS AVERAGES] Error getting distinct students for ${form}:`, error);
-        distinctStudentCounts[form] = 0;
+        return { form, count: 0 };
       }
-    }
+    });
+    
+    const studentCountResults = await Promise.all(studentCountPromises);
+    const distinctStudentCounts = {};
+    studentCountResults.forEach(({ form, count }) => {
+      distinctStudentCounts[form] = count;
+    });
     
     // Convert to array format matching Python version
     const formsArray = forms.map(form => ({
       level: form,
-      averages: Array.isArray(formsData[form]) ? formsData[form] : [],
-      subject_averages: Array.isArray(subjectAveragesData[form]) ? subjectAveragesData[form] : [],
+      averages: formsData[form] || [],
+      subject_averages: subjectAveragesData[form] || [],
       distinct_student_count: distinctStudentCounts[form] || 0
     }));
     
-    console.log('[ALL FORMS AVERAGES] Returning data for forms:', formsArray.map(f => ({ 
-      level: f.level, 
-      monthly_count: f.averages.length,
-      subject_data_count: f.subject_averages.length 
-    })));
-    
-    res.json({
-      forms: formsArray,
-    });
+    res.json({ forms: formsArray });
   } catch (error) {
     console.error('[ALL FORMS AVERAGES] Error:', error);
     console.error('[ALL FORMS AVERAGES] Error stack:', error.stack);
@@ -1007,12 +889,7 @@ router.get('/subjects/:form', async (req, res) => {
     
     sql += ' ORDER BY subject_code';
     
-    console.log(`[SUBJECTS] Querying subjects for form: ${normalizedForm}, stream: ${stream || 'all'}, year: ${year || 'all'}`);
-    console.log(`[SUBJECTS] SQL: ${sql}, Params:`, params);
-    
     const result = await query(sql, params);
-    
-    console.log(`[SUBJECTS] Found ${result.rows.length} subjects for ${normalizedForm}`);
     
     res.json({
       subjects: result.rows.map(row => row.subject_code),
@@ -1046,8 +923,6 @@ router.get('/who-and-when', async (req, res) => {
       }
     }
     
-    console.log(`[WHO-AND-WHEN] Querying: form=${form}, stream=${normalizedStream || 'all'}, year=${year || 'all'}`);
-    
     // Get all students for the form/stream/year
     // For FORM I-IV: when stream is 'A', match both 'A' and 'NA' students
     const isFormIV = form.includes('FORM I') || form.includes('FORM II') || form.includes('FORM III') || form.includes('FORM IV');
@@ -1078,7 +953,6 @@ router.get('/who-and-when', async (req, res) => {
     studentsSql += ' ORDER BY s.adm_no';
     
     const studentsResult = await query(studentsSql, studentsParams);
-    console.log(`[WHO-AND-WHEN] Found ${studentsResult.rows.length} students`);
     
     if (studentsResult.rows.length === 0) {
       return res.json({
@@ -1139,23 +1013,7 @@ router.get('/who-and-when', async (req, res) => {
       
       scoresSql += `
         GROUP BY month, year
-        ORDER BY year, 
-          CASE month
-            WHEN 'Jrb1' THEN 1
-            WHEN 'Robo' THEN 2
-            WHEN 'Jrb2' THEN 3
-            WHEN 'Nusu' THEN 4
-            WHEN 'Muh' THEN 5
-            WHEN 'February' THEN 1
-            WHEN 'March' THEN 2
-            WHEN 'April' THEN 3
-            WHEN 'May' THEN 4
-            WHEN 'August' THEN 5
-            WHEN 'September' THEN 6
-            WHEN 'October' THEN 7
-            WHEN 'November' THEN 8
-            ELSE 6
-          END
+        ORDER BY year, ${MONTH_ORDER_CASE}
       `;
       
       const scoresResult = await query(scoresSql, scoresParams);
@@ -1274,8 +1132,6 @@ router.get('/who-and-when', async (req, res) => {
     });
     categories.inconsistentPerformers.sort((a, b) => b.standardDeviation - a.standardDeviation);
     
-    console.log(`[WHO-AND-WHEN] Categories: High=${categories.highPerformers.length}, Struggling=${categories.strugglingStudents.length}, Improving=${categories.improvingStudents.length}, Declining=${categories.decliningStudents.length}, Inconsistent=${categories.inconsistentPerformers.length}`);
-    
     res.json({
       categories,
       totalStudents: studentsResult.rows.length,
@@ -1312,8 +1168,6 @@ router.get('/solutions', async (req, res) => {
         normalizedStream = stream; // Form V/VI: use as-is
       }
     }
-    
-    console.log(`[SOLUTIONS] Querying: form=${form}, stream=${normalizedStream || 'all'}, year=${year || 'all'}`);
     
     // For FORM I-IV: when stream is 'A', match both 'A' and 'NA' in individual_scores
     const isFormIV = form.includes('FORM I') || form.includes('FORM II') || form.includes('FORM III') || form.includes('FORM IV');
@@ -1358,11 +1212,9 @@ router.get('/solutions', async (req, res) => {
     subjectSql += ' GROUP BY subject_code ORDER BY avg_score ASC';
     
     const subjectResult = await query(subjectSql, subjectParams);
-    console.log(`[SOLUTIONS] Found ${subjectResult.rows.length} subjects with scores`);
     
     // Identify struggling subjects (average < 60)
     const strugglingSubjects = subjectResult.rows.filter(row => parseFloat(row.avg_score) < 60);
-    console.log(`[SOLUTIONS] Found ${strugglingSubjects.length} struggling subjects (avg < 60)`);
     strugglingSubjects.forEach(subject => {
       recommendations.subjectSpecific.push({
         type: 'struggling_subject',
@@ -1413,23 +1265,7 @@ router.get('/solutions', async (req, res) => {
       
       trendSql += `
         GROUP BY month, year
-        ORDER BY year, 
-          CASE month
-            WHEN 'Jrb1' THEN 1
-            WHEN 'Robo' THEN 2
-            WHEN 'Jrb2' THEN 3
-            WHEN 'Nusu' THEN 4
-            WHEN 'Muh' THEN 5
-            WHEN 'February' THEN 1
-            WHEN 'March' THEN 2
-            WHEN 'April' THEN 3
-            WHEN 'May' THEN 4
-            WHEN 'August' THEN 5
-            WHEN 'September' THEN 6
-            WHEN 'October' THEN 7
-            WHEN 'November' THEN 8
-            ELSE 6
-          END
+        ORDER BY year, ${MONTH_ORDER_CASE}
       `;
       
       const trendResult = await query(trendSql, trendParams);
@@ -1495,27 +1331,10 @@ router.get('/solutions', async (req, res) => {
     
     classSql += `
       GROUP BY month, year
-      ORDER BY year, 
-        CASE month
-          WHEN 'Jrb1' THEN 1
-          WHEN 'Robo' THEN 2
-          WHEN 'Jrb2' THEN 3
-          WHEN 'Nusu' THEN 4
-          WHEN 'Muh' THEN 5
-          WHEN 'February' THEN 1
-          WHEN 'March' THEN 2
-          WHEN 'April' THEN 3
-          WHEN 'May' THEN 4
-          WHEN 'August' THEN 5
-          WHEN 'September' THEN 6
-          WHEN 'October' THEN 7
-          WHEN 'November' THEN 8
-          ELSE 6
-        END
+      ORDER BY year, ${MONTH_ORDER_CASE}
     `;
     
     const classResult = await query(classSql, classParams);
-    console.log(`[SOLUTIONS] Found ${classResult.rows.length} monthly class averages`);
     
     if (classResult.rows.length > 0) {
       const allAverages = classResult.rows.map(r => parseFloat(r.avg_score));
@@ -1606,8 +1425,6 @@ router.get('/solutions', async (req, res) => {
     
     const strugglingResult = await query(strugglingSql, strugglingParams);
     const strugglingCount = strugglingResult.rows.length;
-    
-    console.log(`[SOLUTIONS] Found ${strugglingCount} struggling students`);
     
     if (strugglingCount > 0) {
       recommendations.studentLevel.push({
@@ -1717,8 +1534,6 @@ router.get('/solutions', async (req, res) => {
     Object.keys(recommendations).forEach(key => {
       recommendations[key].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
     });
-    
-    console.log(`[SOLUTIONS] Generated recommendations: Subject=${recommendations.subjectSpecific.length}, Class=${recommendations.classLevel.length}, Student=${recommendations.studentLevel.length}, Teaching=${recommendations.teachingStrategies.length}, Resource=${recommendations.resourceAllocation.length}`);
     
     res.json({
       recommendations,

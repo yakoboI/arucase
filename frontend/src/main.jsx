@@ -94,8 +94,25 @@ window.addEventListener('unhandledrejection', (event) => {
   const url = reason?.config?.url || reason?.message || '';
   const reqInfo = reason?.reqInfo;
   
+  // Log for debugging
+  if (import.meta.env.DEV && reason?.code === 403) {
+    console.log('🔍 403 error details:', {
+      code: reason?.code,
+      httpStatus: reason?.httpStatus,
+      httpError: reason?.httpError,
+      name: reason?.name,
+      fullReason: reason
+    });
+  }
+  
   // Suppress known benign cases
   if (url.includes('ERR_BLOCKED_BY_CLIENT') || reason?.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
+    event.preventDefault();
+    return;
+  }
+  
+  // Suppress ALL 403 errors regardless of httpStatus - they're permission checks
+  if (reason?.code === 403 || String(reason?.code) === '403') {
     event.preventDefault();
     return;
   }
@@ -106,7 +123,9 @@ window.addEventListener('unhandledrejection', (event) => {
     reqInfo?.pathPrefix === '/writing' ||
     reqInfo?.path?.includes('/writing') ||
     (reason?.code === 403 && reason?.data?.code === 403 && reason?.data?.error === 'exceptions.UserAuthError') ||
-    (reason?.code === 403 && (reason?.httpStatus === 200 || reason?.httpError === false))
+    (reason?.code === 403 && (reason?.httpStatus === 200 || reason?.httpError === false)) ||
+    (reason?.code === 403 && reason?.httpStatus === 200) ||
+    (String(reason?.code) === '403' && String(reason?.httpStatus) === '200')
   ) {
     event.preventDefault();
     return;
@@ -114,6 +133,18 @@ window.addEventListener('unhandledrejection', (event) => {
   
   // Don't log 401 (expected when not logged in or token expired)
   if (reason?.response?.status === 401) {
+    event.preventDefault();
+    return;
+  }
+  
+  // Suppress chunk loading errors (lazy loading failures) - they're handled by ErrorBoundary
+  if (reason?.message?.includes('Loading chunk') || reason?.message?.includes('chunk')) {
+    event.preventDefault();
+    return;
+  }
+  
+  // Suppress generic object errors without stack (likely chunk loading)
+  if (reason && typeof reason === 'object' && !reason.stack && !reason.message) {
     event.preventDefault();
     return;
   }

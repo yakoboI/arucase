@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import DataTable from '../../components/common/DataTable';
@@ -23,7 +23,7 @@ const StudentList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [bulkStatus, setBulkStatus] = useState('ACTIVE');
-  const [selectByStatus, setSelectByStatus] = useState('PENDING');
+  const [selectByStatus, setSelectByStatus] = useState('ACTIVE');
   const [tableKey, setTableKey] = useState(0);
   
   // Normalize level from URL (handle URL encoding: "FORM+I" -> "FORM I", ensure uppercase)
@@ -39,6 +39,7 @@ const StudentList = () => {
     level: normalizeLevelFromURL(searchParams.get('level')) || '',
     stream: searchParams.get('stream') || '',
     year: searchParams.get('year') || new Date().getFullYear().toString(),
+    term: searchParams.get('term') || 'First Term',
     search: ''
   });
 
@@ -118,18 +119,20 @@ const StudentList = () => {
         if (filters.year && filters.year.toString().trim()) {
           const yearNum = parseInt(filters.year);
           if (!isNaN(yearNum) && yearNum > 0) {
-            // For FORM V/VI, convert display year to API year
-            // This ensures students registered in 2025 appear when searching 2026
-            const normalizedLevel = filters.level?.trim().toUpperCase() || '';
-            const apiYear = requiresSpecialAcademicYearLogic(normalizedLevel) 
-              ? getApiYearForFormVVI(yearNum, normalizedLevel)
-              : yearNum;
-            params.append('year', apiYear.toString());
-            // Also pass the display year for backend to handle academic year range
-            if (requiresSpecialAcademicYearLogic(normalizedLevel)) {
-              params.append('displayYear', yearNum.toString());
-            }
+            // Use calendar year directly for Form V/VI (no academic year conversion)
+            // Form V First Term (Jul-Dec 2025) -> year 2025
+            // Form V Second Term (Jan-Jun 2026) -> year 2026
+            // Form VI First Term (Jul-Dec 2026) -> year 2026
+            // Form VI Second Term (Jan-Jun 2027) -> year 2027
+            params.append('year', yearNum.toString());
           }
+        }
+        // For Form I-IV, don't filter by term - show all students for the year
+        // For Form V/VI, filter by term
+        const isFormVOrVI = filters.level === 'Form V' || filters.level === 'FORM V' ||
+                           filters.level === 'Form VI' || filters.level === 'FORM VI';
+        if (filters.term && filters.term.trim() && isFormVOrVI) {
+          params.append('term', filters.term.trim());
         }
         if (filters.search && filters.search.trim()) {
           params.append('search', filters.search.trim());
@@ -365,6 +368,7 @@ const StudentList = () => {
       render: (value, row) => (
         <div className="action-buttons">
           <button
+            type="button"
             onClick={() => handleDownloadPDF(row)}
             className="btn btn-sm btn-primary"
             title="Download Report PDF"
@@ -417,14 +421,15 @@ const StudentList = () => {
               Network error. Please check your connection and try again.
             </p>
           )}
-          <button 
-            onClick={() => window.location.reload()} 
-            style={{ 
-              marginTop: '20px', 
-              padding: '10px 20px', 
-              background: '#01a72b', 
-              color: 'white', 
-              border: 'none', 
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              marginTop: '20px',
+              padding: '10px 20px',
+              background: '#01a72b',
+              color: 'white',
+              border: 'none',
               borderRadius: '6px',
               cursor: 'pointer'
             }}
@@ -485,6 +490,17 @@ const StudentList = () => {
             min="2020"
             max="2030"
           />
+        </div>
+
+        <div className="filter-group">
+          <label>Term</label>
+          <select
+            value={filters.term}
+            onChange={(e) => handleFilterChange('term', e.target.value)}
+          >
+            <option value="First Term">First Term (Jul-Dec)</option>
+            <option value="Second Term">Second Term (Jan-Jun)</option>
+          </select>
         </div>
 
         <div className="filter-group">

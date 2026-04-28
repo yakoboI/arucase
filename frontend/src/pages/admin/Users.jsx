@@ -3,9 +3,9 @@
  * Assign modules and tasks to non-admin roles (teacher, secretary, priest, discipline).
  * Reference: arucase456copy admin_users_enhanced.html
  */
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import { adminAPI } from '../../services/admin';
@@ -32,8 +32,8 @@ const SCORE_ENTRY_MONTHS = ['February', 'March', 'April', 'May', 'June', 'July',
 
 // Term options for module group restrictions (Comments & Assessment, Reports, Other)
 // System expects: "Term I" and "Term II" only
-// Term I: February, March, April, May
-// Term II: August, September, October, November
+// Form I-IV: Term I: February, March, April, May; Term II: August, September, October, November
+// Form V/VI: Term I (Jul-Dec): August, September, October, November; Term II (Jan-Jun): February, March, April, May
 const TERM_OPTIONS = ['Term I', 'Term II'];
 
 // Module groups for non-admin access (match reference: Academic, Comments, Reports, Other)
@@ -194,7 +194,7 @@ const Users = () => {
     },
   });
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       username: '',
       full_name: '',
@@ -203,15 +203,15 @@ const Users = () => {
       status: 'active',
       permissions: defaultPermissions(),
     });
-  };
+  }, []);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     resetForm();
     setEditingUser(null);
     setShowAddModal(true);
-  };
+  }, [resetForm]);
 
-  const handleEdit = (user) => {
+  const handleEdit = useCallback((user) => {
     setEditingUser(user);
     const perms = user.permissions || defaultPermissions();
     let class_subjects = perms.class_subjects && typeof perms.class_subjects === 'object' ? perms.class_subjects : {};
@@ -236,23 +236,23 @@ const Users = () => {
       },
     });
     setShowAddModal(true);
-  };
+  }, []);
 
-  const handleDelete = (user) => {
+  const handleDelete = useCallback((user) => {
     if (window.confirm(`Are you sure you want to delete user "${user.full_name}"?`)) {
       deleteMutation.mutate(user.id);
     }
-  };
+  }, [deleteMutation]);
 
-  const handleRoleChange = (role) => {
+  const handleRoleChange = useCallback((role) => {
     setFormData((prev) => ({
       ...prev,
       role,
       ...(ROLES_WITH_PERMISSIONS.includes(role) ? {} : { permissions: defaultPermissions() }),
     }));
-  };
+  }, []);
 
-  const toggleClassSubject = (className, subjectName, checked) => {
+  const toggleClassSubject = useCallback((className, subjectName, checked) => {
     setFormData((prev) => {
       const cs = { ...(prev.permissions.class_subjects || {}) };
       if (!cs[className]) cs[className] = [];
@@ -265,9 +265,9 @@ const Users = () => {
       if (cs[className].length === 0) delete cs[className];
       return { ...prev, permissions: { ...prev.permissions, class_subjects: cs } };
     });
-  };
+  }, []);
 
-  const toggleClassYear = (className, year, checked) => {
+  const toggleClassYear = useCallback((className, year, checked) => {
     setFormData((prev) => {
       const cp = { ...(prev.permissions.class_permissions || {}) };
       if (!cp[className]) cp[className] = { years: [] };
@@ -282,27 +282,27 @@ const Users = () => {
         permissions: { ...prev.permissions, class_permissions: cp },
       };
     });
-  };
+  }, []);
 
-  const toggleModule = (moduleId, checked) => {
+  const toggleModule = useCallback((moduleId, checked) => {
     setFormData((prev) => {
       const modules = checked
         ? [...(prev.permissions.modules || []), moduleId]
         : (prev.permissions.modules || []).filter((m) => m !== moduleId);
       return { ...prev, permissions: { ...prev.permissions, modules } };
     });
-  };
+  }, []);
 
-  const toggleScoreEntryMonth = (month, checked) => {
+  const toggleScoreEntryMonth = useCallback((month, checked) => {
     setFormData((prev) => {
       const score_entry_months = checked
         ? [...(prev.permissions.score_entry_months || []), month]
         : (prev.permissions.score_entry_months || []).filter((m) => m !== month);
       return { ...prev, permissions: { ...prev.permissions, score_entry_months } };
     });
-  };
+  }, []);
 
-  const toggleModuleGroupYear = (groupKey, year, checked) => {
+  const toggleModuleGroupYear = useCallback((groupKey, year, checked) => {
     setFormData((prev) => {
       const mgp = { ...(prev.permissions.module_group_permissions || defaultModuleGroupPermissions()) };
       if (!mgp[groupKey]) mgp[groupKey] = { years: [], terms: [] };
@@ -312,9 +312,9 @@ const Users = () => {
       mgp[groupKey] = { ...mgp[groupKey], years };
       return { ...prev, permissions: { ...prev.permissions, module_group_permissions: mgp } };
     });
-  };
+  }, []);
 
-  const toggleModuleGroupTerm = (groupKey, term, checked) => {
+  const toggleModuleGroupTerm = useCallback((groupKey, term, checked) => {
     setFormData((prev) => {
       const mgp = { ...(prev.permissions.module_group_permissions || defaultModuleGroupPermissions()) };
       if (!mgp[groupKey]) mgp[groupKey] = { years: [], terms: [] };
@@ -324,9 +324,9 @@ const Users = () => {
       mgp[groupKey] = { ...mgp[groupKey], terms };
       return { ...prev, permissions: { ...prev.permissions, module_group_permissions: mgp } };
     });
-  };
+  }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     if (!formData.username.trim() || !formData.full_name.trim()) {
       toast.error('Username and full name are required');
@@ -340,9 +340,9 @@ const Users = () => {
       id: editingUser?.id,
       ...formData,
     });
-  };
+  }, [formData, editingUser, saveMutation]);
 
-  const getRoleBadgeClass = (role) => {
+  const getRoleBadgeClass = useCallback((role) => {
     const roleMap = {
       superadmin: 'badge-superadmin',
       admin: 'badge-admin',
@@ -352,10 +352,9 @@ const Users = () => {
       discipline: 'badge-discipline',
     };
     return roleMap[role] || 'badge-default';
-  };
+  }, []);
 
-  // Helper function to get classes from user permissions
-  const getUserClasses = (user) => {
+  const getUserClasses = useCallback((user) => {
     if (user.role === 'admin' || user.role === 'superadmin') {
       return ['All Classes'];
     }
@@ -367,17 +366,15 @@ const Users = () => {
       return perms.classes;
     }
     return [];
-  };
+  }, []);
 
-  // Helper function to get subjects from user permissions
-  const getUserSubjects = (user) => {
+  const getUserSubjects = useCallback((user) => {
     if (user.role === 'admin' || user.role === 'superadmin') {
       return ['All Subjects'];
     }
     const perms = user.permissions || {};
     const subjects = new Set();
     
-    // Collect subjects from class_subjects
     if (perms.class_subjects && typeof perms.class_subjects === 'object') {
       Object.values(perms.class_subjects).forEach((subjList) => {
         if (Array.isArray(subjList)) {
@@ -392,7 +389,6 @@ const Users = () => {
       });
     }
     
-    // Also check old format (subjects array)
     if (perms.subjects && Array.isArray(perms.subjects)) {
       perms.subjects.forEach((subj) => {
         if (typeof subj === 'string') {
@@ -404,19 +400,17 @@ const Users = () => {
     }
     
     return Array.from(subjects);
-  };
+  }, []);
 
-  // Helper function to get module names
-  const getModuleLabel = (moduleId) => {
+  const getModuleLabel = useCallback((moduleId) => {
     for (const group of MODULE_GROUPS) {
       const module = group.modules.find((m) => m.id === moduleId);
       if (module) return module.label;
     }
     return moduleId.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  }, []);
 
-  // Helper function to get modules access display
-  const getUserModules = (user) => {
+  const getUserModules = useCallback((user) => {
     const perms = user.permissions || {};
     if (perms.modules && perms.modules.includes('all')) {
       return ['All Modules'];
@@ -425,10 +419,10 @@ const Users = () => {
       return perms.modules.map((m) => getModuleLabel(m));
     }
     return [];
-  };
+  }, [getModuleLabel]);
 
-  // Prepare columns for DataTable
-  const columns = [
+  // Prepare columns for DataTable (memoized to prevent recreation on every render)
+  const columns = useMemo(() => [
     { 
       key: 'username', 
       label: 'Username',
@@ -561,7 +555,7 @@ const Users = () => {
         </div>
       )
     }
-  ];
+  ], [getRoleBadgeClass, getUserClasses, getUserSubjects, getUserModules, handleEdit, handleDelete]);
 
   return (
     <AdminLayout>

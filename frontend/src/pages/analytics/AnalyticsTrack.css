@@ -453,25 +453,218 @@
 
 @media (max-width: 768px) {
   .chart-container {
-    min-height: clamp(450px, 75vh, 550px) !important;
+    min-height: clamp(400px, 70vh, 500px) !important;
     height: auto;
   }
   
   .chart-container .chart-wrapper {
-    height: clamp(400px, 70vh, 500px) !important;
-    min-height: clamp(400px, 70vh, 500px) !important;
+    height: clamp(350px, 65vh, 450px) !important;
+    min-height: clamp(350px, 65vh, 450px) !important;
+  }
+
+  /* Search results improvements for tablets */
+  .search-result-item {
+    padding: clamp(0.875rem, 2vw, 1rem);
+    min-height: 55px;
+  }
+
+  /* Header improvements for tablets */
+  .analytics-track-page .excel-card-header {
+    flex-wrap: wrap;
+  }
+
+  .header-actions {
+    width: 100%;
+    margin-left: 0;
+    margin-top: clamp(0.5rem, 1vw, 0.75rem);
+  }
+
+  /* Performance section for tablets */
+  .performance-summary {
+    grid-template-columns: 1fr;
+  }
+
+  /* Subject items for tablets */
+  .subject-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Charts section padding */
+  .charts-section {
+    padding: clamp(1rem, 2vw, 1.25rem);
   }
 }
 
 @media (max-width: 480px) {
   .chart-container {
-    min-height: clamp(400px, 70vh, 500px) !important;
-    padding: clamp(10px, 2vw, 15px);
+    min-height: clamp(350px, 65vh, 450px) !important;
+    padding: clamp(8px, 2vw, 12px);
+    margin-bottom: clamp(12px, 2.5vw, 16px);
   }
   
   .chart-container .chart-wrapper {
-    height: clamp(350px, 60vh, 450px) !important;
-    min-height: clamp(350px, 60vh, 450px) !important;
+    height: clamp(300px, 55vh, 400px) !important;
+    min-height: clamp(300px, 55vh, 400px) !important;
+  }
+
+  .chart-container h4 {
+    font-size: clamp(0.9375rem, 3vw, 1.0625rem);
+    margin-bottom: clamp(0.5rem, 1.5vw, 0.75rem);
+  }
+
+  /* Search results improvements for mobile */
+  .search-result-item {
+    padding: clamp(1rem, 3vw, 1.25rem);
+    min-height: 60px;
+  }
+
+  .student-info {
+    gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  }
+
+  .student-info strong {
+    font-size: clamp(0.9375rem, 2.5vw, 1.0625rem);
+  }
+
+  .student-adm,
+  .student-class {
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+  }
+
+  .search-result-item i {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+  }
+
+  /* Header improvements for mobile */
+  .analytics-track-page .excel-card-header {
+    padding: clamp(0.875rem, 2.5vw, 1.125rem);
+    gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  }
+
+  .analytics-track-page .excel-card-header i {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    margin-right: clamp(0.375rem, 1vw, 0.5rem);
+  }
+
+  .analytics-track-page .excel-card-header > *:first-child {
+    font-size: clamp(1rem, 2.5vw, 1.125rem);
+    min-width: calc(100% - 80px);
+  }
+
+  .header-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .header-actions .excel-btn {
+    width: 100%;
+    justify-content: center;
+    padding: clamp(0.625rem, 2vw, 0.75rem);
+  }
+
+  /* Performance section improvements */
+  .performance-section {
+    margin-top: clamp(1rem, 2.5vw, 1.5rem);
+    padding-top: clamp(1rem, 2.5vw, 1.5rem);
+  }
+
+  .performance-section h3 {
+    font-size: clamp(1rem, 2.5vw, 1.125rem);
+    margin-bottom: clamp(1rem, 2vw, 1.25rem);
+  }
+
+  .performance-summary {
+    grid-template-columns: 1fr;
+    gap: clamp(1rem, 2vw, 1.25rem);
+  }
+
+  .summary-card {
+    padding: clamp(0.875rem, 2vw, 1.125rem);
+  }
+
+  .summary-card h4 {
+    font-size: clamp(1rem, 2vw, 1.0625rem);
+    margin-bottom: clamp(0.75rem, 1.5vw, 1rem);
+  }
+
+  .subject-item {
+    padding: clamp(0.625rem, 1.5vw, 0.875rem);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(0.25rem, 0.75vw, 0.375rem);
+  }
+
+  .subject-name {
+    font-size: clamp(0.875rem, 2vw, 0.9375rem);
+  }
+
+  .subject-avg {
+    font-size: clamp(1rem, 2.5vw, 1.125rem);
+  }
+
+  /* Charts section improvements */
+  .charts-section {
+    margin-top: clamp(1rem, 2.5vw, 1.5rem);
+    padding: clamp(0.75rem, 2vw, 1rem);
+  }
+
+  .charts-section .section-title {
+    font-size: clamp(1.0625rem, 2.5vw, 1.25rem);
+    margin-top: clamp(1rem, 2vw, 1.25rem);
+    margin-bottom: clamp(0.75rem, 1.5vw, 1rem);
+  }
+
+  /* Search input improvements */
+  .search-input {
+    padding: clamp(0.75rem, 2vw, 0.875rem);
+    font-size: clamp(0.9375rem, 2.5vw, 1rem);
+  }
+
+  .student-search-section h3 {
+    font-size: clamp(1rem, 2.5vw, 1.125rem);
+  }
+
+  /* Loading and empty states */
+  .loading-state,
+  .no-data {
+    padding: clamp(1.5rem, 4vw, 2rem);
+    font-size: clamp(0.875rem, 2vw, 1rem);
+  }
+
+  /* Additional mobile optimizations */
+  .analytics-track-page .excel-card-body {
+    padding: clamp(0.75rem, 2.5vw, 1rem);
+  }
+
+  .student-search-section {
+    margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+  }
+
+  .no-results {
+    padding: clamp(0.875rem, 2vw, 1.125rem);
+    font-size: clamp(0.8125rem, 2vw, 0.9375rem);
+  }
+
+  /* Improve touch targets for interactive elements */
+  .search-result-item:active {
+    background: #e5e7eb;
+    transform: scale(0.98);
+  }
+
+  .excel-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Better spacing for charts on mobile */
+  .charts-section .chart-container {
+    margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+  }
+
+  /* Optimize legend display on mobile */
+  .chart-container canvas {
+    touch-action: none;
   }
 }
 

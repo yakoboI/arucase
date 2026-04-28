@@ -14,58 +14,56 @@ const About = () => {
     queryKey: ['page', 'about'],
     queryFn: () => publicAPI.getPage('about'),
     retry: false,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 minutes - about content rarely changes
   });
 
   // Fallback content from Python template
   const fallbackContent = (
     <div className="about-page">
       <Link to="/" className="home-button">
-        <i className="fas fa-home"></i> Back to Home
+        <i className="fas fa-home"></i> Rudi Nyumbani
       </Link>
 
       <div className="content-card">
-        <h1>About Arusha Catholic Seminary</h1>
+        <h1>Kuhusu Seminari ya Kikatoliki Arusha</h1>
         
         <p>
-          <strong>Answer:</strong> Arusha Catholic Seminary is a premier Catholic secondary school 
-          established in 1967 in Oldonyosambu, Tanzania. We provide quality Catholic education and 
-          spiritual formation to young men aspiring to serve the Church and society.
+          Seminari ya Kikatoliki Arusha ni shule ya sekondari ya Kikatoliki
+          iliyoanzishwa mwaka 1967 Oldonyosambu, Tanzania. Tunatoa elimu bora ya Kikatoliki na
+          malezi ya kiroho kwa vijana wa kiume wanaotamani kulitumikia Kanisa na jamii.
         </p>
         
-        <h2>Our History</h2>
+        <h2>Historia Yetu</h2>
         <p>
-          Arusha Catholic Seminary was established in <strong>1967</strong> with a mission to provide 
-          quality Catholic education and spiritual formation to young men aspiring to serve the Church 
-          and society. For over <strong>five decades</strong>, we have been nurturing minds and souls 
-          in the heart of Tanzania.
+          Seminari ya Kikatoliki Arusha ilianzishwa mwaka <strong>1967</strong> ikiwa na dhamira ya kutoa
+          elimu bora ya Kikatoliki na malezi ya kiroho kwa vijana wa kiume wanaotamani kulitumikia Kanisa
+          na jamii. Kwa zaidi ya <strong>miongo mitano</strong>, tumekuwa tukilea akili na roho katikati ya Tanzania.
         </p>
 
-        <h2>Our Mission</h2>
+        <h2>Dhamira Yetu</h2>
         <p>
-          <strong>Answer:</strong> To form young men into spiritually mature, academically excellent, 
-          and morally upright individuals who will serve as future leaders in the Catholic Church and 
-          society at large.
+          <strong>Jibu:</strong> Kuwajenga vijana wa kiume wawe wakomavu kiroho, wabora kitaaluma,
+          na wenye maadili mema ili wawe viongozi wa baadaye katika Kanisa Katoliki na jamii kwa ujumla.
         </p>
 
-        <h2>Our Vision</h2>
+        <h2>Maono Yetu</h2>
         <p>
-          <strong>Answer:</strong> To be a center of excellence in Catholic seminary education, 
-          producing well-rounded individuals who embody the values of faith, knowledge, and service.
+          <strong>Jibu:</strong> Kuwa kituo bora cha elimu ya seminari ya Kikatoliki kinachozalisha
+          watu waliokamilika wanaoishi tunu za imani, maarifa, na utumishi.
         </p>
 
-        <h2>Core Values</h2>
+        <h2>Tunu za Msingi</h2>
         <ul>
-          <li><strong>Faith:</strong> Deepening relationship with God through prayer and sacraments</li>
-          <li><strong>Academic Excellence:</strong> Pursuing knowledge with dedication and integrity</li>
-          <li><strong>Discipline:</strong> Cultivating self-control and responsibility</li>
-          <li><strong>Service:</strong> Serving God and humanity with humility and love</li>
-          <li><strong>Community:</strong> Building brotherhood and unity among seminarians</li>
+          <li><strong>Imani:</strong> Kukuza uhusiano na Mungu kupitia sala na sakramenti</li>
+          <li><strong>Ubora wa Kitaaluma:</strong> Kutafuta maarifa kwa bidii na uadilifu</li>
+          <li><strong>Nidhamu:</strong> Kukuza kujitawala na kuwajibika</li>
+          <li><strong>Utumishi:</strong> Kumtumikia Mungu na wanadamu kwa unyenyekevu na upendo</li>
+          <li><strong>Jumuiya:</strong> Kujenga undugu na umoja miongoni mwa wanafunzi wa seminari</li>
         </ul>
 
-        <h3>Our Patron</h3>
+        <h3>Mlinzi Wetu</h3>
         <p>
-          The seminary is placed under the patronage of Saint Thomas Aquinas.
+          Seminari iko chini ya ulinzi wa Mtakatifu Thomas wa Akwino.
         </p>
       </div>
     </div>
@@ -74,7 +72,7 @@ const About = () => {
   if (isLoading) {
     return (
       <PublicLayout>
-        <Loading message="Loading about page..." />
+        <Loading message="Inapakia ukurasa wa kuhusu..." />
       </PublicLayout>
     );
   }
@@ -87,7 +85,7 @@ const About = () => {
       {hasCustomContent ? (
         <div className="about-page">
           <Link to="/" className="home-button">
-            <i className="fas fa-home"></i> Back to Home
+            <i className="fas fa-home"></i> Rudi Nyumbani
           </Link>
           <div 
             className="content-card"

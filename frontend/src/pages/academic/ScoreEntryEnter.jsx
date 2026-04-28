@@ -3,18 +3,19 @@
  * Non-admin without access to this class is redirected to score entry.
  */
 import { useState, useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import { studentsAPI } from '../../services/students';
-import { requiresSpecialAcademicYearLogic, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './ScoreEntryEnter.css';
 
-const ScoreEntryEnter = ({ formLevel }) => {
+const ScoreEntryEnter = ({ formLevel: formLevelProp }) => {
   const params = useParams();
+  const navigate = useNavigate();
   // React Router v6 automatically decodes URL parameters, but we'll decode explicitly to be safe
+  const formLevelParam = formLevelProp || params.formLevel;
   const year = params.year;
   const stream = params.stream;
   const subjectCodeParam = params.subjectCode;
@@ -26,38 +27,82 @@ const ScoreEntryEnter = ({ formLevel }) => {
   // Decode month to handle URL-encoded values
   const month = monthParam ? decodeURIComponent(monthParam) : '';
   
+  // Derive term from month for Form V/VI
+  // First Term: Jul-Dec (August, September, October, November)
+  // Second Term: Jan-Jun (February, March, April, May)
+  const getTermFromMonth = (month) => {
+    const firstTermMonths = ['August', 'September', 'October', 'November'];
+    const secondTermMonths = ['February', 'March', 'April', 'May'];
+    
+    if (firstTermMonths.includes(month)) {
+      return 'First Term';
+    } else if (secondTermMonths.includes(month)) {
+      return 'Second Term';
+    }
+    return 'First Term'; // Default fallback
+  };
+  
+  const currentTerm = getTermFromMonth(month);
+  
   const queryClient = useQueryClient();
   const { getAllowedScoreEntryMonths, hasClass, isAdminLike, hasModule } = useAuth();
   
   const [scores, setScores] = useState({});
   const [saveTimeouts, setSaveTimeouts] = useState({});
 
+  // Form V/VI combination to subjects mapping
+  const combinationSubjects = {
+    'PCB': ['PHY', 'CHE', 'BIO', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'PCM': ['PHY', 'CHE', 'MAT', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'CBG': ['CHE', 'BIO', 'GEO', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'PGM': ['PHY', 'GEO', 'MAT', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'HGE': ['HIS', 'GEO', 'ECO', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'HKL': ['HIS', 'KIS', 'ENG', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'HGK': ['HIS', 'GEO', 'KIS', 'BAM', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'EGM': ['ECO', 'GEO', 'MAT', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM'],
+    'HGL': ['HIS', 'GEO', 'ENG', 'COM', 'A/COM', 'DIV', 'A/DIV', 'HTM', 'A/HTM']
+  };
+
+  // Determine if a combination includes the subject
+  const doesCombinationTakeSubject = (combination, subjectCode) => {
+    if (!combination || !subjectCode) return true; // Show all if can't determine
+    const subjects = combinationSubjects[combination];
+    if (!subjects) return true; // Show all if combination not found
+    // Check if subject code matches any subject in the combination
+    return subjects.some(s => subjectCode.includes(s) || s.includes(subjectCode));
+  };
+
   // Normalize form level (convert to uppercase: "form-i" -> "FORM I")
-  const normalizedLevel = formLevel
-    ? formLevel.split('-').map(w => w.toUpperCase()).join(' ')
+  const normalizedLevel = formLevelParam
+    ? formLevelParam.split('-').map(w => w.toUpperCase()).join(' ')
     : '';
   
   // Normalize stream: use 'A' as default for Form I-IV (previously 'NA')
   // For Form V-VI, use the actual stream value
+  // For together mode (no stream in URL), use 'ALL' to fetch students from all streams
+  const isTogetherMode = !stream; // Together mode has no stream parameter
   const normalizedStream = (() => {
     const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
     if (isFormVOrVI) {
+      if (isTogetherMode) {
+        return 'ALL'; // Together mode: fetch from all streams
+      }
       return stream || '';
     }
     return stream || 'A';
   })();
 
   const currentClassKey = (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI')
-    ? `${normalizedLevel} ${normalizedStream}`
+    ? isTogetherMode ? `${normalizedLevel} (All Streams)` : `${normalizedLevel} ${normalizedStream}`
     : normalizedLevel;
 
   // Validate required parameters before proceeding
   // If critical parameters are missing, show error instead of redirecting
-  const hasRequiredParams = normalizedLevel && year && month && subjectCode && normalizedStream;
+  const hasRequiredParams = normalizedLevel && year && month && subjectCode;
   
-  // For Form V-VI, stream is required - check it explicitly
+  // For Form V-VI, stream is only required if NOT in together mode
   const isFormVOrVILevel = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
-  const hasValidStream = isFormVOrVILevel ? (normalizedStream && normalizedStream.trim() !== '') : true;
+  const hasValidStream = isFormVOrVILevel ? (isTogetherMode || (normalizedStream && normalizedStream.trim() !== '')) : true;
   const allParamsValid = hasRequiredParams && hasValidStream;
   
   if (!allParamsValid) {
@@ -72,17 +117,25 @@ const ScoreEntryEnter = ({ formLevel }) => {
       isFormVOrVILevel,
       params: params,
       pathname: window.location.pathname,
-      formLevel
+      formLevelParam
     });
   }
 
   // Only check access if we have valid parameters
   // This prevents false negatives when stream is missing for Form V-VI
-  if (allParamsValid && !isAdminLike() && !hasClass(currentClassKey)) {
+  // For together mode, check if user has access to ANY stream for this form
+  const FORM_V_STREAMS = ['PCB', 'PCM', 'CBG', 'HGL', 'HKL', 'EGM', 'HGE', 'PGM'];
+  const hasAccessToAnyStream = isTogetherMode
+    ? FORM_V_STREAMS.some(stream => hasClass(`${normalizedLevel} ${stream}`))
+    : hasClass(currentClassKey);
+
+  if (allParamsValid && !isAdminLike() && !hasAccessToAnyStream) {
     console.warn('ScoreEntryEnter: User does not have access to this class', {
       isAdminLike: isAdminLike(),
       currentClassKey,
       hasClass: hasClass(currentClassKey),
+      isTogetherMode,
+      hasAccessToAnyStream,
       normalizedLevel,
       normalizedStream,
       stream
@@ -129,43 +182,69 @@ const ScoreEntryEnter = ({ formLevel }) => {
     });
   };
 
-  // For Form V-VI, convert display year to API year (academic year start year)
-  // Example: If user selects 2026, query for 2025 (academic year start)
-  const apiYear = (() => {
-    if (requiresSpecialAcademicYearLogic(normalizedLevel)) {
-      const yearNum = parseInt(year, 10);
-      if (!isNaN(yearNum)) {
-        return getApiYearForFormVVI(yearNum, normalizedLevel);
-      }
-    }
-    return year;
-  })();
+  // Use calendar year directly for Form V/VI (no academic year conversion)
+  // Form V First Term (Jul-Dec 2025) -> year 2025
+  // Form V Second Term (Jan-Jun 2026) -> year 2026
+  // Form VI First Term (Jul-Dec 2026) -> year 2026
+  // Form VI Second Term (Jan-Jun 2027) -> year 2027
+  const apiYear = parseInt(year, 10);
 
   // Fetch students for this class - sorted by name: first_name, then middle_name, then surname (A-Z)
   // For streams A, B, C, D: also fetch students from stream "NA"
   // For Form V-VI, use apiYear (academic year start) instead of display year
+  // For together mode, fetch students from all streams
   const { data: studentsData = [], isLoading: studentsLoading, error: studentsError } = useQuery({
-    queryKey: ['students', normalizedLevel, normalizedStream, apiYear],
+    queryKey: ['students', normalizedLevel, normalizedStream, apiYear, isTogetherMode],
     queryFn: async () => {
       if (!normalizedLevel || !apiYear) {
         console.warn('ScoreEntryEnter: Missing required params for getStudents', { normalizedLevel, apiYear, displayYear: year });
         return [];
       }
-      
+
       let students = [];
-      
+
       try {
-        // Fetch students for the normalized stream
-        // Note: All "NA" stream values have been normalized to "A" in the database
-        // For Form V-VI, use apiYear (academic year start) instead of display year
-        const res = await studentsAPI.getStudents({
-          level: normalizedLevel,
-          stream: normalizedStream,
-          year: apiYear,
-        });
-        
-        students = res.data.students || [];
-        
+        // For together mode, fetch students from all streams
+        if (isTogetherMode) {
+          const FORM_V_STREAMS = ['PCB', 'PCM', 'CBG', 'HGL', 'HKL', 'EGM', 'HGE', 'PGM'];
+          const studentPromises = FORM_V_STREAMS.map(async (stream) => {
+            try {
+              const res = await studentsAPI.getStudents({
+                level: normalizedLevel,
+                stream: stream,
+                year: apiYear,
+                // For Form I-IV, don't filter by term - show all students for the year
+                // For Form V/VI, filter by term
+                ...(isFormVOrVILevel ? { term: currentTerm } : {}),
+              });
+              return res.data.students || [];
+            } catch (error) {
+              // If a stream has no students, return empty array
+              if (error.response?.status === 404 || error.response?.status === 400) {
+                return [];
+              }
+              throw error;
+            }
+          });
+          const studentArrays = await Promise.all(studentPromises);
+          students = studentArrays.flat();
+        } else {
+          // Fetch students for the normalized stream
+          // Note: All "NA" stream values have been normalized to "A" in the database
+          // For Form V-VI, use apiYear (academic year start) instead of display year
+          const res = await studentsAPI.getStudents({
+            level: normalizedLevel,
+            stream: normalizedStream,
+            year: apiYear,
+            // For Form I-IV, don't filter by term - show all students for the year
+            // For Form V/VI, filter by term
+            ...(isFormVOrVILevel ? { term: currentTerm } : {}),
+            subject_code: isTogetherMode ? subjectCode : undefined,
+          });
+
+          students = res.data.students || [];
+        }
+
         // Sort students by name: first_name, then middle_name, then surname (A-Z)
         const sorted = sortStudentsByName(students);
         return sorted;
@@ -188,13 +267,19 @@ const ScoreEntryEnter = ({ formLevel }) => {
         throw error;
       }
     },
-    enabled: !!normalizedLevel && !!year && !!normalizedStream && !!localStorage.getItem('token') && !!subjectCode && !!month,
+    enabled: !!normalizedLevel && !!year && !!apiYear && !!localStorage.getItem('token') && !!subjectCode && !!month,
     retry: false, // Prevent repeated failed requests
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false, // Prevent refetch on focus to avoid race conditions
   });
   
   const students = studentsData;
+
+  // Filter students based on whether they take the subject
+  // For Form V/VI together mode, always show only students who take the subject
+  const filteredStudents = isFormVOrVILevel && isTogetherMode && students && students.length > 0
+    ? students.filter(s => doesCombinationTakeSubject(s.stream, subjectCode))
+    : students || [];
 
   // Fetch existing scores for this subject and month
   // For Form V-VI, use apiYear (academic year start) instead of display year
@@ -272,8 +357,8 @@ const ScoreEntryEnter = ({ formLevel }) => {
         throw new Error('Score must be between 0 and 100');
       }
       // For Form V-VI, use apiYear (academic year start) instead of display year
-      const yearToUse = requiresSpecialAcademicYearLogic(normalizedLevel) 
-        ? parseInt(apiYear, 10) 
+      const yearToUse = (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI')
+        ? parseInt(apiYear, 10)
         : parseInt(year, 10);
       
       return studentsAPI.saveScore(admNo, {
@@ -294,6 +379,21 @@ const ScoreEntryEnter = ({ formLevel }) => {
   });
 
   const handleScoreChange = (admNo, value) => {
+    // Validate score is within 0-100 range
+    if (value !== '' && value !== null && value !== undefined) {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        // Clamp value to 0-100 range
+        const clampedValue = Math.max(0, Math.min(100, numValue));
+        if (clampedValue !== numValue) {
+          // Only update if value was clamped
+          const newScores = { ...scores, [admNo]: clampedValue.toString() };
+          setScores(newScores);
+          value = clampedValue.toString();
+        }
+      }
+    }
+
     const newScores = { ...scores, [admNo]: value };
     setScores(newScores);
 
@@ -327,11 +427,19 @@ const ScoreEntryEnter = ({ formLevel }) => {
       });
     }
 
-    // Save immediately on blur (when clicking another input)
+    // Validate and clamp score to 0-100 range
     if (value !== '' && value !== null && value !== undefined) {
       const numValue = parseFloat(value);
-      if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
-        saveScoreMutation.mutate({ admNo, score: numValue });
+      if (!isNaN(numValue)) {
+        const clampedValue = Math.max(0, Math.min(100, numValue));
+        // Update state with clamped value if needed
+        if (clampedValue !== numValue) {
+          const newScores = { ...scores, [admNo]: clampedValue.toString() };
+          setScores(newScores);
+          value = clampedValue.toString();
+        }
+        // Save the validated score
+        saveScoreMutation.mutate({ admNo, score: clampedValue });
       }
     }
   };
@@ -355,18 +463,39 @@ const ScoreEntryEnter = ({ formLevel }) => {
     }
   };
 
-  const handleClearAll = () => {
-    if (window.confirm('Clear all scores? This action cannot be undone.')) {
-      setScores({});
-      toast.info('All scores cleared');
+  const handleClearAll = async () => {
+    if (window.confirm('Clear all scores for displayed students? This action cannot be undone and will permanently delete scores from the database.')) {
+      try {
+        // For Form V-VI, use apiYear (academic year start) instead of display year
+        const yearToUse = (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI')
+          ? parseInt(apiYear, 10)
+          : parseInt(year, 10);
+
+        // Get admission numbers of filtered students
+        const admNos = filteredStudents.map(s => s.adm_no);
+
+        await studentsAPI.clearScores({
+          level: normalizedLevel,
+          stream: normalizedStream,
+          year: yearToUse,
+          month: month,
+          subject_code: subjectCode,
+          admNos: JSON.stringify(admNos),
+        });
+        setScores({});
+        queryClient.invalidateQueries(['scores', normalizedLevel, normalizedStream, apiYear, month, subjectCode]);
+        toast.success(`Cleared scores for ${admNos.length} students permanently from database`);
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to clear scores');
+      }
     }
   };
 
   const handleDownloadTemplate = async () => {
     try {
       // For Form V-VI, use apiYear (academic year start) instead of display year
-      const yearToUse = requiresSpecialAcademicYearLogic(normalizedLevel) 
-        ? parseInt(apiYear, 10) 
+      const yearToUse = (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI')
+        ? parseInt(apiYear, 10)
         : parseInt(year, 10);
       
       const res = await studentsAPI.getScoreEntryTemplate({
@@ -419,8 +548,8 @@ const ScoreEntryEnter = ({ formLevel }) => {
       return;
     }
     // For Form V-VI, use apiYear (academic year start) instead of display year
-    const yearToUse = requiresSpecialAcademicYearLogic(normalizedLevel) 
-      ? parseInt(apiYear, 10) 
+    const yearToUse = (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI')
+      ? parseInt(apiYear, 10)
       : parseInt(year, 10);
     
     const formData = new FormData();
@@ -438,40 +567,57 @@ const ScoreEntryEnter = ({ formLevel }) => {
   };
 
   const getBackPath = () => {
-    // Use encoded subject code for URL consistency
-    const encodedSubjectCode = subjectCodeParam || encodeURIComponent(subjectCode);
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
-      return `/admin/score-entry/${formLevel}/stream/${stream}/year/${year}/subject/${encodedSubjectCode}/months`;
-    } else {
-      return `/admin/score-entry/${formLevel}/year/${year}/stream/${stream}/subject/${encodedSubjectCode}/months`;
+    // Always encode subject code to handle special characters like forward slashes
+    const encodedSubjectCode = encodeURIComponent(subjectCode);
+    if (isTogetherMode) {
+      return `/admin/score-entry/${formLevelParam}/together/year/${year}/subject/${encodedSubjectCode}/months`;
     }
+    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+      return `/admin/score-entry/${formLevelParam}/stream/${stream}/year/${year}/subject/${encodedSubjectCode}/months`;
+    } else {
+      return `/admin/score-entry/${formLevelParam}/year/${year}/stream/${stream}/subject/${encodedSubjectCode}/months`;
+    }
+  };
+
+  const handleBackToMonths = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const backPath = getBackPath();
+    console.log('Back to Months clicked, navigating to:', backPath);
+    navigate(backPath, { replace: false });
   };
 
   const getRegistrationPath = () => {
     // Generate the correct registration URL based on form level
     if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
       // FORM V-VI: /admin/students/registration/form-vi/stream/{stream}/year/{year}
-      return `/admin/students/registration/${formLevel}/stream/${stream}/year/${year}`;
+      return `/admin/students/registration/${formLevelParam}/stream/${stream}/year/${year}`;
     } else {
       // FORM I-IV: /admin/students/registration/form-i/year/{year}/stream/{stream}
-      return `/admin/students/registration/${formLevel}/year/${year}/stream/${normalizedStream}`;
+      return `/admin/students/registration/${formLevelParam}/year/${year}/stream/${normalizedStream}`;
     }
   };
 
   // Fetch subject info
-  const { data: subjects = [] } = useQuery({
+  const { data: subjects = [], error: subjectsError } = useQuery({
     queryKey: ['subjects', normalizedLevel, normalizedStream, year],
     queryFn: async () => {
-      const res = await studentsAPI.getSubjects({
-        level: normalizedLevel,
-        stream: normalizedStream,
-        year: year,
-      });
-      return res.data.subjects || [];
+      try {
+        const res = await studentsAPI.getSubjects({
+          level: normalizedLevel,
+          stream: normalizedStream,
+          year: year,
+        });
+        return res.data.subjects || [];
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+        return [];
+      }
     },
+    enabled: !!normalizedLevel && !!year && allParamsValid,
   });
 
-  const subject = subjects.find(s => s.subject_code === subjectCode || s.subject_abbreviation === subjectCode);
+  const subject = subjects && subjects.length > 0 ? subjects.find(s => s.subject_code === subjectCode || s.subject_abbreviation === subjectCode) : null;
 
   // Show error if required parameters are missing
   if (!allParamsValid) {
@@ -506,7 +652,7 @@ const ScoreEntryEnter = ({ formLevel }) => {
               )}
               <p style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>Debug Info:</p>
               <pre style={{ background: '#f5f5f5', padding: '10px', borderRadius: '4px', fontSize: '12px', overflow: 'auto' }}>
-                {JSON.stringify({ normalizedLevel, year, month, subjectCode, normalizedStream, stream, hasValidStream, isFormVOrVILevel, formLevel, params }, null, 2)}
+                {JSON.stringify({ normalizedLevel, year, month, subjectCode, normalizedStream, stream, hasValidStream, isFormVOrVILevel, formLevelParam, params }, null, 2)}
               </pre>
               <Link to="/admin/score-entry" className="excel-btn primary" style={{ marginTop: '20px' }}>
                 <i className="fas fa-arrow-left"></i> Back to Score Entry
@@ -525,40 +671,23 @@ const ScoreEntryEnter = ({ formLevel }) => {
           <div className="excel-card-header">
             <i className="fas fa-graduation-cap"></i>
             {year} - {subject?.subject_name || subjectCode} - {month}
+            {!isTogetherMode && normalizedStream && (
+              <span className="score-entry-header-badge">
+                {normalizedStream}
+              </span>
+            )}
             {students.length > 0 && (
               <span className="score-entry-header-badge">
-                {students.length} student{students.length !== 1 ? 's' : ''} loaded
+                {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''} loaded
               </span>
             )}
             {!studentsLoading && students.length === 0 && (
               <span className="score-entry-header-badge error">No students found</span>
             )}
             <div className="header-actions">
-              {students.length > 0 && (
-                <>
-                  <button
-                    type="button"
-                    className="excel-btn small secondary"
-                    onClick={handleDownloadTemplate}
-                    title="Download CSV template"
-                  >
-                    <i className="fas fa-download"></i> CSV template
-                  </button>
-                  <label className="excel-btn small secondary" style={{ marginBottom: 0 }}>
-                    <i className="fas fa-upload"></i> Upload CSV
-                    <input
-                      type="file"
-                      accept=".csv"
-                      style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
-                      onChange={handleUploadCsv}
-                      disabled={uploadScoresCsvMutation.isLoading}
-                    />
-                  </label>
-                </>
-              )}
-              <Link to={getBackPath()} className="excel-btn small secondary">
+              <button type="button" onClick={handleBackToMonths} className="excel-btn small secondary">
                 <i className="fas fa-arrow-left"></i> Back to Months
-              </Link>
+              </button>
             </div>
           </div>
           <div className="excel-card-body">
@@ -609,11 +738,12 @@ const ScoreEntryEnter = ({ formLevel }) => {
                           <th>Middle Name</th>
                           <th>Surname</th>
                           <th>Sex</th>
+                          <th>COMB</th>
                           <th>Score</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {students.map((student, index) => {
+                        {filteredStudents.map((student, index) => {
                           const studentScore = scores[student.adm_no];
                           return (
                             <tr key={student.adm_no}>
@@ -623,6 +753,7 @@ const ScoreEntryEnter = ({ formLevel }) => {
                               <td data-label="Middle Name"><span className="score-entry-cell-value">{student.middle_name || '-'}</span></td>
                               <td data-label="Surname"><span className="score-entry-cell-value">{student.surname}</span></td>
                               <td data-label="Sex"><span className="score-entry-cell-value">{student.sex}</span></td>
+                              <td data-label="COMB"><span className="score-entry-cell-value">{student.stream || '-'}</span></td>
                               <td data-label="Score">
                                 <span className="score-entry-cell-value">
                                 <input
@@ -648,7 +779,7 @@ const ScoreEntryEnter = ({ formLevel }) => {
 
                 {/* Mobile Card View (same style as Huduma) */}
                 <div className="mobile-students-list">
-                  {students.map((student, index) => {
+                  {filteredStudents.map((student, index) => {
                     const studentScore = scores[student.adm_no];
                     return (
                       <div key={student.adm_no} className="mobile-student-card">
@@ -664,6 +795,10 @@ const ScoreEntryEnter = ({ formLevel }) => {
                           <div className="mobile-student-field">
                             <span className="mobile-student-field-label">Sex</span>
                             <span className="mobile-student-field-value">{student.sex}</span>
+                          </div>
+                          <div className="mobile-student-field">
+                            <span className="mobile-student-field-label">COMB</span>
+                            <span className="mobile-student-field-value">{student.stream || '-'}</span>
                           </div>
                           <div className="mobile-student-field mobile-score-field">
                             <span className="mobile-student-field-label">Score</span>

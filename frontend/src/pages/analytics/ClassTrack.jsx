@@ -16,7 +16,6 @@ import {
   calculateStats,
   exportToCSV
 } from '../../utils/analyticsUtils';
-import { requiresSpecialAcademicYearLogic, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './AnalyticsTrack.css';
 
 const ClassTrack = () => {
@@ -94,11 +93,8 @@ const ClassTrack = () => {
         stream: selectedStream,
       };
       if (selectedYear) {
-        // For FORM V/VI, convert display year to API year
-        const apiYear = requiresSpecialAcademicYearLogic(formLabel) 
-          ? getApiYearForFormVVI(selectedYear, formLabel)
-          : selectedYear;
-        params.year = apiYear;
+        // Use calendar year directly for Form V/VI (no academic year conversion)
+        params.year = selectedYear;
       }
       const res = await analyticsAPI.getClassPerformance(params);
       if (!res.data) {
@@ -187,7 +183,7 @@ const ClassTrack = () => {
                 <i className="fas fa-exclamation-triangle error-icon"></i>
                 <h3>Error Loading Data</h3>
                 <p>{error?.message || 'Failed to load performance data'}</p>
-                <button onClick={() => refetch()} className="excel-btn secondary">
+                <button type="button" onClick={() => refetch()} className="excel-btn secondary">
                   <i className="fas fa-redo"></i> Retry
                 </button>
               </div>

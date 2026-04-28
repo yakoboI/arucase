@@ -23,3 +23,11 @@
   display: flex;
   flex-direction: column;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .public-layout {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+}

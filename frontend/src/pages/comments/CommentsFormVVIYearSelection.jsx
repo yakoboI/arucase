@@ -33,11 +33,7 @@ const CommentsFormVVIYearSelection = ({ formLevel, moduleName }) => {
     if (moduleName === 'promotion') {
       return `/admin/${moduleName}/${formMap[formLevel]}/stream/${stream}/year/${year}/preview`;
     }
-    // For debts, go directly to management page (no term selection needed)
-    if (moduleName === 'debts') {
-      return `/admin/${moduleName}/${formMap[formLevel]}/stream/${stream}/year/${year}`;
-    }
-    // For fees and comments, go to term selection
+    // For fees, comments, and debts, go to term selection
     return `/admin/${moduleName}/${formMap[formLevel]}/stream/${stream}/year/${year}/terms`;
   };
 
@@ -53,7 +49,7 @@ const CommentsFormVVIYearSelection = ({ formLevel, moduleName }) => {
             <div className="subjects-year-selection-grid">
               {years.map((year) => (
                 <Link
-                  key={year}
+                  key={`${year}-comments`}
                   to={getYearDetailPath(year)}
                   className="subjects-year-selection-card-item"
                   data-current-year={year === currentYear}

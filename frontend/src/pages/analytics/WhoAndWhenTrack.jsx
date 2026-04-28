@@ -13,7 +13,6 @@ import {
   sortMonthlyData,
   getCommonChartOptions
 } from '../../utils/analyticsUtils';
-import { requiresSpecialAcademicYearLogic, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './AnalyticsTrack.css';
 
 const WhoAndWhenTrack = () => {
@@ -94,12 +93,10 @@ const WhoAndWhenTrack = () => {
         stream: selectedStream,
       };
       if (selectedYear) {
-        // For FORM V/VI, convert display year to API year
-        const apiYear = requiresSpecialAcademicYearLogic(formLabel) 
-          ? getApiYearForFormVVI(selectedYear, formLabel)
-          : selectedYear;
-        params.year = apiYear;
+        // Use calendar year directly for Form V/VI (no academic year conversion)
+        params.year = selectedYear;
       }
+      params.term = 'First Term'; // Default to First Term
       const res = await analyticsAPI.getWhoAndWhen(params);
       if (!res.data) {
         throw new Error('No data received from server');

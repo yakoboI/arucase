@@ -98,3 +98,45 @@
   background: #4b5563;
 }
 
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .error-boundary-container {
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .error-boundary-content {
+    padding: 1.5rem;
+  }
+
+  .error-boundary-icon {
+    font-size: 3rem;
+  }
+
+  .error-boundary-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .error-boundary-content p {
+    font-size: 0.875rem;
+  }
+
+  .error-boundary-details {
+    padding: 0.75rem;
+  }
+
+  .error-boundary-stack {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .error-boundary-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .error-boundary-button {
+    width: 100%;
+    padding: 0.875rem;
+  }
+}

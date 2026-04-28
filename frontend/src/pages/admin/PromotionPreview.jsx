@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './Promotion.css';
@@ -18,11 +18,20 @@ const PromotionPreview = ({ formLevel }) => {
   const [selectedStream, setSelectedStream] = useState('');
 
   // Normalize form level
-  const normalizedLevel = formLevel
+  const normalizedLevel = (formLevel
     ? formLevel.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-    : '';
+    : '').toUpperCase();
   
-  const normalizedStream = stream || 'NA';
+  // In DB, FORM I-IV use stream = 'NA' (not A/B). For FORM V/VI, stream is PCM/PCB/etc.
+  const normalizedStreamFromRoute = (stream ?? '').toString().trim().toUpperCase();
+  const normalizedStream = (
+    normalizedLevel === 'FORM I' ||
+    normalizedLevel === 'FORM II' ||
+    normalizedLevel === 'FORM III' ||
+    normalizedLevel === 'FORM IV'
+  )
+    ? 'NA'
+    : (normalizedStreamFromRoute || 'NA');
 
   // Get promotion preview data
   const { data: previewData, isLoading } = useQuery({
@@ -226,9 +235,9 @@ const PromotionPreview = ({ formLevel }) => {
                   <button
                     onClick={handleExecute}
                     className="excel-btn primary large"
-                    disabled={executeMutation.isLoading || (previewData.requires_stream_selection && !selectedStream)}
+                    disabled={executeMutation.isPending || (previewData.requires_stream_selection && !selectedStream)}
                   >
-                    <i className="fas fa-graduation-cap"></i> {executeMutation.isLoading ? 'Promoting...' : 'Promote Students'}
+                    <i className="fas fa-graduation-cap"></i> {executeMutation.isPending ? 'Promoting...' : 'Promote Students'}
                   </button>
                 </div>
               </>

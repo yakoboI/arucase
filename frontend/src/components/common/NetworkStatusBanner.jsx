@@ -8,6 +8,7 @@ import './NetworkStatusBanner.css';
 
 const NetworkStatusBanner = () => {
   const [status, setStatus] = useState(null); // null | 'offline' | 'slow'
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const updateStatus = () => {
@@ -36,7 +37,21 @@ const NetworkStatusBanner = () => {
     };
   }, []);
 
-  if (!status) return null;
+  useEffect(() => {
+    if (!status) {
+      setVisible(true);
+      return undefined;
+    }
+
+    setVisible(true);
+    const timer = setInterval(() => {
+      setVisible((prev) => !prev);
+    }, 2000);
+
+    return () => clearInterval(timer);
+  }, [status]);
+
+  if (!status || !visible) return null;
 
   return (
     <div
@@ -47,12 +62,12 @@ const NetworkStatusBanner = () => {
       {status === 'offline' ? (
         <>
           <i className="fas fa-wifi network-status-banner__icon" aria-hidden />
-          <span>No internet connection. Some features may not work. Check your connection and try again.</span>
+          <span>Hakuna muunganisho wa intaneti. Baadhi ya vipengele vinaweza visifanye kazi. Tafadhali angalia mtandao kisha ujaribu tena.</span>
         </>
       ) : (
         <>
           <i className="fas fa-signal network-status-banner__icon" aria-hidden />
-          <span>Slow connection detected. Images load on scroll to save data.</span>
+          <span>Muunganisho wa polepole umeonekana. Picha zitapakiwa unaposogeza ukurasa ili kupunguza matumizi ya data.</span>
         </>
       )}
     </div>

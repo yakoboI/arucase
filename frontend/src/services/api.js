@@ -18,11 +18,43 @@ const api = axios.create({
   timeout: 60000, // 60 seconds - increased for complex queries
 });
 
+// Paths that must not receive the staff/admin JWT (public site + alternate portals set their own auth)
+function isPublicApiRequest(config) {
+  const url = (config.url || '').split('?')[0];
+  return url.startsWith('/public/');
+}
+
+function isAuthEndpoint(config) {
+  const url = (config?.url || '').split('?')[0];
+  return url.startsWith('/auth/login') || url.startsWith('/auth/me');
+}
+
+function isProtectedApiRequest(config) {
+  const url = (config?.url || '').split('?')[0];
+  return (
+    url.startsWith('/admin/') ||
+    url.startsWith('/students/') ||
+    url.startsWith('/reports/') ||
+    url.startsWith('/analytics/')
+  );
+}
+
 // Request interceptor for auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+    // Short-circuit protected calls when session is already gone.
+    // This avoids noisy browser 401 network errors during logout/session-expiry transitions.
+    if (!token && isProtectedApiRequest(config) && !isAuthEndpoint(config)) {
+      const authError = new Error('Authentication required');
+      authError.config = config;
+      authError.response = { status: 401, data: { message: 'Authentication required' } };
+      authError.isAxiosError = true;
+      return Promise.reject(authError);
+    }
+    // Only set Authorization if caller didn't set it (supports other auth flows)
+    // Never attach staff token to /public/* — avoids confusing servers and keeps admissions/student flows clean
+    if (token && !config.headers?.Authorization && !isPublicApiRequest(config)) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
@@ -61,46 +93,47 @@ api.interceptors.response.use(
       }
     }
 
+    // For auth endpoints (login), don't reject on 403 - let the component handle it
+    if (isAuthEndpoint(error.config || {})) {
+      if (error.response?.status === 403) {
+        // Return the error response instead of rejecting
+        return Promise.resolve(error.response);
+      }
+    }
+
     if (error.response?.status === 401) {
       const errorMessage = error.response?.data?.message || 'Authentication required';
-      const isTokenExpired = errorMessage.toLowerCase().includes('expired') || 
+      const isTokenExpired = errorMessage.toLowerCase().includes('expired') ||
                             errorMessage.toLowerCase().includes('token expired');
-      
+      const requestIsPublic = isPublicApiRequest(error.config || {});
+      const requestIsAuth = isAuthEndpoint(error.config || {});
+
       // Don't logout if we're verifying token (let AuthContext handle it)
       // or if we're already on the login page
-      if (!window.__verifyingToken && window.location.pathname !== '/login') {
+      if (!window.__verifyingToken && window.location.pathname !== '/login' && !requestIsPublic && !requestIsAuth) {
         const token = localStorage.getItem('token');
-        
+
         // Set flags so components know about the error
         error.isTokenExpired = isTokenExpired || errorMessage.toLowerCase().includes('invalid token');
         error.expirationMessage = 'Your session has expired. Please log in again.';
-        
-        // Only clear token if it's definitely expired or invalid
-        // Delay clearing to allow components to show error messages first
-        if (error.isTokenExpired || !token) {
-          // Use a small delay to allow error messages to be displayed
-          setTimeout(() => {
-            // Double-check we're still not on login page
-            if (window.location.pathname !== '/login' && !window.__verifyingToken) {
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              
-              // Clear user state in AuthContext by dispatching a custom event
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('auth:logout'));
-              }
-            }
-          }, 1000); // 1 second delay to show error message
+
+        // For protected endpoints, a 401 means this session is unusable now.
+        // Clear immediately to stop repeated unauthorized requests.
+        if (token || error.isTokenExpired) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('auth:logout'));
+          }
         }
-        // If token exists but error is not about expiration, let component handle it
       }
     }
-    
+
     // Handle rate limiting errors (429)
     if (error.response?.status === 429) {
       const retryAfter = error.response?.headers?.['retry-after'] || error.response?.headers?.['Retry-After'];
       const message = error.response?.data?.message || 'Too many requests. Please wait a moment and try again.';
-      error.rateLimitMessage = retryAfter 
+      error.rateLimitMessage = retryAfter
         ? `${message} Please wait ${retryAfter} seconds.`
         : message;
       error.isRateLimit = true;
@@ -110,11 +143,11 @@ api.interceptors.response.use(
     if (error.response?.status >= 500 && error.response?.data) {
       error.response.data = { ...error.response.data, message: 'Something went wrong. Please try again later.' };
     }
-    
+
     if (!error.response) {
       console.error('Network error:', error.message);
     }
-    
+
     return Promise.reject(error);
   }
 );

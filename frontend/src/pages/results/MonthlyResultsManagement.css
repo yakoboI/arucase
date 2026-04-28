@@ -291,6 +291,7 @@
 .compact-results-table thead th.sticky-col,
 .compact-results-table thead th.subject-col,
 .compact-results-table thead th.result-col,
+.compact-results-table thead th.comb-col,
 .compact-results-table thead th.remarks-col {
   background: white !important;
   color: #000000 !important;
@@ -409,6 +410,15 @@
 .grd-col {
   font-weight: 700;
   font-size: 12px;
+}
+
+/* Remarks Column */
+.comb-col {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  font-size: 11px;
+  text-align: center;
 }
 
 /* Remarks Column */

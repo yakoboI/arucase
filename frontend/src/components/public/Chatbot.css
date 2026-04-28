@@ -60,39 +60,36 @@
   box-shadow: 0 6px 18px rgba(var(--chat-primary-rgb), 0.5);
 }
 
-/* Overlay: dim background only when open; doesn’t resize content */
+/* Overlay: removed for standard chatbot behavior - click outside to close */
 .chatbot-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--chat-z-overlay);
-  background: rgba(0, 0, 0, 0.35);
-  animation: chatbot-fade 0.2s ease-out;
-}
-@keyframes chatbot-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  background: transparent;
 }
 
-/* Panel: fixed so main content doesn’t move */
+/* Panel: standard chatbot behavior - positioned at top of viewport */
 .chatbot-panel {
   position: fixed;
   z-index: var(--chat-z-panel);
-  bottom: 0;
-  right: 0;
-  width: 100%;
-  max-width: 24rem;
-  max-height: 85vh;
+  top: var(--chat-offset);
+  right: var(--chat-offset);
+  width: 24rem;
+  max-width: calc(100vw - 2.5rem);
+  max-height: 80vh;
   background: var(--chat-bg);
-  border-radius: var(--chat-radius) var(--chat-radius) 0 0;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  border-radius: var(--chat-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  transform: translateY(100%);
+  transform: scale(0.9) translateY(-10px);
+  opacity: 0;
   visibility: hidden;
-  transition: transform 0.25s ease-out, visibility 0.25s;
+  transition: transform 0.15s ease-out, opacity 0.15s, visibility 0.15s;
 }
 .chatbot-panel-open {
-  transform: translateY(0);
+  transform: scale(1) translateY(0);
+  opacity: 1;
   visibility: visible;
 }
 
@@ -107,13 +104,10 @@
 
 @media (min-width: 768px) {
   .chatbot-panel {
-    bottom: var(--chat-offset);
+    top: var(--chat-offset);
     right: var(--chat-offset);
     max-height: 80vh;
     border-radius: var(--chat-radius);
-  }
-  .chatbot-panel-open {
-    transform: translateY(0) translateX(0);
   }
 }
 
@@ -328,17 +322,17 @@
 /* Small screens: FAB and panel safe area */
 @media (max-width: 767px) {
   .chatbot-fab {
-    bottom: max(6rem, calc(1.5rem + env(safe-area-inset-bottom))) !important;
+    bottom: max(1rem, env(safe-area-inset-bottom)) !important;
     right: max(1rem, env(safe-area-inset-right)) !important;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
   }
   .chatbot-panel {
-    left: 0;
-    right: 0;
+    top: var(--chat-offset);
+    right: var(--chat-offset);
+    left: 1rem;
     max-width: none;
-    max-height: 90vh;
-    padding-bottom: env(safe-area-inset-bottom);
+    max-height: 70vh;
   }
   .chatbot-messages {
     min-height: 10rem;

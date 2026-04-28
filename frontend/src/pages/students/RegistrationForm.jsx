@@ -3,17 +3,16 @@
  * Allows adding, editing, and deleting students for a specific class
  * Uses special academic year logic for Form 5 & 6 streams
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
-import { requiresSpecialAcademicYearLogic, getAcademicYearRange, getCurrentTerm, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './RegistrationForm.css';
 
 const RegistrationForm = () => {
-  const { year, stream } = useParams();
+  const { year, stream, term } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const location = useLocation();
@@ -24,61 +23,60 @@ const RegistrationForm = () => {
     middle_name: '',
     surname: '',
     sex: '',
+    term: term || 'First Term',
   });
-  
+
   const [editingStudent, setEditingStudent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [csvFile, setCsvFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Extract form level from URL path (e.g., /admin/students/registration/form-i/... -> FORM I)
-  const getFormLevelFromPath = () => {
+  // Update term in formData when URL term parameter changes
+  useEffect(() => {
+    if (term) {
+      setFormData(prev => ({ ...prev, term }));
+    }
+  }, [term]);
+
+  const normalizedLevel = useMemo(() => {
     const path = location.pathname;
     const match = path.match(/\/registration\/(form-[iv]+|form-v|form-vi)/i);
     if (match) {
       const formLevel = match[1].toLowerCase();
-      // Convert to uppercase format matching database: "form-i" -> "FORM I"
       return formLevel.split('-').map(w => w.toUpperCase()).join(' ');
     }
     return '';
-  };
+  }, [location.pathname]);
 
-  const normalizedLevel = getFormLevelFromPath();
-
-  // Get the correct year to use for API calls (ensures student continuity across terms)
-  // If year is an end year (e.g., 2026), this returns the start year (e.g., 2025)
-  const apiYear = getApiYearForFormVVI(parseInt(year), normalizedLevel);
-  
-  // Get academic year information for Form V/VI using the API year
-  // This ensures correct academic year range is displayed
-  const academicYearInfo = requiresSpecialAcademicYearLogic(normalizedLevel) ? getAcademicYearRange(apiYear) : null;
-  const currentTermInfo = requiresSpecialAcademicYearLogic(normalizedLevel) ? getCurrentTerm() : null;
+  // Use calendar year directly for Form V/VI (no academic year conversion)
+  // Form V First Term (Jul-Dec 2025) -> year 2025
+  // Form V Second Term (Jan-Jun 2026) -> year 2026
+  // Form VI First Term (Jul-Dec 2026) -> year 2026
+  // Form VI Second Term (Jan-Jun 2027) -> year 2027
+  const apiYear = useMemo(() => parseInt(year), [year]);
 
   // Helper function to sort students by name: first_name, then middle_name, then surname (A-Z)
-  const sortStudentsByName = (students) => {
+  const sortStudentsByName = useCallback((students) => {
     return [...students].sort((a, b) => {
-      // Sort by first_name first
       const firstNameA = String(a.first_name || '').toLowerCase().trim();
       const firstNameB = String(b.first_name || '').toLowerCase().trim();
       const firstNameCompare = firstNameA.localeCompare(firstNameB, undefined, { sensitivity: 'base' });
       if (firstNameCompare !== 0) return firstNameCompare;
       
-      // If first names are equal, sort by middle_name
       const middleNameA = String(a.middle_name || '').toLowerCase().trim();
       const middleNameB = String(b.middle_name || '').toLowerCase().trim();
       const middleNameCompare = middleNameA.localeCompare(middleNameB, undefined, { sensitivity: 'base' });
       if (middleNameCompare !== 0) return middleNameCompare;
       
-      // If middle names are equal, sort by surname
       const surnameA = String(a.surname || '').toLowerCase().trim();
       const surnameB = String(b.surname || '').toLowerCase().trim();
       return surnameA.localeCompare(surnameB, undefined, { sensitivity: 'base' });
     });
-  };
+  }, []);
 
   // Fetch students for this class - sorted by name: first_name, then middle_name, then surname (A-Z)
   const { data: studentsData = [], isLoading, error: studentsError } = useQuery({
-    queryKey: ['students', normalizedLevel, stream, apiYear],
+    queryKey: ['students', normalizedLevel, stream, apiYear, term],
     queryFn: async () => {
       if (!normalizedLevel || !stream || !apiYear) {
         throw new Error('Missing required parameters');
@@ -87,6 +85,7 @@ const RegistrationForm = () => {
         level: normalizedLevel,
         stream: stream,
         year: apiYear,
+        term: term || 'First Term',
       });
       const students = res.data.students || [];
       // Sort students by name: first_name, then middle_name, then surname (A-Z)
@@ -105,6 +104,47 @@ const RegistrationForm = () => {
     }
   }, [studentsError]);
 
+  const resetFormData = useCallback(() => {
+    setFormData({
+      adm_no: '',
+      first_name: '',
+      middle_name: '',
+      surname: '',
+      sex: '',
+      term: term || 'First Term',
+    });
+  }, [term]);
+
+  // Handle blob error responses
+  const handleBlobError = useCallback(async (error, operationName) => {
+    if (error.response?.data instanceof Blob) {
+      try {
+        const text = await error.response.data.text();
+        const errorData = JSON.parse(text);
+        const errorMessage = errorData.message || `Failed to ${operationName}`;
+        
+        if (error.response?.status === 401 || errorMessage.toLowerCase().includes('expired') || errorMessage.toLowerCase().includes('token')) {
+          toast.error('Your session has expired. Please log in again.');
+          return true;
+        }
+        
+        toast.error(errorMessage);
+      } catch (parseError) {
+        toast.error(`Failed to ${operationName}`);
+      }
+    } else {
+      const errorMessage = error.response?.data?.message || error.message || `Failed to ${operationName}`;
+      
+      if (error.response?.status === 401 || errorMessage.toLowerCase().includes('expired') || errorMessage.toLowerCase().includes('token')) {
+        toast.error('Your session has expired. Please log in again.');
+        return true;
+      }
+      
+      toast.error(errorMessage);
+    }
+    return false;
+  }, []);
+
   // Create student mutation
   const createMutation = useMutation({
     mutationFn: (data) => studentsAPI.createStudent({
@@ -112,17 +152,12 @@ const RegistrationForm = () => {
       level: normalizedLevel,
       stream: stream,
       year: apiYear,
+      term: formData.term,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear]);
+      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, term]);
       toast.success('Student added successfully!');
-      setFormData({
-        adm_no: '',
-        first_name: '',
-        middle_name: '',
-        surname: '',
-        sex: '',
-      });
+      resetFormData();
       setIsSubmitting(false);
     },
     onError: (error) => {
@@ -151,9 +186,10 @@ const RegistrationForm = () => {
       level: normalizedLevel,
       stream: stream,
       year: apiYear,
-    }, { level: normalizedLevel, stream: stream, year: apiYear }),
+      term: formData.term,
+    }, { level: normalizedLevel, stream: stream, year: apiYear, term: formData.term }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear]);
+      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, formData.term]);
       toast.success('Student updated successfully!');
       setEditingStudent(null);
       setFormData({
@@ -175,9 +211,10 @@ const RegistrationForm = () => {
       level: normalizedLevel,
       stream: stream,
       year: apiYear,
+      term: formData.term,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear]);
+      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, formData.term]);
       toast.success('Student deleted successfully!');
     },
     onError: (error) => {
@@ -213,21 +250,16 @@ const RegistrationForm = () => {
       middle_name: student.middle_name || '',
       surname: student.surname,
       sex: student.sex,
+      term: student.term || term || 'First Term',
     });
     // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditingStudent(null);
-    setFormData({
-      adm_no: '',
-      first_name: '',
-      middle_name: '',
-      surname: '',
-      sex: '',
-    });
-  };
+    resetFormData();
+  }, [resetFormData]);
 
   const handleDelete = (student) => {
     if (window.confirm(`Are you sure you want to delete ${student.first_name} ${student.surname} (${student.adm_no})?`)) {
@@ -253,7 +285,6 @@ const RegistrationForm = () => {
         year: year,
       });
       
-      // Check if response is actually an error (blob containing JSON error)
       if (res.data instanceof Blob && res.data.type === 'application/json') {
         const text = await res.data.text();
         const errorData = JSON.parse(text);
@@ -261,7 +292,6 @@ const RegistrationForm = () => {
         return;
       }
       
-      // Create blob and download
       const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -274,36 +304,7 @@ const RegistrationForm = () => {
       
       toast.success('Template downloaded successfully!');
     } catch (error) {
-      // Handle blob error responses
-      if (error.response?.data instanceof Blob) {
-        try {
-          const text = await error.response.data.text();
-          const errorData = JSON.parse(text);
-          const errorMessage = errorData.message || 'Failed to download template';
-          
-          // Check if it's a token expiration error
-          if (error.response?.status === 401 || errorMessage.toLowerCase().includes('expired') || errorMessage.toLowerCase().includes('token')) {
-            toast.error('Your session has expired. Please log in again.');
-            // Don't show additional error - interceptor will handle redirect
-            return;
-          }
-          
-          toast.error(errorMessage);
-        } catch (parseError) {
-          toast.error('Failed to download template');
-        }
-      } else {
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to download template';
-        
-        // Check if it's a token expiration error
-        if (error.response?.status === 401 || errorMessage.toLowerCase().includes('expired') || errorMessage.toLowerCase().includes('token')) {
-          toast.error('Your session has expired. Please log in again.');
-          // Don't show additional error - interceptor will handle redirect
-          return;
-        }
-        
-        toast.error(errorMessage);
-      }
+      await handleBlobError(error, 'download template');
     }
   };
 
@@ -322,7 +323,6 @@ const RegistrationForm = () => {
         year: year,
       });
       
-      // Check if response is actually an error (blob containing JSON error)
       if (res.data instanceof Blob && res.data.type === 'application/json') {
         const text = await res.data.text();
         const errorData = JSON.parse(text);
@@ -330,7 +330,6 @@ const RegistrationForm = () => {
         return;
       }
       
-      // Create blob and download
       const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -343,36 +342,7 @@ const RegistrationForm = () => {
       
       toast.success('CSV exported successfully!');
     } catch (error) {
-      // Handle blob error responses
-      if (error.response?.data instanceof Blob) {
-        try {
-          const text = await error.response.data.text();
-          const errorData = JSON.parse(text);
-          const errorMessage = errorData.message || 'Failed to export CSV';
-          
-          // Check if it's a token expiration error
-          if (error.response?.status === 401 || errorMessage.toLowerCase().includes('expired') || errorMessage.toLowerCase().includes('token')) {
-            toast.error('Your session has expired. Please log in again.');
-            // Don't show additional error - interceptor will handle redirect
-            return;
-          }
-          
-          toast.error(errorMessage);
-        } catch (parseError) {
-          toast.error('Failed to export CSV');
-        }
-      } else {
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to export CSV';
-        
-        // Check if it's a token expiration error
-        if (error.response?.status === 401 || errorMessage.toLowerCase().includes('expired') || errorMessage.toLowerCase().includes('token')) {
-          toast.error('Your session has expired. Please log in again.');
-          // Don't show additional error - interceptor will handle redirect
-          return;
-        }
-        
-        toast.error(errorMessage);
-      }
+      await handleBlobError(error, 'export CSV');
     }
   };
 
@@ -405,9 +375,9 @@ const RegistrationForm = () => {
       formData.append('year', year);
 
       const res = await studentsAPI.bulkUpload(formData);
-      
+
       // Refresh students list
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, year]);
+      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, term]);
       
       // Show success message with details
       const { success_count, duplicate_count, error_count, errors } = res.data;
@@ -444,8 +414,7 @@ const RegistrationForm = () => {
     }
   };
 
-  const getBackPath = () => {
-    // Convert normalizedLevel to URL format (e.g., "FORM I" -> "form-i")
+  const getBackPath = useCallback(() => {
     const formMap = {
       'FORM I': 'form-i',
       'FORM II': 'form-ii',
@@ -454,17 +423,13 @@ const RegistrationForm = () => {
       'FORM V': 'form-v',
       'FORM VI': 'form-vi',
     };
-    
     const formPath = formMap[normalizedLevel];
     
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
-      // For Form V-VI, go back to Action Selection
-      return `/admin/students/registration/${formPath}/stream/${stream}/year/${year}/actions`;
-    } else {
-      // For Form I-IV, go back to Action Selection
-      return `/admin/students/registration/${formPath}/year/${year}/stream/${stream}/actions`;
-    }
-  };
+    const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
+    return isFormVOrVI
+      ? `/admin/students/registration/${formPath}/stream/${stream}/year/${year}/term/${term}/actions`
+      : `/admin/students/registration/${formPath}/year/${year}/stream/${stream}/actions`;
+  }, [normalizedLevel, stream, year, term]);
 
   // Validate required parameters
   if (!normalizedLevel || !stream || !year) {
@@ -505,15 +470,6 @@ const RegistrationForm = () => {
             <i className="fas fa-user-plus"></i>
             <span>
               Register Students - {normalizedLevel} {stream} {year}
-              {academicYearInfo && (
-                <span className="academic-year-info">
-                  <br />
-                  <small>Academic Year: ({academicYearInfo.displayRange})</small>
-                  {currentTermInfo && (
-                    <><br /><small>Current Term: {currentTermInfo.description}</small></>
-                  )}
-                </span>
-              )}
             </span>
           </div>
           <div className="registration-form-card-body">
@@ -602,6 +558,23 @@ const RegistrationForm = () => {
                     </select>
                   </div>
                 </div>
+                <div className="form-field">
+                  <div className="form-group">
+                    <label htmlFor="term">Term <span className="req">*</span></label>
+                    <select
+                      id="term"
+                      name="term"
+                      className="form-input"
+                      required
+                      value={formData.term}
+                      onChange={(e) => setFormData({ ...formData, term: e.target.value })}
+                      disabled={isSubmitting}
+                    >
+                      <option value="First Term">First Term (Jul-Dec)</option>
+                      <option value="Second Term">Second Term (Jan-Jun)</option>
+                    </select>
+                  </div>
+                </div>
                 <div className="form-field form-actions-field">
                   <button
                     type="submit"
@@ -647,6 +620,7 @@ const RegistrationForm = () => {
             <div className="bulk-upload-content">
               <div className="bulk-upload-actions">
                 <button 
+                  type="button"
                   className="form-btn primary" 
                   onClick={handleDownloadTemplate}
                   disabled={isUploading}
@@ -655,6 +629,7 @@ const RegistrationForm = () => {
                   <span className="btn-text">Download Template</span>
                 </button>
                 <button 
+                  type="button"
                   className="form-btn secondary" 
                   onClick={handleExportCSV}
                   disabled={isUploading || students.length === 0}
@@ -758,6 +733,7 @@ const RegistrationForm = () => {
                         <td>{index + 1}</td>
                         <td>
                           <button
+                            type="button"
                             className="clickable-cell"
                             onClick={() => handleEdit(student)}
                             title="Click to edit"
@@ -767,6 +743,7 @@ const RegistrationForm = () => {
                         </td>
                         <td>
                           <button
+                            type="button"
                             className="clickable-cell"
                             onClick={() => handleEdit(student)}
                             title="Click to edit"
@@ -777,6 +754,7 @@ const RegistrationForm = () => {
                         <td>{student.middle_name || '-'}</td>
                         <td>
                           <button
+                            type="button"
                             className="clickable-cell"
                             onClick={() => handleEdit(student)}
                             title="Click to edit"
@@ -789,6 +767,7 @@ const RegistrationForm = () => {
                         <td>
                           <div className="action-buttons">
                             <button
+                              type="button"
                               className="form-btn small"
                               onClick={() => handleEdit(student)}
                               title="Edit"
@@ -796,6 +775,7 @@ const RegistrationForm = () => {
                               <i className="fas fa-edit"></i>
                             </button>
                             <button
+                              type="button"
                               className="form-btn small danger"
                               onClick={() => handleDelete(student)}
                               title="Delete"

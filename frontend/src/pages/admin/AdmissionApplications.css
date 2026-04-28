@@ -1,0 +1,326 @@
+/* Arial for this admin screen + controls (inputs/buttons often ignore inherited font) */
+.admissions-apps-page {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.admissions-apps-page button,
+.admissions-apps-page input,
+.admissions-apps-page select,
+.admissions-apps-page textarea {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.admissions-apps-page .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admissions-apps-page .page-title {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.admissions-apps-page .page-title h1 {
+  margin: 0;
+}
+
+.admissions-apps-page .page-title p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.admissions-apps-toolbar {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.admissions-apps-stats {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admissions-stat {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.admissions-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admissions-status-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-chip {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.5rem 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.status-chip.active {
+  background: #eff6ff;
+  border-color: rgba(26, 84, 144, 0.35);
+  color: #1a5490;
+}
+
+.status-chip .count {
+  margin-left: 0.35rem;
+  font-weight: 900;
+  opacity: 0.85;
+}
+
+.admissions-search {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1 1 320px;
+  justify-content: flex-end;
+}
+
+.admissions-search .excel-input {
+  width: min(520px, 100%);
+}
+
+.admissions-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 980px) {
+  .admissions-layout {
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: start;
+  }
+}
+
+.apps-list-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.panel-header {
+  padding: 0.9rem 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.panel-header .left {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.panel-header .title {
+  font-weight: 900;
+  color: #111827;
+}
+
+.panel-header .subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.apps-list {
+  display: grid;
+}
+
+.app-row {
+  appearance: none;
+  border: none;
+  background: #fff;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #eef2f7;
+  cursor: pointer;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.app-row:hover {
+  background: #f9fafb;
+}
+
+.app-row.selected {
+  background: #eff6ff;
+}
+
+.app-row-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.app-name {
+  font-weight: 900;
+  color: #111827;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pill-pending {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid rgba(154, 52, 18, 0.18);
+}
+
+.pill-approved {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid rgba(6, 95, 70, 0.18);
+}
+
+.pill-rejected {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid rgba(153, 27, 27, 0.18);
+}
+
+.app-meta {
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.app-meta strong {
+  color: #111827;
+}
+
+.apps-empty {
+  padding: 1.25rem;
+  color: #6b7280;
+}
+
+.detail-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.detail-body {
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.detail-section h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+@media (min-width: 720px) {
+  .kv-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.kv {
+  padding: 0.75rem;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.kv .k {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 800;
+}
+
+.kv .v {
+  margin-top: 0.15rem;
+  font-weight: 900;
+  color: #111827;
+  word-break: break-word;
+}
+
+.message-box {
+  padding: 0.9rem;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  background: #fff;
+  color: #111827;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.feedback-label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 900;
+}
+
+.feedback-label small {
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.detail-actions .btn {
+  min-height: 48px;
+}
+
+.detail-hint {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+

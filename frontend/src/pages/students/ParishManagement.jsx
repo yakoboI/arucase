@@ -2,14 +2,13 @@
  * Student Parish Management Page
  * Allows assigning, viewing, and deleting student parish assignments
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import { useAuth } from '../../context/AuthContext';
-import { requiresSpecialAcademicYearLogic, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './ParishManagement.css';
 
 const ParishManagement = ({ formLevel: formLevelProp }) => {
@@ -21,6 +20,9 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [parishName, setParishName] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedTerm, setSelectedTerm] = useState('First Term');
+  const fileInputRef = useRef(null);
 
   // Extract parameters from URL
   const { year, stream } = params;
@@ -38,12 +40,12 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
     ? formLevel.split('-').map(w => w.toUpperCase()).join(' ')
     : '';
   
-  // Ensure year is a number from URL (display year, e.g. 2026)
-  const yearNum = year ? (typeof year === 'number' ? year : parseInt(year, 10)) : null;
-  // For Form V/VI use same API year as Registration: e.g. URL 2026 -> apiYear 2025 for 2025-2026 academic year
-  const apiYear = yearNum != null && requiresSpecialAcademicYearLogic(normalizedLevel)
-    ? getApiYearForFormVVI(yearNum, normalizedLevel)
-    : yearNum;
+  // Use calendar year directly for Form V/VI (no academic year conversion)
+  // Form V First Term (Jul-Dec 2025) -> year 2025
+  // Form V Second Term (Jan-Jun 2026) -> year 2026
+  // Form VI First Term (Jul-Dec 2026) -> year 2026
+  // Form VI Second Term (Jan-Jun 2027) -> year 2027
+  const apiYear = year ? (typeof year === 'number' ? year : parseInt(year, 10)) : null;
 
   // Validate that we have all required parameters
   const hasValidParams = normalizedLevel && stream && apiYear != null && !isNaN(apiYear) && apiYear > 0;
@@ -72,12 +74,16 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
 
   // Fetch students for this class - sorted by name: first_name, then middle_name, then surname (A-Z)
   const { data: studentsData = [], isLoading, error: studentsError } = useQuery({
-    queryKey: ['students', normalizedLevel, stream, apiYear],
+    queryKey: ['students', normalizedLevel, stream, apiYear, selectedTerm],
     queryFn: async () => {
       if (!hasValidParams) {
         return [];
       }
       try {
+        // For Form V/VI, filter by term to show only students registered for that term
+        // For Form I-IV, term is not needed as students stay for the full year
+        const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
+        
         // For streams A, B, C, D: also fetch students from stream "NA"
         // This treats "NA" as containing students from all streams A-D
         let students = [];
@@ -89,11 +95,13 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
               level: normalizedLevel,
               stream: stream,
               year: apiYear,
+              ...(isFormVOrVI && { term: selectedTerm })
             }),
             studentsAPI.getStudents({
               level: normalizedLevel,
               stream: 'NA',
               year: apiYear,
+              ...(isFormVOrVI && { term: selectedTerm })
             })
           ]);
           
@@ -118,6 +126,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
             level: normalizedLevel,
             stream: stream,
             year: apiYear,
+            ...(isFormVOrVI && { term: selectedTerm })
           });
           students = res.data.students || [];
         }
@@ -136,7 +145,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
 
   // Fetch parishes for this class
   const { data: parishesData = {}, isLoading: parishesLoading, error: parishesError } = useQuery({
-    queryKey: ['student-parishes', normalizedLevel, stream, apiYear, students.length],
+    queryKey: ['student-parishes', normalizedLevel, stream, apiYear, selectedTerm, students.length],
     queryFn: async () => {
       if (!hasValidParams || !normalizedLevel) {
         console.log('[PARISHES] Invalid params, returning empty');
@@ -149,11 +158,12 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
       }
       
       try {
-        console.log('[PARISHES] Fetching parishes:', { level: normalizedLevel, stream, year: apiYear, studentsCount: students.length });
+        console.log('[PARISHES] Fetching parishes:', { level: normalizedLevel, stream, year: apiYear, term: selectedTerm, studentsCount: students.length });
         const res = await studentsAPI.getParishes({
           level: normalizedLevel,
           stream: stream,
-          year: apiYear
+          year: apiYear,
+          term: selectedTerm
         });
         const parishesMap = {};
         const parishes = res.data.parishes || [];
@@ -280,7 +290,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
       return studentsAPI.saveParish(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['student-parishes', normalizedLevel, stream, apiYear]);
+      queryClient.invalidateQueries(['student-parishes', normalizedLevel, stream, apiYear, selectedTerm]);
       toast.success('Parish assigned successfully!');
       closeModal();
     },
@@ -301,7 +311,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
       return studentsAPI.deleteParish(params);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['student-parishes', normalizedLevel, stream, apiYear]);
+      queryClient.invalidateQueries(['student-parishes', normalizedLevel, stream, apiYear, selectedTerm]);
       toast.success('Parish assignment removed successfully!');
     },
     onError: (error) => {
@@ -337,6 +347,190 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
       student_index: selectedStudent.index,
       parish_name: parishName.trim()
     });
+  };
+
+  // CSV: escape cell for CSV (quote if contains comma, newline, or quote)
+  const csvEscape = (val) => {
+    const s = String(val ?? '').trim();
+    if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+
+  const parseLine = (line, delimiter = ',') => {
+    if (delimiter === '\t') {
+      return line.split('\t').map((cell) => String(cell).trim().replace(/^\uFEFF/, ''));
+    }
+
+    const out = [];
+    let cur = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (inQuotes) {
+        cur += c;
+      } else if (c === delimiter) {
+        out.push(cur.trim());
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+
+    out.push(cur.trim().replace(/^\uFEFF/, ''));
+    return out;
+  };
+
+  const normalizeHeader = (h) =>
+    String(h ?? '')
+      .trim()
+      .replace(/\uFEFF/g, '')
+      .replace(/\s/g, '')
+      .toLowerCase();
+
+  const findStudentIndexByAdmNo = (admNoStr) => {
+    const target = String(admNoStr ?? '').trim();
+    if (!target) return -1;
+
+    const exact = students.findIndex((s) => String(s.adm_no).trim() === target);
+    if (exact >= 0) return exact;
+
+    const tNum = Number(target);
+    if (!Number.isNaN(tNum)) {
+      return students.findIndex(
+        (s) => Number(s.adm_no) === tNum || String(s.adm_no).trim() === String(tNum)
+      );
+    }
+
+    return -1;
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ['AdmNumber', 'first_name', 'middle_name', 'surname', 'Parish'];
+    const rows = students.map((s, index) => {
+      const parish = getParishName(index) || '';
+      return [
+        csvEscape(s.adm_no),
+        csvEscape(s.first_name),
+        csvEscape(s.middle_name || ''),
+        csvEscape(s.surname),
+        csvEscape(parish),
+      ].join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student_parishes_template_${normalizedLevel}_${stream}_${apiYear}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Parish CSV template downloaded');
+  };
+
+  const handleUploadFilled = (e) => {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploading(true);
+
+    const run = async () => {
+      try {
+        let text = await file.text();
+        text = text.replace(/^\uFEFF/, '');
+        const lines = text.split(/\r?\n/).filter((l) => l.trim());
+
+        if (lines.length < 2) {
+          toast.error('CSV must have a header row and at least one data row');
+          return;
+        }
+
+        const firstLine = lines[0];
+        const delimiter = firstLine.includes('\t') && firstLine.split('\t').length >= 2 ? '\t' : ',';
+        const rawHeaderCells = parseLine(firstLine, delimiter);
+        const header = rawHeaderCells.map((h) => normalizeHeader(h));
+
+        const admNoIdx = header.findIndex(
+          (h) => h === 'admnumber' || h === 'adm_no' || h === 'admno' || h.startsWith('admission')
+        );
+        const parishIdx = header.findIndex((h) => h === 'parish' || h === 'parish_name' || h === 'parishname');
+
+        if (admNoIdx === -1 || parishIdx === -1) {
+          toast.error('Upload rejected: CSV must include columns "AdmNumber" and "Parish"');
+          return;
+        }
+
+        const payload = [];
+        let skipped = 0;
+        let skippedNoStudent = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const cells = parseLine(lines[i], delimiter);
+          const admNo = String(cells[admNoIdx] ?? '').trim();
+          const parishName = String(cells[parishIdx] ?? '').trim();
+
+          if (!admNo) continue;
+          if (!parishName) {
+            skipped++;
+            continue;
+          }
+
+          const studentIndex = findStudentIndexByAdmNo(admNo);
+          if (studentIndex < 0) {
+            skippedNoStudent++;
+            continue;
+          }
+
+          payload.push({
+            student_index: studentIndex,
+            parish_name: parishName,
+          });
+        }
+
+        if (payload.length === 0) {
+          toast.warning(
+            `No parishes to upload. ${skippedNoStudent ? `${skippedNoStudent} row(s) had unknown AdmNumber. ` : ''}${skipped ? `${skipped} row(s) were empty.` : ''}`.trim()
+          );
+          return;
+        }
+
+        const res = await studentsAPI.saveParishesBulk({
+          level: normalizedLevel,
+          stream: stream,
+          year: apiYear,
+          parishes: payload,
+        });
+
+        const saved = res.data?.saved ?? 0;
+        const failed = res.data?.failed ?? 0;
+
+        queryClient.invalidateQueries(['student-parishes', normalizedLevel, stream, apiYear, selectedTerm]);
+
+        if (saved > 0 && failed === 0) {
+          toast.success(`Upload complete: ${saved} parish(es) saved.`);
+        } else if (failed > 0) {
+          toast.warning(`Upload complete with issues: ${saved} saved, ${failed} failed.`);
+        } else {
+          toast.success('Upload complete');
+        }
+      } catch (err) {
+        console.error('[Parish CSV upload] Failure:', err?.response?.data || err?.message || err);
+        toast.error(err?.response?.data?.message || err?.message || 'Upload failed');
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    setTimeout(run, 0);
   };
 
   const handleDelete = (student, index) => {
@@ -399,7 +593,17 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
         <div className="parish-mgmt-card">
           <div className="parish-mgmt-card-header">
             <i className="fas fa-place-of-worship"></i>
-            <span>Student Parishes Management - {normalizedLevel} {stream} {yearNum}</span>
+            <span>
+              Student Parishes Management - {normalizedLevel} {stream} {apiYear}
+              <select
+                value={selectedTerm}
+                onChange={(e) => setSelectedTerm(e.target.value)}
+                style={{ marginLeft: '10px', padding: '4px 8px', fontSize: '14px' }}
+              >
+                <option value="First Term">First Term (Jul-Dec)</option>
+                <option value="Second Term">Second Term (Jan-Jun)</option>
+              </select>
+            </span>
             <span style={{ marginLeft: '15px', fontSize: '14px', opacity: 0.8 }}>
               {parishesLoading ? '(Loading parishes...)' : 
                parishesError ? '(Error loading parishes)' :
@@ -409,6 +613,34 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
             </span>
           </div>
           <div className="parish-mgmt-card-body">
+            <div className="action-buttons" style={{ marginBottom: '1rem' }}>
+              <button
+                type="button"
+                className="parish-btn small primary"
+                onClick={handleDownloadTemplate}
+                disabled={students.length === 0 || uploading}
+                title="Download CSV template"
+              >
+                <i className="fas fa-download"></i> Download CSV Template
+              </button>
+
+              <label
+                className="parish-btn small primary"
+                style={{ cursor: 'pointer', opacity: uploading || students.length === 0 ? 0.6 : 1 }}
+                title="Upload filled CSV"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleUploadFilled}
+                  disabled={uploading || students.length === 0}
+                  style={{ display: 'none' }}
+                />
+                <i className={`fas ${uploading ? 'fa-spinner fa-spin' : 'fa-upload'}`}></i> {uploading ? 'Uploading...' : 'Upload Filled CSV'}
+              </label>
+            </div>
+
             {studentsError ? (
               <div className="empty-state">
                 <i className="fas fa-exclamation-triangle empty-icon"></i>
@@ -424,7 +656,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
                 </p>
                 {studentsError.response?.status !== 401 && (
                   <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-                    Debug: {normalizedLevel} | {stream} | {yearNum}
+                    Debug: {normalizedLevel} | {stream} | {apiYear}
                   </p>
                 )}
               </div>
@@ -436,7 +668,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
                 <h3>No Students Found</h3>
                 <p>No students registered for this class yet.</p>
                 <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-                  Debug: {normalizedLevel} | {stream} | {yearNum}
+                  Debug: {normalizedLevel} | {stream} | {apiYear}
                 </p>
               </div>
             ) : (
@@ -477,6 +709,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
                           <td>
                             <div className="action-buttons">
                               <button
+                                type="button"
                                 className="parish-btn small primary"
                                 onClick={() => openModal(student, index)}
                                 title="Assign/Edit Parish"
@@ -485,6 +718,7 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
                               </button>
                               {parish && (
                                 <button
+                                  type="button"
                                   className="parish-btn small danger"
                                   onClick={() => handleDelete(student, index)}
                                   title="Delete Parish"

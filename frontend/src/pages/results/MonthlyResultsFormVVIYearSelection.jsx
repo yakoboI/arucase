@@ -45,7 +45,7 @@ const MonthlyResultsFormVVIYearSelection = ({ formLevel }) => {
             <div className="subjects-year-selection-grid">
               {years.map((year) => (
                 <Link
-                  key={year}
+                  key={`${year}-monthly`}
                   to={getYearDetailPath(year)}
                   className="subjects-year-selection-card-item"
                   data-current-year={year === currentYear}

@@ -15,8 +15,8 @@ const PUBLIC_ROUTE_SEO = {
     description: 'Arusha Catholic Seminary (ARUCASE, S0171) - St. Thomas Aquinas Seminary Arusha, Seminari ya Jimbo, Jimbo Kuu la Arusha. Located in Oldonyosambu, Arusha, Tanzania. One of the best seminary schools and best O-Level schools in Tanzania. Catholic secondary school offering O-Level and A-Level education, Form I–VI, admissions, staff, NECTA results, fees, and contact.',
   },
   '/about': {
-    title: `About Us | ${SITE_NAME} - Best Seminary in Oldonyosambu`,
-    description: 'Learn about Arusha Catholic Seminary in Oldonyosambu: one of the best seminary schools in Tanzania. Our mission, history since 1967, and Catholic education in Arusha, Tanzania.',
+    title: `About Us | ${SITE_NAME}`,
+    description: 'Learn about Arusha Catholic Seminary in Oldonyosambu, Tanzania. Explore our mission, history since 1967, and Catholic education in Arusha.',
   },
   '/admissions': {
     title: `Admissions | ${SITE_NAME} - Best O-Level School`,

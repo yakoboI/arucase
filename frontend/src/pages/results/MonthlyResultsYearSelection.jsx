@@ -42,7 +42,7 @@ const MonthlyResultsYearSelection = ({ formLevel }) => {
             <div className="subjects-year-selection-grid">
               {years.map((year) => (
                 <Link
-                  key={year}
+                  key={`monthly-${year}`}
                   to={getYearDetailPath(year)}
                   className="subjects-year-selection-card-item"
                   data-current-year={year === currentYear}

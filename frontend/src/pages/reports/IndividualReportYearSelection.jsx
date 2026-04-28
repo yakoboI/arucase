@@ -2,9 +2,7 @@
  * Individual Student Report - Step 2: Year Selection
  */
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '../../components/layout/AdminLayout';
-import api from '../../services/api';
 import './IndividualReport.css';
 
 const IndividualReportYearSelection = () => {
@@ -12,18 +10,7 @@ const IndividualReportYearSelection = () => {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
 
-  // Fetch available years from database (for reference, but we'll generate from 2025)
-  const { data: yearsData, isLoading } = useQuery({
-    queryKey: ['available-years', form, stream],
-    queryFn: async () => {
-      const res = await api.get('/students/years', {
-        params: { level: form, stream: stream === 'NA' ? null : stream }
-      });
-      return res.data.years || [];
-    }
-  });
-
-  // Generate years list from 2025 to current year + 3 (same as other parts)
+  // Generate years list from 2025 to current year + 3
   const startYear = 2025;
   const endYear = currentYear + 3;
   const generatedYears = [];
@@ -31,13 +18,11 @@ const IndividualReportYearSelection = () => {
     generatedYears.push(i);
   }
   generatedYears.reverse(); // Most recent first
-  
-  // Use generated years (from 2025 onwards) instead of only database years
+
   const availableYears = generatedYears;
 
   const handleYearClick = (year) => {
-    // React Router handles URL encoding automatically
-    navigate(`/reports/individual/${form}/${stream}/${year}/term`);
+    navigate(`/reports/individual/${encodeURIComponent(form)}/${encodeURIComponent(stream)}/${encodeURIComponent(year)}/term`);
   };
 
   return (
@@ -52,13 +37,11 @@ const IndividualReportYearSelection = () => {
             <i className="fas fa-calendar-alt"></i> Select Academic Year
           </div>
           <div className="excel-card-body">
-            {isLoading ? (
-              <div className="loading">Loading years...</div>
-            ) : (
-              <div className="year-grid">
+            <div className="year-grid">
                 {availableYears.map((year) => (
                   <button
-                    key={year}
+                    type="button"
+                    key={`individual-${year}`}
                     onClick={() => handleYearClick(year)}
                     className="year-card"
                   >
@@ -75,7 +58,6 @@ const IndividualReportYearSelection = () => {
                   </button>
                 ))}
               </div>
-            )}
             <div className="promotion-select-actions mt-20">
               <Link to="/reports/individual" className="excel-btn">
                 <nobr><i className="fas fa-arrow-left"></i> Back to Forms</nobr>

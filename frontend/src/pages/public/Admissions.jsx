@@ -26,57 +26,63 @@ const Admissions = () => {
   const fallbackContent = (
     <div className="admissions-page">
       <Link to="/" className="home-button">
-        <i className="fas fa-home"></i> Back to Home
+        <i className="fas fa-home"></i> Rudi Nyumbani
       </Link>
 
+      <div className="admissions-actions">
+        <Link to="/admissions/apply" className="admissions-apply-button">
+          BOFYA HAPA KUJISAJILI
+        </Link>
+      </div>
+
       <div className="content-card">
-        <h1>Admissions</h1>
+        <h1>Udahili</h1>
         
-        <h2>Admission Requirements</h2>
+        <h2>Vigezo vya Udahili</h2>
         <p>
-          Arusha Catholic Seminary welcomes young men who demonstrate a genuine interest in pursuing 
-          their vocation and academic excellence. The following are our admission requirements:
+          Seminari ya Kikatoliki Arusha inapokea vijana wa kiume wenye nia ya kweli ya malezi ya wito
+          na ubora wa kitaaluma. Hivi ni vigezo vya msingi vya udahili:
         </p>
 
         <ul>
-          <li>Baptismal certificate from a Catholic Church</li>
-          <li>Academic transcripts from previous schools</li>
-          <li>Letter of recommendation from parish priest</li>
-          <li>Medical examination certificate</li>
-          <li>Birth certificate or valid identification</li>
-          <li>Passport-sized photographs (4 copies)</li>
+          <li>Cheti cha ubatizo kutoka Kanisa Katoliki</li>
+          <li>Nakala ya matokeo ya masomo kutoka shule aliyosoma</li>
+          <li>Barua ya utambulisho kutoka kwa padre wa parokia</li>
+          <li>Cheti cha uchunguzi wa afya</li>
+          <li>Cheti cha kuzaliwa au kitambulisho halali</li>
+          <li>Picha ndogo za pasipoti (nakala 4)</li>
         </ul>
 
-        <h2>Application Process</h2>
-        <p><strong>Answer:</strong> To apply to Arusha Catholic Seminary, follow these 6 steps:</p>
+        <h2>Utaratibu wa Kutuma Maombi</h2>
+        <p><strong>Jibu:</strong> Ili kuomba kujiunga na Seminari ya Kikatoliki Arusha, fuata hatua hizi 6:</p>
         <ol>
-          <li><strong>Obtain Application Form:</strong> Download or collect from the seminary office</li>
-          <li><strong>Complete Application:</strong> Fill out all required information accurately</li>
-          <li><strong>Submit Documents:</strong> Submit all required documents with your application</li>
-          <li><strong>Entrance Examination:</strong> Attend the scheduled entrance examination</li>
-          <li><strong>Interview:</strong> Participate in an interview with the admissions committee</li>
-          <li><strong>Admission Decision:</strong> Receive notification of admission status</li>
+          <li><strong>Pata Fomu ya Maombi:</strong> Pakua mtandaoni au chukua ofisini seminari</li>
+          <li><strong>Jaza Fomu ya Maombi:</strong> Jaza taarifa zote zinazohitajika kwa usahihi</li>
+          <li><strong>Wasilisha Nyaraka:</strong> Wasilisha nyaraka zote zinazotakiwa pamoja na fomu yako</li>
+          <li><strong>Mtihani wa Kuingia:</strong> Hudhuria mtihani wa kuingia uliopangwa</li>
+          <li><strong>Mahojiano:</strong> Shiriki mahojiano na kamati ya udahili</li>
+          <li><strong>Uamuzi wa Udahili:</strong> Pokea taarifa ya matokeo ya maombi yako</li>
         </ol>
 
-        <h2>Important Dates</h2>
+        <h2>Tarehe Muhimu</h2>
         <ul>
-          <li><strong>Application Period:</strong> January - March</li>
-          <li><strong>Entrance Examinations:</strong> April</li>
-          <li><strong>Interviews:</strong> May</li>
-          <li><strong>Admission Letters:</strong> June</li>
-          <li><strong>Orientation:</strong> Late June</li>
-          <li><strong>Academic Year Begins:</strong> July</li>
+          <li><strong>Kipindi cha Maombi:</strong> Januari - Machi</li>
+          <li><strong>Mitihani ya Kuingia:</strong> Aprili</li>
+          <li><strong>Mahojiano:</strong> Mei</li>
+          <li><strong>Barua za Udahili:</strong> Juni</li>
+          <li><strong>Mafunzo ya Utangulizi:</strong> Mwishoni mwa Juni</li>
+          <li><strong>Mwaka wa Masomo Unaaza:</strong> Julai</li>
         </ul>
 
-        <h3>Contact Admissions Office</h3>
+        <h3>Wasiliana na Ofisi ya Udahili</h3>
         <p>
-          For more information about admissions, please contact:<br />
-          <strong>Email:</strong>{' '}
+          Kwa maelezo zaidi kuhusu udahili, tafadhali wasiliana nasi:<br />
+          <strong>Barua pepe:</strong>{' '}
           <a href={`mailto:${settings?.contact_email || 'info@arushacatholicseminary.co.tz'}`} className="contact-link">
             {settings?.contact_email || 'info@arushacatholicseminary.co.tz'}
           </a>
           <br />
-          <strong>Phone:</strong>{' '}
+          <strong>Simu:</strong>{' '}
           <a href={`tel:${settings?.contact_phone || '+255 123 456 789'}`} className="contact-link">
             {settings?.contact_phone || '+255 123 456 789'}
           </a>
@@ -88,7 +94,7 @@ const Admissions = () => {
   if (isLoading) {
     return (
       <PublicLayout>
-        <Loading message="Loading admissions page..." />
+        <Loading message="Inapakia ukurasa wa udahili..." />
       </PublicLayout>
     );
   }
@@ -101,8 +107,13 @@ const Admissions = () => {
       {hasCustomContent ? (
         <div className="admissions-page">
           <Link to="/" className="home-button">
-            <i className="fas fa-home"></i> Back to Home
+            <i className="fas fa-home"></i> Rudi Nyumbani
           </Link>
+          <div className="admissions-actions">
+            <Link to="/admissions/apply" className="admissions-apply-button">
+              BOFYA HAPA KUJISAJILI
+            </Link>
+          </div>
           <div 
             className="content-card"
             dangerouslySetInnerHTML={{ __html: page.html_content || page.content || '' }}

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { reportsAPI } from '../../services/reports';
 import api from '../../services/api';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import './BulkReport.css';
 
 const BulkReportGenerate = () => {
@@ -17,13 +17,20 @@ const BulkReportGenerate = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
 
+  // Use calendar year directly for Form V/VI (no academic year conversion)
+  // Form V First Term (Jul-Dec 2025) -> year 2025
+  // Form V Second Term (Jan-Jun 2026) -> year 2026
+  // Form VI First Term (Jul-Dec 2026) -> year 2026
+  // Form VI Second Term (Jan-Jun 2027) -> year 2027
+  const apiYear = parseInt(year);
+
   // Fetch students for bulk report
   const { data: bulkData, isLoading, error } = useQuery({
     queryKey: ['bulk-report', form, stream, year, term],
     queryFn: async () => {
       const res = await reportsAPI.getBulkReport(
         form,
-        year,
+        apiYear,
         term,
         isAllStreams ? null : stream
       );
@@ -269,6 +276,11 @@ const BulkReportGenerate = () => {
             </div>
             <div className="excel-card-body">
               <p>No students found for {form} {year} {term}.</p>
+              <p style={{ marginTop: '12px', color: '#64748b', fontSize: '0.95rem', maxWidth: '520px' }}>
+                Common causes: no students registered for this class and year in <strong>Student Registration</strong>,
+                or the class year in the database does not match <strong>{year}</strong>.
+                If you expect students here, confirm their <strong>level</strong>, <strong>year</strong>, and <strong>stream</strong> in the student list.
+              </p>
               <div className="action-buttons mt-20">
                 <Link to="/reports/bulk" className="excel-btn">
                   <i className="fas fa-arrow-left"></i> Back to Form Selection
@@ -296,6 +308,7 @@ const BulkReportGenerate = () => {
 
         <div className="bulk-report-actions">
           <button 
+            type="button"
             onClick={handleDownloadPDF} 
             className="excel-btn" 
             style={{ fontSize: '1rem', padding: '0.75rem 1.5rem' }}
@@ -345,7 +358,8 @@ const BulkReportGenerate = () => {
               <i className="fas fa-list"></i> Students List
             </div>
             <div className="excel-card-body">
-              <table className="excel-table">
+              <div className="excel-table-wrapper">
+                <table className="excel-table">
                 <thead>
                   <tr>
                     <th>Admission No.</th>
@@ -388,6 +402,7 @@ const BulkReportGenerate = () => {
                         <td>{summary.grade || '-'}</td>
                         <td>
                           <button
+                            type="button"
                             onClick={() => handleViewIndividual(student.adm_no, student.stream)}
                             className="excel-btn small"
                           >
@@ -399,6 +414,7 @@ const BulkReportGenerate = () => {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </div>

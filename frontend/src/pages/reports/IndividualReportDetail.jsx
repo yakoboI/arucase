@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import api from '../../services/api';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import './IndividualReport.css';
 import './IndividualReportDetail.css';
 
@@ -129,12 +129,14 @@ const IndividualReportDetail = () => {
         stampImage: false
       });
       
-      // Debug: Log student photo path
-      if (reportData.student?.photo_path) {
-        console.log('[IndividualReport] Student photo_path:', reportData.student.photo_path);
-        console.log('[IndividualReport] Constructed photo URL:', getStudentPhotoUrl(reportData.student.photo_path));
-      } else {
-        console.warn('[IndividualReport] No photo_path found for student:', reportData.student?.adm_no);
+      // Debug logging only in development to avoid noisy production console
+      if (import.meta.env.DEV) {
+        if (reportData.student?.photo_path) {
+          console.log('[IndividualReport] Student photo_path:', reportData.student.photo_path);
+          console.log('[IndividualReport] Constructed photo URL:', getStudentPhotoUrl(reportData.student.photo_path));
+        } else {
+          console.log('[IndividualReport] No photo_path found for student:', reportData.student?.adm_no);
+        }
       }
     }
   }, [reportData]);
@@ -579,7 +581,7 @@ const IndividualReportDetail = () => {
             <br />- Term: {term}
           </p>
           <Link to="/reports/individual" style={{ marginTop: '20px', display: 'inline-block' }}>
-            <button>Back to Report Selection</button>
+            <button type="button">Back to Report Selection</button>
           </Link>
         </div>
       </AdminLayout>
@@ -696,8 +698,9 @@ const IndividualReportDetail = () => {
   const studentEvaluations = {};
   if (tabia_mwenendo && Array.isArray(tabia_mwenendo)) {
     tabia_mwenendo.forEach((t) => {
-      if (t.code) {
-        studentEvaluations[t.code] = t.grade || 'C';
+      const code = String(t.criterion ?? t.code ?? '').trim();
+      if (code) {
+        studentEvaluations[code] = t.evaluation || t.grade || 'C';
       }
     });
   }
@@ -770,6 +773,7 @@ const IndividualReportDetail = () => {
 
         <div className="download-section" style={{ marginTop: '16px', textAlign: 'center' }}>
           <button 
+            type="button"
             onClick={handleDownloadPDF} 
             className="download-btn"
             disabled={isDownloading || isLoading || !reportData}
@@ -1033,9 +1037,9 @@ const IndividualReportDetail = () => {
                 
                 // Try to find scores using both code and abbreviation
                 const getScore = (month) => {
-                  return monthlyData[subjectKey]?.[month] || 
-                         (subjectAbbr ? monthlyData[subjectAbbr]?.[month] : null) || 
-                         0;
+                  const score1 = monthlyData[subjectKey]?.[month];
+                  const score2 = subjectAbbr ? monthlyData[subjectAbbr]?.[month] : null;
+                  return score1 !== undefined && score1 !== null && score1 !== '' ? score1 : null;
                 };
                 
                 const month1 = getScore(months[0]);
@@ -1043,16 +1047,24 @@ const IndividualReportDetail = () => {
                 const month3 = getScore(months[2]);
                 const month4 = getScore(months[3]);
                 
+                // Check if all scores are null (no scores for this subject)
+                const allScoresNull = month1 === null && month2 === null && month3 === null && month4 === null;
+                
+                // Skip this subject if all scores are null
+                if (allScoresNull) {
+                  return null;
+                }
+                
                 // Apply weights
                 const weight1 = (marks_config?.month_weights?.[months[0]] || 100) / 100;
                 const weight2 = (marks_config?.month_weights?.[months[1]] || 0) / 100;
                 const weight3 = (marks_config?.month_weights?.[months[2]] || 0) / 100;
                 const weight4 = (marks_config?.month_weights?.[months[3]] || 0) / 100;
                 
-                const test1 = month1 * weight1;
-                const midterm = month2 * weight2;
-                const test2 = month3 * weight3;
-                const exam = month4 * weight4;
+                const test1 = (month1 || 0) * weight1;
+                const midterm = (month2 || 0) * weight2;
+                const test2 = (month3 || 0) * weight3;
+                const exam = (month4 || 0) * weight4;
                 const total = test1 + midterm + test2 + exam;
                 
                 const grade = getGrade(total);
@@ -1080,7 +1092,7 @@ const IndividualReportDetail = () => {
                     </td>
                   </tr>
                 );
-              })}
+              }).filter(row => row !== null)}
             </tbody>
           </table>
             <div style={{ marginTop: '5px', fontSize: '12px', textAlign: 'left', paddingLeft: '2px' }}>
@@ -1151,21 +1163,13 @@ const IndividualReportDetail = () => {
                 <td>
                   <strong>Mwalimu wa Taaluma:</strong>
                 </td>
-                <td colSpan={3}>
-                  {getCommentValue('mwalimu_taaluma') || (
-                    <em style={{ color: '#000000' }}>No comment entered for {term}</em>
-                  )}
-                </td>
+                <td colSpan={3}>{getCommentValue('mwalimu_taaluma') || ''}</td>
               </tr>
               <tr>
                 <td>
                   <strong>Maoni ya Mkuu wa Shule:</strong>
                 </td>
-                <td colSpan={3}>
-                  {getCommentValue('mkuu_shule') || (
-                    <em className="comment-placeholder">No comment entered for {term}</em>
-                  )}
-                </td>
+                <td colSpan={3}>{getCommentValue('mkuu_shule') || ''}</td>
               </tr>
               <tr>
                 <td>
@@ -1280,51 +1284,31 @@ const IndividualReportDetail = () => {
                 <td className="maoni-label">
                   <strong>TAALUMA:</strong>
                 </td>
-                <td className="maoni-content">
-                  {getCommentValue('taaluma') || (
-                    <em className="comment-placeholder">No comment entered for {term}</em>
-                  )}
-                </td>
+                <td className="maoni-content">{getCommentValue('taaluma') || ''}</td>
               </tr>
               <tr>
                 <td className="maoni-label">
                   <strong>HUDUMA:</strong>
                 </td>
-                <td className="maoni-content">
-                  {studentHuduma || (
-                    <em className="comment-placeholder">No comment entered for {term}</em>
-                  )}
-                </td>
+                <td className="maoni-content">{studentHuduma || ''}</td>
               </tr>
               <tr>
                 <td className="maoni-label">
                   <strong>MICHEZO:</strong>
                 </td>
-                <td className="maoni-content">
-                  {getCommentValue('michezo') || (
-                    <em className="comment-placeholder">No comment entered for {term}</em>
-                  )}
-                </td>
+                <td className="maoni-content">{getCommentValue('michezo') || ''}</td>
               </tr>
               <tr className="maoni-tabia-row">
                 <td className="maoni-label">
                   <strong>TABIA:</strong>
                 </td>
-                <td className="maoni-content">
-                  {getCommentValue('tabia') || (
-                    <em className="comment-placeholder">No comment entered for {term}</em>
-                  )}
-                </td>
+                <td className="maoni-content">{getCommentValue('tabia') || ''}</td>
               </tr>
               <tr>
                 <td className="maoni-label">
                   <strong>SALA:</strong>
                 </td>
-                <td className="maoni-content">
-                  {getCommentValue('sala') || (
-                    <em className="comment-placeholder">No comment entered for {term}</em>
-                  )}
-                </td>
+                <td className="maoni-content">{getCommentValue('sala') || ''}</td>
               </tr>
               <tr>
                 <td className="maoni-label">

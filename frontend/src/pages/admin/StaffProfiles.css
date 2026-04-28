@@ -1,0 +1,298 @@
+.staff-profiles-page .excel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.staff-page-title {
+  flex: 1;
+  min-width: 180px;
+}
+
+.staff-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+}
+
+.staff-stat {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  background: #f9fafb;
+  color: #1f2937;
+  display: grid;
+  gap: 0.05rem;
+}
+
+.staff-stat small {
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.staff-stat strong {
+  font-size: 1.05rem;
+  color: #111827;
+}
+
+.staff-profiles-page .staff-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.staff-profiles-page {
+  --staff-photo-size: clamp(68px, 12vw, 96px);
+  --staff-photo-outer-padding: 3px;
+}
+
+.staff-type-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.type-filter-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  min-height: 42px;
+  padding: 0.45rem 0.55rem;
+  font-weight: 800;
+  color: #374151;
+}
+
+.type-filter-btn.active {
+  border-color: rgba(26, 84, 144, 0.38);
+  background: #eff6ff;
+  color: #1a5490;
+}
+
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0.9rem;
+}
+
+.staff-card-admin {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  padding: 0.9rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-card-top {
+  display: grid;
+  grid-template-columns: var(--staff-photo-size) 1fr;
+  gap: 0.75rem;
+}
+
+.staff-photo-frame {
+  width: var(--staff-photo-size);
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  position: relative;
+  border-radius: 2px;
+  background: #e5e7eb; /* outer frame */
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  display: block;
+
+  --mat-inset: clamp(4px, 1.25vw, 7px);
+  --photo-inset: clamp(7px, 1.8vw, 11px);
+}
+
+.staff-photo-frame::before {
+  content: '';
+  position: absolute;
+  inset: var(--mat-inset);
+  background: #ffffff; /* inner mat */
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 2px #f3f4f6; /* subtle inner border */
+}
+
+.staff-photo-inner {
+  position: absolute;
+  inset: var(--photo-inset);
+  border-radius: 1px;
+  border: 0;
+  object-fit: cover;
+  display: block;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #d1d5db; /* thin border around the photo */
+}
+
+.staff-photo-placeholder {
+  display: grid;
+  place-items: center;
+  color: #6b7280;
+  font-size: 1.35rem;
+  background: #ffffff;
+}
+
+.staff-card-top h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.staff-card-top p {
+  margin: 0.15rem 0 0.35rem;
+  color: #4b5563;
+}
+
+.chip-row {
+  display: inline-flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.chip.teacher { background: #eff6ff; color: #1d4ed8; }
+.chip.non-teacher { background: #f5f3ff; color: #6d28d9; }
+.chip.active { background: #ecfdf5; color: #065f46; }
+.chip.inactive { background: #fef2f2; color: #991b1b; }
+
+.staff-meta {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.2rem;
+  color: #1f2937;
+  font-size: 0.9rem;
+  min-height: 108px;
+}
+
+.staff-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.staff-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.staff-form .form-section-title {
+  margin: 0.25rem 0 0.1rem;
+  font-weight: 900;
+  color: #1a5490;
+}
+
+.checkbox-line {
+  display: flex;
+  align-items: end;
+}
+
+.staff-profiles-page .modal-content.large {
+  width: min(980px, 95vw);
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-profiles-page .staff-form {
+  overflow: auto;
+  padding-bottom: 0.2rem;
+}
+
+.staff-profiles-page .staff-form label,
+.staff-profiles-page .upload-area p,
+.staff-profiles-page .form-actions .excel-btn {
+  color: #000 !important;
+}
+
+.upload-cta-btn {
+  border: 1px solid #111827;
+  background: #fff;
+  color: #000;
+  border-radius: 10px;
+  min-height: 42px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.upload-cta-btn:active {
+  transform: scale(0.99);
+}
+
+.staff-profiles-page .form-actions {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-top: 0.65rem;
+  border-top: 1px solid #eef2f7;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .staff-form .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staff-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .staff-card-admin {
+    padding: 0.8rem;
+    border-radius: 12px;
+  }
+
+  .staff-actions .admin-action-btn {
+    flex: 1 1 120px;
+    min-height: 44px;
+  }
+
+  .staff-profiles-page .header-actions {
+    width: 100%;
+    display: flex;
+  }
+
+  .staff-profiles-page .header-actions .excel-btn {
+    width: 100%;
+    min-height: 46px;
+    justify-content: center;
+  }
+
+  .staff-profiles-page .modal-content.large {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .staff-profiles-page .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #fff;
+    border-bottom: 1px solid #eef2f7;
+  }
+}
+

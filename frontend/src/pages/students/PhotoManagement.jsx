@@ -3,10 +3,10 @@
  * Allows uploading, viewing, and deleting student photos
  * Uses special academic year logic for Form 5 & 6 streams
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import api from '../../services/api';
@@ -16,11 +16,11 @@ import './PhotoManagement.css';
 const PhotoManagement = ({ formLevel: formLevelProp }) => {
   const params = useParams();
   const queryClient = useQueryClient();
-  
+
   // Extract parameters - handle both URL patterns:
   // FORM I-IV: /photos/form-i/year/:year/stream/:stream
-  // FORM V-VI: /photos/form-v/stream/:stream/year/:year
-  const { formLevel: formLevelParam, year, stream } = params;
+  // FORM V-VI: /photos/form-v/stream/:stream/year/:year/term/:term
+  const { formLevel: formLevelParam, year, stream, term } = params;
   
   // Use prop if provided, otherwise use URL params
   // Only extract from pathname if we're on a route that should have these params
@@ -43,26 +43,37 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
   const [capturedPhoto, setCapturedPhoto] = useState(false);
   const [failedImages, setFailedImages] = useState(new Set());
   const [photosVersion, setPhotosVersion] = useState(0); // Increment on upload/delete to bust image cache
-  
+  const [selectedTerm, setSelectedTerm] = useState(term || 'First Term');
+
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const uploadFormRef = useRef(null);
 
+  // Update selectedTerm when URL term parameter changes
+  useEffect(() => {
+    if (term) {
+      setSelectedTerm(term);
+    }
+  }, [term]);
+
   // Normalize form level from URL param (convert to uppercase: "form-i" -> "FORM I")
   const normalizedLevel = formLevel
     ? formLevel.split('-').map(w => w.toUpperCase()).join(' ')
     : '';
-  
-  // Get academic year information for Form V/VI
-  const academicYearInfo = requiresSpecialAcademicYearLogic(normalizedLevel) ? getAcademicYearRange(parseInt(year)) : null;
-  const currentTermInfo = requiresSpecialAcademicYearLogic(normalizedLevel) ? getCurrentTerm() : null;
-  
-  // Get the correct year to use for API calls (ensures student continuity across terms)
-  const apiYear = getApiYearForFormVVI(parseInt(year), normalizedLevel);
+
+  // Check if this is Form V or VI
+  const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
+
+  // Use calendar year directly for Form V/VI (no academic year conversion)
+  // Form V First Term (Jul-Dec 2025) -> year 2025
+  // Form V Second Term (Jan-Jun 2026) -> year 2026
+  // Form VI First Term (Jul-Dec 2026) -> year 2026
+  // Form VI Second Term (Jan-Jun 2027) -> year 2027
+  const apiYear = year ? (typeof year === 'number' ? year : parseInt(year, 10)) : null;
   
   // Ensure year is a number for API calls - handle both string and number inputs
-  const yearNum = year ? (typeof year === 'number' ? year : parseInt(year, 10)) : null;
+  const yearNum = apiYear;
   
   // Validate that we have all required parameters
   // Must have formLevel, stream, and valid year
@@ -103,7 +114,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
   // Fetch students for this class - works for ALL forms (FORM I-VI) and ALL years
   // Students are sorted by name: first_name, then middle_name, then surname (A-Z)
   const { data: studentsData = [], isLoading, error: studentsError } = useQuery({
-    queryKey: ['students-photos', normalizedLevel, stream, apiYear],
+    queryKey: ['students-photos', normalizedLevel, stream, apiYear, selectedTerm],
     queryFn: async () => {
       if (!hasValidParams) {
         console.warn('PhotoManagement: Invalid params', {
@@ -122,7 +133,8 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
         console.log('PhotoManagement: Fetching students with params', {
           level: normalizedLevel,
           stream: stream,
-          year: apiYear
+          year: apiYear,
+          term: selectedTerm
         });
         // Normalize stream: ensure uppercase (backend expects uppercase)
         const normalizedStream = stream ? stream.trim().toUpperCase() : stream;
@@ -131,6 +143,9 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
           level: normalizedLevel,
           stream: normalizedStream,
           year: apiYear,
+          // For Form I-IV, don't filter by term - show all students for the year
+          // For Form V/VI, filter by term
+          ...(isFormVOrVI ? { term: selectedTerm } : {}),
         });
         const students = res.data.students || [];
         console.log(`PhotoManagement: Found ${students.length} students for ${normalizedLevel} ${stream} ${apiYear}`);
@@ -451,9 +466,10 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
         normalizedLevel,
         stream,
         yearNum,
-        currentMonth
+        currentMonth,
+        selectedTerm
       );
-      
+
       // Create blob URL and trigger download
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -464,7 +480,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success('Photo Entry Form downloaded successfully!');
     } catch (error) {
       console.error('Error downloading Photo Entry Form:', error);
@@ -480,30 +496,15 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
             <i className="fas fa-camera"></i>
             <span>
               Student Photos Management - {normalizedLevel} {stream} {yearNum}
-              {academicYearInfo && (
-                <span className="academic-year-info">
-                  <br />
-                  <small>Academic Year: {academicYearInfo.displayRange} ({academicYearInfo.fullDisplay})</small>
-                  {currentTermInfo && (
-                    <><br /><small>Current Term: {currentTermInfo.description}</small></>
-                  )}
-                </span>
-              )}
+              <select
+                value={selectedTerm}
+                onChange={(e) => setSelectedTerm(e.target.value)}
+                style={{ marginLeft: '10px', padding: '4px 8px', fontSize: '14px' }}
+              >
+                <option value="First Term">First Term (Jul-Dec)</option>
+                <option value="Second Term">Second Term (Jan-Jun)</option>
+              </select>
             </span>
-            {hasValidParams && students.length > 0 && (
-              <div className="header-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
-                <button
-                  onClick={handleDownloadPhotoEntryForm}
-                  className="excel-btn secondary small"
-                  title="Download Photo Entry Form PDF"
-                >
-                  <i className="fas fa-download"></i> Download Photo Entry Form
-                </button>
-                <Link to={getBackPath()} className="excel-btn secondary small">
-                  <i className="fas fa-arrow-left"></i> Back
-                </Link>
-              </div>
-            )}
           </div>
           <div className="photos-mgmt-card-body">
             {!hasValidParams ? (
@@ -605,6 +606,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                             <td>
                               <div className="action-buttons">
                                 <button
+                                  type="button"
                                   className="photo-btn small primary"
                                   onClick={() => openPhotoModal(student)}
                                   title="Add Photo"
@@ -614,6 +616,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                                 {photoFilename && !isImageFailed(photoFilename) && (
                                   <>
                                     <button
+                                      type="button"
                                       className="photo-btn small"
                                       onClick={() => openViewModal(student, photoFilename)}
                                       title="View Photo"
@@ -621,6 +624,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                                       <i className="fas fa-eye"></i> View
                                     </button>
                                     <button
+                                      type="button"
                                       className="photo-btn small danger"
                                       onClick={() => openDeleteModal(student)}
                                       title="Delete Photo"
@@ -643,6 +647,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                   <h3>Photo Entry Form</h3>
                   <p>Download a printable form with all student photos and information</p>
                   <button
+                    type="button"
                     className="download-btn"
                     onClick={handleDownloadPhotoEntryForm}
                   >
@@ -672,12 +677,14 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
               <div className="modal-body">
                 <div className="photo-upload-tabs">
                   <button
+                    type="button"
                     className={`tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('upload'); stopCamera(); }}
                   >
                     Upload File
                   </button>
                   <button
+                    type="button"
                     className={`tab-btn ${activeTab === 'camera' ? 'active' : ''}`}
                     onClick={() => {
                       setActiveTab('camera');
@@ -701,7 +708,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                         required
                       />
                       <small className="text-muted">
-                        Supported formats: PNG, JPG, JPEG, GIF, WebP (Max 5MB)
+                        Upload max 5MB. Photos are saved passport-style (35×45 mm proportions, ~413×531px) and compressed for reports and fast loading.
                       </small>
                     </div>
                     <div className="modal-actions">
@@ -737,17 +744,17 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                     </div>
                     <div className="modal-actions">
                       {!cameraStream && !capturedPhoto && (
-                        <button className="photo-btn primary" onClick={startCamera}>
+                        <button type="button" className="photo-btn primary" onClick={startCamera}>
                           <i className="fas fa-video"></i> Start Camera
                         </button>
                       )}
                       {cameraStream && !capturedPhoto && (
-                        <button className="photo-btn primary" onClick={capturePhoto}>
+                        <button type="button" className="photo-btn primary" onClick={capturePhoto}>
                           <i className="fas fa-camera"></i> Capture Photo
                         </button>
                       )}
                       {capturedPhoto && (
-                        <button className="photo-btn primary" onClick={saveCameraPhoto} disabled={uploadMutation.isPending}>
+                        <button type="button" className="photo-btn primary" onClick={saveCameraPhoto} disabled={uploadMutation.isPending}>
                           <i className="fas fa-save"></i> {uploadMutation.isPending ? 'Saving...' : 'Save Photo'}
                         </button>
                       )}

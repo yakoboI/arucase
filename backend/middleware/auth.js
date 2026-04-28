@@ -3,6 +3,20 @@
  */
 const jwt = require('jsonwebtoken');
 
+// Validate JWT secret key in production
+const validateJwtSecret = () => {
+  const secret = process.env.JWT_SECRET_KEY;
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction && (!secret || secret === 'dev-secret-key')) {
+    throw new Error('CRITICAL: JWT_SECRET_KEY must be set in production. Set a strong random secret key (32+ characters).');
+  }
+  
+  return secret || 'dev-secret-key';
+};
+
+const JWT_SECRET = validateJwtSecret();
+
 const requireAuth = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -17,7 +31,7 @@ const requireAuth = (req, res, next) => {
       return res.status(401).json({ message: 'Token not provided' });
     }
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'dev-secret-key');
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {
@@ -37,7 +51,11 @@ const requireRole = (...roles) => {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    if (!roles.includes(req.user.role)) {
+    // Case-insensitive role comparison
+    const userRole = (req.user.role || '').toLowerCase();
+    const normalizedRoles = roles.map(r => r.toLowerCase());
+    
+    if (!normalizedRoles.includes(userRole)) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
     
@@ -63,6 +81,7 @@ const requirePermission = (permission) => {
 module.exports = {
   requireAuth,
   requireRole,
-  requirePermission
+  requirePermission,
+  JWT_SECRET
 };
 

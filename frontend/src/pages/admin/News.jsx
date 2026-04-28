@@ -1,9 +1,9 @@
 /**
  * News & Announcements Management Page
  */
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './News.css';
@@ -11,13 +11,15 @@ import './News.css';
 const News = () => {
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({
+  const defaultFormData = useMemo(() => ({
     title: '',
     content: '',
     date: new Date().toISOString().split('T')[0],
     priority: 'normal',
     type: 'General Announcement',
-  });
+  }), []);
+
+  const [formData, setFormData] = useState(defaultFormData);
 
   // Fetch announcements
   const { data: announcements = [], isLoading } = useQuery({
@@ -51,13 +53,7 @@ const News = () => {
       queryClient.invalidateQueries(['announcements']);
       toast.success('Announcement published successfully!');
       setShowAddForm(false);
-      setFormData({
-        title: '',
-        content: '',
-        date: new Date().toISOString().split('T')[0],
-        priority: 'normal',
-        type: 'General Announcement',
-      });
+      setFormData(defaultFormData);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to save announcement');
@@ -78,27 +74,27 @@ const News = () => {
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim()) {
       toast.error('Title and content are required');
       return;
     }
     saveMutation.mutate(formData);
-  };
+  }, [formData, saveMutation]);
 
-  const handleDelete = (id) => {
+  const handleDelete = useCallback((id) => {
     if (window.confirm('Are you sure you want to delete this announcement?')) {
       deleteMutation.mutate(id);
     }
-  };
+  }, [deleteMutation]);
 
-  const getPriorityClass = (priority) => {
+  const getPriorityClass = useCallback((priority) => {
     const p = priority?.toLowerCase() || 'normal';
     if (p === 'high') return 'priority-high';
     if (p === 'low') return 'priority-low';
     return 'priority-normal';
-  };
+  }, []);
 
   return (
     <AdminLayout>

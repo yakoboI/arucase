@@ -5,28 +5,49 @@ import { Link, useParams } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
 import '../academic/MarksConfigTermSelection.css';
 
-const CommentsTermSelection = ({ formLevel, moduleName }) => {
+const CommentsTermSelection = ({ formLevel, moduleName, basePath }) => {
   const { year, stream } = useParams();
-  
-  const terms = ['Term I', 'Term II'];
+
+  const terms = ['First Term', 'Second Term'];
 
   const getBackPath = () => {
     const normalizedLevel = formLevel
       ? formLevel.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
       : '';
-    
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+
+    const isFormVOrVI = normalizedLevel.toUpperCase() === 'FORM V' || normalizedLevel.toUpperCase() === 'FORM VI';
+
+    // Use custom basePath if provided (e.g., for student registration)
+    if (basePath) {
+      if (isFormVOrVI) {
+        return `${basePath}/${formLevel}/stream/${stream}/years`;
+      } else {
+        return `${basePath}/${formLevel}/year/${year}/streams`;
+      }
+    }
+
+    if (isFormVOrVI) {
       return `/admin/${moduleName}/${formLevel}/stream/${stream}/years`;
     } else {
-      return `/admin/${moduleName}/${formLevel}/years`;
+      return `/admin/${moduleName}/${formLevel}/year/${year}/streams`;
     }
   };
 
   const getTermDetailPath = (term) => {
+    const encodedTerm = encodeURIComponent(term);
+    // Use custom basePath if provided (e.g., for student registration)
+    if (basePath) {
+      if (formLevel.includes('form-v') || formLevel.includes('form-vi')) {
+        return `${basePath}/${formLevel}/stream/${stream}/year/${year}/term/${encodedTerm}`;
+      } else {
+        return `${basePath}/${formLevel}/year/${year}/stream/${stream}/term/${encodedTerm}`;
+      }
+    }
+
     if (formLevel.includes('form-v') || formLevel.includes('form-vi')) {
-      return `/admin/${moduleName}/${formLevel}/stream/${stream}/year/${year}/term/${term}`;
+      return `/admin/${moduleName}/${formLevel}/stream/${stream}/year/${year}/term/${encodedTerm}`;
     } else {
-      return `/admin/${moduleName}/${formLevel}/year/${year}/stream/${stream}/term/${term}`;
+      return `/admin/${moduleName}/${formLevel}/year/${year}/stream/${stream}/term/${encodedTerm}`;
     }
   };
 

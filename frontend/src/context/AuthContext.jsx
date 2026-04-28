@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { Howl } from 'howler';
 
 const AuthContext = createContext(null);
 
@@ -15,6 +16,18 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Play logout sound directly using Howl
+  const playLogoutSound = () => {
+    const isMuted = localStorage.getItem('uiSoundsMuted') === 'true';
+    if (isMuted) return;
+
+    const logoutSound = new Howl({
+      src: ['/sounds/logout.mp3'],
+      volume: 0.3,
+    });
+    logoutSound.play();
+  };
+
   useEffect(() => {
     // Listen for logout events from API interceptor
     const handleLogout = () => {
@@ -26,8 +39,15 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in on mount and verify token before rendering protected content
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
+    const isLoginPage = window.location.pathname === '/login';
 
     if (!token || !savedUser) {
+      setLoading(false);
+      return () => window.removeEventListener('auth:logout', handleLogout);
+    }
+
+    // Avoid noisy /auth/me checks on login screen (especially double-run in StrictMode).
+    if (isLoginPage) {
       setLoading(false);
       return () => window.removeEventListener('auth:logout', handleLogout);
     }
@@ -120,15 +140,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    playLogoutSound();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
     window.location.href = '/login';
   };
 
-  const isAuthenticated = () => {
+  // Stable reference so SocketProvider (and others) don't re-run effects every AuthProvider render
+  const isAuthenticated = useCallback(() => {
     return !!user && !!localStorage.getItem('token');
-  };
+  }, [user]);
 
   const hasRole = (role) => {
     return user?.role === role;
@@ -211,7 +233,24 @@ export const AuthProvider = ({ children }) => {
     if (isAdminLike()) return true;
     const perms = getParsedPermissions();
     if (perms.class_subjects && Object.keys(perms.class_subjects).includes(className)) return true;
-    return (perms.classes || []).includes(className);
+    if ((perms.classes || []).includes(className)) return true;
+    
+    // For FORM V/VI, also check if user has any subject permissions for streams of that form
+    // This enables together mode access for users with subject permissions
+    if (className === 'FORM V' || className === 'FORM VI') {
+      const streams = ['PCB', 'PCM', 'CBG', 'HGL', 'HKL', 'EGM', 'HGE', 'PGM'];
+      for (const stream of streams) {
+        const streamClass = `${className} ${stream}`;
+        if (perms.class_subjects && perms.class_subjects[streamClass]) {
+          const subjects = perms.class_subjects[streamClass];
+          if (Array.isArray(subjects) && subjects.length > 0) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
   };
 
   /** True if user has the given module (admin/superadmin always have all). Used for registration, etc. */

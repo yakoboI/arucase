@@ -112,16 +112,6 @@
   border-color: #ff0000;
 }
 
-.social-icons a.facebook:hover {
-  background: #1877f2;
-  border-color: #1877f2;
-}
-
-.social-icons a.instagram:hover {
-  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-  border-color: #bc1888;
-}
-
 .social-icons a.email:hover {
   background: #ea4335;
   border-color: #ea4335;

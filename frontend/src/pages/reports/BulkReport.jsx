@@ -33,14 +33,14 @@ const BulkReport = () => {
 
   const handleFormClick = (form) => {
     if (form.hasStreams) {
-      navigate(`/reports/bulk/${form.code}/stream`);
+      navigate(`/reports/bulk/${encodeURIComponent(form.code)}/stream`);
     } else {
-      navigate(`/reports/bulk/${form.code}/${form.stream}/year`);
+      navigate(`/reports/bulk/${encodeURIComponent(form.code)}/${encodeURIComponent(form.stream)}/year`);
     }
   };
 
   const handleStreamClick = (formCode, stream) => {
-    navigate(`/reports/bulk/${formCode}/${stream}/year`);
+    navigate(`/reports/bulk/${encodeURIComponent(formCode)}/${encodeURIComponent(stream)}/year`);
   };
 
   // If we're on the stream selection route, show only streams for the selected form
@@ -67,6 +67,7 @@ const BulkReport = () => {
               <div className="streams-grid">
                 {selectedForm.streams.map((stream) => (
                   <button
+                    type="button"
                     key={stream}
                     onClick={() => handleStreamClick(selectedForm.code, stream)}
                     className="stream-card"
@@ -120,6 +121,7 @@ const BulkReport = () => {
                     <div className="streams-grid">
                       {form.streams.map((stream) => (
                         <button
+                          type="button"
                           key={stream}
                           onClick={() => handleStreamClick(form.code, stream)}
                           className="stream-card"
@@ -138,6 +140,7 @@ const BulkReport = () => {
                   </div>
                 ) : (
                   <button
+                    type="button"
                     key={form.code}
                     onClick={() => handleFormClick(form)}
                     className="form-card"

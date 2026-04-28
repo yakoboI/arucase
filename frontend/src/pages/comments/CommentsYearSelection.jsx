@@ -27,9 +27,6 @@ const CommentsYearSelection = ({ formLevel, moduleName }) => {
       'FORM III': 'form-iii',
       'FORM IV': 'form-iv',
     };
-    if (moduleName === 'promotion') {
-      return `/admin/${moduleName}/${formMap[formLevel]}/year/${year}/streams`;
-    }
     return `/admin/${moduleName}/${formMap[formLevel]}/year/${year}/streams`;
   };
 
@@ -45,7 +42,7 @@ const CommentsYearSelection = ({ formLevel, moduleName }) => {
             <div className="subjects-year-selection-grid">
               {years.map((year) => (
                 <Link
-                  key={year}
+                  key={`comments-${year}`}
                   to={getYearDetailPath(year)}
                   className="subjects-year-selection-card-item"
                   data-current-year={year === currentYear}

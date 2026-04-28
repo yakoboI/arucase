@@ -71,7 +71,7 @@ const ScoreEntryYearSelection = ({ formLevel }) => {
               <div className="year-selection-grid">
                 {years.map((year) => (
                   <Link
-                    key={year}
+                    key={`score-${year}`}
                     to={getYearDetailPath(year)}
                     className="year-selection-card-item"
                     aria-label={`${year} Score Entry`}

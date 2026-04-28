@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import api from '../../services/api';
@@ -139,6 +139,10 @@ const SubjectsManagement = ({ formLevel: formLevelProp, stream: streamProp }) =>
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['subjects', normalizedLevel, normalizedStream, year]);
+      // Also invalidate together mode cache for Form V/VI
+      if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+        queryClient.invalidateQueries(['subjects-together', normalizedLevel, year]);
+      }
       toast.success('Subject saved successfully!');
       closeModal();
     },
@@ -161,6 +165,10 @@ const SubjectsManagement = ({ formLevel: formLevelProp, stream: streamProp }) =>
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['subjects', normalizedLevel, normalizedStream, year]);
+      // Also invalidate together mode cache for Form V/VI
+      if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+        queryClient.invalidateQueries(['subjects-together', normalizedLevel, year]);
+      }
       toast.success('Subject deleted successfully!');
     },
     onError: (error) => {

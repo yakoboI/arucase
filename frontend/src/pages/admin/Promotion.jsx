@@ -3,6 +3,7 @@
  */
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './Promotion.css';
@@ -16,6 +17,12 @@ const Promotion = () => {
       return res.data.sessions || [];
     },
   });
+
+  // Memoize computed stats to prevent recalculation on every render
+  const totalPromoted = useMemo(() => 
+    sessions.reduce((sum, s) => sum + (s.promoted_count || 0), 0),
+    [sessions]
+  );
 
   return (
     <AdminLayout>
@@ -46,7 +53,7 @@ const Promotion = () => {
                   <div className="stat-card">
                     <i className="fas fa-users stat-icon"></i>
                     <div className="stat-content">
-                      <h3>{sessions.reduce((sum, s) => sum + (s.promoted_count || 0), 0)}</h3>
+                      <h3>{totalPromoted}</h3>
                       <p>Students Promoted</p>
                     </div>
                   </div>

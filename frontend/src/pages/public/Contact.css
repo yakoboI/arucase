@@ -4,57 +4,150 @@
   max-width: 100vw;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 2rem clamp(1rem, 4vw, 2rem);
+  padding: clamp(0.5rem, 2vw, 2rem);
   overflow-x: hidden;
 }
 
 .contact-page .home-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  padding: 0.75rem 1.5rem;
+  gap: clamp(0.375rem, 1vw, 0.5rem);
+  margin-bottom: clamp(1rem, 2.5vw, 2rem);
+  padding: clamp(0.625rem, 1.5vw, 0.75rem) clamp(1rem, 2.5vw, 1.5rem);
   background: #1a5490;
   color: white;
   text-decoration: none;
-  border-radius: 6px;
-  transition: background 0.2s;
+  border-radius: 0;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   font-weight: 500;
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  min-height: clamp(44px, 11vw, 48px);
 }
 
 .contact-page .home-button:hover {
   background: #2d7bc4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 84, 144, 0.3);
+}
+
+.contact-page .home-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(26, 84, 144, 0.2);
 }
 
 .contact-page .content-card {
   background: white;
-  border-radius: 8px;
-  padding: 2.5rem;
+  border-radius: 0;
+  padding: clamp(1rem, 3vw, 2.5rem);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Full width utilization on all screen sizes */
+@media (max-width: 768px) {
+  .contact-page .content-card {
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .contact-page {
+    padding: 0;
+  }
 }
 
 .contact-page .content-card h2 {
   color: #1a5490;
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
+  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
   font-weight: 700;
 }
 
 .contact-page .content-card h3 {
   color: #1a5490;
-  font-size: 1.75rem;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  margin-top: clamp(1.5rem, 3vw, 2rem);
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
   font-weight: 600;
 }
 
 .contact-page .content-card p {
   line-height: 1.8;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
   color: #374151;
-  font-size: 1.0625rem;
+  font-size: clamp(0.9375rem, 2.5vw, 1.0625rem);
+  white-space: pre-wrap;
+}
+
+.contact-page .content-card br {
+  display: block;
+  margin: 0.5rem 0;
+  content: "";
+}
+
+/* Extra small screens (< 375px) */
+@media (max-width: 374px) {
+  .contact-page {
+    padding: 0;
+  }
+
+  .contact-page .content-card {
+    padding: 0.75rem 0.5rem;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .contact-page .content-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .contact-page .content-card h3 {
+    font-size: 1.125rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .contact-page .content-card p {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .contact-info-box {
+    padding: 0.75rem;
+    margin: 0.75rem 0;
+  }
+
+  .contact-info-box p {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .contact-page .home-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 44px;
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Small screens (375px - 480px) */
+@media (min-width: 375px) and (max-width: 480px) {
+  .contact-page .content-card h2 {
+    font-size: 1.375rem;
+  }
+
+  .contact-page .content-card h3 {
+    font-size: 1.1875rem;
+  }
+
+  .contact-page .content-card p {
+    font-size: 0.9375rem;
+  }
 }
 
 .contact-info-box {
@@ -62,7 +155,7 @@
   border-left: 4px solid #1a5490;
   padding: 1.5rem;
   margin: 1.5rem 0;
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 .contact-info-box p {
@@ -121,7 +214,7 @@
   background: #1a5490;
   color: white;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 0;
   font-weight: 500;
   transition: background 0.2s;
 }
@@ -148,7 +241,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  border-radius: 0;
   text-decoration: none;
   color: white;
   font-weight: 500;
@@ -193,8 +286,8 @@
 
   .contact-page .content-card {
     padding: 1.25rem;
-    margin: 0 0.75rem;
-    border-radius: 12px;
+    margin: 0;
+    max-width: 100%;
   }
 
   .contact-page .content-card h2 {
@@ -256,7 +349,8 @@
 
   .contact-page .content-card {
     padding: 1.5rem;
-    margin: 0 1rem;
+    margin: 0;
+    max-width: 100%;
   }
 
   .map-button {
@@ -281,7 +375,8 @@
 @media (min-width: 640px) {
   .contact-page .content-card {
     padding: 2rem;
-    margin: 0 auto;
+    margin: 0;
+    max-width: 100%;
   }
 
   .social-links {
@@ -297,7 +392,7 @@
 
   .contact-page .content-card {
     padding: 2.5rem;
-    max-width: 900px;
+    max-width: 1200px;
   }
 
   .contact-page .content-card h2 {

@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import api from '../../services/api';
@@ -29,9 +29,24 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
   const normalizedLevel = formLevel
     ? formLevel.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     : '';
-  
+
+  // Check if this is Form V or VI
+  const isFormVOrVI = normalizedLevel.toUpperCase() === 'FORM V' || normalizedLevel.toUpperCase() === 'FORM VI';
+
   const normalizedStream = stream || 'NA';
-  const normalizedTerm = term || 'Term I';
+
+  // Normalize term to match backend format (First Term/Second Term)
+  const normalizeTerm = (termParam) => {
+    if (!termParam) return 'Term I';
+    const t = termParam.trim();
+    if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t)) return 'First Term';
+    if (/^Term\s+II$/i.test(t) || /^Term\s+2$/i.test(t)) return 'Second Term';
+    if (/^First\s+Term$/i.test(t)) return 'First Term';
+    if (/^Second\s+Term$/i.test(t)) return 'Second Term';
+    return t; // Return as-is if no match
+  };
+
+  const normalizedTerm = normalizeTerm(term);
 
   // 11 Evaluation Criteria
   const criteria = [
@@ -58,13 +73,13 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
       const firstNameB = String(b.first_name || '').toLowerCase().trim();
       const firstNameCompare = firstNameA.localeCompare(firstNameB, undefined, { sensitivity: 'base' });
       if (firstNameCompare !== 0) return firstNameCompare;
-      
+
       // If first names are equal, sort by middle_name
       const middleNameA = String(a.middle_name || '').toLowerCase().trim();
       const middleNameB = String(b.middle_name || '').toLowerCase().trim();
       const middleNameCompare = middleNameA.localeCompare(middleNameB, undefined, { sensitivity: 'base' });
       if (middleNameCompare !== 0) return middleNameCompare;
-      
+
       // If middle names are equal, sort by surname
       const surnameA = String(a.surname || '').toLowerCase().trim();
       const surnameB = String(b.surname || '').toLowerCase().trim();
@@ -74,12 +89,15 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
 
   // Fetch students for this class - sorted by name: first_name, then middle_name, then surname (A-Z)
   const { data: studentsData = [], isLoading: studentsLoading } = useQuery({
-    queryKey: ['students', normalizedLevel, normalizedStream, year],
+    queryKey: ['students', normalizedLevel, normalizedStream, year, ...(isFormVOrVI ? [normalizedTerm] : [])],
     queryFn: async () => {
       const res = await studentsAPI.getStudents({
         level: normalizedLevel,
         stream: normalizedStream,
         year: year,
+        // For Form I-IV, don't filter by term - show all students for the year
+        // For Form V/VI, filter by term
+        ...(isFormVOrVI ? { term: normalizedTerm } : {}),
       });
       const students = res.data.students || [];
       // Sort students by name: first_name, then middle_name, then surname (A-Z)
@@ -236,7 +254,7 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
   };
 
   const getBackPath = () => {
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+    if (isFormVOrVI) {
       return `/admin/tabia-mwenendo/${formLevel}/stream/${stream}/year/${year}/terms`;
     } else {
       return `/admin/tabia-mwenendo/${formLevel}/year/${year}/stream/${stream}/terms`;
@@ -244,8 +262,8 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
   };
 
   const getOtherTermPath = () => {
-    const otherTerm = normalizedTerm === 'Term I' ? 'Term II' : 'Term I';
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+    const otherTerm = normalizedTerm === 'First Term' ? 'Second Term' : 'First Term';
+    if (isFormVOrVI) {
       return `/admin/tabia-mwenendo/${formLevel}/stream/${stream}/year/${year}/term/${otherTerm}`;
     } else {
       return `/admin/tabia-mwenendo/${formLevel}/year/${year}/stream/${stream}/term/${otherTerm}`;
@@ -254,7 +272,7 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
 
   // Link to registration actions for this class so user can add students for this level/stream/year
   const getRegisterStudentsPath = () => {
-    if (normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI') {
+    if (isFormVOrVI) {
       return `/admin/students/registration/${formLevel}/stream/${stream}/year/${year}/actions`;
     }
     return `/admin/students/registration/${formLevel}/year/${year}/stream/${stream}/actions`;
@@ -263,7 +281,9 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
   // Calculate student index (position in sorted list)
   const getStudentIndex = (student) => {
     const sortedStudents = sortStudentsByName(students);
-    return sortedStudents.findIndex(s => s.adm_no === student.adm_no).toString();
+    return sortedStudents.findIndex(
+      (s) => String(s.adm_no) === String(student.adm_no)
+    ).toString();
   };
 
   const csvEscape = (val) => {
@@ -522,7 +542,7 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
                     <i className="fas fa-save"></i> {saveEvaluationsMutation.isLoading ? 'Saving...' : 'Save All Evaluations'}
                   </button>
                   <Link to={getOtherTermPath()} className="excel-btn secondary">
-                    <i className="fas fa-exchange-alt"></i> Switch to {normalizedTerm === 'Term I' ? 'Term II' : 'Term I'}
+                    <i className="fas fa-exchange-alt"></i> Switch to {normalizedTerm === 'First Term' ? 'Second Term' : 'First Term'}
                   </Link>
                 </div>
 
