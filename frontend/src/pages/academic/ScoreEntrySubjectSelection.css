@@ -148,6 +148,13 @@
   overflow-wrap: break-word;
 }
 
+/* iPad / tablet layout */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .score-entry-subject-selection-page-container .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* Smartphone layout */
 @media (max-width: 768px) {
   .score-entry-subject-selection-page-container {
@@ -184,7 +191,7 @@
   }
 
   .score-entry-subject-selection-page-container .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: clamp(0.375rem, 1vw, 0.5rem);
   }
 

@@ -99,8 +99,9 @@ const Gallery = ({ photos = [], limit = 12 }) => {
             <button
               className="lightbox-close"
               onClick={() => setSelectedPhoto(null)}
+              aria-label="Close"
             >
-              ×
+              <i className="fas fa-times"></i>
             </button>
             <img 
               src={getImageUrl(selectedPhoto.path)} 

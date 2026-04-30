@@ -28,8 +28,15 @@ const Staff = () => {
 
   const { data: settings } = useQuery({
     queryKey: ['homepage-settings'],
-    queryFn: () => publicAPI.getHomepage(),
-    select: (res) => res.data?.settings,
+    queryFn: async () => {
+      try {
+        const res = await publicAPI.getHomepage();
+        return res.data?.settings;
+      } catch (err) {
+        console.error('Error fetching staff settings:', err);
+        return {};
+      }
+    },
     staleTime: 15 * 60 * 1000, // 15 minutes - settings rarely change
   });
 

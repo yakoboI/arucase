@@ -243,7 +243,14 @@
   }
 
   .individual-score-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* iPad / tablet layout */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .individual-score-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 

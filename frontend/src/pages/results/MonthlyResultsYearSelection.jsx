@@ -8,7 +8,7 @@ import '../academic/SubjectsYearSelection.css';
 const MonthlyResultsYearSelection = ({ formLevel }) => {
   const currentYear = new Date().getFullYear();
   
-  const startYear = 2025;
+  const startYear = currentYear - 10;
   const endYear = currentYear + 3;
   const years = [];
   for (let i = startYear; i <= endYear; i++) {

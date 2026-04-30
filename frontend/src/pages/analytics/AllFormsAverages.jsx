@@ -777,9 +777,9 @@ const AllFormsAverages = () => {
                                         const data = chart.data;
                                         if (data.labels.length && data.datasets.length) {
                                           const dataset = data.datasets[0];
-                                          const total = dataset.data.reduce((a, b) => a + b, 0);
+                                          const total = dataset.data.reduce((a, b) => (a || 0) + (b || 0), 0);
                                           return data.labels.map((label, i) => {
-                                            const value = dataset.data[i];
+                                            const value = dataset.data[i] || 0;
                                             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                             return {
                                               text: `${label}: ${value} (${percentage}%)`,
@@ -800,9 +800,9 @@ const AllFormsAverages = () => {
                                       label: function(context) {
                                         const label = context.label || '';
                                         const value = context.parsed || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const total = context.dataset.data.reduce((a, b) => (a || 0) + (b || 0), 0);
                                         const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                        return `${label}: ${value} students (${percentage}%)`;
+                                        return `${label}: ${value || 0} students (${percentage}%)`;
                                       },
                                     },
                                   },

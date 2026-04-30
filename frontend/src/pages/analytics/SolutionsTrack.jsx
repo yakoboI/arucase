@@ -297,7 +297,7 @@ const SolutionsTrack = () => {
                   }}
                   className="filter-input"
                   placeholder="All years"
-                  min="2020"
+                  min={new Date().getFullYear() - 10}
                   max={new Date().getFullYear() + 5}
                 />
               </div>

@@ -142,8 +142,27 @@
   font-weight: 500;
 }
 
-/* Tablet and larger screens */
-@media (min-width: 640px) {
+/* Smartphone layout */
+@media (max-width: 768px) {
+  .comments-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(0.375rem, 1vw, 0.5rem);
+  }
+
+  .comments-form-card {
+    min-height: clamp(85px, 22vw, 120px);
+    padding: clamp(0.625rem, 2vw, 1rem);
+    border-radius: 8px;
+  }
+
+  .comments-card-header {
+    padding: clamp(0.5rem, 1.5vw, 0.75rem);
+    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+  }
+}
+
+/* iPad / tablet layout */
+@media (min-width: 769px) and (max-width: 1024px) {
   .comments-landing-page-container {
     padding: clamp(0.75rem, 2vw, 1rem);
   }
@@ -174,7 +193,26 @@
 }
 
 /* Desktop screens */
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
+  .comments-landing-page-container {
+    padding: clamp(0.75rem, 2vw, 1rem);
+  }
+
+  .comments-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .comments-card-header {
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 0;
+    position: relative;
+    top: auto;
+  }
+
   .comments-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: clamp(1rem, 2vw, 1.5rem);
@@ -183,14 +221,6 @@
   .comments-form-card {
     min-height: 160px;
     padding: clamp(1rem, 2vw, 1.5rem);
-  }
-}
-
-/* Large desktop screens */
-@media (min-width: 1280px) {
-  .comments-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: clamp(1rem, 2vw, 1.5rem);
   }
 }
 
@@ -209,36 +239,6 @@
 
   .comments-form-icon {
     font-size: clamp(1.5rem, 5vw, 2rem);
-  }
-}
-
-/* Landscape mobile orientation */
-@media (max-width: 768px) and (orientation: landscape) {
-  .comments-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .comments-form-card {
-    min-height: clamp(90px, 20vw, 120px);
-  }
-}
-
-/* Extra small devices */
-@media (max-width: 480px) {
-  .comments-grid {
-    grid-template-columns: 1fr;
-    gap: clamp(0.375rem, 1vw, 0.5rem);
-  }
-
-  .comments-form-card {
-    min-height: clamp(85px, 22vw, 120px);
-    padding: clamp(0.625rem, 2vw, 1rem);
-    border-radius: 8px;
-  }
-
-  .comments-card-header {
-    padding: clamp(0.5rem, 1.5vw, 0.75rem);
-    font-size: clamp(0.75rem, 2.5vw, 0.875rem);
   }
 }
 

@@ -2,13 +2,14 @@
  * Monthly Results Management Page
  * Displays and manages monthly test results with automatic calculation
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import { adminAPI } from '../../services/admin';
+import { useAuth } from '../../context/AuthContext';
 import './MonthlyResultsManagement.css';
 
 const MonthlyResultsManagement = ({ formLevel }) => {
@@ -63,7 +64,8 @@ const MonthlyResultsManagement = ({ formLevel }) => {
   };
 
   // Check authentication before making queries
-  const isAuthenticated = !!localStorage.getItem('token');
+  const { isAuthenticated: isAuth } = useAuth();
+  const isAuthenticated = isAuth();
 
   // Fetch students for this class
   const { data: students = [], isLoading: studentsLoading } = useQuery({
@@ -350,7 +352,7 @@ const MonthlyResultsManagement = ({ formLevel }) => {
       deleteResultMutation.mutate({
         level: normalizedLevel,
         stream: normalizedStream,
-        year: year,
+        year: parseInt(year),
         month: month,
         student_index: studentIndex,
       });
@@ -375,10 +377,16 @@ const MonthlyResultsManagement = ({ formLevel }) => {
     }
   };
 
-  // Calculate student index (position in sorted list by adm_no)
+  // Memoize student index map to avoid O(n²) recalculations
+  const studentIndexMap = useMemo(() => {
+    const sorted = [...students].sort((a, b) => a.adm_no.localeCompare(b.adm_no));
+    const map = {};
+    sorted.forEach((s, i) => { map[s.adm_no] = i.toString(); });
+    return map;
+  }, [students]);
+
   const getStudentIndex = (student) => {
-    const sortedStudents = [...students].sort((a, b) => a.adm_no.localeCompare(b.adm_no));
-    return sortedStudents.findIndex(s => s.adm_no === student.adm_no).toString();
+    return studentIndexMap[student.adm_no] || '0';
   };
 
   // Format subject scores:

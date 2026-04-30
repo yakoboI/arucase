@@ -88,10 +88,10 @@
   text-decoration: none;
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 599px) {
+/* Smartphone layout */
+@media (max-width: 768px) {
   .parish-stream-selection-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
   
@@ -100,13 +100,8 @@
   }
 }
 
-@media (min-width: 600px) and (max-width: 767px) {
-  .parish-stream-selection-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 768px) {
+/* iPad / tablet layout */
+@media (min-width: 769px) and (max-width: 1024px) {
   .parish-stream-selection-grid {
     grid-template-columns: repeat(3, 1fr);
   }

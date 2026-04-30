@@ -13,9 +13,16 @@ const FAQs = ({ faqs: propFAQs = [], limit = 5 }) => {
   // Fetch FAQs if not provided
   const { data: fetchedData } = useQuery({
     queryKey: ['faqs'],
-    queryFn: () => publicAPI.getFAQs(),
+    queryFn: async () => {
+      try {
+        const res = await publicAPI.getFAQs();
+        return res.data?.faqs || [];
+      } catch (err) {
+        console.error('Error fetching FAQs:', err);
+        return [];
+      }
+    },
     enabled: propFAQs.length === 0,
-    select: (res) => res.data?.faqs || [],
     staleTime: 10 * 60 * 1000,
   });
 

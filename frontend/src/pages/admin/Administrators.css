@@ -546,26 +546,54 @@
     display: none !important;
   }
 
-  /* Show mobile card list */
+  /* Show mobile card list as grid */
   .administrators-page .admin-mobile-list {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
     width: 100%;
   }
 
   .administrators-page .admin-mobile-card {
-    padding: clamp(1rem, 3vw, 1.25rem);
+    padding: clamp(0.75rem, 2vw, 1rem);
+    margin-bottom: 0;
+  }
+
+  .administrators-page .admin-mobile-card-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .administrators-page .admin-mobile-photo,
+  .administrators-page .admin-mobile-photo-placeholder {
+    width: 48px;
+    height: 48px;
+  }
+
+  .administrators-page .admin-mobile-name {
+    font-size: 0.9375rem;
+  }
+
+  .administrators-page .admin-mobile-title {
+    font-size: 0.875rem;
+  }
+
+  .administrators-page .admin-mobile-year {
+    font-size: 0.8125rem;
   }
 
   .administrators-page .admin-mobile-card-actions {
     gap: 0.5rem;
+    flex-direction: column;
   }
 
   .administrators-page .admin-action-btn {
-    min-height: 44px;
-    padding: 0.6rem 1rem;
-    font-size: 0.9375rem;
-    flex: 1;
-    min-width: 0;
+    min-height: 36px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    width: 100%;
     justify-content: center;
     -webkit-tap-highlight-color: transparent;
   }
@@ -707,8 +735,53 @@
   }
 }
 
+/* iPad / tablet layout - 3 column grid */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .administrators-page .admin-table-container {
+    display: none !important;
+  }
+
+  .administrators-page .admin-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .administrators-page .admin-mobile-card {
+    padding: 1rem;
+    margin-bottom: 0;
+  }
+
+  .administrators-page .admin-mobile-card-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .administrators-page .admin-mobile-photo,
+  .administrators-page .admin-mobile-photo-placeholder {
+    width: 56px;
+    height: 56px;
+  }
+
+  .administrators-page .admin-mobile-card-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .administrators-page .admin-action-btn {
+    flex: 1;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
 /* Desktop: hide mobile list */
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
   .administrators-page .admin-mobile-list {
     display: none !important;
   }

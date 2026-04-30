@@ -134,8 +134,33 @@
   line-height: 1.4;
 }
 
-/* Tablet and larger screens */
-@media (min-width: 640px) {
+/* Smartphone layout */
+@media (max-width: 768px) {
+  .marks-config-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(0.75rem, 2vw, 1rem);
+  }
+
+  .marks-config-form-card {
+    min-height: clamp(120px, 28vw, 150px);
+    padding: clamp(1.25rem, 3.5vw, 1.5rem);
+  }
+}
+
+/* iPad / tablet layout */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .marks-config-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .marks-config-form-card {
+    min-height: 180px;
+  }
+}
+
+/* Desktop screens */
+@media (min-width: 1025px) {
   .marks-config-page-container {
     padding: clamp(1rem, 3vw, 1.5rem);
   }
@@ -155,32 +180,12 @@
 
   .marks-config-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-  }
-
-  .marks-config-form-card {
-    min-height: 180px;
-  }
-}
-
-/* Desktop screens */
-@media (min-width: 1024px) {
-  .marks-config-grid {
-    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
   }
 
   .marks-config-form-card {
     min-height: 200px;
     padding: 2rem;
-  }
-}
-
-/* Large desktop screens */
-@media (min-width: 1280px) {
-  .marks-config-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
   }
 }
 
@@ -198,30 +203,6 @@
 
   .marks-config-form-icon {
     font-size: clamp(2rem, 7vw, 2.5rem);
-  }
-}
-
-/* Landscape mobile orientation */
-@media (max-width: 768px) and (orientation: landscape) {
-  .marks-config-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .marks-config-form-card {
-    min-height: clamp(120px, 25vw, 160px);
-  }
-}
-
-/* Extra small devices */
-@media (max-width: 480px) {
-  .marks-config-grid {
-    grid-template-columns: 1fr;
-    gap: clamp(0.75rem, 2vw, 1rem);
-  }
-
-  .marks-config-form-card {
-    min-height: clamp(120px, 28vw, 150px);
-    padding: clamp(1.25rem, 3.5vw, 1.5rem);
   }
 }
 

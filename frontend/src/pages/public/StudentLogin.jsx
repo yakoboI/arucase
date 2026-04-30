@@ -84,8 +84,8 @@ const StudentLogin = () => {
                     className="form-input"
                     placeholder="Year"
                     required
-                    min="2020"
-                    max="2030"
+                    min={new Date().getFullYear() - 10}
+                    max={new Date().getFullYear() + 5}
                   />
                 </div>
               </div>

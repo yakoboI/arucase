@@ -76,7 +76,7 @@ const HomePage = () => {
     ? data.data 
     : data || {};
   
-  const { settings, gallery_photos, faqs, administrators, announcements } = actualData;
+  const { settings, gallery_photos, administrators } = actualData;
 
   // Filter out failed images from carousel
   const validGalleryPhotos = useMemo(() => {
@@ -125,7 +125,7 @@ const HomePage = () => {
     } catch (err) {
       console.error('Error setting up carousel rotation:', err);
     }
-  }, [validGalleryPhotos.length]);
+  }, [validGalleryPhotos]);
 
   // Close modal on Escape (VP-style "click to view")
   useEffect(() => {

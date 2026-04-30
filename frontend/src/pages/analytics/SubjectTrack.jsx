@@ -18,6 +18,8 @@ import {
 } from '../../utils/analyticsUtils';
 import './AnalyticsTrack.css';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const SubjectTrack = () => {
   const { form } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,7 +71,7 @@ const SubjectTrack = () => {
         return yearNum;
       }
     }
-    return new Date().getFullYear();
+    return CURRENT_YEAR;
   });
 
   // Update URL params when filters change
@@ -192,10 +194,10 @@ const SubjectTrack = () => {
                   value={selectedYear}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setSelectedYear(value ? parseInt(value) : new Date().getFullYear());
+                    setSelectedYear(value ? parseInt(value) : CURRENT_YEAR);
                   }}
                   className="filter-input"
-                  min="2020"
+                  min={new Date().getFullYear() - 10}
                   max={new Date().getFullYear() + 5}
                 />
               </div>

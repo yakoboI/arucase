@@ -12,10 +12,17 @@ import './Contact.css';
 const Contact = () => {
   const lang = getPreferredLanguage();
   const tt = createT(lang);
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading, isError } = useQuery({
     queryKey: ['homepage'],
-    queryFn: () => publicAPI.getHomepage(),
-    select: (res) => res.data?.settings,
+    queryFn: async () => {
+      try {
+        const res = await publicAPI.getHomepage();
+        return res.data?.settings;
+      } catch (err) {
+        console.error('Error fetching contact settings:', err);
+        return {};
+      }
+    },
     staleTime: 10 * 60 * 1000,
   });
 

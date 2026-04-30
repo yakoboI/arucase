@@ -157,9 +157,10 @@
   }
 }
 
-@media (max-width: 480px) {
+/* iPad / tablet layout */
+@media (min-width: 769px) and (max-width: 1024px) {
   .score-entry-month-selection-page-container .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
