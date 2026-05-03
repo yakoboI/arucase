@@ -1591,10 +1591,28 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     const schoolFullName = 'CATHOLIC ARCHDIOCESE OF ARUSHA';
     const contactInfo = 'P.O BOX 3102 Arusha, Tanzania\n+255 754 92 60 22 / +255 765 394 802\nEmail: arucase@gmail.com';
     
-    // Determine test type
-    const testType = normalizedMonth === 'February' || normalizedMonth === 'March' || normalizedMonth === 'April' || normalizedMonth === 'May' 
-      ? 'TERM I' 
-      : 'TERM II';
+    // Determine test type based on month and form level (same logic as frontend)
+    const isALevel = normalizedLevel.includes('FORM V') || normalizedLevel.includes('FORM VI');
+    const getTestType = (month, level) => {
+      const testTypes = {
+        'February': 'MONTHLY',
+        'March': 'MIDTERM',
+        'April': 'MONTHLY',
+        'May': isALevel ? 'ANNUAL' : 'TERMINAL',
+        'June': 'MONTHLY',
+        'July': 'MONTHLY',
+        'August': 'MONTHLY',
+        'September': 'MIDTERM',
+        'October': 'MONTHLY',
+        'November': isALevel ? 'TERMINAL' : 'ANNUAL',
+        'December': 'MONTHLY',
+        'January': 'MONTHLY'
+      };
+      return testTypes[month] || 'MONTHLY';
+    };
+    const testTypeRaw = getTestType(normalizedMonth, normalizedLevel);
+    // Format: MIDTERM -> MIDTERM RESULTS (no "TEST" in output)
+    const testType = testTypeRaw + ' RESULTS';
     
     // Helper function to escape HTML
     const escapeHtml = (text) => {
@@ -1813,7 +1831,7 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     </div>
   </div>
   <div class="test-info-bar">
-    ${normalizedLevel} ${normalizedStream} ${normalizedYear} ${testType} ${normalizedMonth.toUpperCase()} ${normalizedYear}
+    ${normalizedLevel} ${testType} ${normalizedMonth.toUpperCase()} ${normalizedYear}
   </div>
   <table class="compact-results-table">
     <thead>
@@ -1822,8 +1840,7 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
         <th class="text-left">F.Name</th>
         <th class="text-left">M.Name</th>
         <th class="text-left">Surname</th>`;
-    
-    const isALevel = normalizedLevel.includes('FORM V') || normalizedLevel.includes('FORM VI');
+
     const formatALevelSubjectHeader = (label) => {
       const s = String(label || '').trim();
       if (!s) return s;

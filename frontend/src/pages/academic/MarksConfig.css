@@ -56,7 +56,7 @@
 .marks-config-form-card {
   background: white;
   border: 2px solid rgba(255, 255, 255, 0.8);
-  border-radius: 12px;
+  border-radius: 0;
   padding: clamp(1.5rem, 4vw, 2rem);
   text-align: center;
   text-decoration: none;

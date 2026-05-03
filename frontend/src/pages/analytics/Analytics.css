@@ -27,7 +27,7 @@
 /* Excel Card Styles */
 .excel-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
@@ -81,7 +81,7 @@
 .form-card {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 2rem;
   text-align: center;
   cursor: pointer;
@@ -136,7 +136,7 @@
   padding: 0.25rem 0.75rem;
   background: var(--gray-900, #1f2328);
   color: white;
-  border-radius: 12px;
+  border-radius: 0;
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -152,7 +152,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transition: all 0.3s ease;
 }

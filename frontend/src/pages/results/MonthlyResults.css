@@ -65,7 +65,7 @@
 .stat-card {
   background: white;
   border: none;
-  border-radius: 16px;
+  border-radius: 0;
   padding: clamp(1.25rem, 3vw, 1.5rem);
   text-align: center;
   text-decoration: none !important;
@@ -92,7 +92,7 @@
   transform: scaleX(0);
   transition: transform 0.3s ease;
   transform-origin: left;
-  border-radius: 16px 16px 0 0;
+  border-radius: 0;
 }
 
 .stat-card:hover,

@@ -82,7 +82,7 @@
   margin-bottom: clamp(1rem, 3vw, 1.5rem);
   padding: clamp(0.75rem, 2vw, 1rem);
   background: rgba(249, 250, 251, 0.8);
-  border-radius: 12px;
+  border-radius: 0;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -90,7 +90,7 @@
 .info-item {
   padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
   background: rgba(249, 250, 251, 0.6);
-  border-radius: 8px;
+  border-radius: 0;
   font-size: clamp(0.75rem, 2vw, 13px);
   border: none;
 }
@@ -156,7 +156,7 @@
   object-fit: contain;
   object-position: center;
   border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: 0;
   background: white;
   padding: 4px;
   box-sizing: border-box;
@@ -172,7 +172,7 @@
   background: #f3f4f6;
   font-size: clamp(1.25rem, 3vw, 1.5rem);
   color: #6b7280;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }

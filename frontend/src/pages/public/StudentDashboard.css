@@ -33,7 +33,7 @@
   margin-bottom: 2rem;
   padding: 1.75rem 2rem;
   background: white;
-  border-radius: 16px;
+  border-radius: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 100%;
@@ -53,7 +53,7 @@
   align-items: center;
   justify-content: center;
   background: #f1f5f9;
-  border-radius: 6px;
+  border-radius: 0;
   color: #94a3b8;
   font-size: 2rem;
   position: relative;
@@ -67,7 +67,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 0;
   display: block !important;
   border: none;
   margin: 0;
@@ -120,7 +120,7 @@
   background: #ef4444;
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 0;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -139,7 +139,7 @@
 .months-selection,
 .results-view {
   background: white;
-  border-radius: 16px;
+  border-radius: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   padding: 2.5rem;
   width: 100%;
@@ -155,7 +155,7 @@
   margin-bottom: 1.75rem;
   padding: 1rem 1.25rem;
   background: #f8fafc;
-  border-radius: 12px;
+  border-radius: 0;
   border: 1px solid #e2e8f0;
 }
 
@@ -167,7 +167,7 @@
 
 .report-year-select {
   padding: 0.5rem 2rem 0.5rem 0.75rem;
-  border-radius: 8px;
+  border-radius: 0;
   border: 1px solid #cbd5e1;
   background: white;
   /* 16px+ prevents iOS zoom-on-focus */
@@ -189,7 +189,7 @@
 
 .report-term-btn {
   padding: 0.65rem 1.35rem;
-  border-radius: 10px;
+  border-radius: 0;
   border: 2px solid #e2e8f0;
   background: white;
   font-size: 0.9375rem;
@@ -276,7 +276,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 14px;
+  border-radius: 0;
   color: white;
   font-size: 1.5rem;
   flex-shrink: 0;
@@ -313,7 +313,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  border-radius: 14px;
+  border-radius: 0;
   color: white;
   font-size: 1.5rem;
   flex-shrink: 0;
@@ -375,7 +375,7 @@
   padding: 1.5rem;
   background: #f9fafb;
   border: none;
-  border-radius: 12px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s;
   width: 100%;
@@ -396,7 +396,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 12px;
+  border-radius: 0;
   font-size: 1.5rem;
   flex-shrink: 0;
 }
@@ -447,7 +447,7 @@
   background: #667eea;
   color: #000000 !important;
   border: none;
-  border-radius: 10px;
+  border-radius: 0;
   font-size: 0.9375rem;
   font-weight: 700;
   cursor: pointer;
@@ -498,7 +498,7 @@
   margin-bottom: 2.5rem;
   padding: 2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
+  border-radius: 0;
   color: white;
 }
 
@@ -515,7 +515,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 0;
   font-size: 1.5rem;
   flex-shrink: 0;
 }
@@ -583,7 +583,7 @@
   gap: 1.25rem;
   padding: 1.5rem 2rem;
   background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  border-radius: 12px;
+  border-radius: 0;
   color: white;
   margin-bottom: 2.5rem;
 }

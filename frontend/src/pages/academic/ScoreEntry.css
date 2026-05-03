@@ -11,7 +11,7 @@
 
 .individual-score-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   width: 100%;

@@ -8,7 +8,7 @@
 
 .subjects-year-selection-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   margin-bottom: 1rem;
@@ -40,7 +40,7 @@
 .subjects-year-selection-card-item {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: clamp(0.875rem, 2vw, 1.25rem);
   text-align: center;
   text-decoration: none;
@@ -103,7 +103,7 @@
   background: #6b7280;
   color: white;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 0;
   transition: background 0.2s;
   font-size: clamp(0.75rem, 1.8vw, 0.875rem);
   min-height: 36px;

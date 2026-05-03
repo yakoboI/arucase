@@ -7,7 +7,7 @@
 .mute-toggle-btn {
   background: #ffffff;
   border: 2px solid #01a72b;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 8px 16px;
   cursor: pointer;
   font-size: 1rem;
@@ -44,7 +44,7 @@
   height: 48px;
   border: 4px solid #e2e8f0;
   border-top-color: #01a72b;
-  border-radius: 50%;
+  border-radius: 0;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }

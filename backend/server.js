@@ -323,6 +323,7 @@ const adminRoutes = require('./routes/admin');
 const studentRoutes = require('./routes/students');
 const reportRoutes = require('./routes/reports');
 const analyticsRoutes = require('./routes/analytics');
+const dtaMonitorRoutes = require('./routes/dtaMonitor');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
@@ -330,6 +331,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/dta-monitor', dtaMonitorRoutes);
 
 // Socket.IO authentication middleware
 io.use((socket, next) => {

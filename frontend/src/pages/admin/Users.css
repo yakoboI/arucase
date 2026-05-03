@@ -13,7 +13,7 @@
 
 .admin-table-container {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
@@ -22,7 +22,7 @@
   text-align: center;
   padding: 4rem 2rem;
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -295,7 +295,7 @@
   padding: 0.25rem 0.625rem;
   background: #e0e7ff;
   color: #3730a3;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: clamp(0.6875rem, 1.5vw, 0.75rem);
   font-weight: 500;
   white-space: nowrap;
@@ -525,7 +525,7 @@
 
 .modal-content {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;

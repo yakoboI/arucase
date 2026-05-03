@@ -292,7 +292,7 @@ const getStreamsForSubject = (subjectCode) => {
 router.get('/', async (req, res) => {
   try {
     const { level, stream, year, term, search, subject_code } = req.query;
-    let queryText = 'SELECT adm_no, first_name, middle_name, surname, sex, level, stream, year, term FROM students WHERE 1=1';
+    let queryText = 'SELECT adm_no, first_name, middle_name, surname, sex, level, stream, year, term, com FROM students WHERE 1=1';
     const params = [];
     let paramCount = 1;
     
@@ -431,7 +431,7 @@ router.get('/export', async (req, res) => {
     
     // Fetch students (select only needed columns)
     const result = await query(
-      'SELECT adm_no, first_name, middle_name, surname, sex, year FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
+      'SELECT adm_no, first_name, middle_name, surname, sex, year, com FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
       [level, normalizedStream, parseInt(year)]
     );
     
@@ -527,7 +527,7 @@ router.get('/scores/template', async (req, res) => {
     let studentsResult;
     // Handle ALL stream mode (together mode) - fetch students from all streams
     if (normalizedStream === 'ALL') {
-      let queryText = 'SELECT adm_no, first_name, middle_name, surname, stream FROM students WHERE level = $1 AND year = $2';
+      let queryText = 'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND year = $2';
       let queryParams = [normalizedLevel, yearNum];
       
       // Add term filtering for Form V/VI together mode
@@ -541,12 +541,12 @@ router.get('/scores/template', async (req, res) => {
       studentsResult = await query(queryText, queryParams);
     } else if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
       studentsResult = await query(
-        'SELECT adm_no, first_name, middle_name, surname, stream FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC',
+        'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC',
         [normalizedLevel, 'A', 'NA', yearNum]
       );
     } else {
       // Normal mode (specific stream) - add term filtering for Form V/VI
-      let queryText = 'SELECT adm_no, first_name, middle_name, surname, stream FROM students WHERE level = $1 AND stream = $2 AND year = $3';
+      let queryText = 'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND stream = $2 AND year = $3';
       let queryParams = [normalizedLevel, normalizedStream, yearNum];
       
       // Add term filtering for Form V/VI normal mode
@@ -2311,6 +2311,42 @@ router.post('/:admNo/scores', async (req, res) => {
       }
     }
 
+    // DTA Monitor: Check if score already exists to detect changes
+    const existingScoreResult = await query(
+      'SELECT score FROM individual_scores WHERE level = $1 AND stream = $2 AND year = $3 AND month = $4 AND subject_code = $5 AND adm_no = $6',
+      [level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, admNo]
+    );
+    const oldScore = existingScoreResult.rows.length > 0 ? existingScoreResult.rows[0].score : null;
+    const isModification = oldScore !== null;
+
+    // Get student name for audit log
+    let studentName = 'Unknown';
+    try {
+      const studentInfoResult = await query(
+        'SELECT first_name, surname FROM students WHERE adm_no = $1 LIMIT 1',
+        [admNo]
+      );
+      if (studentInfoResult.rows.length > 0) {
+        studentName = `${studentInfoResult.rows[0].first_name} ${studentInfoResult.rows[0].surname}`;
+      }
+    } catch (studentInfoError) {
+      // If student lookup fails, use 'Unknown'
+    }
+
+    // Get subject name for audit log
+    let subjectName = scoreSubjectCode;
+    try {
+      const subjectInfoResult = await query(
+        'SELECT subject_name FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 AND subject_code = $4 LIMIT 1',
+        [level, actualStream, yearNum, scoreSubjectCode]
+      );
+      if (subjectInfoResult.rows.length > 0 && subjectInfoResult.rows[0].subject_name) {
+        subjectName = subjectInfoResult.rows[0].subject_name;
+      }
+    } catch (subjectInfoError) {
+      // If subject lookup fails, use subject_code
+    }
+
     const insertScore = () => query(
       `INSERT INTO individual_scores (level, stream, year, month, subject_code, adm_no, score)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -2318,24 +2354,72 @@ router.post('/:admNo/scores', async (req, res) => {
        DO UPDATE SET score = EXCLUDED.score, updated_at = NOW()`,
       [level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, admNo, scoreNum]
     );
-    
-    try {
-      await insertScore();
-    } catch (insertError) {
-      // Sequence out of sync: id sequence returned a value that already exists (e.g. after import/restore)
-      if (insertError.code === '23505' && insertError.constraint === 'individual_scores_pkey') {
-        await query(`
-          SELECT setval(
-            pg_get_serial_sequence('individual_scores', 'id'),
-            COALESCE((SELECT MAX(id) FROM individual_scores), 0) + 1
-          )
-        `);
-        await insertScore();
-      } else {
-        throw insertError;
+
+    // DTA Monitor: Log score change to audit table
+    const logScoreChange = async (client) => {
+      if (!isModification) {
+        // First entry - create audit record with initial score
+        await client.query(
+          `INSERT INTO score_change_audit 
+           (student_adm_no, student_name, level, stream, year, month, subject_code, subject_name, initial_score, current_score, change_count, change_history, last_changed_by, last_changed_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, '[]'::jsonb, $11, NOW())`,
+          [admNo, studentName, level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, subjectName, scoreNum, scoreNum, req.user?.username || 'system']
+        );
+      } else if (oldScore !== scoreNum) {
+        // Score changed - update audit record
+        const auditResult = await client.query(
+          `SELECT * FROM score_change_audit 
+           WHERE student_adm_no = $1 AND level = $2 AND stream = $3 AND year = $4 AND month = $5 AND subject_code = $6`,
+          [admNo, level, actualStream, yearNum, String(month).trim(), scoreSubjectCode]
+        );
+
+        if (auditResult.rows.length > 0) {
+          // Update existing audit record
+          const existingAudit = auditResult.rows[0];
+          const changeHistory = existingAudit.change_history || [];
+          changeHistory.push({
+            timestamp: new Date().toISOString(),
+            username: req.user?.username || 'system',
+            old_score: oldScore,
+            new_score: scoreNum
+          });
+
+          await client.query(
+            `UPDATE score_change_audit 
+             SET current_score = $1, change_count = change_count + 1, change_history = $2, 
+                 last_changed_by = $3, last_changed_at = NOW(), updated_at = NOW()
+             WHERE id = $4`,
+            [scoreNum, JSON.stringify(changeHistory), req.user?.username || 'system', existingAudit.id]
+          );
+        } else {
+          // Audit record doesn't exist (shouldn't happen, but handle it)
+          await client.query(
+            `INSERT INTO score_change_audit 
+             (student_adm_no, student_name, level, stream, year, month, subject_code, subject_name, initial_score, current_score, change_count, change_history, last_changed_by, last_changed_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11::jsonb, $12, NOW())`,
+            [admNo, studentName, level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, subjectName, oldScore, scoreNum, JSON.stringify([{
+              timestamp: new Date().toISOString(),
+              username: req.user?.username || 'system',
+              old_score: oldScore,
+              new_score: scoreNum
+            }]), req.user?.username || 'system']
+          );
+        }
       }
-    }
-    
+    };
+
+    // Use transaction for atomic score update and audit logging
+    await withTransaction(async (client) => {
+      await client.query(
+        `INSERT INTO individual_scores (level, stream, year, month, subject_code, adm_no, score)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (level, stream, year, month, subject_code, adm_no)
+         DO UPDATE SET score = EXCLUDED.score, updated_at = NOW()`,
+        [level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, admNo, scoreNum]
+      );
+      await logScoreChange(client);
+    });
+
     res.json({ message: 'Score saved successfully' });
   } catch (error) {
     console.error('POST /:admNo/scores error:', error);
@@ -3435,7 +3519,7 @@ router.post('/monthly-results/calculate', async (req, res) => {
     let studentsParams;
 
     if (normalizedStreamForQuery === 'ALL') {
-      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND year = $2';
+      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname, com FROM students WHERE level = $1 AND year = $2';
       studentsParams = [level, parseInt(year)];
 
       if (isFormVOrVI && normalizedTerm) {
@@ -3445,7 +3529,7 @@ router.post('/monthly-results/calculate', async (req, res) => {
 
       studentsQuery += ' ORDER BY adm_no';
     } else if (isFormIV && (normalizedStreamForQuery === 'A' || normalizedStreamForQuery === 'NA')) {
-      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4';
+      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname, com FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4';
       studentsParams = [level, 'A', 'NA', parseInt(year)];
 
       if (isFormVOrVI && normalizedTerm) {
@@ -3455,7 +3539,7 @@ router.post('/monthly-results/calculate', async (req, res) => {
 
       studentsQuery += ' ORDER BY adm_no';
     } else {
-      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname FROM students WHERE level = $1 AND stream = $2 AND year = $3';
+      studentsQuery = 'SELECT adm_no, first_name, middle_name, surname, com FROM students WHERE level = $1 AND stream = $2 AND year = $3';
       studentsParams = [level, normalizedStreamForQuery, parseInt(year)];
 
       if (isFormVOrVI && normalizedTerm) {

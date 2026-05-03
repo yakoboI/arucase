@@ -80,6 +80,7 @@ const SubjectsManagement = lazy(() => import('./pages/academic/SubjectsManagemen
 const ScoreEntry = lazy(() => import('./pages/academic/ScoreEntry'));
 const ScoreEntryYearSelection = lazy(() => import('./pages/academic/ScoreEntryYearSelection'));
 const ScoreEntryStreamSelection = lazy(() => import('./pages/academic/ScoreEntryStreamSelection'));
+const DTAMonitor = lazy(() => import('./pages/admin/DTAMonitor'));
 const ScoreEntryFormVVIStreamSelection = lazy(() => import('./pages/academic/ScoreEntryFormVVIStreamSelection'));
 const ScoreEntryFormVVIYearSelection = lazy(() => import('./pages/academic/ScoreEntryFormVVIYearSelection'));
 const ScoreEntrySubjectSelection = lazy(() => import('./pages/academic/ScoreEntrySubjectSelection'));
@@ -1019,6 +1020,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ScoreEntry />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dta-monitor"
+              element={
+                <ProtectedRoute requiredModule="dta_monitor">
+                  <DTAMonitor />
                 </ProtectedRoute>
               }
             />

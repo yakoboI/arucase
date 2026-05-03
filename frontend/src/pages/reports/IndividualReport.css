@@ -24,7 +24,7 @@
 /* Excel Card Styles */
 .excel-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   margin-bottom: 0.75rem;
@@ -56,7 +56,7 @@
 .form-card {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: clamp(0.75rem, 2vw, 1.5rem);
   text-align: center;
   cursor: pointer;
@@ -115,7 +115,7 @@
 .form-card-with-streams {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: clamp(0.75rem, 2vw, 1.25rem);
   grid-column: span 1;
 }
@@ -146,7 +146,7 @@
 .stream-card {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 0;
   padding: clamp(0.5rem, 1.5vw, 0.875rem);
   cursor: pointer;
   transition: all 0.2s ease;

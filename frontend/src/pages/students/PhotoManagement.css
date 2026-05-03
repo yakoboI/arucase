@@ -11,7 +11,7 @@
 .photos-mgmt-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   margin-bottom: clamp(0.75rem, 2vw, 1rem);
   overflow: hidden;
@@ -107,7 +107,7 @@
 .student-photo {
   width: clamp(40px, 10vw, 50px);
   height: clamp(40px, 10vw, 50px);
-  border-radius: 6px;
+  border-radius: 0;
   object-fit: cover;
   border: 1px solid #e2e8f0;
   display: block;
@@ -119,7 +119,7 @@
   height: clamp(40px, 10vw, 50px);
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;

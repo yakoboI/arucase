@@ -19,7 +19,7 @@
   margin-bottom: clamp(1.25rem, 3vw, 2rem);
   padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 3vw, 2rem);
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin: 0 clamp(0.75rem, 2vw, 1.5rem) clamp(1.25rem, 3vw, 1.75rem);
 }
@@ -67,7 +67,7 @@
   margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
   padding: clamp(0.875rem, 2vw, 1.25rem);
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   max-width: 1400px;
   margin-left: auto;
@@ -79,7 +79,7 @@
   padding: 0.625rem 1.25rem;
   border: 2px solid #e5e7eb;
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   font-size: clamp(0.875rem, 2vw, 1rem);
   font-weight: 500;
   color: #374151;
@@ -112,7 +112,7 @@
   text-align: center;
   padding: 4rem 2rem;
   background: white;
-  border-radius: 16px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   max-width: 500px;
   margin: 2rem auto;
@@ -136,7 +136,7 @@
   text-align: center;
   padding: 3rem 2rem;
   background: white;
-  border-radius: 16px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   max-width: 500px;
   margin: 2rem auto;
@@ -160,7 +160,7 @@
   background: #3b82f6;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 0;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -217,7 +217,7 @@
 /* Gallery Item Card - Modern Card Design (Pinterest/Instagram Style) */
 .gallery-item-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -297,7 +297,7 @@
   background: rgba(59, 130, 246, 0.9);
   color: white;
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: 0;
   font-size: clamp(0.75rem, 1.5vw, 0.875rem);
   font-weight: 600;
   display: flex;
@@ -313,7 +313,7 @@
   color: #1a5490;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -393,7 +393,7 @@
   margin-top: clamp(2rem, 4vw, 2.5rem);
   padding: clamp(1rem, 2.5vw, 1.25rem);
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   color: #6b7280;
   font-size: clamp(0.875rem, 1.8vw, 0.9375rem);

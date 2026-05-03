@@ -9,7 +9,7 @@
 
 .subjects-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   width: 100%;
@@ -41,7 +41,7 @@
 .subjects-form-card {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: clamp(1rem, 2.5vw, 2rem);
   text-align: center;
   text-decoration: none;
@@ -91,7 +91,7 @@
   }
   
   .subjects-card {
-    border-radius: 6px;
+    border-radius: 0;
     margin: 0;
     width: 100%;
   }
@@ -113,7 +113,7 @@
   .subjects-form-card {
     padding: 1.25rem 0.875rem;
     min-height: 95px;
-    border-radius: 6px;
+    border-radius: 0;
   }
   
   .subjects-form-number {

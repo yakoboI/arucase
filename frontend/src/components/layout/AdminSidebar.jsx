@@ -63,6 +63,7 @@ const AdminSidebar = () => {
       items: [
         { path: '/admin/subjects', label: 'Subjects', icon: 'fa-book' },
         { path: '/admin/score-entry', label: 'Score Entry', icon: 'fa-graduation-cap', moduleId: 'individual_scores' },
+        { path: '/admin/dta-monitor', label: 'DTA Monitor', icon: 'fa-history', moduleId: 'dta_monitor' },
         { path: '/admin/teachers', label: 'Teachers', icon: 'fa-chalkboard-teacher' },
         { path: '/admin/grades', label: 'Grades', icon: 'fa-award' },
         { path: '/admin/marks-config', label: 'Marks Config', icon: 'fa-calendar-alt' }

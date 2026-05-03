@@ -39,7 +39,7 @@
 /* Excel Card Styles */
 .excel-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
@@ -76,7 +76,7 @@
 .form-card {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 1.25rem;
   text-align: center;
   cursor: pointer;
@@ -138,7 +138,7 @@
 .form-card-with-streams {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -176,7 +176,7 @@
 .stream-card {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 1rem;
   text-align: center;
   cursor: pointer;
@@ -236,7 +236,7 @@
 .year-card {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 1rem;
   text-align: center;
   cursor: pointer;
@@ -296,7 +296,7 @@
 .term-card {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 1.25rem;
   text-align: center;
   cursor: pointer;
@@ -375,7 +375,7 @@
 .info-banner {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
   display: flex;

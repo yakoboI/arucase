@@ -47,7 +47,7 @@
 .admissions-stat {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 999px;
+  border-radius: 0;
   padding: 0.35rem 0.75rem;
   font-weight: 700;
   color: #111827;
@@ -71,7 +71,7 @@
 .status-chip {
   border: 1px solid #e5e7eb;
   background: #fff;
-  border-radius: 999px;
+  border-radius: 0;
   padding: 0.5rem 0.75rem;
   font-weight: 800;
   cursor: pointer;
@@ -117,7 +117,7 @@
 
 .apps-list-panel {
   border: 1px solid #e5e7eb;
-  border-radius: 14px;
+  border-radius: 0;
   overflow: hidden;
   background: #fff;
 }
@@ -190,7 +190,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.25rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 0;
   font-weight: 900;
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -232,7 +232,7 @@
 
 .detail-panel {
   border: 1px solid #e5e7eb;
-  border-radius: 14px;
+  border-radius: 0;
   overflow: hidden;
   background: #fff;
 }
@@ -269,7 +269,7 @@
 .kv {
   padding: 0.75rem;
   border: 1px solid #eef2f7;
-  border-radius: 12px;
+  border-radius: 0;
   background: #fafafa;
 }
 
@@ -289,7 +289,7 @@
 .message-box {
   padding: 0.9rem;
   border: 1px solid #eef2f7;
-  border-radius: 12px;
+  border-radius: 0;
   background: #fff;
   color: #111827;
   line-height: 1.6;

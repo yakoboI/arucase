@@ -602,8 +602,15 @@ const MonthlyResultsManagement = ({ formLevel }) => {
     csv.push(['Email: arucase@gmail.com']);
     csv.push([]);
     
-    // Add title row
-    csv.push([`${className} ${testType} ${month ? month.toUpperCase() : ''} ${year}`]);
+    // Add title row with formatted test type
+    // Test types: MONTHLY TEST, MID-TERM TEST, ANNUAL, TERMINAL
+    let formattedTestTypeCSV = testType
+      .replace('MID-TERM', 'MIDTERM')
+      .replace(' TEST', '')
+      .trim();
+    // Add RESULTS suffix
+    formattedTestTypeCSV = formattedTestTypeCSV + ' RESULTS';
+    csv.push([`${normalizedLevel} ${formattedTestTypeCSV} ${month ? month.toUpperCase() : ''} ${year}`]);
     csv.push([]);
     
     // Process header row
@@ -791,7 +798,19 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                 </div>
               </div>
               <div className="test-info-bar">
-                {className} {testType} {month ? month.toUpperCase() : ''} {year}
+                {(() => {
+                  // Extract just the form level (e.g., "FORM III" from "FORM III A 2025")
+                  const formLevelOnly = normalizedLevel;
+                  // Format test type: remove hyphen from MID-TERM and remove TEST, then add RESULTS
+                  // Test types: MONTHLY TEST, MID-TERM TEST, ANNUAL, TERMINAL
+                  let formattedTestType = testType
+                    .replace('MID-TERM', 'MIDTERM')
+                    .replace(' TEST', '')
+                    .trim();
+                  // Add RESULTS suffix
+                  formattedTestType = formattedTestType + ' RESULTS';
+                  return `${formLevelOnly} ${formattedTestType} ${month ? month.toUpperCase() : ''} ${year}`;
+                })()}
               </div>
             </div>
 
