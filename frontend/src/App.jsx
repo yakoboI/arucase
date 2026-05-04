@@ -145,6 +145,10 @@ const Users = lazy(() => import('./pages/admin/Users'));
 const Promotion = lazy(() => import('./pages/admin/Promotion'));
 const PromotionSelectClass = lazy(() => import('./pages/admin/PromotionSelectClass'));
 const PromotionPreview = lazy(() => import('./pages/admin/PromotionPreview'));
+const PreFormOne = lazy(() => import('./pages/admin/PreFormOne'));
+const PreFormOneYear = lazy(() => import('./pages/admin/PreFormOneYear'));
+const PreFormOneRegistration = lazy(() => import('./pages/admin/PreFormOneRegistration'));
+const PreFormOneParishes = lazy(() => import('./pages/admin/PreFormOneParishes'));
 
 // Analytics (lazy)
 const AnalyticsTrackSelection = lazy(() => import('./pages/analytics/AnalyticsTrackSelection'));
@@ -2144,6 +2148,12 @@ function App() {
             <Route path="/admin/promotion/form-iv/year/:year/stream/:stream/preview" element={<ProtectedRoute><PromotionPreview formLevel="form-iv" /></ProtectedRoute>} />
             <Route path="/admin/promotion/form-v/stream/:stream/year/:year/preview" element={<ProtectedRoute><PromotionPreview formLevel="form-v" /></ProtectedRoute>} />
             <Route path="/admin/promotion/form-vi/stream/:stream/year/:year/preview" element={<ProtectedRoute><PromotionPreview formLevel="form-vi" /></ProtectedRoute>} />
+
+            {/* Pre-Form One */}
+            <Route path="/admin/pre-form-one" element={<ProtectedRoute><PreFormOne /></ProtectedRoute>} />
+            <Route path="/admin/pre-form-one/:year" element={<ProtectedRoute><PreFormOneYear /></ProtectedRoute>} />
+            <Route path="/admin/pre-form-one/:year/registration" element={<ProtectedRoute><PreFormOneRegistration /></ProtectedRoute>} />
+            <Route path="/admin/pre-form-one/:year/parishes" element={<ProtectedRoute><PreFormOneParishes /></ProtectedRoute>} />
 
             {/* Public Website Routes */}
             <Route path="/admin/gallery" element={<ProtectedRoute><AdminGallery /></ProtectedRoute>} />

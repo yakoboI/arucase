@@ -5,9 +5,9 @@ import axios from 'axios';
 const getBaseURL = () => {
   if (import.meta.env.DEV) {
     // Use relative URL to leverage Vite proxy
-    return '/api';
+    return 'http://localhost:5000/api';
   }
-  return import.meta.env.VITE_API_URL || '/api';
+  return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 };
 
 const api = axios.create({

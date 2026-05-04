@@ -316,22 +316,24 @@ app.get('/api/health/database', async (req, res) => {
 const requestLogger = require('./middleware/requestLogger');
 app.use('/api/', requestLogger);
 
-// Routes
+// Admin Routes
+const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
 const authRoutes = require('./routes/auth');
 const publicRoutes = require('./routes/public');
-const adminRoutes = require('./routes/admin');
-const studentRoutes = require('./routes/students');
-const reportRoutes = require('./routes/reports');
-const analyticsRoutes = require('./routes/analytics');
+const reportsRoutes = require('./routes/reports');
 const dtaMonitorRoutes = require('./routes/dtaMonitor');
+const studentsRoutes = require('./routes/students');
+const preFormOneRoutes = require('./routes/preFormOne');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/api/students', studentsRoutes);
+app.use('/api/reports', reportsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dta-monitor', dtaMonitorRoutes);
+app.use('/api/pre-form-one', preFormOneRoutes);
 
 // Socket.IO authentication middleware
 io.use((socket, next) => {

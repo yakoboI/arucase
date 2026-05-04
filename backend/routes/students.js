@@ -4440,4 +4440,245 @@ router.post('/migrate-div-to-adiv', async (req, res) => {
   }
 });
 
+// ============================================================================
+// PRE-FORM ONE STUDENT MANAGEMENT ENDPOINTS
+// ============================================================================
+
+// Get all Pre-Form One students for a specific year
+router.get('/preform-one/:year', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    const result = await query(
+      'SELECT * FROM preform_one_students WHERE year = $1 ORDER BY admission_number',
+      [year]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching Pre-Form One students:', error);
+    return sendError(res, error, 500);
+  }
+});
+
+// Create a new Pre-Form One student
+router.post('/preform-one', requireAuth, async (req, res) => {
+  try {
+    const {
+      admission_number,
+      serial_number,
+      first_name,
+      middle_name,
+      surname,
+      sex,
+      parish,
+      year
+    } = req.body;
+
+    // Validate required fields
+    if (!admission_number || !serial_number || !first_name || !surname || !sex || !year) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate sex
+    if (!['Male', 'Female'].includes(sex)) {
+      return res.status(400).json({ error: 'Invalid sex value' });
+    }
+
+    const result = await query(
+      `INSERT INTO preform_one_students 
+       (admission_number, serial_number, first_name, middle_name, surname, sex, parish, year)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [admission_number, serial_number, first_name, middle_name, surname, sex, parish || null, year]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating Pre-Form One student:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Admission number already exists' });
+    }
+    return sendError(res, error, 500);
+  }
+});
+
+// Create multiple Pre-Form One students (bulk registration)
+router.post('/preform-one/bulk', requireAuth, async (req, res) => {
+  try {
+    const { students } = req.body;
+    
+    if (!Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({ error: 'Students array is required' });
+    }
+
+    const results = [];
+    
+    await withTransaction(async (client) => {
+      for (const student of students) {
+        const {
+          admission_number,
+          serial_number,
+          first_name,
+          middle_name,
+          surname,
+          sex,
+          parish,
+          year
+        } = student;
+
+        // Validate required fields
+        if (!admission_number || !serial_number || !first_name || !surname || !sex || !year) {
+          throw new Error(`Missing required fields for student ${admission_number}`);
+        }
+
+        // Validate sex
+        if (!['Male', 'Female'].includes(sex)) {
+          throw new Error(`Invalid sex value for student ${admission_number}`);
+        }
+
+        const result = await client.query(
+          `INSERT INTO preform_one_students 
+           (admission_number, serial_number, first_name, middle_name, surname, sex, parish, year)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           RETURNING *`,
+          [admission_number, serial_number, first_name, middle_name, surname, sex, parish || null, year]
+        );
+
+        results.push(result.rows[0]);
+      }
+    });
+
+    res.status(201).json({ 
+      message: `Successfully registered ${results.length} students`,
+      students: results 
+    });
+  } catch (error) {
+    console.error('Error bulk creating Pre-Form One students:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'One or more admission numbers already exist' });
+    }
+    return sendError(res, error, 500);
+  }
+});
+
+// Update a Pre-Form One student's parish
+router.put('/preform-one/:id/parish', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { parish } = req.body;
+
+    const result = await query(
+      'UPDATE preform_one_students SET parish = $1 WHERE id = $2 RETURNING *',
+      [parish || null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating student parish:', error);
+    return sendError(res, error, 500);
+  }
+});
+
+// Bulk update parishes for multiple students
+router.put('/preform-one/bulk-parish', requireAuth, async (req, res) => {
+  try {
+    const { updates } = req.body; // Array of { serial_number, parish }
+    
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ error: 'Updates array is required' });
+    }
+
+    const results = [];
+    
+    await withTransaction(async (client) => {
+      for (const update of updates) {
+        const { serial_number, parish } = update;
+
+        if (!serial_number) {
+          throw new Error('Serial number is required for each update');
+        }
+
+        const result = await client.query(
+          'UPDATE preform_one_students SET parish = $1 WHERE serial_number = $2 RETURNING *',
+          [parish || null, serial_number]
+        );
+
+        if (result.rows.length > 0) {
+          results.push(result.rows[0]);
+        }
+      }
+    });
+
+    res.json({ 
+      message: `Successfully updated parish for ${results.length} students`,
+      students: results 
+    });
+  } catch (error) {
+    console.error('Error bulk updating parishes:', error);
+    return sendError(res, error, 500);
+  }
+});
+
+// Delete a Pre-Form One student
+router.delete('/preform-one/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await query(
+      'DELETE FROM preform_one_students WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json({ message: 'Student deleted successfully', student: result.rows[0] });
+  } catch (error) {
+    console.error('Error deleting Pre-Form One student:', error);
+    return sendError(res, error, 500);
+  }
+});
+
+// Export Pre-Form One students to CSV
+router.get('/preform-one/:year/export', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    const result = await query(
+      'SELECT * FROM preform_one_students WHERE year = $1 ORDER BY admission_number',
+      [year]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No students found for this year' });
+    }
+
+    // Convert to CSV format
+    const headers = ['Admission Number', 'Serial Number', 'First Name', 'Middle Name', 'Surname', 'Sex', 'Parish', 'Year'];
+    const csvRows = result.rows.map(student => [
+      student.admission_number,
+      student.serial_number,
+      student.first_name,
+      student.middle_name || '',
+      student.surname,
+      student.sex,
+      student.parish || '',
+      student.year
+    ]);
+
+    const csvContent = [headers.join(','), ...csvRows.map(row => row.join(','))].join('\n');
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="preform-one-students-${year}.csv"`);
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Error exporting Pre-Form One students:', error);
+    return sendError(res, error, 500);
+  }
+});
+
 module.exports = router;
