@@ -15,7 +15,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 seconds - increased for complex queries
+  timeout: 30000, // 30 seconds - increased for better reliability
 });
 
 // Paths that must not receive the staff/admin JWT (public site + alternate portals set their own auth)
@@ -35,7 +35,8 @@ function isProtectedApiRequest(config) {
     url.startsWith('/admin/') ||
     url.startsWith('/students/') ||
     url.startsWith('/reports/') ||
-    url.startsWith('/analytics/')
+    url.startsWith('/analytics/') ||
+    url.startsWith('/pre-form-one/')
   );
 }
 
@@ -93,9 +94,10 @@ api.interceptors.response.use(
       }
     }
 
-    // For auth endpoints (login), don't reject on 403 - let the component handle it
+    // For auth endpoints, don't reject on 401/403 - let the component handle it
+    // This prevents console errors for expected auth failures during token verification
     if (isAuthEndpoint(error.config || {})) {
-      if (error.response?.status === 403) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
         // Return the error response instead of rejecting
         return Promise.resolve(error.response);
       }

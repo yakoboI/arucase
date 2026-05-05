@@ -16,20 +16,33 @@ const ProtectedRoute = ({ children, requiredRole = null, requiredPermission = nu
     const token = localStorage.getItem('token');
     const hasUser = isAuthenticated();
     
+    console.log('🔍 PROTECTED ROUTE DEBUG: Token verification check', {
+      hasToken: !!token,
+      hasUser,
+      loading,
+      isVerifying,
+      currentPath: location.pathname
+    });
+    
     // If we have a token but no user state, verify it
     if (token && !hasUser && !loading && !isVerifying) {
+      console.log('🔍 PROTECTED ROUTE DEBUG: Starting token verification');
       setIsVerifying(true);
       verifyToken().finally(() => {
         setIsVerifying(false);
+        console.log('🔍 PROTECTED ROUTE DEBUG: Token verification completed');
       });
     }
-  }, [loading, isAuthenticated, verifyToken, isVerifying]);
+  }, [loading, isAuthenticated, verifyToken, isVerifying, location.pathname]);
 
   if (loading || isVerifying) {
     return <Loading />;
   }
 
   if (!isAuthenticated()) {
+    console.log('🔍 PROTECTED ROUTE DEBUG: Not authenticated, redirecting to login');
+    console.log('🔍 PROTECTED ROUTE DEBUG: Current path:', location.pathname);
+    console.log('🔍 PROTECTED ROUTE DEBUG: Has token:', !!localStorage.getItem('token'));
     return <Navigate to="/login" replace />;
   }
 
@@ -43,7 +56,8 @@ const ProtectedRoute = ({ children, requiredRole = null, requiredPermission = nu
 
   // Non-admin without the required module (e.g. registration) cannot access
   if (requiredModule && !isAdminLike() && !hasModule(requiredModule)) {
-    return <Navigate to="/admin/score-entry" replace />;
+    // Redirect to admin dashboard instead of specific score entry
+    return <Navigate to="/admin" replace />;
   }
 
   // Admin-only routes (e.g. subjects management)

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import './PreFormOneParishes.css';
 import { preFormOneService } from '../../services/preFormOneService';
 
@@ -9,7 +10,7 @@ const PreFormOneParishes = () => {
   const [csvData, setCsvData] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterParish, setFilterParish] = useState('all');
-  const [sortBy, setSortBy] = useState('admissionNumber');
+  const [sortBy, setSortBy] = useState('admission_number');
   const [sortOrder, setSortOrder] = useState('asc');
   const [editingParish, setEditingParish] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -20,8 +21,9 @@ const PreFormOneParishes = () => {
     const loadRegisteredStudents = async () => {
       try {
         setLoading(true);
-        const data = await preFormOneService.getStudents(year);
-        setStudents(data);
+        const response = await preFormOneService.getStudents(year);
+        // Ensure we always set an array
+        setStudents(Array.isArray(response) ? response : (response?.data || []));
       } catch (error) {
         console.error('Error loading registered students:', error);
         // Handle error gracefully
@@ -41,21 +43,23 @@ const PreFormOneParishes = () => {
 
   // Filter and sort students
   const filteredAndSortedStudents = useMemo(() => {
-    let filtered = students;
+    // Ensure students is always an array
+    let filtered = Array.isArray(students) ? students : [];
     
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(student => 
-        student.admissionNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.parish.toLowerCase().includes(searchTerm.toLowerCase())
+        student && 
+        student.admission_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.parish?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     // Apply parish filter
     if (filterParish !== 'all') {
-      filtered = filtered.filter(student => student.parish === filterParish);
+      filtered = filtered.filter(student => student && student.parish === filterParish);
     }
     
     // Apply sorting
@@ -68,7 +72,7 @@ const PreFormOneParishes = () => {
       if (aValue === undefined) return sortOrder === 'asc' ? 1 : -1;
       if (bValue === undefined) return sortOrder === 'asc' ? -1 : 1;
       
-      if (sortBy === 'admissionNumber') {
+      if (sortBy === 'admission_number') {
         // Convert to string and handle undefined safely
         const aStr = String(aValue || '');
         const bStr = String(bValue || '');
@@ -76,12 +80,7 @@ const PreFormOneParishes = () => {
         bValue = parseInt(bStr.replace('789ABC', '')) || 0;
       }
       
-      // Handle string comparison for non-numeric values
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      
+            
       if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
       return 0;
@@ -103,28 +102,67 @@ const PreFormOneParishes = () => {
 
   // Save parish assignment
   const handleSaveParish = async () => {
+    console.log('🔍 FRONTEND DEBUG: Parish save initiated');
+    console.log('🔍 FRONTEND DEBUG: Editing ID:', editingId);
+    console.log('🔍 FRONTEND DEBUG: Editing parish:', editingParish);
+    
     if (!editingId || !editingParish.trim()) {
-      alert('Please select a student and enter a parish name');
+      console.log('🔍 FRONTEND DEBUG: Parish save validation failed');
+      console.log('🔍 FRONTEND DEBUG: Missing fields:', {
+        editingId: !editingId,
+        editingParish: !editingParish.trim()
+      });
+      toast.error('Please select a student and enter a parish name');
       return;
     }
 
     try {
       setLoading(true);
+      console.log('🔍 FRONTEND DEBUG: Calling API to update parish');
+      
       const updatedStudent = await preFormOneService.updateStudentParish(editingId, editingParish.trim());
+      console.log('🔍 FRONTEND DEBUG: API response - updated student:', updatedStudent);
       
       // Update local state with the updated student
-      setStudents(prev => prev.map(student => 
-        student.id === editingId ? updatedStudent : student
-      ));
+      setStudents(prev => {
+        console.log('🔍 FRONTEND DEBUG: Updating local state with parish update');
+        console.log('🔍 FRONTEND DEBUG: Student to update ID:', editingId);
+        
+        const updatedStudents = prev.map(student => {
+          if (student.id === editingId) {
+            console.log('🔍 FRONTEND DEBUG: Found student to update:', student);
+            console.log('🔍 FRONTEND DEBUG: Updated to:', updatedStudent);
+            return updatedStudent;
+          }
+          return student;
+        });
+        
+        console.log('🔍 FRONTEND DEBUG: State update completed');
+        return updatedStudents;
+      });
 
-      alert('Parish updated successfully!');
+      // Refresh data from database to ensure UI is in sync
+      try {
+        console.log('🔍 FRONTEND DEBUG: Refreshing data from database after parish update');
+        const freshData = await preFormOneService.getStudents(year);
+        const studentsArray = Array.isArray(freshData) ? freshData : (freshData?.data || []);
+        console.log('🔍 FRONTEND DEBUG: Fresh data loaded:', studentsArray);
+        setStudents(studentsArray);
+        console.log('🔍 FRONTEND DEBUG: UI state refreshed with latest database data');
+      } catch (refreshError) {
+        console.error('🔍 FRONTEND DEBUG: Error refreshing data:', refreshError);
+      }
+
+      toast.success('Parish updated successfully!');
       
       // Reset editing state
+      console.log('🔍 FRONTEND DEBUG: Resetting editing state');
       setEditingParish('');
       setEditingId(null);
     } catch (error) {
-      console.error('Error updating parish:', error);
-      alert('Error updating parish. Please try again.');
+      console.error('🔍 FRONTEND DEBUG: Error updating parish:', error);
+      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
+      toast.error('Error updating parish. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -149,23 +187,56 @@ const PreFormOneParishes = () => {
     reader.readAsText(file);
   };
 
+  // Improved CSV parsing function to handle quoted fields
+  const parseCSVLine = (line) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current.trim());
+    return result;
+  };
+
   // Process CSV data for parish updates
   const processCsvData = async (csvText) => {
+    console.log('🔍 FRONTEND DEBUG: Parish CSV processing initiated');
+    console.log('🔍 FRONTEND DEBUG: CSV text length:', csvText.length);
+    console.log('🔍 FRONTEND DEBUG: CSV text preview:', csvText.substring(0, 200));
+    
     if (!csvText.trim()) {
-      alert('Please enter CSV data');
+      console.log('🔍 FRONTEND DEBUG: Parish CSV validation failed - empty text');
+      toast.error('Please enter CSV data');
       return;
     }
 
     try {
       setLoading(true);
       const lines = csvText.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      const headers = parseCSVLine(lines[0]);
       const dataLines = lines.slice(1);
+      
+      console.log('🔍 FRONTEND DEBUG: Parish CSV parsed - lines:', lines.length);
+      console.log('🔍 FRONTEND DEBUG: Parish CSV headers:', headers);
+      console.log('🔍 FRONTEND DEBUG: Parish CSV data lines count:', dataLines.length);
 
       const updates = [];
+      const seenSerialNumbers = new Set();
 
-      dataLines.forEach((line) => {
-        const values = line.split(',').map(v => v.trim());
+      dataLines.forEach((line, index) => {
+        const values = parseCSVLine(line);
         let serialNumber = '';
         let parish = '';
 
@@ -174,39 +245,82 @@ const PreFormOneParishes = () => {
           if (field === 'serialnumber' || field === 's/n') serialNumber = values[i] || '';
           else if (field === 'parish') parish = values[i] || '';
         });
+        
+        console.log(`🔍 FRONTEND DEBUG: Processing parish CSV line ${index + 1}:`, {
+          serialNumber,
+          parish,
+          rawValues: values
+        });
+
+        // Validate serial number format (basic validation)
+        if (serialNumber && !/^[A-Za-z0-9\-_]+$/.test(serialNumber)) {
+          console.warn(`🔍 FRONTEND DEBUG: Invalid serial number format at line ${index + 2}: ${serialNumber}`);
+          return;
+        }
+
+        // Check for duplicates
+        if (serialNumber && seenSerialNumbers.has(serialNumber)) {
+          console.warn(`🔍 FRONTEND DEBUG: Duplicate serial number found: ${serialNumber}`);
+          return;
+        }
 
         // Add to updates array if both serial number and parish are provided
         if (serialNumber && parish) {
+          seenSerialNumbers.add(serialNumber);
           updates.push({
+            serial_number: serialNumber,
+            parish: parish.trim()
+          });
+          console.log(`🔍 FRONTEND DEBUG: Added valid update ${updates.length}:`, {
             serial_number: serialNumber,
             parish: parish.trim()
           });
         }
       });
+      
+      console.log('🔍 FRONTEND DEBUG: Total valid parish updates:', updates.length);
+      console.log('🔍 FRONTEND DEBUG: Updates data:', updates);
 
       if (updates.length === 0) {
-        alert('No valid parish updates found in CSV');
+        console.log('🔍 FRONTEND DEBUG: No valid parish updates found in CSV');
+        toast.error('No valid parish updates found in CSV');
         return;
       }
 
       const result = await preFormOneService.bulkUpdateParishes(updates);
+      console.log('🔍 FRONTEND DEBUG: Bulk parish update API response:', result);
       
       // Update local state with the updated students
       setStudents(prev => {
+        console.log('🔍 FRONTEND DEBUG: Updating local state with bulk parish updates');
+        console.log('🔍 FRONTEND DEBUG: Previous students count:', prev.length);
+        
         const updatedStudents = [...prev];
-        result.students.forEach(updatedStudent => {
+        const updatedCount = result.students?.length || 0;
+        
+        result.students?.forEach(updatedStudent => {
           const index = updatedStudents.findIndex(s => s.id === updatedStudent.id);
           if (index !== -1) {
+            console.log(`🔍 FRONTEND DEBUG: Updating student at index ${index}:`, {
+              before: updatedStudents[index],
+              after: updatedStudent
+            });
             updatedStudents[index] = updatedStudent;
+          } else {
+            console.log('🔍 FRONTEND DEBUG: Student not found in local state:', updatedStudent);
           }
         });
+        
+        console.log('🔍 FRONTEND DEBUG: Bulk parish state update completed');
+        console.log('🔍 FRONTEND DEBUG: Updated students count:', updatedCount);
         return updatedStudents;
       });
       
-      alert(`Successfully updated parish for ${result.students.length} students from CSV!`);
+      toast.success(`Successfully updated parish for ${result.students?.length || 0} students from CSV!`);
     } catch (error) {
-      console.error('Error processing CSV data:', error);
-      alert('Error processing CSV data. Please check the file format and try again.');
+      console.error('🔍 FRONTEND DEBUG: Error processing parish CSV data:', error);
+      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
+      toast.error('Error processing CSV data. Please check the file format and try again.');
     } finally {
       setLoading(false);
     }
@@ -224,16 +338,29 @@ const PreFormOneParishes = () => {
       try {
         setLoading(true);
         const updatedStudent = await preFormOneService.updateStudentParish(studentId, '');
+        console.log('🔍 FRONTEND DEBUG: Parish removal API response:', updatedStudent);
         
-        // Update local state with the updated student
-        setStudents(prev => prev.map(student => 
-          student.id === studentId ? updatedStudent : student
-        ));
+        // Refresh data from database to ensure UI is in sync
+        try {
+          console.log('🔍 FRONTEND DEBUG: Refreshing data from database after parish removal');
+          const freshData = await preFormOneService.getStudents(year);
+          const studentsArray = Array.isArray(freshData) ? freshData : (freshData?.data || []);
+          console.log('🔍 FRONTEND DEBUG: Fresh data loaded after parish removal:', studentsArray);
+          console.log('🔍 FRONTEND DEBUG: Student with removed parish:', studentsArray.find(s => s.id === studentId));
+          setStudents(studentsArray);
+          console.log('🔍 FRONTEND DEBUG: UI state refreshed after parish removal');
+        } catch (refreshError) {
+          console.error('🔍 FRONTEND DEBUG: Error refreshing data after parish removal:', refreshError);
+          // Fallback to local state update if refresh fails
+          setStudents(prev => prev.map(student => 
+            student.id === studentId ? updatedStudent : student
+          ));
+        }
         
-        alert('Parish assignment removed successfully!');
+        toast.success('Parish assignment removed successfully!');
       } catch (error) {
         console.error('Error removing parish assignment:', error);
-        alert('Error removing parish assignment. Please try again.');
+        toast.error('Error removing parish assignment. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -247,7 +374,7 @@ const PreFormOneParishes = () => {
       await preFormOneService.exportStudents(year);
     } catch (error) {
       console.error('Error exporting students:', error);
-      alert('Error exporting students. Please try again.');
+      toast.error('Error exporting students. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -258,7 +385,7 @@ const PreFormOneParishes = () => {
   const clearAllStudents = () => {
     if (window.confirm('Are you sure you want to clear all registered students? This action cannot be undone.')) {
       setStudents([]);
-      alert('All students cleared successfully');
+      toast.success('All students cleared successfully');
     }
   };
 
@@ -292,7 +419,7 @@ const PreFormOneParishes = () => {
             <i className="fas fa-church"></i>
             <span>Edit Parish Assignment - {year}</span>
             <span className="academic-year-info">
-              <small>Student: {students.find(s => s.id === editingId)?.admissionNumber}</small>
+              <small>Student: {students.find(s => s.id === editingId)?.admission_number}</small>
             </span>
           </div>
           <div className="registration-form-card-body">
@@ -301,11 +428,11 @@ const PreFormOneParishes = () => {
                 <div className="student-details-grid">
                   <div className="detail-item">
                     <label>Admission Number:</label>
-                    <span>{students.find(s => s.id === editingId)?.admissionNumber}</span>
+                    <span>{students.find(s => s.id === editingId)?.admission_number}</span>
                   </div>
                   <div className="detail-item">
                     <label>Name:</label>
-                    <span>{students.find(s => s.id === editingId)?.firstName} {students.find(s => s.id === editingId)?.surname}</span>
+                    <span>{students.find(s => s.id === editingId)?.first_name} {students.find(s => s.id === editingId)?.surname}</span>
                   </div>
                   <div className="detail-item">
                     <label>Sex:</label>
@@ -389,7 +516,7 @@ const PreFormOneParishes = () => {
                 />
                 <label htmlFor="csv-file" className={`file-label ${loading ? 'disabled' : ''}`}>
                   <span>
-                    <i className="fas fa-folder-open"></i>
+                    <i className="fas fa-folder-open"></i> Choose CSV File
                   </span>
                 </label>
               </div>
@@ -439,8 +566,8 @@ const PreFormOneParishes = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="form-input"
               >
-                <option value="admissionNumber">Sort by Admission No</option>
-                <option value="firstName">Sort by First Name</option>
+                <option value="admission_number">Sort by Admission No</option>
+                <option value="first_name">Sort by First Name</option>
                 <option value="surname">Sort by Surname</option>
                 <option value="parish">Sort by Parish</option>
               </select>
@@ -478,14 +605,14 @@ const PreFormOneParishes = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAndSortedStudents.map(student => (
-                    <tr key={student.id}>
-                      <td>{student.admissionNumber}</td>
-                      <td>{student.serialNumber}</td>
-                      <td>{`${student.firstName} ${student.middleName || ''} ${student.surname}`.trim()}</td>
+                  {filteredAndSortedStudents.map((student, index) => (
+                    <tr key={student.id || `student-${index}`}>
+                      <td>{student.admission_number || 'N/A'}</td>
+                      <td>{student.serial_number || 'N/A'}</td>
+                      <td>{`${student.first_name || ''} ${student.middle_name || ''} ${student.surname || ''}`.trim() || 'N/A'}</td>
                       <td>
-                        <span className={`sex-badge ${student.sex.toLowerCase()}`}>
-                          {student.sex}
+                        <span className={`sex-badge ${student.sex?.toLowerCase() || 'unknown'}`}>
+                          {student.sex || 'Unknown'}
                         </span>
                       </td>
                       <td>
@@ -503,15 +630,11 @@ const PreFormOneParishes = () => {
                             <i className="fas fa-edit"></i>
                           </button>
                           <button 
-                            onClick={() => {
-                              if (window.confirm(`Delete student ${student.admissionNumber}?`)) {
-                                setStudents(prev => prev.filter(s => s.id !== student.id));
-                              }
-                            }}
+                            onClick={() => handleDeleteStudent(student.id)}
                             className="form-btn secondary small"
-                            title="Delete student"
+                            title="Remove parish assignment"
                           >
-                            <i className="fas fa-trash"></i>
+                            <i className="fas fa-times"></i>
                           </button>
                         </div>
                       </td>

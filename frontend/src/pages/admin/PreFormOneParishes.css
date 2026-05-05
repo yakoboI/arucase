@@ -614,6 +614,32 @@
 }
 
 /* CSV Template Section */
+.bulk-upload-actions {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1rem);
+  align-items: center;
+}
+
+/* Large screen layout - buttons in one row with equal space */
+@media (min-width: 768px) {
+  .bulk-upload-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+  }
+  
+  .bulk-upload-actions .form-btn {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .bulk-upload-actions .file-upload-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .csv-template-section {
   background: #ffffff;
   border: 1px solid #e2e8f0;

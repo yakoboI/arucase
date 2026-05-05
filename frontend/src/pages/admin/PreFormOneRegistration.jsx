@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { preFormOneService } from '../../services/preFormOneService';
 import './PreFormOneRegistration.css';
 
@@ -17,7 +18,7 @@ const PreFormOneRegistration = () => {
   const [csvData, setCsvData] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSex, setFilterSex] = useState('all');
-  const [sortBy, setSortBy] = useState('admissionNumber');
+  const [sortBy, setSortBy] = useState('admission_number');
   const [sortOrder, setSortOrder] = useState('asc');
   const [loading, setLoading] = useState(false);
 
@@ -26,11 +27,26 @@ const PreFormOneRegistration = () => {
     const loadStudents = async () => {
       try {
         setLoading(true);
-        const data = await preFormOneService.getStudents(year);
-        setStudents(data);
+        console.log('🔍 FRONTEND DEBUG: Loading students for year:', year);
+        const response = await preFormOneService.getStudents(year);
+        console.log('🔍 FRONTEND DEBUG: Students API response:', response);
+        console.log('🔍 FRONTEND DEBUG: Response data type:', typeof response);
+        console.log('🔍 FRONTEND DEBUG: Response data:', response);
+        console.log('🔍 FRONTEND DEBUG: Response.data:', response?.data);
+        console.log('🔍 FRONTEND DEBUG: Is array:', Array.isArray(response));
+        console.log('🔍 FRONTEND DEBUG: Is response.data array:', Array.isArray(response?.data));
+        
+        // Ensure we always set an array
+        const studentsData = Array.isArray(response) ? response : (response?.data || []);
+        console.log('🔍 FRONTEND DEBUG: Final students data to set:', studentsData);
+        console.log('🔍 FRONTEND DEBUG: Students count:', studentsData.length);
+        
+        setStudents(studentsData);
       } catch (error) {
-        console.error('Error loading students:', error);
-        // Handle error gracefully - maybe show a notification
+        console.error('🔍 FRONTEND DEBUG: Error loading students:', error);
+        console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
+        // Handle error gracefully - set empty array
+        setStudents([]);
       } finally {
         setLoading(false);
       }
@@ -41,22 +57,24 @@ const PreFormOneRegistration = () => {
 
   // Filter and sort students
   const filteredAndSortedStudents = useMemo(() => {
-    let filtered = students;
+    // Ensure students is always an array
+    let filtered = Array.isArray(students) ? students : [];
     
     // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(student => 
-        student.admissionNumber.toLowerCase().includes(searchLower) ||
-        student.firstName.toLowerCase().includes(searchLower) ||
-        student.middleName.toLowerCase().includes(searchLower) ||
-        student.surname.toLowerCase().includes(searchLower)
+        student && 
+        (student.admission_number?.toLowerCase().includes(searchLower) ||
+        student.first_name?.toLowerCase().includes(searchLower) ||
+        student.middle_name?.toLowerCase().includes(searchLower) ||
+        student.surname?.toLowerCase().includes(searchLower))
       );
     }
     
     // Apply sex filter
     if (filterSex !== 'all') {
-      filtered = filtered.filter(student => student.sex.toLowerCase() === filterSex.toLowerCase());
+      filtered = filtered.filter(student => student && student.sex?.toLowerCase() === filterSex.toLowerCase());
     }
     
     // Apply sorting
@@ -64,7 +82,7 @@ const PreFormOneRegistration = () => {
       let aVal = a[sortBy] || '';
       let bVal = b[sortBy] || '';
       
-      if (sortBy === 'admissionNumber') {
+      if (sortBy === 'admission_number') {
         aVal = aVal.replace('789ABC', '');
         bVal = bVal.replace('789ABC', '');
         aVal = parseInt(aVal) || 0;
@@ -82,7 +100,9 @@ const PreFormOneRegistration = () => {
   // Generate automatic admission number
   const generateAdmissionNumber = (serialNumber) => {
     const prefix = '789ABC';
-    return `${prefix}${serialNumber}`;
+    const timestamp = Date.now().toString(36); // Base36 timestamp for uniqueness
+    const random = Math.random().toString(36).substring(2, 5); // 3 random chars
+    return `${prefix}${serialNumber}-${timestamp}-${random}`;
   };
 
   // Handle single student input changes
@@ -117,10 +137,159 @@ const PreFormOneRegistration = () => {
     return errors;
   };
 
-  // Handle single student registration
-  const handleSingleRegistration = async () => {
+  // Handle student update
+  const handleUpdateStudent = async () => {
+    console.log('🔍 FRONTEND DEBUG: Student update initiated');
+    console.log('🔍 FRONTEND DEBUG: Current student data:', currentStudent);
+    
     // Validate form data
     const validationErrors = validateStudentData(currentStudent);
+    console.log('🔍 FRONTEND DEBUG: Validation errors:', validationErrors);
+    
+    if (validationErrors.length > 0) {
+      validationErrors.forEach(error => toast.error(error));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Find the student ID from the current students array
+      const existingStudent = students.find(s => 
+        s.serial_number === currentStudent.serialNumber && 
+        s.first_name === currentStudent.firstName &&
+        s.surname === currentStudent.surname
+      );
+      
+      if (!existingStudent) {
+        toast.error('Student not found for update');
+        return;
+      }
+      
+      console.log('🔍 FRONTEND DEBUG: Found student for update:', existingStudent);
+      
+      const studentData = {
+        serial_number: currentStudent.serialNumber,
+        first_name: currentStudent.firstName,
+        middle_name: currentStudent.middleName,
+        surname: currentStudent.surname,
+        sex: currentStudent.sex,
+        parish: currentStudent.parish || ''
+      };
+      
+      console.log('🔍 FRONTEND DEBUG: Prepared student data for update:', studentData);
+
+      const updatedStudent = await preFormOneService.updateStudent(existingStudent.id, studentData);
+      console.log('🔍 FRONTEND DEBUG: API response - updated student:', updatedStudent);
+      
+      // Check if the response indicates success
+      if (updatedStudent && updatedStudent.success) {
+        // Update local state with the updated student
+        setStudents(prev => {
+          console.log('🔍 FRONTEND DEBUG: Updating local students state for edit');
+          console.log('🔍 FRONTEND DEBUG: Previous students count:', prev.length);
+          const newStudents = prev.map(s => s.id === existingStudent.id ? updatedStudent.data : s);
+          console.log('🔍 FRONTEND DEBUG: Updated students count:', newStudents.length);
+          return newStudents;
+        });
+        
+        // Clear form
+        setCurrentStudent({
+          serialNumber: '',
+          firstName: '',
+          middleName: '',
+          surname: '',
+          sex: '',
+          year: year
+        });
+        
+        toast.success(`${updatedStudent.data.first_name} ${updatedStudent.data.surname} updated successfully!`);
+      } else {
+        // Handle specific error messages from backend
+        console.error('🔍 FRONTEND DEBUG: Backend returned error:', updatedStudent);
+        toast.error(updatedStudent.message || 'Error updating student. Please try again.');
+      }
+    } catch (error) {
+      console.error('🔍 FRONTEND DEBUG: Error updating student:', error);
+      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
+      toast.error('Error updating student. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle student deletion
+  const handleDeleteStudent = async (student) => {
+    console.log('🔍 FRONTEND DEBUG: Student deletion initiated');
+    console.log('🔍 FRONTEND DEBUG: Student to delete:', student);
+    console.log('🔍 FRONTEND DEBUG: Student ID:', student.id);
+    console.log('🔍 FRONTEND DEBUG: Student admission number:', student.admission_number);
+    
+    if (!student.id) {
+      console.error('🔍 FRONTEND DEBUG: ERROR - Student has no ID');
+      toast.error('Cannot delete student - missing ID');
+      return;
+    }
+    
+    if (!window.confirm(`Delete student ${student.admission_number}?`)) {
+      console.log('🔍 FRONTEND DEBUG: User cancelled deletion');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      console.log('🔍 FRONTEND DEBUG: Calling delete API for student ID:', student.id);
+      const deleteResult = await preFormOneService.deleteStudent(student.id);
+      console.log('🔍 FRONTEND DEBUG: Delete API response:', deleteResult);
+      console.log('🔍 FRONTEND DEBUG: Delete API response type:', typeof deleteResult);
+      console.log('🔍 FRONTEND DEBUG: Delete API success status:', deleteResult?.success);
+      
+      // Check if the response indicates success
+      if (deleteResult && deleteResult.success) {
+        console.log('🔍 FRONTEND DEBUG: Delete successful, updating local state');
+        
+        // Update local state by removing the deleted student
+        setStudents(prev => {
+          console.log('🔍 FRONTEND DEBUG: Updating local students state for delete');
+          console.log('🔍 FRONTEND DEBUG: Previous students count:', prev.length);
+          console.log('🔍 FRONTEND DEBUG: Removing student with ID:', student.id);
+          const newStudents = prev.filter(s => s.id !== student.id);
+          console.log('🔍 FRONTEND DEBUG: New students count:', newStudents.length);
+          return newStudents;
+        });
+        
+        toast.success('Student deleted successfully!');
+        console.log('🔍 FRONTEND DEBUG: Delete operation completed successfully');
+      } else {
+        // Handle specific error messages from backend
+        console.error('🔍 FRONTEND DEBUG: Backend returned error:', deleteResult);
+        const errorMessage = deleteResult?.message || 'Error deleting student. Please try again.';
+        toast.error(errorMessage);
+        console.error('🔍 FRONTEND DEBUG: Error message displayed:', errorMessage);
+      }
+    } catch (error) {
+      console.error('🔍 FRONTEND DEBUG: Error deleting student:', error);
+      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
+      console.error('🔍 FRONTEND DEBUG: Error status:', error.response?.status);
+      console.error('🔍 FRONTEND DEBUG: Error code:', error.code);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Error deleting student. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+      console.log('🔍 FRONTEND DEBUG: Delete operation finished, loading set to false');
+    }
+  };
+
+  // Handle single student registration
+  const handleSingleRegistration = async () => {
+    console.log('🔍 FRONTEND DEBUG: Single student registration initiated');
+    console.log('🔍 FRONTEND DEBUG: Current student data:', currentStudent);
+    
+    // Validate form data
+    const validationErrors = validateStudentData(currentStudent);
+    console.log('🔍 FRONTEND DEBUG: Validation errors:', validationErrors);
     
     if (validationErrors.length > 0) {
       validationErrors.forEach(error => toast.error(error));
@@ -130,6 +299,7 @@ const PreFormOneRegistration = () => {
     try {
       setLoading(true);
       const admissionNumber = generateAdmissionNumber(currentStudent.serialNumber);
+      console.log('🔍 FRONTEND DEBUG: Generated admission number:', admissionNumber);
       
       const studentData = {
         admission_number: admissionNumber,
@@ -141,15 +311,32 @@ const PreFormOneRegistration = () => {
         parish: '', // Initialize parish as empty string
         year: parseInt(year)
       };
+      
+      console.log('🔍 FRONTEND DEBUG: Prepared student data for API:', studentData);
 
       const createdStudent = await preFormOneService.createStudent(studentData);
+      console.log('🔍 FRONTEND DEBUG: API response - created student:', createdStudent);
       
-      // Update local state with the new student
-      setStudents(prev => [...prev, createdStudent]);
-      
-      toast.success(`${createdStudent.first_name} ${createdStudent.surname} registered successfully!`);
+      // Check if the response indicates success
+      if (createdStudent && createdStudent.success) {
+        // Update local state with the new student
+        setStudents(prev => {
+          console.log('🔍 FRONTEND DEBUG: Updating local students state');
+          console.log('🔍 FRONTEND DEBUG: Previous students count:', prev.length);
+          const newStudents = [...prev, createdStudent.data];
+          console.log('🔍 FRONTEND DEBUG: New students count:', newStudents.length);
+          return newStudents;
+        });
+        
+        toast.success(`${createdStudent.data.first_name} ${createdStudent.data.surname} registered successfully!`);
+      } else {
+        // Handle specific error messages from backend
+        console.error('🔍 FRONTEND DEBUG: Backend returned error:', createdStudent);
+        toast.error(createdStudent.message || 'Error registering student. Please try again.');
+      }
     } catch (error) {
-      console.error('Error registering student:', error);
+      console.error('🔍 FRONTEND DEBUG: Error registering student:', error);
+      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
       toast.error('Error registering student. Please try again.');
     } finally {
       setLoading(false);
@@ -171,7 +358,12 @@ const PreFormOneRegistration = () => {
 
   // Process CSV data
   const processCsvData = async (csvText) => {
+    console.log('🔍 FRONTEND DEBUG: CSV processing initiated');
+    console.log('🔍 FRONTEND DEBUG: CSV text length:', csvText.length);
+    console.log('🔍 FRONTEND DEBUG: CSV text preview:', csvText.substring(0, 200));
+    
     if (!csvText.trim()) {
+      console.log('🔍 FRONTEND DEBUG: CSV validation failed - empty text');
       toast.error('Please enter CSV data');
       return;
     }
@@ -181,6 +373,10 @@ const PreFormOneRegistration = () => {
       const lines = csvText.split('\n').filter(line => line.trim());
       const headers = lines[0].split(',').map(h => h.trim());
       const dataLines = lines.slice(1);
+      
+      console.log('🔍 FRONTEND DEBUG: CSV parsed - lines:', lines.length);
+      console.log('🔍 FRONTEND DEBUG: CSV headers:', headers);
+      console.log('🔍 FRONTEND DEBUG: CSV data lines count:', dataLines.length);
 
       const studentsToCreate = dataLines.map((line, index) => {
         const values = line.split(',').map(v => v.trim());
@@ -204,23 +400,37 @@ const PreFormOneRegistration = () => {
           else if (field === 'surname') student.surname = values[i] || '';
           else if (field === 'sex') student.sex = values[i] || '';
         });
-
+        
+        console.log(`🔍 FRONTEND DEBUG: Processed CSV student ${index + 1}:`, student);
         return student;
       }).filter(student => student.serial_number && student.first_name && student.surname && student.sex);
+      
+      console.log('🔍 FRONTEND DEBUG: Valid students to create:', studentsToCreate.length);
+      console.log('🔍 FRONTEND DEBUG: Students data:', studentsToCreate);
 
       if (studentsToCreate.length === 0) {
+        console.log('🔍 FRONTEND DEBUG: No valid students found in CSV');
         toast.error('No valid student data found in CSV');
         return;
       }
 
       const result = await preFormOneService.createBulkStudents(studentsToCreate);
+      console.log('🔍 FRONTEND DEBUG: Bulk creation API response:', result);
       
       // Update local state with the new students
-      setStudents(prev => [...prev, ...result.students]);
+      setStudents(prev => {
+        console.log('🔍 FRONTEND DEBUG: Updating local state with bulk students');
+        console.log('🔍 FRONTEND DEBUG: Previous count:', prev.length);
+        console.log('🔍 FRONTEND DEBUG: Adding count:', result.students?.length || 0);
+        const newStudents = [...prev, ...(result.students || [])];
+        console.log('🔍 FRONTEND DEBUG: New total count:', newStudents.length);
+        return newStudents;
+      });
       
-      toast.success(`${result.students.length} students registered successfully from CSV!`);
+      toast.success(`${result.students?.length || 0} students registered successfully from CSV!`);
     } catch (error) {
-      console.error('Error processing CSV data:', error);
+      console.error('🔍 FRONTEND DEBUG: Error processing CSV data:', error);
+      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
       toast.error('Error processing CSV data. Please check file format and try again.');
     } finally {
       setLoading(false);
@@ -234,7 +444,7 @@ const PreFormOneRegistration = () => {
       await preFormOneService.exportStudents(year);
     } catch (error) {
       console.error('Error exporting students:', error);
-      alert('Error exporting students. Please try again.');
+      toast.error('Error exporting students. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -281,7 +491,14 @@ const PreFormOneRegistration = () => {
           </span>
         </div>
         <div className="registration-form-card-body">
-          <form onSubmit={handleSingleRegistration} className="registration-form">
+          <form onSubmit={(e) => { 
+            e.preventDefault(); 
+            if (currentStudent.id) {
+              handleUpdateStudent();
+            } else {
+              handleSingleRegistration();
+            }
+          }} className="registration-form">
             <div className="registration-form-grid">
               <div className="form-field">
                 <div className="form-group">
@@ -373,17 +590,47 @@ const PreFormOneRegistration = () => {
               </div>
               
               <div className="form-field form-actions-field">
-                <button type="submit" className="form-btn primary" disabled={loading}>
-                  <i className={`fas ${loading ? 'fa-spinner fa-spin' : 'fa-plus'}`}></i>
-                  <span className="btn-text">{loading ? 'Adding...' : 'Add Student'}</span>
-                </button>
-              </div>
-              
-              <div className="form-field form-actions-field">
-                <Link to={`/admin/pre-form-one/${year}`} className="form-btn secondary">
-                  <i className="fas fa-arrow-left"></i>
-                  <span className="btn-text">Back</span>
-                </Link>
+                <div className="form-actions">
+                  <button
+                    type="submit"
+                    className="form-btn primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <span className="btn-text">Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-save"></i>
+                        <span className="btn-text">
+                          {currentStudent.id ? 'Update Student' : 'Register Student'}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                  
+                  {currentStudent.id && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStudent({
+                        serialNumber: '',
+                        firstName: '',
+                        middleName: '',
+                        surname: '',
+                        sex: '',
+                        parish: '',
+                        year: year
+                      })}
+                      className="form-btn secondary"
+                      disabled={loading}
+                    >
+                      <i className="fas fa-times"></i>
+                      <span className="btn-text">Cancel</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </form>
@@ -420,40 +667,78 @@ const PreFormOneRegistration = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {students.map(student => (
-                    <tr key={student.id}>
-                      <td>{student.admissionNumber}</td>
-                      <td>{student.serialNumber}</td>
-                      <td>{`${student.firstName} ${student.middleName || ''} ${student.surname}`.trim()}</td>
-                      <td>
-                        <span className={`sex-badge ${student.sex.toLowerCase()}`}>
-                          {student.sex}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button 
-                            onClick={() => setCurrentStudent(student)}
-                            className="form-btn primary small"
-                            title="Edit student"
-                          >
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button 
-                            onClick={() => {
-                              if (window.confirm(`Delete student ${student.admissionNumber}?`)) {
-                                setStudents(prev => prev.filter(s => s.id !== student.id));
-                              }
-                            }}
-                            className="form-btn secondary small"
-                            title="Delete student"
-                          >
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {students.map((student, index) => {
+                    console.log(`🔍 FRONTEND DEBUG: Rendering student ${index + 1}:`, student);
+                    console.log(`🔍 FRONTEND DEBUG: Student ID:`, student.id);
+                    console.log(`🔍 FRONTEND DEBUG: Student data fields:`, {
+                      admission_number: student.admission_number,
+                      serial_number: student.serial_number,
+                      first_name: student.first_name,
+                      middle_name: student.middle_name,
+                      surname: student.surname,
+                      sex: student.sex,
+                      parish: student.parish,
+                      year: student.year,
+                      created_at: student.created_at,
+                      updated_at: student.updated_at
+                    });
+                    console.log(`🔍 FRONTEND DEBUG: Field values check:`, {
+                      has_admission_number: !!student.admission_number,
+                      has_serial_number: !!student.serial_number,
+                      has_first_name: !!student.first_name,
+                      has_middle_name: !!student.middle_name,
+                      has_surname: !!student.surname,
+                      has_sex: !!student.sex,
+                      admission_number_value: student.admission_number,
+                      serial_number_value: student.serial_number,
+                      first_name_value: student.first_name,
+                      surname_value: student.surname,
+                      sex_value: student.sex
+                    });
+                    
+                    return (
+                      <tr key={student.id || `student-${index}`}>
+                        <td>{student.admission_number || 'N/A'}</td>
+                        <td>{student.serial_number || 'N/A'}</td>
+                        <td>{`${student.first_name || ''} ${student.middle_name || ''} ${student.surname || ''}`.trim() || 'N/A'}</td>
+                        <td>
+                          <span className={`sex-badge ${student.sex?.toLowerCase() || 'unknown'}`}>
+                            {student.sex || 'Unknown'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="action-buttons">
+                            <button 
+                              onClick={() => {
+                                // Populate form with student data for editing
+                                setCurrentStudent({
+                                  serialNumber: student.serial_number,
+                                  firstName: student.first_name,
+                                  middleName: student.middle_name,
+                                  surname: student.surname,
+                                  sex: student.sex,
+                                  parish: student.parish,
+                                  year: year,
+                                  id: student.id // Store ID for update
+                                });
+                              }}
+                              className="form-btn primary small"
+                              title="Edit student"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteStudent(student)}
+                              className="form-btn secondary small"
+                              title="Delete student"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -325,6 +325,10 @@ const reportsRoutes = require('./routes/reports');
 const dtaMonitorRoutes = require('./routes/dtaMonitor');
 const studentsRoutes = require('./routes/students');
 const preFormOneRoutes = require('./routes/preFormOne');
+const preFormOneInterviewSubjectsRoutes = require('./routes/preFormOneInterviewSubjects');
+const preFormOneContinuingSubjectsRoutes = require('./routes/preFormOneContinuingSubjects');
+const preFormOneScoresRoutes = require('./routes/preFormOneScores');
+const systemGradesRoutes = require('./routes/systemGrades');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
@@ -334,6 +338,10 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dta-monitor', dtaMonitorRoutes);
 app.use('/api/pre-form-one', preFormOneRoutes);
+app.use('/api/preformone-interview-subjects', preFormOneInterviewSubjectsRoutes);
+app.use('/api/preformone-continuing-subjects', preFormOneContinuingSubjectsRoutes);
+app.use('/api/preformone-scores', preFormOneScoresRoutes);
+app.use('/api/system', systemGradesRoutes);
 
 // Socket.IO authentication middleware
 io.use((socket, next) => {

@@ -57,23 +57,25 @@ export const AuthProvider = ({ children }) => {
     api.get('/auth/me')
       .then((response) => {
         if (cancelled) return;
+        // Handle 401 responses that are now resolved by the interceptor
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+          return;
+        }
         setUser(response.data.user);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       })
       .catch((error) => {
         if (cancelled) return;
-        if (error.response?.status === 401) {
+        // Network errors or other unexpected errors
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
-        } else {
-          try {
-            setUser(JSON.parse(savedUser));
-          } catch {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            setUser(null);
-          }
         }
       })
       .finally(() => {
@@ -92,22 +94,26 @@ export const AuthProvider = ({ children }) => {
       // Add a flag to prevent interceptor from logging out during verification
       window.__verifyingToken = true;
       const response = await api.get('/auth/me');
-      setUser(response.data.user);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      window.__verifyingToken = false;
-      return true;
-    } catch (error) {
-      console.error('Token verification failed:', error);
       window.__verifyingToken = false;
       
-      // Only clear user if token is truly invalid (401)
-      if (error.response?.status === 401) {
-        // Token is invalid - clear it but don't redirect immediately
-        // Let the ProtectedRoute or next API call handle the redirect
+      // Handle 401 responses that are now resolved by the interceptor
+      if (response.status === 401) {
         setUser(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        return false;
       }
+      
+      setUser(response.data.user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      return true;
+    } catch (error) {
+      // Network errors or other unexpected errors
+      window.__verifyingToken = false;
+      console.error('Token verification failed:', error);
+      setUser(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       return false;
     }
   };
