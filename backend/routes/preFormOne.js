@@ -128,8 +128,6 @@ router.post('/', requireAuth, async (req, res) => {
   
   try {
     console.log('🔍 DEBUG: Transaction completed, preparing response');
-    const result = await client;
-    console.log('🔍 DEBUG: Sending response:', JSON.stringify(result, null, 2));
     res.json(result);
   } catch (error) {
     console.error('🔍 DEBUG: Error creating Pre-Form One student:');
@@ -206,8 +204,6 @@ router.post('/bulk', requireAuth, async (req, res) => {
   
   try {
     console.log('🔍 DEBUG: Bulk transaction completed, preparing response');
-    const result = await client;
-    console.log('🔍 DEBUG: Sending bulk response:', JSON.stringify(result, null, 2));
     res.json(result);
   } catch (error) {
     console.error('🔍 DEBUG: Error creating bulk Pre-Form One students:');
@@ -312,8 +308,6 @@ router.put('/:id', requireAuth, async (req, res) => {
   
   try {
     console.log('🔍 DEBUG: Student update transaction completed, preparing response');
-    const result = await client;
-    console.log('🔍 DEBUG: Sending student update response:', JSON.stringify(result, null, 2));
     res.json(result);
   } catch (error) {
     console.error('🔍 DEBUG: Error updating student:');
@@ -387,8 +381,6 @@ router.put('/:id/parish', requireAuth, async (req, res) => {
   
   try {
     console.log('🔍 DEBUG: Parish update transaction completed, preparing response');
-    const result = await client;
-    console.log('🔍 DEBUG: Sending parish update response:', JSON.stringify(result, null, 2));
     res.json(result);
   } catch (error) {
     console.error('🔍 DEBUG: Error updating student parish:');
@@ -467,8 +459,6 @@ router.put('/bulk-parish', requireAuth, async (req, res) => {
   
   try {
     console.log('🔍 DEBUG: Bulk parish update transaction completed, preparing response');
-    const result = await client;
-    console.log('🔍 DEBUG: Sending bulk parish update response:', JSON.stringify(result, null, 2));
     res.json(result);
   } catch (error) {
     console.error('🔍 DEBUG: Error bulk updating parishes:');
@@ -534,8 +524,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
   
   try {
     console.log('🔍 DEBUG: Delete transaction completed, preparing response');
-    const result = await client;
-    console.log('🔍 DEBUG: Sending delete response:', JSON.stringify(result, null, 2));
     res.json(result);
   } catch (error) {
     console.error('🔍 DEBUG: Error deleting student:');
@@ -581,6 +569,892 @@ router.get('/:year/export', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error exporting Pre-Form One students:', error);
     sendError(res, 500, 'Failed to export students', error);
+  }
+});
+
+// Get interview results for a specific year
+router.get('/:year/interview-results', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    // Validate year parameter
+    if (!year || isNaN(parseInt(year))) {
+      return sendError(res, 400, 'Invalid year parameter');
+    }
+    
+    const result = await query(
+      'SELECT * FROM preform_one_interview_results WHERE year = $1 ORDER BY position',
+      [year]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rowCount
+    });
+  } catch (error) {
+    console.error('Error fetching Pre-Form One interview results:', error);
+    sendError(res, 500, 'Failed to fetch interview results', error);
+  }
+});
+
+// Get continuing results for a specific year
+router.get('/:year/continuing-results', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    // Validate year parameter
+    if (!year || isNaN(parseInt(year))) {
+      return sendError(res, 400, 'Invalid year parameter');
+    }
+    
+    const result = await query(
+      'SELECT * FROM preform_one_continuing_results WHERE year = $1 ORDER BY position',
+      [year]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rowCount
+    });
+  } catch (error) {
+    console.error('Error fetching Pre-Form One continuing results:', error);
+    sendError(res, 500, 'Failed to fetch continuing results', error);
+  }
+});
+
+// Calculate interview results
+router.post('/:year/interview-results/calculate', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    if (!year || isNaN(parseInt(year))) {
+      return sendError(res, 400, 'Invalid year parameter');
+    }
+    
+    const client = await withTransaction(async (client) => {
+      // Get students for the year
+      const studentsResult = await client.query(
+        'SELECT id, admission_number FROM preform_one_students WHERE year = $1 ORDER BY admission_number',
+        [year]
+      );
+
+      // Get interview subjects
+      const subjectsResult = await client.query(
+        'SELECT id, subject_code FROM preformone_interview_subjects WHERE is_active = true'
+      );
+
+      if (studentsResult.rows.length === 0 || subjectsResult.rows.length === 0) {
+        return [];
+      }
+
+      const results = [];
+
+      for (const student of studentsResult.rows) {
+        // Get student scores for each subject
+        const scoresResult = await client.query(
+          'SELECT subject_id, score FROM preform_one_scores WHERE student_id = $1 AND subject_type = $2',
+          [student.id, 'interview']
+        );
+
+        let totalMarks = 0;
+        let subjectCount = 0;
+
+        const studentScores = {};
+
+        for (const subject of subjectsResult.rows) {
+          const score = scoresResult.rows.find(s => s.subject_id === subject.id);
+          const subjectScore = score ? score.score : 0;
+
+          studentScores[subject.subject_code] = subjectScore;
+          totalMarks += subjectScore;
+          subjectCount++;
+        }
+
+        // Calculate average and grade (assuming all subjects are out of 100)
+        const average = subjectCount > 0 ? totalMarks / subjectCount : 0;
+        const grade = calculateGrade(average);
+        
+        // Results will be updated with correct positions after the loop
+        const result = {
+          student_id: student.id,
+          admission_number: student.admission_number,
+          total_marks: totalMarks,
+          average: average,
+          grade: grade,
+          position: 0, // Placeholder
+          remarks: getRemarks(grade),
+          year: parseInt(year)
+        };
+        
+        results.push(result);
+      }
+
+      // Calculate correct positions based on average
+      const sortedResults = [...results].sort((a, b) => b.average - a.average);
+      
+      for (let i = 0; i < sortedResults.length; i++) {
+        const studentResult = sortedResults[i];
+        const position = i + 1;
+        
+        // Save or update result with correct position
+        await client.query(`
+          INSERT INTO preform_one_interview_results 
+          (student_id, admission_number, total_marks, average, grade, position, remarks, year)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          ON CONFLICT (student_id, year) 
+          DO UPDATE SET 
+            total_marks = EXCLUDED.total_marks,
+            average = EXCLUDED.average,
+            grade = EXCLUDED.grade,
+            position = EXCLUDED.position,
+            remarks = EXCLUDED.remarks,
+            updated_at = CURRENT_TIMESTAMP
+        `, [
+          studentResult.student_id,
+          studentResult.admission_number,
+          studentResult.total_marks,
+          studentResult.average,
+          studentResult.grade,
+          position,
+          getRemarks(studentResult.grade),
+          parseInt(year)
+        ]);
+        
+        // Update position in the array we return
+        const originalResult = results.find(r => r.student_id === studentResult.student_id);
+        if (originalResult) originalResult.position = position;
+      }
+      
+      return results;
+    });
+    
+    const result = await client;
+    
+    res.json({
+      success: true,
+      message: 'Interview results calculated and saved successfully!',
+      results: result
+    });
+  } catch (error) {
+    console.error('Error calculating interview results:', error);
+    sendError(res, 500, 'Failed to calculate interview results', error);
+  }
+});
+
+// Calculate continuing results
+router.post('/:year/continuing-results/calculate', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    if (!year || isNaN(parseInt(year))) {
+      return sendError(res, 400, 'Invalid year parameter');
+    }
+    
+    const client = await withTransaction(async (client) => {
+      // Get students for the year
+      const studentsResult = await client.query(
+        'SELECT id, admission_number FROM preform_one_students WHERE year = $1 ORDER BY admission_number',
+        [year]
+      );
+
+      // Get continuing subjects
+      const subjectsResult = await client.query(
+        'SELECT id, subject_code FROM preformone_continuing_subjects WHERE is_active = true'
+      );
+
+      if (studentsResult.rows.length === 0 || subjectsResult.rows.length === 0) {
+        return [];
+      }
+
+      const results = [];
+
+      for (const student of studentsResult.rows) {
+        // Get student scores for each subject
+        const scoresResult = await client.query(
+          'SELECT subject_id, score FROM preform_one_scores WHERE student_id = $1 AND subject_type = $2',
+          [student.id, 'continuing']
+        );
+        
+        let totalMarks = 0;
+        let subjectCount = 0;
+        
+        const studentScores = {};
+        
+        for (const subject of subjectsResult.rows) {
+          const score = scoresResult.rows.find(s => s.subject_id === subject.id);
+          const subjectScore = score ? score.score : 0;
+          
+          studentScores[subject.subject_code] = subjectScore;
+          totalMarks += subjectScore;
+          subjectCount++;
+        }
+        
+        // Calculate average and grade
+        const average = subjectCount > 0 ? totalMarks / subjectCount : 0;
+        const grade = calculateGrade(average);
+        
+        // Results will be updated with correct positions after the loop
+        const result = {
+          student_id: student.id,
+          admission_number: student.admission_number,
+          total_marks: totalMarks,
+          average: average,
+          grade: grade,
+          position: 0, // Placeholder
+          remarks: getRemarks(grade),
+          year: parseInt(year)
+        };
+        
+        results.push(result);
+      }
+
+      // Calculate correct positions based on average
+      const sortedResults = [...results].sort((a, b) => b.average - a.average);
+      
+      for (let i = 0; i < sortedResults.length; i++) {
+        const studentResult = sortedResults[i];
+        const position = i + 1;
+        
+        // Save or update result
+        await client.query(`
+          INSERT INTO preform_one_continuing_results 
+          (student_id, admission_number, total_marks, average, grade, position, remarks, year)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          ON CONFLICT (student_id, year) 
+          DO UPDATE SET 
+            total_marks = EXCLUDED.total_marks,
+            average = EXCLUDED.average,
+            grade = EXCLUDED.grade,
+            position = EXCLUDED.position,
+            remarks = EXCLUDED.remarks,
+            updated_at = CURRENT_TIMESTAMP
+        `, [
+          studentResult.student_id,
+          studentResult.admission_number,
+          studentResult.total_marks,
+          studentResult.average,
+          studentResult.grade,
+          position,
+          getRemarks(studentResult.grade),
+          parseInt(year)
+        ]);
+        
+        // Update position in the array we return
+        const originalResult = results.find(r => r.student_id === studentResult.student_id);
+        if (originalResult) originalResult.position = position;
+      }
+      
+      return results;
+    });
+    
+    const result = await client;
+    
+    res.json({
+      success: true,
+      message: 'Continuing results calculated and saved successfully!',
+      results: result
+    });
+  } catch (error) {
+    console.error('Error calculating continuing results:', error);
+    sendError(res, 500, 'Failed to calculate continuing results', error);
+  }
+});
+
+// Get individual interview score
+router.get('/interview-score/:studentId/:subjectId', requireAuth, async (req, res) => {
+  try {
+    const { studentId, subjectId } = req.params;
+    
+    const result = await query(
+      'SELECT score FROM preform_one_scores WHERE student_id = $1 AND subject_id = $2 AND subject_type = $3',
+      [studentId, subjectId, 'interview']
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows[0]?.score || 0
+    });
+  } catch (error) {
+    console.error('Error fetching interview score:', error);
+    sendError(res, 500, 'Failed to fetch interview score', error);
+  }
+});
+
+// Get individual continuing score
+router.get('/continuing-score/:studentId/:subjectId', requireAuth, async (req, res) => {
+  try {
+    const { studentId, subjectId } = req.params;
+    
+    const result = await query(
+      'SELECT score FROM preform_one_scores WHERE student_id = $1 AND subject_id = $2 AND subject_type = $3',
+      [studentId, subjectId, 'continuing']
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows[0]?.score || 0
+    });
+  } catch (error) {
+    console.error('Error fetching continuing score:', error);
+    sendError(res, 500, 'Failed to fetch continuing score', error);
+  }
+});
+
+// Save individual interview score
+router.post('/interview-score/:studentId/:subjectId', requireAuth, async (req, res) => {
+  try {
+    const { studentId, subjectId } = req.params;
+    const { score } = req.body;
+    
+    const client = await withTransaction(async (client) => {
+      const result = await client.query('INSERT INTO preform_one_scores (student_id, subject_id, subject_type, score, created_by) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (student_id, subject_id, subject_type) DO UPDATE SET score = EXCLUDED.score, updated_at = CURRENT_TIMESTAMP', [studentId, subjectId, 'interview', score, req.user?.id || 1]);
+      
+      return result;
+    });
+    
+    const result = await client;
+    
+    res.json({
+      success: true,
+      message: 'Interview score saved successfully!',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error saving interview score:', error);
+    sendError(res, 500, 'Failed to save interview score', error);
+  }
+});
+
+// Save individual continuing score
+router.post('/continuing-score/:studentId/:subjectId', requireAuth, async (req, res) => {
+  try {
+    const { studentId, subjectId } = req.params;
+    const { score } = req.body;
+    
+    const client = await withTransaction(async (client) => {
+      const result = await client.query('INSERT INTO preform_one_scores (student_id, subject_id, subject_type, score, created_by) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (student_id, subject_id, subject_type) DO UPDATE SET score = EXCLUDED.score, updated_at = CURRENT_TIMESTAMP', [studentId, subjectId, 'continuing', score, req.user?.id || 1]);
+      
+      return result;
+    });
+    
+    const result = await client;
+    
+    res.json({
+      success: true,
+      message: 'Continuing score saved successfully!',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error saving continuing score:', error);
+    sendError(res, 500, 'Failed to save continuing score', error);
+  }
+});
+
+// Download interview results PDF
+router.get('/:year/interview-results/pdf', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    if (!year || isNaN(parseInt(year))) {
+      return sendError(res, 400, 'Invalid year parameter');
+    }
+    
+    // Get results for PDF generation
+    const results = await query('SELECT r.*, s.first_name, s.middle_name, s.surname, s.admission_number, s.parish FROM preform_one_interview_results r JOIN preform_one_students s ON r.student_id = s.id WHERE r.year = $1 ORDER BY r.position', [year]);
+    
+    // Check if there are any results
+    if (results.rows.length === 0) {
+      return sendError(res, 404, 'No interview results found for this year. Please enter scores and calculate results first.');
+    }
+    
+    // Get subjects for PDF generation
+    const subjects = await query('SELECT id, subject_code FROM preformone_interview_subjects WHERE is_active = true ORDER BY subject_code');
+    
+    // Get subject scores for all students in the year
+    const scores = await query(`
+      SELECT sc.score, sc.student_id, sub.subject_code 
+      FROM preform_one_scores sc
+      JOIN preformone_interview_subjects sub ON sc.subject_id = sub.id
+      WHERE sc.subject_type = 'interview' AND sc.student_id IN (
+        SELECT student_id FROM preform_one_interview_results WHERE year = $1
+      )
+    `, [year]);
+    
+    // Create a map of student_id -> subject_code -> score
+    const scoresMap = {};
+    scores.rows.forEach(scoreRow => {
+      const studentId = scoreRow.student_id;
+      const subjectCode = scoreRow.subject_code;
+      if (!scoresMap[studentId]) {
+        scoresMap[studentId] = {};
+      }
+      scoresMap[studentId][subjectCode] = scoreRow.score;
+    });
+    
+    // Add subject scores to results
+    const resultsWithScores = results.rows.map(result => ({
+      ...result,
+      ...scoresMap[result.student_id] || {}
+    }));
+    
+    console.log('🔍 PDF DEBUG: Starting PDF generation for interview results');
+    console.log('🔍 PDF DEBUG: Results count:', resultsWithScores.length);
+    console.log('🔍 PDF DEBUG: Subjects count:', subjects.rows.length);
+    
+    // Generate PDF using puppeteer
+    try {
+      const puppeteer = require('puppeteer');
+      console.log('🔍 PDF DEBUG: Puppeteer module loaded');
+      
+      const browser = await puppeteer.launch({ 
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        timeout: 30000
+      });
+      console.log('🔍 PDF DEBUG: Puppeteer browser launched');
+      
+      const page = await browser.newPage();
+      console.log('🔍 PDF DEBUG: New page created');
+      
+      // Generate HTML content for PDF
+      const htmlContent = generateInterviewResultsPDF(resultsWithScores, subjects.rows, year);
+      console.log('🔍 PDF DEBUG: HTML content generated, length:', htmlContent.length);
+      
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      console.log('🔍 PDF DEBUG: HTML content set to page');
+      
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20px',
+          right: '20px',
+          bottom: '20px',
+          left: '20px'
+        },
+        timeout: 15000
+      });
+      console.log('🔍 PDF DEBUG: PDF generated, buffer size:', pdfBuffer.length);
+      
+      await browser.close();
+      console.log('🔍 PDF DEBUG: Browser closed');
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="preform-one-interview-results-${year}.pdf"`);
+      res.send(pdfBuffer);
+      console.log('🔍 PDF DEBUG: PDF response sent');
+      
+    } catch (error) {
+      console.error('🔍 PDF ERROR: PDF generation failed:', error);
+      console.error('🔍 PDF ERROR: Error stack:', error.stack);
+      sendError(res, 500, 'Failed to generate PDF', error);
+    }
+    
+  } catch (error) {
+    console.error('Error generating interview results PDF:', error);
+    sendError(res, 500, 'Failed to generate PDF', error);
+  }
+});
+
+// Download continuing results PDF
+router.get('/:year/continuing-results/pdf', requireAuth, async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    if (!year || isNaN(parseInt(year))) {
+      return sendError(res, 400, 'Invalid year parameter');
+    }
+    
+    // Get results for PDF generation
+    const results = await query('SELECT r.*, s.first_name, s.middle_name, s.surname, s.admission_number, s.parish FROM preform_one_continuing_results r JOIN preform_one_students s ON r.student_id = s.id WHERE r.year = $1 ORDER BY r.position', [year]);
+    
+    // Check if there are any results
+    if (results.rows.length === 0) {
+      return sendError(res, 404, 'No continuing results found for this year. Please enter scores and calculate results first.');
+    }
+    
+    // Get subjects for PDF generation
+    const subjects = await query('SELECT id, subject_code FROM preformone_continuing_subjects WHERE is_active = true ORDER BY subject_code');
+    
+    // Get subject scores for all students in the year
+    const scores = await query(`
+      SELECT sc.score, sc.student_id, sub.subject_code 
+      FROM preform_one_scores sc
+      JOIN preformone_continuing_subjects sub ON sc.subject_id = sub.id
+      WHERE sc.subject_type = 'continuing' AND sc.student_id IN (
+        SELECT student_id FROM preform_one_continuing_results WHERE year = $1
+      )
+    `, [year]);
+    
+    // Create a map of student_id -> subject_code -> score
+    const scoresMap = {};
+    scores.rows.forEach(scoreRow => {
+      const studentId = scoreRow.student_id;
+      const subjectCode = scoreRow.subject_code;
+      if (!scoresMap[studentId]) {
+        scoresMap[studentId] = {};
+      }
+      scoresMap[studentId][subjectCode] = scoreRow.score;
+    });
+    
+    // Add subject scores to results
+    const resultsWithScores = results.rows.map(result => ({
+      ...result,
+      ...scoresMap[result.student_id] || {}
+    }));
+    
+    console.log('🔍 PDF DEBUG: Starting PDF generation for continuing results');
+    console.log('🔍 PDF DEBUG: Results count:', resultsWithScores.length);
+    console.log('🔍 PDF DEBUG: Subjects count:', subjects.rows.length);
+    
+    // Generate PDF using puppeteer
+    try {
+      const puppeteer = require('puppeteer');
+      console.log('🔍 PDF DEBUG: Puppeteer module loaded');
+      
+      const browser = await puppeteer.launch({ 
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        timeout: 30000
+      });
+      console.log('🔍 PDF DEBUG: Puppeteer browser launched');
+      
+      const page = await browser.newPage();
+      console.log('🔍 PDF DEBUG: New page created');
+      
+      // Generate HTML content for PDF
+      const htmlContent = generateContinuingResultsPDF(resultsWithScores, subjects.rows, year);
+      console.log('🔍 PDF DEBUG: HTML content generated, length:', htmlContent.length);
+      
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      console.log('🔍 PDF DEBUG: HTML content set to page');
+      
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20px',
+          right: '20px',
+          bottom: '20px',
+          left: '20px'
+        },
+        timeout: 15000
+      });
+      console.log('🔍 PDF DEBUG: PDF generated, buffer size:', pdfBuffer.length);
+      
+      await browser.close();
+      console.log('🔍 PDF DEBUG: Browser closed');
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="preform-one-continuing-results-${year}.pdf"`);
+      res.send(pdfBuffer);
+      console.log('🔍 PDF DEBUG: PDF response sent');
+      
+    } catch (error) {
+      console.error('🔍 PDF ERROR: PDF generation failed:', error);
+      console.error('🔍 PDF ERROR: Error stack:', error.stack);
+      sendError(res, 500, 'Failed to generate PDF', error);
+    }
+    
+  } catch (error) {
+    console.error('Error generating continuing results PDF:', error);
+    sendError(res, 500, 'Failed to generate PDF', error);
+  }
+});
+
+// Helper function to generate interview results PDF HTML
+function generateInterviewResultsPDF(results, subjects, year) {
+  const subjectHeaders = subjects.map(s => `<th>${s.subject_code}</th>`).join('');
+  
+  const tableRows = results.map((result, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${result.admission_number}</td>
+      <td>${result.first_name}</td>
+      <td>${result.middle_name || ''}</td>
+      <td>${result.surname}</td>
+      <td>${result.parish || ''}</td>
+      ${subjects.map(subject => `<td>${result[subject.subject_code] || 0}</td>`).join('')}
+      <td>${parseFloat(result.total_marks).toFixed(2)}</td>
+      <td>${parseFloat(result.average).toFixed(2)}</td>
+      <td>${result.grade}</td>
+      <td>${result.position}</td>
+      <td>${result.remarks || ''}</td>
+    </tr>
+  `).join('');
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Pre-Form One Interview Results ${year}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>CATHOLIC ARCHDIOCESE OF ARUSHA</h1>
+      <h2>ARUSHA CATHOLIC SEMINARY-OLDONYOSAMBU</h2>
+      <h3>Pre-Form One Interview Results ${year}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>S/N</th>
+            <th>Admission No</th>
+            <th>First Name</th>
+            <th>Middle Name</th>
+            <th>Surname</th>
+            <th>Parish</th>
+            ${subjectHeaders}
+            <th>Total</th>
+            <th>Average</th>
+            <th>Grade</th>
+            <th>Position</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+}
+
+// Helper function to generate continuing results PDF HTML
+function generateContinuingResultsPDF(results, subjects, year) {
+  const subjectHeaders = subjects.map(s => `<th>${s.subject_code}</th>`).join('');
+  
+  const tableRows = results.map((result, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${result.admission_number}</td>
+      <td>${result.first_name}</td>
+      <td>${result.middle_name || ''}</td>
+      <td>${result.surname}</td>
+      <td>${result.parish || ''}</td>
+      ${subjects.map(subject => `<td>${result[subject.subject_code] || 0}</td>`).join('')}
+      <td>${parseFloat(result.total_marks).toFixed(2)}</td>
+      <td>${parseFloat(result.average).toFixed(2)}</td>
+      <td>${result.grade}</td>
+      <td>${result.position}</td>
+      <td>${result.remarks || ''}</td>
+    </tr>
+  `).join('');
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Pre-Form One Continuing Results ${year}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>CATHOLIC ARCHDIOCESE OF ARUSHA</h1>
+      <h2>ARUSHA CATHOLIC SEMINARY-OLDONYOSAMBU</h2>
+      <h3>Pre-Form One Continuing Results ${year}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>S/N</th>
+            <th>Admission No</th>
+            <th>First Name</th>
+            <th>Middle Name</th>
+            <th>Surname</th>
+            <th>Parish</th>
+            ${subjectHeaders}
+            <th>Total</th>
+            <th>Average</th>
+            <th>Grade</th>
+            <th>Position</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+}
+
+// Helper functions
+function calculateGrade(average) {
+  if (average >= 80) return 'A';
+  if (average >= 70) return 'B';
+  if (average >= 55) return 'C';
+  if (average >= 45) return 'D';
+  return 'F';
+}
+
+function getRemarks(grade) {
+  switch (grade) {
+    case 'A': return 'Excellent';
+    case 'B': return 'Good';
+    case 'C': return 'Satisfactory';
+    case 'D': return 'Needs Improvement';
+    case 'F': return 'Fail';
+    default: return '';
+  }
+}
+
+// Save individual interview result
+router.post('/interview-result', requireAuth, async (req, res) => {
+  try {
+    const { year, student_index, total_marks, average, grade, position, remarks } = req.body;
+    
+    if (!year || !student_index) {
+      return sendError(res, 400, 'Year and student index are required');
+    }
+    
+    const client = await withTransaction(async (client) => {
+      // Get student by admission number
+      const studentResult = await client.query(
+        'SELECT id FROM preform_one_students WHERE admission_number = $1 AND year = $2',
+        [student_index, year]
+      );
+      
+      if (studentResult.rowCount === 0) {
+        return { success: false, message: 'Student not found' };
+      }
+      
+      const studentId = studentResult.rows[0].id;
+      
+      // Save or update interview result
+      const result = await client.query(`
+        INSERT INTO preform_one_interview_results 
+        (student_id, admission_number, total_marks, average, grade, position, remarks, year)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (student_id, year) 
+        DO UPDATE SET 
+          total_marks = EXCLUDED.total_marks,
+          average = EXCLUDED.average,
+          grade = EXCLUDED.grade,
+          position = EXCLUDED.position,
+          remarks = EXCLUDED.remarks,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `, [studentId, student_index, total_marks, average, grade, position, remarks, year]);
+      
+      return { success: true, data: result.rows[0] };
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error saving interview result:', error);
+    sendError(res, 500, 'Failed to save interview result', error);
+  }
+});
+
+// Save individual continuing result
+router.post('/continuing-result', requireAuth, async (req, res) => {
+  try {
+    const { year, student_index, total_marks, average, grade, position, remarks } = req.body;
+    
+    if (!year || !student_index) {
+      return sendError(res, 400, 'Year and student index are required');
+    }
+    
+    const client = await withTransaction(async (client) => {
+      // Get student by admission number
+      const studentResult = await client.query(
+        'SELECT id FROM preform_one_students WHERE admission_number = $1 AND year = $2',
+        [student_index, year]
+      );
+      
+      if (studentResult.rowCount === 0) {
+        return { success: false, message: 'Student not found' };
+      }
+      
+      const studentId = studentResult.rows[0].id;
+      
+      // Save or update continuing result
+      const result = await client.query(`
+        INSERT INTO preform_one_continuing_results 
+        (student_id, admission_number, total_marks, average, grade, position, remarks, year)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (student_id, year) 
+        DO UPDATE SET 
+          total_marks = EXCLUDED.total_marks,
+          average = EXCLUDED.average,
+          grade = EXCLUDED.grade,
+          position = EXCLUDED.position,
+          remarks = EXCLUDED.remarks,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `, [studentId, student_index, total_marks, average, grade, position, remarks, year]);
+      
+      return { success: true, data: result.rows[0] };
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error saving continuing result:', error);
+    sendError(res, 500, 'Failed to save continuing result', error);
+  }
+});
+
+// Delete individual interview result
+router.delete('/interview-result/:studentId', requireAuth, async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { year } = req.query;
+    
+    if (!studentId || !year) {
+      return sendError(res, 400, 'Student ID and year are required');
+    }
+    
+    const result = await query(
+      'DELETE FROM preform_one_interview_results WHERE student_id = $1 AND year = $2 RETURNING *',
+      [studentId, year]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Interview result deleted successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error deleting interview result:', error);
+    sendError(res, 500, 'Failed to delete interview result', error);
+  }
+});
+
+// Delete individual continuing result
+router.delete('/continuing-result/:studentId', requireAuth, async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { year } = req.query;
+    
+    if (!studentId || !year) {
+      return sendError(res, 400, 'Student ID and year are required');
+    }
+    
+    const result = await query(
+      'DELETE FROM preform_one_continuing_results WHERE student_id = $1 AND year = $2 RETURNING *',
+      [studentId, year]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Continuing result deleted successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error deleting continuing result:', error);
+    sendError(res, 500, 'Failed to delete continuing result', error);
   }
 });
 

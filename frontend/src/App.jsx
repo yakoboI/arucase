@@ -152,6 +152,10 @@ const PreFormOneParishes = lazy(() => import('./pages/admin/PreFormOneParishes')
 const PreFormOneInterviewSubjects = lazy(() => import('./pages/admin/PreFormOneInterviewSubjects'));
 const PreFormOneContinuingSubjects = lazy(() => import('./pages/admin/PreFormOneContinuingSubjects'));
 const PreFormOneScoreEntry = lazy(() => import('./pages/admin/PreFormOneScoreEntry'));
+const PreFormOneInterviewResults = lazy(() => import('./pages/admin/PreFormOneInterviewResults'));
+const PreFormOneContinuingResults = lazy(() => import('./pages/admin/PreFormOneContinuingResults'));
+const PreFormOneInterviewReports = lazy(() => import('./pages/admin/PreFormOneInterviewReports'));
+const PreFormOneContinuingReports = lazy(() => import('./pages/admin/PreFormOneContinuingReports'));
 
 // Analytics (lazy)
 const AnalyticsTrackSelection = lazy(() => import('./pages/analytics/AnalyticsTrackSelection'));
@@ -2161,6 +2165,10 @@ function App() {
             <Route path="/admin/pre-form-one/:year/continuing-subjects" element={<ProtectedRoute><PreFormOneContinuingSubjects /></ProtectedRoute>} />
             <Route path="/admin/pre-form-one/:year/score-entry" element={<ProtectedRoute><PreFormOneScoreEntry /></ProtectedRoute>} />
             <Route path="/admin/pre-form-one/:year/score-entry/:subjectId" element={<ProtectedRoute><PreFormOneScoreEntry /></ProtectedRoute>} />
+            <Route path="/admin/pre-form-one/:year/interview-results" element={<ProtectedRoute><PreFormOneInterviewResults /></ProtectedRoute>} />
+            <Route path="/admin/pre-form-one/:year/continuing-results" element={<ProtectedRoute><PreFormOneContinuingResults /></ProtectedRoute>} />
+            <Route path="/admin/pre-form-one/:year/interview-reports" element={<ProtectedRoute><PreFormOneInterviewReports /></ProtectedRoute>} />
+            <Route path="/admin/pre-form-one/:year/continuing-reports" element={<ProtectedRoute><PreFormOneContinuingReports /></ProtectedRoute>} />
 
             {/* Public Website Routes */}
             <Route path="/admin/gallery" element={<ProtectedRoute><AdminGallery /></ProtectedRoute>} />

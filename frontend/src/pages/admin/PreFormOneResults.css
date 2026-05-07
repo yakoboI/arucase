@@ -1,0 +1,454 @@
+/* Pre-Form One Results Page Styles */
+.preform-one-results-page-container {
+  padding: 1rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.excel-card.preform-one-results {
+  background: white;
+  border-radius: 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-bottom: 2rem;
+}
+
+.excel-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 0;
+}
+
+.excel-card-header i {
+  margin-right: 0.75rem;
+  font-size: 1.25rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.excel-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.excel-btn.primary {
+  background: #10b981;
+  color: white;
+}
+
+.excel-btn.primary:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.excel-btn.secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.excel-btn.secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.excel-btn.small {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.excel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.excel-card-body {
+  padding: 1.5rem;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.loading-state i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.empty-state .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #d1d5db;
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #374151;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.results-info {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0;
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-item strong {
+  color: #374151;
+}
+
+.print-button-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 0 1rem;
+}
+
+.download-btn-monthly {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+}
+
+.download-btn-monthly:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px -1px rgba(239, 68, 68, 0.4);
+}
+
+.download-btn-monthly:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Report Header Styles */
+.report-header-section {
+  margin-bottom: 2rem;
+  background: white;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem;
+  background: white;
+}
+
+.logo-section,
+.logo-section-right {
+  flex: 0 0 120px;
+  display: flex;
+  justify-content: center;
+}
+
+.school-logo,
+.school-logo-right {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.school-logo-placeholder {
+  width: 100px;
+  height: 100px;
+  background: #f3f4f6;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 2rem;
+}
+
+.school-info {
+  flex: 1;
+  text-align: center;
+}
+
+.school-info h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.school-info h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.contact-info p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.test-info-bar {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Results Table Styles */
+.results-table-container {
+  background: white;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.results-table-wrapper {
+  overflow-x: auto;
+}
+
+.compact-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  min-width: 800px;
+}
+
+.compact-results-table th {
+  background: #f9fafb;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.compact-results-table td {
+  padding: 0.5rem;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.sticky-col {
+  position: sticky;
+  background: white;
+  z-index: 5;
+}
+
+.col-sn {
+  left: 0;
+  min-width: 50px;
+}
+
+.col-adm {
+  left: 50px;
+  min-width: 80px;
+}
+
+.col-fname {
+  left: 130px;
+  min-width: 80px;
+}
+
+.col-mname {
+  left: 210px;
+  min-width: 80px;
+}
+
+.col-sname {
+  left: 290px;
+  min-width: 100px;
+}
+
+.col-parish {
+  left: 390px;
+  min-width: 100px;
+}
+
+.subject-col {
+  min-width: 60px;
+  max-width: 80px;
+}
+
+.result-col {
+  min-width: 50px;
+  max-width: 70px;
+  font-weight: 600;
+}
+
+.tot-col {
+  background: #fef3c7;
+}
+
+.grd-col {
+  font-weight: 700;
+}
+
+.rotate-header {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  max-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+/* Grade Row Colors */
+.grade-row-A { background: #dcfce7; }
+.grade-row-B { background: #dbeafe; }
+.grade-row-C { background: #fef3c7; }
+.grade-row-C-low { background: #fee2e2; }
+.grade-row-D { background: #fee2e2; }
+.grade-row-F { background: #fecaca; }
+.grade-row-none { background: transparent; }
+
+.grade-row-A:hover { background: #bbf7d0; }
+.grade-row-B:hover { background: #bfdbfe; }
+.grade-row-C:hover { background: #fde68a; }
+.grade-row-C-low:hover { background: #fca5a5; }
+.grade-row-D:hover { background: #fca5a5; }
+.grade-row-F:hover { background: #f87171; }
+
+.print-spacer-bottom {
+  margin-bottom: 2rem;
+}
+
+.back-margin {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+.csv-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.csv-btn:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+}
+
+/* Print Styles */
+@media print {
+  .preform-one-results-page-container {
+    background: white;
+    padding: 0;
+  }
+  
+  .excel-card,
+  .print-button-container,
+  .back-margin {
+    display: none;
+  }
+  
+  .report-header-section {
+    box-shadow: none;
+    margin-bottom: 1rem;
+  }
+  
+  .results-table-container {
+    box-shadow: none;
+    margin-bottom: 0;
+  }
+  
+  .compact-results-table {
+    font-size: 0.65rem;
+  }
+  
+  .compact-results-table th,
+  .compact-results-table td {
+    padding: 0.25rem;
+  }
+  
+  .grade-row-A,
+  .grade-row-B,
+  .grade-row-C,
+  .grade-row-C-low,
+  .grade-row-D,
+  .grade-row-F {
+    background: transparent !important;
+  }
+  
+  .grade-row-A td,
+  .grade-row-B td,
+  .grade-row-C td,
+  .grade-row-C-low td,
+  .grade-row-D td,
+  .grade-row-F td {
+    border: 1px solid #000;
+  }
+}
