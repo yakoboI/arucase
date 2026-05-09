@@ -7,7 +7,7 @@ const getBaseURL = () => {
     // Use relative URL to leverage Vite proxy
     return 'http://localhost:3001/api';
   }
-  return import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  return import.meta.env.VITE_API_URL || 'https://your-railway-app-url.railway.app/api';
 };
 
 const api = axios.create({
