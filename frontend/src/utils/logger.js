@@ -29,7 +29,7 @@ const getLogLevel = () => {
   return import.meta.env.DEV ? LOG_LEVELS.DEBUG : LOG_LEVELS.WARN;
 };
 
-const currentLogLevel = getLogLevel();
+const currentLogLevel = LOG_LEVELS.NONE; // Disable all logging output
 
 // Store logs in memory (can be configured to send to backend)
 let logStore = [];
@@ -88,7 +88,6 @@ const sendToBackend = async (entry) => {
     }
   } catch (error) {
     // Silently fail - don't break the app if logging fails
-    console.error('Logging error:', error);
   }
 };
 

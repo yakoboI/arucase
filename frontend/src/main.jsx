@@ -5,25 +5,21 @@ import App from './App';
 import './styles/index.css';
 import '@fortawesome/fontawesome-free/css/fontawesome.css';
 import '@fortawesome/fontawesome-free/css/solid.css';
-// Initialize logger and log helper
-import logger from './utils/logger';
+// Initialize utilities
 import './utils/debugAuth.js'; // Import debug utility to make it available globally
 import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
 import './utils/tokenDecoder'; // Initialize token decoder (makes window.logTokenInfo available)
 
-// Log app initialization
-logger.info('Application starting', {
-  userAgent: navigator.userAgent,
-  url: window.location.href,
+// Global error handling for uncaught promises (silent)
+window.addEventListener('unhandledrejection', (event) => {
+  // Prevent the default browser behavior
+  event.preventDefault();
 });
 
-// Log helper instructions (collapsed in dev to reduce console noise)
-if (import.meta.env.DEV) {
-  console.groupCollapsed('%c📊 Log Helper Available', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
-  console.log('Use: window.logHelper.printRecentErrors() | printErrorSummary() | searchLogs("keyword")');
-  console.log('Or: console.getErrors() | getErrorSummary() | tokenInfo()');
-  console.groupEnd();
-}
+// Global error handling for uncaught errors (silent)
+window.addEventListener('error', (event) => {
+  // Silent error handling
+});
 
 // Detect network speed for adaptive loading (3G-4G optimization)
 const getNetworkSpeed = () => {

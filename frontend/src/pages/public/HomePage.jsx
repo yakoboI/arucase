@@ -53,7 +53,6 @@ const HomePage = () => {
         return res.data;
       } catch (err) {
         // Handle errors gracefully
-        console.error('Error fetching homepage data:', err);
         // Return empty data structure to prevent crashes
         return {
           settings: {},
@@ -111,7 +110,7 @@ const HomePage = () => {
             return prev >= maxIndex ? 0 : prev + 1;
           });
         } catch (err) {
-          console.error('Error updating carousel index:', err);
+          // Silently handle carousel index errors
         }
       }, 4000); // Change image every 4 seconds
 
@@ -123,7 +122,7 @@ const HomePage = () => {
         }
       };
     } catch (err) {
-      console.error('Error setting up carousel rotation:', err);
+        // Silently handle carousel setup errors
     }
   }, [validGalleryPhotos]);
 
@@ -212,10 +211,9 @@ const HomePage = () => {
             )}
           </div>
 
-          {/* Home Button - Top Right Corner */}
-          <Link to="/" className="home-button" aria-label="Navigate to homepage">
-            <i className="fas fa-home" aria-hidden="true"></i>
-            <span className="sr-only">Navigate to homepage</span> Rudi Nyumbani
+          {/* Login Button - Top Right Corner */}
+          <Link to="/login" className="login-button" aria-label="Navigate to login page">
+            <i className="fas fa-sign-in-alt" aria-hidden="true"></i>
           </Link>
 
           {/* Scrolling Text at Bottom - Rector Statement */}
