@@ -14,6 +14,17 @@ const { sendError } = require('../utils/safeError');
 
 // Generate JWT token
 const generateToken = (user) => {
+  // Validate required fields before signing
+  if (!user || typeof user !== 'object') {
+    throw new Error('generateToken: user must be an object');
+  }
+  if (!user.username || typeof user.username !== 'string') {
+    throw new Error('generateToken: user.username is required and must be a string');
+  }
+  if (!user.role || typeof user.role !== 'string') {
+    throw new Error('generateToken: user.role is required and must be a string');
+  }
+
   // Handle token expiration - support both number (seconds) and string (e.g., '5m', '1h')
   let expiresIn = '5m'; // Default: 5 minutes
   
