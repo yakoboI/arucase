@@ -49,6 +49,8 @@ async function initDatabase() {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(100);`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR(100);`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(255);`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
     console.log('✅ Users table profile columns ensured');
 
     // Admissions applicants (public registration for admissions)
