@@ -35,6 +35,17 @@ if (!fs.existsSync(serverPath)) {
 
 console.log('✅ server.js found');
 
+// Copy admin photos from the committed source directory into the
+// Railway persistent volume (/app/admin-photos) so the Cloudinary
+// upload script can find them.
+try {
+  console.log('🔄 Running admin photos volume setup...');
+  require('./setup-admin-photos-volume');
+} catch (setupError) {
+  // Non-fatal: log the error but do not prevent the server from starting.
+  console.error('⚠️  Admin photos volume setup encountered an error:', setupError.message);
+}
+
 // Import and start the server
 try {
   console.log('🔄 Loading server.js...');

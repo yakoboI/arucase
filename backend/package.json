@@ -17,7 +17,9 @@
     "migrate-scores": "node scripts/migrateScoresFromSQLite.js",
     "remove-students-1800-2000": "node scripts/removeStudentsByAdmRange.js",
     "restore-students-1800-2000": "node scripts/restoreStudentsFromSQLite.js",
-    "count-students-by-form": "node scripts/countStudentsByForm.js"
+    "count-students-by-form": "node scripts/countStudentsByForm.js",
+    "setup-photos": "node scripts/setup-admin-photos-volume.js",
+    "upload-admin-photos": "node upload_admin_photos_to_cloudinary_production.js"
   },
   "keywords": [
     "express",

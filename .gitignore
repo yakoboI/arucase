@@ -67,9 +67,14 @@ Thumbs.db
 # Railway
 .railway/
 
-# Uploads (keep structure)
+# Uploads (keep structure, ignore user-uploaded files)
 static/uploads/*
 !static/uploads/.gitkeep
+
+# Admin photos source — committed to repo so they can be copied to the
+# Railway persistent volume (/app/admin-photos) on deployment.
+!backend/admin-photos-source/
+!backend/admin-photos-source/*.png
 
 # PostgreSQL dumps (from backend/scripts/backupDatabase.js)
 backend/backups/
