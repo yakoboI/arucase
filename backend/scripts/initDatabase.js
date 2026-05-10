@@ -5,6 +5,7 @@
  * Creates all necessary tables for the application
  */
 require('dotenv').config();
+const bcrypt = require('bcryptjs');
 const { query } = require('../config/database');
 
 async function initDatabase() {
@@ -962,17 +963,18 @@ async function initDatabase() {
     console.log('✅ Default Pre-Form One Interview Subjects inserted');
 
     // Insert default admin user (idempotent — skipped if username already exists)
+    const adminPasswordHash = await bcrypt.hash('admin123', 10);
     await query(`
       INSERT INTO users (username, password_hash, full_name, role, status)
       VALUES (
         'admin',
-        '$2b$10$rQZ8kHWKtGYIuIq8qIq9I.9Gq8qIq9I9Gq8qIq9I9Gq8qIq9I9Gq8',
+        $1,
         'System Administrator',
         'admin',
         'active'
       )
       ON CONFLICT (username) DO NOTHING
-    `);
+    `, [adminPasswordHash]);
     console.log('✅ Default admin user ensured');
 
     console.log('\n✅ Database schema initialized successfully!');
