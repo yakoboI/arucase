@@ -14,14 +14,25 @@ const path = require('path');
  */
 async function getCSSContent() {
   try {
-    const cssPath = path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css');
-    return await fs.readFile(cssPath, 'utf-8');
+    // For bulk reports, we need both IndividualReportDetail.css (for report content) 
+    // and BulkReport.css (for the bulk report interface styling)
+    const individualReportCSSPath = path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css');
+    const bulkReportCSSPath = path.join(__dirname, '../../frontend/src/pages/reports/BulkReport.css');
+    
+    const individualReportCSS = await fs.readFile(individualReportCSSPath, 'utf-8');
+    const bulkReportCSS = await fs.readFile(bulkReportCSSPath, 'utf-8');
+    
+    // Combine both CSS files - bulk report styling first, then individual report styling
+    return `${bulkReportCSS}\n\n${individualReportCSS}`;
   } catch (e) {
-    console.log('Could not read CSS file, using minimal styles');
+    console.log('Could not read CSS files, using minimal styles');
     return `
       * { box-sizing: border-box; }
       body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
+      .bulk-report-page { padding: 1rem; }
+      .excel-card { background: white; border-radius: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+      .excel-card-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 1.25rem; }
       table { width: 100%; border-collapse: collapse; border: 1px solid #000; }
       th, td { border: 1px solid #000; padding: 4px 5px; font-size: 10px; }
       th { background: #fff; font-weight: bold; }
@@ -146,21 +157,57 @@ async function generateBulkReportPDFWithBatches(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bulk Student Report - ${form} ${year} ${term}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     ${cssContent}
     @media print {
-      .download-section, .breadcrumb { display: none !important; }
+      .download-section, .breadcrumb, .bulk-report-actions, .excel-card-header { display: none !important; }
       .report-container {
         page-break-after: always;
+        margin-bottom: 20px;
       }
       .report-container:last-child {
         page-break-after: auto;
+      }
+      .bulk-report-page {
+        padding: 0.5rem;
+      }
+      .excel-card {
+        box-shadow: none;
+        border: none;
       }
     }
   </style>
 </head>
 <body>
-${reportHTMLs.map(html => `<div class="report-container">${html}</div>`).join('\n')}
+  <div class="bulk-report-page">
+    <div class="page-header">
+      <h1>Bulk Student Report</h1>
+      <p>Generated for ${form} ${year} ${term} - ${reportHTMLs.length} students</p>
+    </div>
+    
+    <div class="bulk-report-actions">
+      <div class="bulk-report-info">
+        <i class="fas fa-info-circle"></i>
+        Showing ${reportHTMLs.length} student${reportHTMLs.length !== 1 ? 's' : ''} for ${form} ${year} ${term}
+      </div>
+    </div>
+
+    <div class="bulk-reports-list">
+      <div class="excel-card">
+        <div class="excel-card-header">
+          <i class="fas fa-list"></i> Student Reports - ${form} ${year} ${term}
+        </div>
+        <div class="excel-card-body">
+          ${reportHTMLs.map((html, index) => `
+            <div class="report-container" style="${index > 0 ? 'page-break-before: always;' : ''}">
+              ${html}
+            </div>
+          `).join('\n')}
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>`;
     
@@ -237,6 +284,144 @@ ${reportHTMLs.map(html => `<div class="report-container">${html}</div>`).join('\
     // Wait a bit for all images/fonts to load (increased wait time for bulk PDFs)
     console.log('[BULK PDF] Waiting for resources to load...');
     await new Promise(resolve => setTimeout(resolve, 5000)); // Increased from 2s to 5s
+    
+    // CRITICAL: Execute the same JavaScript styling enforcement as local development
+    // This ensures exact congruence between local and production PDFs for each report
+    console.log('[BULK PDF] Applying JavaScript styling enforcement for exact congruence...');
+    await page.evaluate(() => {
+      // Apply styling enforcement to all report containers
+      const reportContainers = document.querySelectorAll('.report-container');
+      
+      reportContainers.forEach((container) => {
+        // Force MAONI column visibility within each report
+        const forceMaoniColumnVisible = () => {
+          const maoniHeaders = container.querySelectorAll('.academic-table th:nth-child(10)');
+          const maoniCells = container.querySelectorAll('.academic-table td:nth-child(10)');
+          
+          maoniHeaders.forEach((header) => {
+            header.style.setProperty('display', 'table-cell', 'important');
+            header.style.setProperty('visibility', 'visible', 'important');
+            header.style.setProperty('opacity', '1', 'important');
+            header.style.setProperty('border', '1px solid #000000', 'important');
+          });
+          
+          maoniCells.forEach((cell) => {
+            cell.style.setProperty('display', 'table-cell', 'important');
+            cell.style.setProperty('visibility', 'visible', 'important');
+            cell.style.setProperty('opacity', '1', 'important');
+            cell.style.setProperty('border', '1px solid #000000', 'important');
+          });
+        };
+
+        // Force thin black borders on all table cells within each report
+        const forceThinBlackBorders = () => {
+          const allTableCells = container.querySelectorAll('td, th');
+          allTableCells.forEach((cell) => {
+            cell.style.setProperty('border', '1px solid #000000', 'important');
+          });
+        };
+
+        // Force column widths within each report
+        const forceColumnWidths = () => {
+          const academicTable = container.querySelector('.academic-table');
+          if (!academicTable) return;
+
+          academicTable.style.setProperty('table-layout', 'fixed', 'important');
+          academicTable.style.setProperty('width', '100%', 'important');
+
+          // Column widths - ensure all 10 columns are properly sized
+          const colWidths = ['33%', '7%', '7%', '7%', '7%', '5%', '4%', '4%', '12%', '14%'];
+          colWidths.forEach((width, idx) => {
+            const col = academicTable.querySelectorAll(`th:nth-child(${idx + 1}), td:nth-child(${idx + 1})`);
+            col.forEach(cell => {
+              cell.style.setProperty('width', width, 'important');
+              cell.style.setProperty('min-width', width, 'important');
+              cell.style.setProperty('max-width', width, 'important');
+            });
+          });
+        };
+        
+        // Force NAFASI header rotation within each report
+        const forceNafasiRotation = () => {
+          const academicTable = container.querySelector('.academic-table');
+          if (!academicTable) return;
+          
+          // Find NAFASI header (column 8 with rotate-header class)
+          const nafasiHeader = academicTable.querySelector('thead tr:first-child th:nth-child(8).rotate-header');
+          if (nafasiHeader) {
+            // Apply rotation with all vendor prefixes for maximum compatibility
+            nafasiHeader.style.setProperty('writing-mode', 'vertical-rl', 'important');
+            nafasiHeader.style.setProperty('text-orientation', 'mixed', 'important');
+            nafasiHeader.style.setProperty('transform', 'rotate(180deg)', 'important');
+            nafasiHeader.style.setProperty('-webkit-transform', 'rotate(180deg)', 'important');
+            nafasiHeader.style.setProperty('-moz-transform', 'rotate(180deg)', 'important');
+            nafasiHeader.style.setProperty('-ms-transform', 'rotate(180deg)', 'important');
+            nafasiHeader.style.setProperty('-o-transform', 'rotate(180deg)', 'important');
+            nafasiHeader.style.setProperty('white-space', 'nowrap', 'important');
+            nafasiHeader.style.setProperty('text-align', 'center', 'important');
+            nafasiHeader.style.setProperty('vertical-align', 'middle', 'important');
+            nafasiHeader.style.setProperty('display', 'table-cell', 'important');
+            nafasiHeader.style.setProperty('position', 'relative', 'important');
+          }
+        };
+
+        // Initialize formatting - same as local development
+        const initFormatting = () => {
+          forceMaoniColumnVisible();
+          forceThinBlackBorders();
+          forceColumnWidths();
+          forceNafasiRotation();
+        };
+
+        // Run immediately for each report
+        initFormatting();
+
+        // Use MutationObserver to watch for style changes within each report
+        const academicTable = container.querySelector('.academic-table');
+        if (academicTable) {
+          const observer = new MutationObserver(() => {
+            setTimeout(initFormatting, 10);
+          });
+
+          observer.observe(academicTable, {
+            attributes: true,
+            attributeFilter: ['style'],
+            subtree: true
+          });
+        }
+
+        // CRITICAL: Force grade key to be visible within each report
+        const gradeKeyLegend = container.querySelector('.grade-key-legend');
+        if (gradeKeyLegend) {
+          gradeKeyLegend.style.setProperty('display', 'block', 'important');
+          gradeKeyLegend.style.setProperty('visibility', 'visible', 'important');
+          gradeKeyLegend.style.setProperty('opacity', '1', 'important');
+          gradeKeyLegend.style.setProperty('color', '#000000', 'important');
+          
+          // Force all child divs to be visible
+          const childDivs = gradeKeyLegend.querySelectorAll('div');
+          childDivs.forEach(div => {
+            div.style.setProperty('display', 'block', 'important');
+            div.style.setProperty('visibility', 'visible', 'important');
+            div.style.setProperty('opacity', '1', 'important');
+            div.style.setProperty('color', '#000000', 'important');
+          });
+          
+          // Force all strong tags to be visible
+          const strongTags = gradeKeyLegend.querySelectorAll('strong');
+          strongTags.forEach(strong => {
+            strong.style.setProperty('display', 'inline', 'important');
+            strong.style.setProperty('visibility', 'visible', 'important');
+            strong.style.setProperty('opacity', '1', 'important');
+            strong.style.setProperty('color', '#000000', 'important');
+            strong.style.setProperty('font-weight', 'bold', 'important');
+          });
+        }
+      });
+    });
+    
+    // Final grace period after JavaScript execution
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Generate PDF
     // Note: page.pdf() doesn't have a direct timeout option, but we can wrap it in Promise.race

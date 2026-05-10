@@ -214,6 +214,138 @@ async function generateIndividualReportPDFWithPuppeteer(
     // Small grace period for layout/render stability.
     await new Promise(resolve => setTimeout(resolve, 500));
     
+    // CRITICAL: Execute the same JavaScript styling enforcement as local development
+    // This ensures exact congruence between local and production PDFs
+    await page.evaluate(() => {
+      // Force MAONI column visibility
+      const forceMaoniColumnVisible = () => {
+        const maoniHeaders = document.querySelectorAll('.academic-table th:nth-child(10)');
+        const maoniCells = document.querySelectorAll('.academic-table td:nth-child(10)');
+        
+        maoniHeaders.forEach((header) => {
+          header.style.setProperty('display', 'table-cell', 'important');
+          header.style.setProperty('visibility', 'visible', 'important');
+          header.style.setProperty('opacity', '1', 'important');
+          header.style.setProperty('border', '1px solid #000000', 'important');
+        });
+        
+        maoniCells.forEach((cell) => {
+          cell.style.setProperty('display', 'table-cell', 'important');
+          cell.style.setProperty('visibility', 'visible', 'important');
+          cell.style.setProperty('opacity', '1', 'important');
+          cell.style.setProperty('border', '1px solid #000000', 'important');
+        });
+      };
+
+      // Force thin black borders on all table cells
+      const forceThinBlackBorders = () => {
+        const allTableCells = document.querySelectorAll('.report-container td, .report-container th');
+        allTableCells.forEach((cell) => {
+          cell.style.setProperty('border', '1px solid #000000', 'important');
+        });
+      };
+
+      // Force column widths
+      const forceColumnWidths = () => {
+        const academicTable = document.querySelector('.academic-table');
+        if (!academicTable) return;
+
+        academicTable.style.setProperty('table-layout', 'fixed', 'important');
+        academicTable.style.setProperty('width', '100%', 'important');
+
+        // Column widths - ensure all 10 columns are properly sized
+        const colWidths = ['33%', '7%', '7%', '7%', '7%', '5%', '4%', '4%', '12%', '14%'];
+        colWidths.forEach((width, idx) => {
+          const col = academicTable.querySelectorAll(`th:nth-child(${idx + 1}), td:nth-child(${idx + 1})`);
+          col.forEach(cell => {
+            cell.style.setProperty('width', width, 'important');
+            cell.style.setProperty('min-width', width, 'important');
+            cell.style.setProperty('max-width', width, 'important');
+          });
+        });
+      };
+      
+      // Force NAFASI header rotation - critical for PDF generation
+      const forceNafasiRotation = () => {
+        const academicTable = document.querySelector('.academic-table');
+        if (!academicTable) return;
+        
+        // Find NAFASI header (column 8 with rotate-header class)
+        const nafasiHeader = academicTable.querySelector('thead tr:first-child th:nth-child(8).rotate-header');
+        if (nafasiHeader) {
+          // Apply rotation with all vendor prefixes for maximum compatibility
+          nafasiHeader.style.setProperty('writing-mode', 'vertical-rl', 'important');
+          nafasiHeader.style.setProperty('text-orientation', 'mixed', 'important');
+          nafasiHeader.style.setProperty('transform', 'rotate(180deg)', 'important');
+          nafasiHeader.style.setProperty('-webkit-transform', 'rotate(180deg)', 'important');
+          nafasiHeader.style.setProperty('-moz-transform', 'rotate(180deg)', 'important');
+          nafasiHeader.style.setProperty('-ms-transform', 'rotate(180deg)', 'important');
+          nafasiHeader.style.setProperty('-o-transform', 'rotate(180deg)', 'important');
+          nafasiHeader.style.setProperty('white-space', 'nowrap', 'important');
+          nafasiHeader.style.setProperty('text-align', 'center', 'important');
+          nafasiHeader.style.setProperty('vertical-align', 'middle', 'important');
+          nafasiHeader.style.setProperty('display', 'table-cell', 'important');
+          nafasiHeader.style.setProperty('position', 'relative', 'important');
+        }
+      };
+
+      // Initialize formatting - same as local development
+      const initFormatting = () => {
+        forceMaoniColumnVisible();
+        forceThinBlackBorders();
+        forceColumnWidths();
+        forceNafasiRotation();
+      };
+
+      // Run immediately
+      initFormatting();
+
+      // Use MutationObserver to watch for style changes - same as local
+      const academicTable = document.querySelector('.academic-table');
+      if (academicTable) {
+        const observer = new MutationObserver(() => {
+          setTimeout(initFormatting, 10);
+        });
+
+        observer.observe(academicTable, {
+          attributes: true,
+          attributeFilter: ['style'],
+          subtree: true
+        });
+      }
+
+      // CRITICAL: Force grade key to be visible before PDF generation
+      const gradeKeyLegend = document.querySelector('.grade-key-legend');
+      if (gradeKeyLegend) {
+        gradeKeyLegend.style.setProperty('display', 'block', 'important');
+        gradeKeyLegend.style.setProperty('visibility', 'visible', 'important');
+        gradeKeyLegend.style.setProperty('opacity', '1', 'important');
+        gradeKeyLegend.style.setProperty('color', '#000000', 'important');
+        
+        // Force all child divs to be visible
+        const childDivs = gradeKeyLegend.querySelectorAll('div');
+        childDivs.forEach(div => {
+          div.style.setProperty('display', 'block', 'important');
+          div.style.setProperty('visibility', 'visible', 'important');
+          div.style.setProperty('opacity', '1', 'important');
+          div.style.setProperty('color', '#000000', 'important');
+        });
+        
+        // Force all strong tags to be visible
+        const strongTags = gradeKeyLegend.querySelectorAll('strong');
+        strongTags.forEach(strong => {
+          strong.style.setProperty('display', 'inline', 'important');
+          strong.style.setProperty('visibility', 'visible', 'important');
+          strong.style.setProperty('opacity', '1', 'important');
+          strong.style.setProperty('color', '#000000', 'important');
+          strong.style.setProperty('font-weight', 'bold', 'important');
+        });
+      }
+    });
+    
+    // Another grace period after JavaScript execution
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     // Verify page loaded correctly
     const pageTitle = await page.title();
     console.log('Page loaded. Title:', pageTitle);
