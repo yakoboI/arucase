@@ -1,5 +1,5 @@
 /**
- * Student Login Page Styles
+ * Student Login Page Styles - SCC (Seminary Catholic College)
  */
 .student-login-page {
   width: 100%;
@@ -11,8 +11,20 @@
   align-items: center;
   justify-content: center;
   padding: 2rem clamp(1rem, 4vw, 2rem);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a5490 0%, #2d7bc4 50%, #4a90e2 100%);
   overflow-x: hidden;
+  position: relative;
+}
+
+.student-login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="cross" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M0 10 L20 10 M10 0 L10 20" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23cross)"/></svg>');
+  pointer-events: none;
 }
 
 .login-container {
@@ -21,11 +33,15 @@
 }
 
 .login-card {
-  background: white;
-  border-radius: 0;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(26, 84, 144, 0.3), 0 8px 20px rgba(0, 0, 0, 0.1);
   padding: 2.5rem;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
 }
 
 .login-header {
@@ -35,15 +51,18 @@
 
 .login-header i {
   font-size: 3.5rem;
-  color: #667eea;
+  color: #1a5490;
   margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(26, 84, 144, 0.2);
 }
 
 .login-header h2 {
   margin: 0;
-  color: #111827;
+  color: #1a5490;
   font-size: 1.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(26, 84, 144, 0.1);
+  font-family: 'Georgia', 'Times New Roman', serif;
 }
 
 .login-form {
@@ -71,34 +90,39 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 0;
+  color: #1a5490;
+  background: rgba(26, 84, 144, 0.1);
+  border-radius: 8px;
   font-size: 1.125rem;
   flex-shrink: 0;
+  border: 1px solid rgba(26, 84, 144, 0.2);
 }
 
 .form-input {
   flex: 1;
   width: 100%;
   padding: 1rem 1.25rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: all 0.2s;
-  background: #f9fafb;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  font-family: inherit;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #1a5490;
   background: white;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(26, 84, 144, 0.15), 0 4px 12px rgba(26, 84, 144, 0.1);
+  transform: translateY(-1px);
 }
 
 .input-wrapper:focus-within .input-icon {
-  background: rgba(102, 126, 234, 0.15);
-  color: #667eea;
+  background: rgba(26, 84, 144, 0.15);
+  color: #1a5490;
+  border-color: #1a5490;
+  transform: scale(1.05);
 }
 
 .form-input::placeholder {
@@ -109,24 +133,29 @@
 .login-button {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a5490 0%, #2d7bc4 100%);
   color: white;
   border: none;
-  border-radius: 0;
+  border-radius: 8px;
   font-size: 1.125rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 1rem;
   min-height: 52px;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(26, 84, 144, 0.3);
 }
 
 .login-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 25px rgba(26, 84, 144, 0.4);
+  background: linear-gradient(135deg, #2d7bc4 0%, #4a90e2 100%);
 }
 
 .login-button:disabled {
@@ -154,10 +183,11 @@
 
   .login-card {
     padding: clamp(1.5rem, 4vw, 2.5rem);
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(26, 84, 144, 0.2);
     width: 100%;
     margin: 0;
+    background: rgba(255, 255, 255, 0.98);
   }
 
   .login-header {
@@ -191,20 +221,20 @@
     padding: 1rem 1.125rem;
     font-size: clamp(0.9375rem, 3.5vw, 1rem);
     min-height: 48px;
-    border-radius: 0;
-    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
   }
 
   .form-input:focus {
-    border-width: 1px;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(26, 84, 144, 0.15), 0 4px 12px rgba(26, 84, 144, 0.1);
   }
 
   .login-button {
     padding: 1rem;
     font-size: clamp(1rem, 4vw, 1.125rem);
     min-height: 52px;
-    border-radius: 0;
+    border-radius: 8px;
   }
 }
 
@@ -216,7 +246,7 @@
 
   .login-card {
     padding: clamp(1.75rem, 4vw, 2rem);
-    border-radius: 0;
+    border-radius: 16px;
   }
 
   .login-container {
@@ -238,7 +268,7 @@
 
   .login-card {
     padding: clamp(2rem, 4vw, 2.25rem);
-    border-radius: 0;
+    border-radius: 16px;
   }
 }
 
@@ -254,8 +284,8 @@
 
   .login-card {
     padding: 2.5rem;
-    border-radius: 0;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(26, 84, 144, 0.3), 0 8px 20px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -276,7 +306,6 @@
   .form-input {
     padding: 1rem 1.25rem;
   }
-}
 
 /* Touch Device Optimizations */
 @media (hover: none) and (pointer: coarse) {
@@ -297,7 +326,7 @@
 @media (orientation: landscape) and (max-height: 600px) {
   .student-login-page {
     padding: 1rem;
-    min-height: auto;
+    min-height: 100vh;
   }
 
   .login-card {
