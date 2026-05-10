@@ -23,10 +23,16 @@ const HomePage = () => {
     // Remove leading slash if present
     let cleanPath = path.startsWith('/') ? path.substring(1) : path;
     
+    // Handle Cloudinary URLs (direct URLs from Cloudinary)
+    if (cleanPath.includes('cloudinary.com') || cleanPath.includes('res.cloudinary.com')) {
+      return path; // Return Cloudinary URL as-is
+    }
+    
     // Handle different path formats:
-    // 1. Full path: "uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 2. Just filename: "filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 3. Already has static/: "static/uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
+    // 1. Cloudinary URL: Return as-is
+    // 2. Local path: "uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
+    // 3. Just filename: "filename.jpg" -> "/static/uploads/photos/filename.jpg"
+    // 4. Already has static/: "static/uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
     
     let resolvedUrl;
     if (cleanPath.startsWith('static/')) {
