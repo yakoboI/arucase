@@ -968,6 +968,36 @@ async function initDatabase() {
     );
     console.log('✅ Default Pre-Form One Interview Subjects inserted');
 
+    // Pre-Form One Continuing Subjects table
+    await query(`
+      CREATE TABLE IF NOT EXISTS preformone_continuing_subjects (
+        id SERIAL PRIMARY KEY,
+        subject_name VARCHAR(255) NOT NULL UNIQUE,
+        subject_code VARCHAR(50) NOT NULL UNIQUE,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Pre-Form One Continuing Subjects table created');
+
+    // Pre-Form One Students table
+    await query(`
+      CREATE TABLE IF NOT EXISTS preform_one_students (
+        id SERIAL PRIMARY KEY,
+        adm_no VARCHAR(50) NOT NULL,
+        first_name VARCHAR(255) NOT NULL,
+        middle_name VARCHAR(255),
+        surname VARCHAR(255) NOT NULL,
+        sex VARCHAR(10),
+        year INTEGER,
+        term VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Pre-Form One Students table created');
+
     // Seed the default admin user (creates or updates password hash)
     await seedAdminUser();
 
