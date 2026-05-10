@@ -37,6 +37,10 @@ async function initDatabase() {
     `);
     console.log('✅ Users table created');
 
+    // Ensure permissions column exists on existing deployments
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions TEXT;`);
+    console.log('✅ Users table permissions column ensured');
+
     // Admissions applicants (public registration for admissions)
     await query(`
       CREATE TABLE IF NOT EXISTS admission_applicants (
