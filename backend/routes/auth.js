@@ -97,9 +97,11 @@ router.post('/login',
     }
     
     const user = result.rows[0];
+    console.error('DEBUG: user found:', !!user, '| password_hash exists:', !!user.password_hash);
     
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    console.error('DEBUG: bcrypt.compare result:', isValidPassword);
     
     if (!isValidPassword) {
       // Log failed attempt
