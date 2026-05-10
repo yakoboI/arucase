@@ -235,11 +235,14 @@ async function generateBulkReportPDFWithBatches(
     page.setDefaultTimeout(300000);
     page.setDefaultNavigationTimeout(300000);
     
-    // Set viewport
+    // Set viewport to match premium local development appearance
     await page.setViewport({
-      width: 1920,
-      height: 1600,
-      deviceScaleFactor: 2
+      width: 1200,
+      height: 800,
+      deviceScaleFactor: 1,
+      isMobile: false,
+      hasTouch: false,
+      isLandscape: false
     });
     
     // Set auth headers for image requests
@@ -365,12 +368,30 @@ async function generateBulkReportPDFWithBatches(
           }
         };
 
+        // CRITICAL: Force premium font styling to match local development exactly
+        const forcePremiumFontStyling = () => {
+          const allTextElements = container.querySelectorAll('*');
+          allTextElements.forEach(element => {
+            // Force Arial font family and proper sizing
+            if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
+              element.style.setProperty('font-family', 'Arial, sans-serif', 'important');
+              // Ensure font sizes are applied correctly
+              const computedStyle = window.getComputedStyle(element);
+              const fontSize = computedStyle.fontSize;
+              if (fontSize && parseFloat(fontSize) > 0) {
+                element.style.setProperty('font-size', fontSize, 'important');
+              }
+            }
+          });
+        };
+
         // Initialize formatting - same as local development
         const initFormatting = () => {
           forceMaoniColumnVisible();
           forceThinBlackBorders();
           forceColumnWidths();
           forceNafasiRotation();
+          forcePremiumFontStyling();
         };
 
         // Run immediately for each report
@@ -423,21 +444,20 @@ async function generateBulkReportPDFWithBatches(
     // Final grace period after JavaScript execution
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Generate PDF
-    // Note: page.pdf() doesn't have a direct timeout option, but we can wrap it in Promise.race
+    // Generate PDF with premium settings to match local development appearance
     console.log('[BULK PDF] Generating PDF from HTML (this may take a while for bulk reports)...');
     const pdfPromise = page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '3mm',
-        right: '3mm',
-        bottom: '3mm',
-        left: '3mm'
+        top: '10mm',
+        right: '10mm',
+        bottom: '10mm',
+        left: '10mm'
       },
-      preferCSSPageSize: true,
+      preferCSSPageSize: false,
       displayHeaderFooter: false,
-      scale: 1.0
+      scale: 0.85
     });
     
     // Add timeout wrapper (10 minutes for very large bulk PDFs)

@@ -141,11 +141,14 @@ async function generateIndividualReportPDFWithPuppeteer(
       console.warn('[PUPPETEER][requestfailed]', req.url(), failure?.errorText || 'unknown');
     });
     
-    // Set viewport for consistent rendering - wider to match screen view
+    // Set viewport to match premium local development appearance
     await page.setViewport({
-      width: 1920,
-      height: 1600,
-      deviceScaleFactor: 2
+      width: 1200,
+      height: 800,
+      deviceScaleFactor: 1,
+      isMobile: false,
+      hasTouch: false,
+      isLandscape: false
     });
     
     // Set base URL for relative image paths
@@ -295,6 +298,7 @@ async function generateIndividualReportPDFWithPuppeteer(
         forceThinBlackBorders();
         forceColumnWidths();
         forceNafasiRotation();
+        forcePremiumFontStyling();
       };
 
       // Run immediately
@@ -313,6 +317,23 @@ async function generateIndividualReportPDFWithPuppeteer(
           subtree: true
         });
       }
+
+      // CRITICAL: Force premium font styling to match local development exactly
+      const forcePremiumFontStyling = () => {
+        const allTextElements = document.querySelectorAll('.report-container *');
+        allTextElements.forEach(element => {
+          // Force Arial font family and proper sizing
+          if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
+            element.style.setProperty('font-family', 'Arial, sans-serif', 'important');
+            // Ensure font sizes are applied correctly
+            const computedStyle = window.getComputedStyle(element);
+            const fontSize = computedStyle.fontSize;
+            if (fontSize && parseFloat(fontSize) > 0) {
+              element.style.setProperty('font-size', fontSize, 'important');
+            }
+          }
+        });
+      };
 
       // CRITICAL: Force grade key to be visible before PDF generation
       const gradeKeyLegend = document.querySelector('.grade-key-legend');
@@ -350,21 +371,21 @@ async function generateIndividualReportPDFWithPuppeteer(
     const pageTitle = await page.title();
     console.log('Page loaded. Title:', pageTitle);
     
-    // Generate PDF with optimized settings for A4 printing - maximize width to match screen view
+    // Generate PDF with premium settings to match local development appearance
     let pdfBuffer;
     try {
       pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
         margin: {
-          top: '0.5mm',
-          right: '0.5mm',
-          bottom: '0.5mm',
-          left: '0.5mm'
+          top: '10mm',
+          right: '10mm',
+          bottom: '10mm',
+          left: '10mm'
         },
-        preferCSSPageSize: true,
+        preferCSSPageSize: false,
         displayHeaderFooter: false,
-        scale: 1.0
+        scale: 0.85
       });
     } catch (pdfError) {
       console.error('Error generating PDF:', pdfError);
