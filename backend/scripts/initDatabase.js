@@ -41,6 +41,15 @@ async function initDatabase() {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions TEXT;`);
     console.log('✅ Users table permissions column ensured');
 
+    // Ensure all columns expected by auth.js exist on existing deployments
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(100);`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR(100);`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(255);`);
+    console.log('✅ Users table profile columns ensured');
+
     // Admissions applicants (public registration for admissions)
     await query(`
       CREATE TABLE IF NOT EXISTS admission_applicants (
