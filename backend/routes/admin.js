@@ -3011,7 +3011,7 @@ router.post('/administrators', upload.single('photo'), async (req, res) => {
         }
       }
 
-      // Upload to Cloudinary with fallback to local storage
+      // Upload to Cloudinary ONLY (no local fallback)
       try {
         const result = await cloudinary.uploader.upload(req.file.path, {
           folder: 'administrator-photos',
@@ -3023,22 +3023,15 @@ router.post('/administrators', upload.single('photo'), async (req, res) => {
         });
         photoPath = result.secure_url;
         cloudinaryPublicId = result.public_id;
-        console.log(`✅ Administrator photo uploaded to Cloudinary: ${cloudinaryPublicId}`);
+        console.log(`✅ Admin photo uploaded to Cloudinary: ${cloudinaryPublicId}`);
       } catch (cloudinaryError) {
-        console.warn('⚠️  Cloudinary upload failed for administrator photo, falling back to local storage:', cloudinaryError.message);
-        // Fallback: save to local filesystem
-        const ext = path.extname(req.file.originalname).toLowerCase();
-        const filename = `${uuidv4()}${ext}`;
-        const relativePath = `uploads/administrators/${filename}`;
-        const newFilePath = path.join(__dirname, '../static', relativePath);
-        await fs.mkdir(path.dirname(newFilePath), { recursive: true });
-        await fs.rename(req.file.path, newFilePath);
-        photoPath = relativePath;
-        cloudinaryPublicId = null;
-      } finally {
-        // Clean up temp file if it still exists
-        try { await fs.unlink(req.file.path).catch(() => {}); } catch (_) {}
-      }
+        console.error(`❌ Cloudinary upload failed:`, cloudinaryError.message);
+        return res.status(500).json({ 
+          message: 'Photo upload failed. Cloudinary error.', 
+          error: cloudinaryError.message 
+        });
+      } 
+      try { await fs.unlink(req.file.path).catch(() => {}); } catch (_) {}
     } else if (id) {
       // Keep existing photo if updating without new photo
       const existingResult = await query('SELECT photo, cloudinary_public_id FROM administrators WHERE id = $1', [id]);

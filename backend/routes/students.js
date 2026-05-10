@@ -1578,7 +1578,7 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
       return res.status(422).json({ message: photoError.message || 'Photo processing failed' });
     }
 
-    // Try Cloudinary upload with fallback to local storage
+    // Upload to Cloudinary ONLY (no local fallback)
     let photoUrl, cloudinaryPublicId, source;
     try {
       const result = await cloudinary.uploader.upload(req.file.path, {
@@ -1593,12 +1593,11 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
       source = 'cloudinary';
       console.log(`✅ Photo uploaded to Cloudinary: ${cloudinaryPublicId}`);
     } catch (cloudinaryError) {
-      console.warn(`⚠️  Cloudinary upload failed, using local storage:`, cloudinaryError.message);
-      // Fallback to local storage
-      const relativePath = `uploads/photos/${path.basename(req.file.path)}`;
-      photoUrl = `/static/${relativePath}`;
-      cloudinaryPublicId = null;
-      source = 'local';
+      console.error(`❌ Cloudinary upload failed:`, cloudinaryError.message);
+      return res.status(500).json({ 
+        message: 'Photo upload failed. Cloudinary error.', 
+        error: cloudinaryError.message 
+      });
     }
 
     // Clean up temp file
