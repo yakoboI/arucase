@@ -56,6 +56,12 @@ const PLACEHOLDER_IMAGE = Buffer.from(
 );
 
 const app = express();
+
+// Trust Railway's proxy so Express correctly reads the X-Forwarded-For header.
+// Without this, express-rate-limit throws a ValidationError in production because
+// the header is present but 'trust proxy' is false (the default).
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
