@@ -379,6 +379,7 @@ app.use('/api/preformone-continuing-subjects', preFormOneContinuingSubjectsRoute
 app.use('/api/preformone-scores', preFormOneScoresRoutes);
 app.use('/api/preformone-promotion', preFormOnePromotionRoutes);
 app.use('/api/system', systemGradesRoutes);
+app.use('/api/cloudinary', require('./routes/cloudinary-signature'));
 
 // Socket.IO authentication middleware
 io.use((socket, next) => {
