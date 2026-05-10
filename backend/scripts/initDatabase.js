@@ -664,12 +664,15 @@ async function initDatabase() {
         title VARCHAR(255) NOT NULL,
         year_started VARCHAR(10),
         photo VARCHAR(255),
+        cloudinary_public_id VARCHAR(255),
         display_order INTEGER DEFAULT 0,
         active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    // Ensure cloudinary_public_id column exists on existing deployments
+    await query(`ALTER TABLE administrators ADD COLUMN IF NOT EXISTS cloudinary_public_id VARCHAR(255);`);
     console.log('✅ Administrators table created');
 
     // Staff profiles table (teachers + non-teaching staff shown on public /staff page)
@@ -687,6 +690,7 @@ async function initDatabase() {
         contact_phone VARCHAR(50),
         contact_email VARCHAR(255),
         photo_path VARCHAR(255),
+        cloudinary_public_id VARCHAR(255),
         profile_summary TEXT,
         display_order INTEGER DEFAULT 0,
         active BOOLEAN DEFAULT TRUE,
@@ -694,6 +698,8 @@ async function initDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    // Ensure cloudinary_public_id column exists on existing deployments
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS cloudinary_public_id VARCHAR(255);`);
     await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_active_order ON staff_profiles(active, display_order, created_at DESC)');
     await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_teaching ON staff_profiles(is_teaching, active)');
     console.log('✅ Staff profiles table created');
