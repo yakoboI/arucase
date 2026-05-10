@@ -16,10 +16,28 @@ const { cacheRoutes } = require('../middleware/cache');
 const sharp = require('sharp');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('cloudinary').v2;
+const NodeCache = require('node-cache');
+
+// Per-user photo upload rate limiter: max 5 uploads per hour per user
+const photoUploadCache = new NodeCache({ stdTTL: 3600 });
+const PHOTO_UPLOAD_LIMIT = 5;
+function checkPhotoUploadRateLimit(username) {
+  const key = `photo_upload_${username}`;
+  const count = photoUploadCache.get(key) || 0;
+  if (count >= PHOTO_UPLOAD_LIMIT) {
+    return false;
+  }
+  photoUploadCache.set(key, count + 1, photoUploadCache.getTtl(key) ? Math.ceil((photoUploadCache.getTtl(key) - Date.now()) / 1000) : 3600);
+  return true;
+}
 
 // Term variants so DELETE matches both "Term I" and "Term 1" (and II/2, etc.) in DB
 function getTermMatchValues(term) {
   const t = term != null ? String(term).trim() : '';
+  // Guard against excessively long input that could produce huge IN clauses
+  if (t.length > 50) {
+    throw new Error('Invalid term value: too long');
+  }
   const variants = [t];
   if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t) || /^First\s+Term$/i.test(t)) {
     variants.push('Term I', 'Term 1', 'First Term');
@@ -35,6 +53,10 @@ function getTermMatchValues(term) {
 // Level variants so DELETE matches "FORM III" and "FORM 3" (and Form III, etc.) in DB
 function getLevelMatchValues(level) {
   const L = level != null ? String(level).trim().toUpperCase() : '';
+  // Guard against excessively long input that could produce huge IN clauses
+  if (L.length > 50) {
+    throw new Error('Invalid level value: too long');
+  }
   const variants = [L];
   if (/^FORM\s+I$/.test(L)) variants.push('FORM I', 'FORM 1');
   else if (/^FORM\s+II$/.test(L)) variants.push('FORM II', 'FORM 2');
@@ -100,10 +122,17 @@ async function isUserAllocatedToSubject(username, level, stream, year, subject_c
 // Configure Cloudinary storage for student photos
 // Passport-style output: ~35×45 mm at ~300 DPI (ICAO-style digital photo), JPEG capped for web/reports.
 // Uploads may be up to 5MB; we resize (contain on white), then lower quality until <= max bytes.
-const STUDENT_PHOTO_MAX_BYTES = 150 * 1024; // ~150KB — sharp enough for ID/reports; still fast to load
+// All limits are configurable via environment variables.
+const STUDENT_PHOTO_MAX_BYTES = process.env.STUDENT_PHOTO_MAX_KB
+  ? parseInt(process.env.STUDENT_PHOTO_MAX_KB, 10) * 1024
+  : 150 * 1024; // ~150KB — sharp enough for ID/reports; still fast to load
 const STUDENT_PHOTO_UPLOAD_MAX_BYTES = 5 * 1024 * 1024; // Raw upload limit (<= 5MB) before resizing/compression
-const STUDENT_PHOTO_TARGET_WIDTH = 413;
-const STUDENT_PHOTO_TARGET_HEIGHT = 531; // 35:45 passport aspect
+const STUDENT_PHOTO_TARGET_WIDTH = process.env.STUDENT_PHOTO_TARGET_WIDTH
+  ? parseInt(process.env.STUDENT_PHOTO_TARGET_WIDTH, 10)
+  : 413;
+const STUDENT_PHOTO_TARGET_HEIGHT = process.env.STUDENT_PHOTO_TARGET_HEIGHT
+  ? parseInt(process.env.STUDENT_PHOTO_TARGET_HEIGHT, 10)
+  : 531; // 35:45 passport aspect
 
 // Use disk storage first, then upload to Cloudinary with fallback
 const diskStorage = multer.diskStorage({
@@ -1516,6 +1545,13 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
     const { admNo } = req.params;
     let { level, stream, year, student_index } = req.body;
 
+    // Per-user rate limit: 5 uploads per hour
+    const uploaderUsername = req.user?.user_id || req.user?.username || 'unknown';
+    if (!checkPhotoUploadRateLimit(uploaderUsername)) {
+      if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
+      return res.status(429).json({ message: 'Photo upload limit reached. Maximum 5 uploads per hour per user.' });
+    }
+
     if (!req.file) {
       return res.status(400).json({ message: 'No photo uploaded' });
     }
@@ -1535,7 +1571,12 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
     }
 
     // Compress and resize photo
-    await enforceStudentPhotoSpec(req.file);
+    try {
+      await enforceStudentPhotoSpec(req.file);
+    } catch (photoError) {
+      await fs.unlink(req.file.path).catch(() => {});
+      return res.status(422).json({ message: photoError.message || 'Photo processing failed' });
+    }
 
     // Try Cloudinary upload with fallback to local storage
     let photoUrl, cloudinaryPublicId, source;

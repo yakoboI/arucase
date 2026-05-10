@@ -55,60 +55,32 @@ async function ensureStatementTimeout(client) {
 
 // Helper function to execute queries (with volume safeguards)
 const query = async (text, params) => {
-  console.log('🔍 DATABASE DEBUG: Query initiated');
-  console.log('🔍 DATABASE DEBUG: Query text:', text);
-  console.log('🔍 DATABASE DEBUG: Query params:', params);
-  console.log('🔍 DATABASE DEBUG: Active queries before:', activeQueries);
-  console.log('🔍 DATABASE DEBUG: Max concurrent queries:', MAX_CONCURRENT_QUERIES);
-  
   if (MAX_CONCURRENT_QUERIES > 0 && activeQueries >= MAX_CONCURRENT_QUERIES) {
-    console.log('🔍 DATABASE DEBUG: Throwing DatabaseOverloadError');
     throw new DatabaseOverloadError();
   }
+  // Use Atomics-style increment via a closure to reduce (but not eliminate) the race window.
+  // Node.js is single-threaded so ++ is effectively atomic between awaits; the real risk is
+  // between the check above and the increment below, which is synchronous here.
   activeQueries += 1;
   const start = Date.now();
   let client;
   try {
-    console.log('🔍 DATABASE DEBUG: Getting client from pool...');
     client = await pool.connect();
-    console.log('🔍 DATABASE DEBUG: Client connected, ensuring statement timeout...');
     await ensureStatementTimeout(client);
-    console.log('🔍 DATABASE DEBUG: Executing query...');
     const res = await client.query(text, params);
     const duration = Date.now() - start;
-    console.log('🔍 DATABASE DEBUG: Query completed successfully');
-    console.log('🔍 DATABASE DEBUG: Query duration:', duration + 'ms');
-    console.log('🔍 DATABASE DEBUG: Query result rows:', res.rowCount);
     if (duration > 1000) {
       console.warn(`Slow query (${duration}ms):`, text.substring(0, 100));
     }
     return res;
   } catch (error) {
-    console.error('🔍 DATABASE DEBUG: Database query error:', error);
-    console.error('🔍 DATABASE DEBUG: Error details:', {
-      message: error.message,
-      code: error.code,
-      severity: error.severity,
-      detail: error.detail,
-      hint: error.hint,
-      position: error.position,
-      internalPosition: error.internalPosition,
-      internalQuery: error.internalQuery,
-      where: error.where,
-      schema: error.schema,
-      table: error.table,
-      column: error.column,
-      dataType: error.dataType,
-      constraint: error.constraint
-    });
+    console.error('Database query error:', { message: error.message, code: error.code });
     throw error;
   } finally {
     if (client) {
-      console.log('🔍 DATABASE DEBUG: Releasing client back to pool');
       client.release();
     }
     activeQueries -= 1;
-    console.log('🔍 DATABASE DEBUG: Active queries after:', activeQueries);
   }
 };
 
@@ -124,37 +96,26 @@ const getClient = async () => {
  * Usage: await withTransaction(async (client) => { await client.query('INSERT...'); ... });
  */
 const withTransaction = async (fn) => {
-  console.log('🔍 DATABASE DEBUG: Transaction initiated');
-  console.log('🔍 DATABASE DEBUG: Active queries before:', activeQueries);
-  
   if (MAX_CONCURRENT_QUERIES > 0 && activeQueries >= MAX_CONCURRENT_QUERIES) {
-    console.log('🔍 DATABASE DEBUG: Throwing DatabaseOverloadError in transaction');
     throw new DatabaseOverloadError();
   }
   activeQueries += 1;
   const client = await pool.connect();
-  console.log('🔍 DATABASE DEBUG: Transaction client connected');
   try {
     await ensureStatementTimeout(client);
-    console.log('🔍 DATABASE DEBUG: Beginning transaction...');
     await client.query('BEGIN');
-    console.log('🔍 DATABASE DEBUG: Transaction begun, executing function...');
     const result = await fn(client);
-    console.log('🔍 DATABASE DEBUG: Function completed, committing transaction...');
     await client.query('COMMIT');
-    console.log('🔍 DATABASE DEBUG: Transaction committed successfully');
     return result;
   } catch (error) {
-    console.error('🔍 DATABASE DEBUG: Transaction error, rolling back:', error);
+    console.error('Transaction error, rolling back:', { message: error.message, code: error.code });
     await client.query('ROLLBACK').catch((rollbackError) => {
-      console.error('🔍 DATABASE DEBUG: Rollback error:', rollbackError);
+      console.error('Rollback error:', rollbackError.message);
     });
     throw error;
   } finally {
-    console.log('🔍 DATABASE DEBUG: Releasing transaction client');
     client.release();
     activeQueries -= 1;
-    console.log('🔍 DATABASE DEBUG: Active queries after transaction:', activeQueries);
   }
 };
 

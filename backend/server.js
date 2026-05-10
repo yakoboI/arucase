@@ -167,13 +167,23 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cookieParser());
+const cloudinaryDomains = [
+  'https://res.cloudinary.com',
+  'https://api.cloudinary.com'
+];
+const defaultDevOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  ...cloudinaryDomains
+];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? [...process.env.ALLOWED_ORIGINS.split(','), ...cloudinaryDomains]
+  : (process.env.NODE_ENV === 'production' ? cloudinaryDomains : defaultDevOrigins);
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || (process.env.NODE_ENV === 'production' ? [] : [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://localhost:5174'
-  ]),
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -249,7 +259,7 @@ app.use('/static', express.static(path.join(__dirname, 'static'), {
 // Health check
 app.get('/health', async (req, res) => {
   try {
-    const { query } = require('./config/database');
+    const { query, pool } = require('./config/database');
     await query('SELECT 1');
 
     // Check Cloudinary status
@@ -265,6 +275,11 @@ app.get('/health', async (req, res) => {
       status: 'healthy',
       database: 'connected',
       cloudinary: cloudinaryStatus,
+      pool: {
+        total: pool.totalCount,
+        idle: pool.idleCount,
+        waiting: pool.waitingCount
+      },
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -292,26 +307,32 @@ app.get('/api/health/database', async (req, res) => {
     `);
     
     // Get record counts for key tables
-    const keyTables = ['students', 'users', 'subjects', 'individual_scores'];
+    // Table names are whitelisted — never interpolate user input here.
+    const allowedTables = ['students', 'users', 'subjects', 'individual_scores'];
     const tableCounts = {};
-    
-    for (const table of keyTables) {
+
+    for (const table of allowedTables) {
       try {
-        // Use parameterized query to prevent SQL injection (even though table names are from trusted array)
-        const countResult = await query('SELECT COUNT(*) as count FROM "' + table + '"');
+        const countResult = await query(`SELECT COUNT(*) as count FROM "${table}"`);
         tableCounts[table] = countResult.rows.length > 0 && countResult.rows[0] ? parseInt(countResult.rows[0].count) : 0;
       } catch (err) {
         tableCounts[table] = 'error';
       }
     }
-    
+
+    const { pool } = require('./config/database');
     res.json({
       status: 'connected',
       database: {
         current_time: result.rows.length > 0 ? result.rows[0].current_time : null,
         version: result.rows.length > 0 ? result.rows[0].pg_version.split(',')[0] : 'unknown',
         table_count: tablesResult.rows.length > 0 ? parseInt(tablesResult.rows[0].count) : 0,
-        record_counts: tableCounts
+        record_counts: tableCounts,
+        pool: {
+          total: pool.totalCount,
+          idle: pool.idleCount,
+          waiting: pool.waitingCount
+        }
       },
       timestamp: new Date().toISOString()
     });
