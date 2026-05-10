@@ -145,8 +145,12 @@ async function initDatabase() {
         ) THEN
           ALTER TABLE students ADD COLUMN com VARCHAR(50);
         END IF;
-      END $$;
+      END $;
     `);
+
+    // Ensure term column exists on existing deployments (required by routes/students.js).
+    await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS term VARCHAR(20) DEFAULT 'First Term';`);
+    console.log('✅ Students table term column ensured');
     
     // Create indexes for students (scale: 2000+ students with photos/data across years)
     await query('CREATE INDEX IF NOT EXISTS idx_students_class ON students(level, stream, year)');
