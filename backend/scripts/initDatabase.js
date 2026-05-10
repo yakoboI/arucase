@@ -961,6 +961,20 @@ async function initDatabase() {
     );
     console.log('✅ Default Pre-Form One Interview Subjects inserted');
 
+    // Insert default admin user (idempotent — skipped if username already exists)
+    await query(`
+      INSERT INTO users (username, password_hash, full_name, role, status)
+      VALUES (
+        'admin',
+        '$2b$10$rQZ8kHWKtGYIuIq8qIq9I.9Gq8qIq9I9Gq8qIq9I9Gq8qIq9I9Gq8',
+        'System Administrator',
+        'admin',
+        'active'
+      )
+      ON CONFLICT (username) DO NOTHING
+    `);
+    console.log('✅ Default admin user ensured');
+
     console.log('\n✅ Database schema initialized successfully!');
   } catch (error) {
     console.error('❌ Error initializing database schema:', error);
