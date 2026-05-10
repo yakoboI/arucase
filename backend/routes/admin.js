@@ -2185,22 +2185,41 @@ router.post('/alumni', upload.single('photo'), async (req, res) => {
     if (!official_names || !year_start || !year_end) {
       return res.status(400).json({ message: 'official_names, year_start, and year_end are required' });
     }
-    
-    
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const filename = `${uuidv4()}${ext}`;
-    const relativePath = `uploads/photos/${filename}`;
-    const newFilePath = path.join(__dirname, '../static', relativePath);
-    
-    await fs.mkdir(path.dirname(newFilePath), { recursive: true });
-    await fs.rename(req.file.path, newFilePath);
+
+    // Upload photo to Cloudinary with fallback to local storage
+    let photoPath;
+    try {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'alumni-photos',
+        resource_type: 'image',
+        transformation: [
+          { width: 400, height: 400, crop: 'fit', gravity: 'face' },
+          { quality: 'auto:good', fetch_format: 'auto' }
+        ]
+      });
+      photoPath = result.secure_url;
+      console.log(`✅ Alumni photo uploaded to Cloudinary: ${result.public_id}`);
+    } catch (cloudinaryError) {
+      console.warn('⚠️  Cloudinary upload failed for alumni photo, falling back to local storage:', cloudinaryError.message);
+      // Fallback: save to local filesystem
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const filename = `${uuidv4()}${ext}`;
+      const relativePath = `uploads/photos/${filename}`;
+      const newFilePath = path.join(__dirname, '../static', relativePath);
+      await fs.mkdir(path.dirname(newFilePath), { recursive: true });
+      await fs.rename(req.file.path, newFilePath);
+      photoPath = relativePath;
+    } finally {
+      // Clean up temp file if it still exists
+      try { await fs.unlink(req.file.path).catch(() => {}); } catch (_) {}
+    }
     
     const alumniId = `alumni_${Date.now()}`;
     
     await query(
       `INSERT INTO alumni (id, official_names, year_start, year_end, class_level, current_position, phone, email, social_media, philosophy, photo, submitted_date, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-      [alumniId, official_names, year_start, year_end, class_level || null, current_position || null, phone || null, email || null, social_media || null, philosophy || null, relativePath, new Date().toISOString().split('T')[0], 'pending']
+      [alumniId, official_names, year_start, year_end, class_level || null, current_position || null, phone || null, email || null, social_media || null, philosophy || null, photoPath, new Date().toISOString().split('T')[0], 'pending']
     );
     
     res.json({ message: 'Alumni registration submitted successfully. Awaiting approval.', id: alumniId });
@@ -2233,13 +2252,27 @@ router.delete('/alumni/:id', async (req, res) => {
     
     const alumniResult = await query('SELECT photo FROM alumni WHERE id = $1', [id]);
     if (alumniResult.rows.length > 0 && alumniResult.rows[0] && alumniResult.rows[0].photo) {
-      const path = require('path');
-      const fs = require('fs').promises;
-      try {
-        const filePath = path.join(__dirname, '../static', alumniResult.rows[0].photo);
-        await fs.unlink(filePath);
-      } catch (err) {
-        // Photo file not found or already deleted
+      const photoUrl = alumniResult.rows[0].photo;
+      if (photoUrl.startsWith('http') && photoUrl.includes('cloudinary.com')) {
+        // Delete from Cloudinary — extract public_id from URL
+        try {
+          const urlParts = photoUrl.split('/');
+          const filenameWithExt = urlParts[urlParts.length - 1];
+          const filename = filenameWithExt.split('.')[0];
+          const folder = urlParts[urlParts.length - 2];
+          const publicId = `${folder}/${filename}`;
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          console.warn('Failed to delete alumni photo from Cloudinary:', err.message);
+        }
+      } else if (!photoUrl.startsWith('http')) {
+        // Legacy local file
+        try {
+          const filePath = path.join(__dirname, '../static', photoUrl);
+          await fs.unlink(filePath);
+        } catch (err) {
+          // Photo file not found or already deleted
+        }
       }
     }
     
@@ -2951,16 +2984,24 @@ router.post('/administrators', upload.single('photo'), async (req, res) => {
     }
     
     let photoPath = null;
+    let cloudinaryPublicId = null;
     
     // Handle photo upload
     if (req.file) {
-      // Get old photo path if updating
+      // Get old photo and cloudinary_public_id if updating
       if (id) {
-        const oldAdminResult = await query('SELECT photo FROM administrators WHERE id = $1', [id]);
+        const oldAdminResult = await query('SELECT photo, cloudinary_public_id FROM administrators WHERE id = $1', [id]);
         const oldPhotoPath = oldAdminResult.rows[0]?.photo;
-        
-        // Delete old photo if exists
-        if (oldPhotoPath) {
+        const oldCloudinaryPublicId = oldAdminResult.rows[0]?.cloudinary_public_id;
+
+        // Delete old photo from Cloudinary or local storage
+        if (oldCloudinaryPublicId) {
+          try {
+            await cloudinary.uploader.destroy(oldCloudinaryPublicId);
+          } catch (err) {
+            console.warn('Failed to delete old administrator photo from Cloudinary:', err.message);
+          }
+        } else if (oldPhotoPath && !oldPhotoPath.startsWith('http')) {
           try {
             const oldFilePath = path.join(__dirname, '../static', oldPhotoPath);
             await fs.unlink(oldFilePath);
@@ -2969,23 +3010,40 @@ router.post('/administrators', upload.single('photo'), async (req, res) => {
           }
         }
       }
-      
-      // Generate unique filename
-      const ext = path.extname(req.file.originalname).toLowerCase();
-      const filename = `${uuidv4()}${ext}`;
-      const relativePath = `uploads/administrators/${filename}`;
-      const newFilePath = path.join(__dirname, '../static', relativePath);
-      
-      // Ensure directory exists
-      await fs.mkdir(path.dirname(newFilePath), { recursive: true });
-      
-      // Move uploaded file
-      await fs.rename(req.file.path, newFilePath);
-      photoPath = relativePath;
+
+      // Upload to Cloudinary with fallback to local storage
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'administrator-photos',
+          resource_type: 'image',
+          transformation: [
+            { width: 400, height: 400, crop: 'fit', gravity: 'face' },
+            { quality: 'auto:good', fetch_format: 'auto' }
+          ]
+        });
+        photoPath = result.secure_url;
+        cloudinaryPublicId = result.public_id;
+        console.log(`✅ Administrator photo uploaded to Cloudinary: ${cloudinaryPublicId}`);
+      } catch (cloudinaryError) {
+        console.warn('⚠️  Cloudinary upload failed for administrator photo, falling back to local storage:', cloudinaryError.message);
+        // Fallback: save to local filesystem
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const filename = `${uuidv4()}${ext}`;
+        const relativePath = `uploads/administrators/${filename}`;
+        const newFilePath = path.join(__dirname, '../static', relativePath);
+        await fs.mkdir(path.dirname(newFilePath), { recursive: true });
+        await fs.rename(req.file.path, newFilePath);
+        photoPath = relativePath;
+        cloudinaryPublicId = null;
+      } finally {
+        // Clean up temp file if it still exists
+        try { await fs.unlink(req.file.path).catch(() => {}); } catch (_) {}
+      }
     } else if (id) {
       // Keep existing photo if updating without new photo
-      const existingResult = await query('SELECT photo FROM administrators WHERE id = $1', [id]);
+      const existingResult = await query('SELECT photo, cloudinary_public_id FROM administrators WHERE id = $1', [id]);
       photoPath = existingResult.rows[0]?.photo || null;
+      cloudinaryPublicId = existingResult.rows[0]?.cloudinary_public_id || null;
     }
     
     const displayOrder = display_order ? parseInt(display_order) : 0;
@@ -2995,17 +3053,17 @@ router.post('/administrators', upload.single('photo'), async (req, res) => {
       // Update existing administrator
       await query(
         `UPDATE administrators 
-         SET name = $1, title = $2, year_started = $3, photo = $4, display_order = $5, active = $6, updated_at = NOW()
-         WHERE id = $7`,
-        [name, title, year_started || null, photoPath, displayOrder, isActive, id]
+         SET name = $1, title = $2, year_started = $3, photo = $4, cloudinary_public_id = $5, display_order = $6, active = $7, updated_at = NOW()
+         WHERE id = $8`,
+        [name, title, year_started || null, photoPath, cloudinaryPublicId, displayOrder, isActive, id]
       );
     } else {
       // Create new administrator
       const newId = uuidv4();
       await query(
-        `INSERT INTO administrators (id, name, title, year_started, photo, display_order, active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [newId, name, title, year_started || null, photoPath, displayOrder, isActive]
+        `INSERT INTO administrators (id, name, title, year_started, photo, cloudinary_public_id, display_order, active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [newId, name, title, year_started || null, photoPath, cloudinaryPublicId, displayOrder, isActive]
       );
     }
     
@@ -3021,16 +3079,23 @@ router.delete('/administrators/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get photo path before deleting
-    const adminResult = await query('SELECT photo FROM administrators WHERE id = $1', [id]);
+    // Get photo path and cloudinary_public_id before deleting
+    const adminResult = await query('SELECT photo, cloudinary_public_id FROM administrators WHERE id = $1', [id]);
     if (adminResult.rows.length === 0) {
       return res.status(404).json({ message: 'Administrator not found' });
     }
     
     const photoPath = adminResult.rows[0].photo;
+    const cloudinaryPublicId = adminResult.rows[0].cloudinary_public_id;
     
-    // Delete photo file if exists
-    if (photoPath) {
+    // Delete photo from Cloudinary or local storage
+    if (cloudinaryPublicId) {
+      try {
+        await cloudinary.uploader.destroy(cloudinaryPublicId);
+      } catch (err) {
+        console.warn('Failed to delete administrator photo from Cloudinary:', err.message);
+      }
+    } else if (photoPath && !photoPath.startsWith('http')) {
       try {
         const filePath = path.join(__dirname, '../static', photoPath);
         await fs.unlink(filePath);
