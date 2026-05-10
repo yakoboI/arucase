@@ -123,7 +123,7 @@ async function ensureStudentPhotosCloudinaryPublicIdColumn() {
 async function ensureStaffProfilesCloudinaryPublicIdColumn() {
   try {
     await query(`
-      DO $
+      DO $$
       BEGIN
         IF NOT EXISTS (
           SELECT 1
@@ -133,17 +133,18 @@ async function ensureStaffProfilesCloudinaryPublicIdColumn() {
         ) THEN
           ALTER TABLE staff_profiles ADD COLUMN cloudinary_public_id VARCHAR(255);
         END IF;
-      END $;
+      END $$;
     `);
   } catch (error) {
     console.warn('[schema] ensure staff_profiles.cloudinary_public_id failed:', error.message);
   }
 }
 
+
 async function ensureAdministratorsCloudinaryPublicIdColumn() {
   try {
     await query(`
-      DO $
+      DO $$
       BEGIN
         IF NOT EXISTS (
           SELECT 1
@@ -153,12 +154,13 @@ async function ensureAdministratorsCloudinaryPublicIdColumn() {
         ) THEN
           ALTER TABLE administrators ADD COLUMN cloudinary_public_id VARCHAR(255);
         END IF;
-      END $;
+      END $$;
     `);
   } catch (error) {
     console.warn('[schema] ensure administrators.cloudinary_public_id failed:', error.message);
   }
 }
+
 
 // Run once at startup.
 setImmediate(() => {
