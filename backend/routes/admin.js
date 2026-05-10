@@ -196,7 +196,7 @@ const staffPhotoStorage = new CloudinaryStorage({
     folder: 'staff-photos',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
     transformation: [
-      { width: 400, height: 400, crop: 'fit', gravity: 'face' },
+      { width: 400, height: 400, crop: 'fill', gravity: 'face' },
       { quality: 'auto:good', fetch_format: 'auto' }
     ],
     public_id: (req, file) => {
@@ -2193,7 +2193,7 @@ router.post('/alumni', upload.single('photo'), async (req, res) => {
         folder: 'alumni-photos',
         resource_type: 'image',
         transformation: [
-          { width: 400, height: 400, crop: 'fit', gravity: 'face' },
+          { width: 400, height: 400, crop: 'fill', gravity: 'face' },
           { quality: 'auto:good', fetch_format: 'auto' }
         ]
       });
@@ -3017,7 +3017,7 @@ router.post('/administrators', upload.single('photo'), async (req, res) => {
           folder: 'administrator-photos',
           resource_type: 'image',
           transformation: [
-            { width: 400, height: 400, crop: 'fit', gravity: 'face' },
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
             { quality: 'auto:good', fetch_format: 'auto' }
           ]
         });
