@@ -141,10 +141,10 @@ async function generateIndividualReportPDFWithPuppeteer(
       console.warn('[PUPPETEER][requestfailed]', req.url(), failure?.errorText || 'unknown');
     });
     
-    // Set viewport to match premium local development appearance
+    // Set viewport to match local development browser exactly
     await page.setViewport({
-      width: 1200,
-      height: 800,
+      width: 1920,
+      height: 1080,
       deviceScaleFactor: 1,
       isMobile: false,
       hasTouch: false,
@@ -371,25 +371,43 @@ async function generateIndividualReportPDFWithPuppeteer(
     const pageTitle = await page.title();
     console.log('Page loaded. Title:', pageTitle);
     
-    // Generate PDF with premium settings to match local development appearance
+    // Generate PDF using browser screenshot to preserve exact styling
     let pdfBuffer;
     try {
-      pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '10mm',
-          right: '10mm',
-          bottom: '10mm',
-          left: '10mm'
-        },
-        preferCSSPageSize: false,
-        displayHeaderFooter: false,
-        scale: 0.85
+      // Take screenshot at high quality to preserve exact browser rendering
+      const screenshot = await page.screenshot({
+        fullPage: true,
+        type: 'png',
+        quality: 100,
+        omitBackground: false
       });
+      
+      // Convert screenshot to PDF using pdf-lib library for better quality
+      const { PDFDocument, rgb } = require('pdf-lib');
+      const imgData = await screenshot.toString('base64');
+      
+      // Create PDF with exact A4 dimensions
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([595.28, 841.89]); // A4 size in points
+      
+      // Add screenshot as full page image
+      const image = await pdfDoc.embedPng(imgData);
+      page.drawImage(image, {
+        x: 0,
+        y: 0,
+        width: 595.28,
+        height: 841.89
+      });
+      
+      // Convert to buffer
+      pdfBuffer = Buffer.from(await pdfDoc.save());
+      
+      console.log('PDF generated from screenshot using pdf-lib. Size:', pdfBuffer.length, 'bytes');
+      
+      console.log('Screenshot captured successfully. Size:', screenshot.length, 'bytes');
     } catch (pdfError) {
-      console.error('Error generating PDF:', pdfError);
-      throw new Error(`Failed to generate PDF: ${pdfError.message}`);
+      console.error('Error generating screenshot:', pdfError);
+      throw new Error(`Failed to generate screenshot: ${pdfError.message}`);
     }
     
     // Validate PDF buffer
