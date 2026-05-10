@@ -123,7 +123,7 @@ async function ensureStudentPhotosCloudinaryPublicIdColumn() {
 async function ensureStaffProfilesCloudinaryPublicIdColumn() {
   try {
     await query(`
-      DO $$
+      DO $
       BEGIN
         IF NOT EXISTS (
           SELECT 1
@@ -133,10 +133,30 @@ async function ensureStaffProfilesCloudinaryPublicIdColumn() {
         ) THEN
           ALTER TABLE staff_profiles ADD COLUMN cloudinary_public_id VARCHAR(255);
         END IF;
-      END $$;
+      END $;
     `);
   } catch (error) {
     console.warn('[schema] ensure staff_profiles.cloudinary_public_id failed:', error.message);
+  }
+}
+
+async function ensureAdministratorsCloudinaryPublicIdColumn() {
+  try {
+    await query(`
+      DO $
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'administrators'
+            AND column_name = 'cloudinary_public_id'
+        ) THEN
+          ALTER TABLE administrators ADD COLUMN cloudinary_public_id VARCHAR(255);
+        END IF;
+      END $;
+    `);
+  } catch (error) {
+    console.warn('[schema] ensure administrators.cloudinary_public_id failed:', error.message);
   }
 }
 
@@ -145,6 +165,7 @@ setImmediate(() => {
   ensureStudentsComColumn().catch((e) => console.warn('[schema] ensureStudentsComColumn fatal:', e.message));
   ensureStudentPhotosCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureStudentPhotosCloudinaryPublicIdColumn fatal:', e.message));
   ensureStaffProfilesCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureStaffProfilesCloudinaryPublicIdColumn fatal:', e.message));
+  ensureAdministratorsCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureAdministratorsCloudinaryPublicIdColumn fatal:', e.message));
   validateCloudinaryCredentials().catch((e) => console.warn('[cloudinary] Validation failed:', e.message));
   
   // Migration: Update all DIV scores to A/DIV
