@@ -145,7 +145,7 @@ async function initDatabase() {
         ) THEN
           ALTER TABLE students ADD COLUMN com VARCHAR(50);
         END IF;
-      END $;
+      END $$;
     `);
 
     // Ensure term column exists on existing deployments (required by routes/students.js).
