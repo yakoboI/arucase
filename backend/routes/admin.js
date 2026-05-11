@@ -18,11 +18,17 @@ const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
 const { sendError } = require('../utils/safeError');
 const CloudinaryStorage = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
+// multer-storage-cloudinary v2.x requires the full cloudinary module (not the
+// v2 sub-object) because it internally accesses cloudinary.v2.uploader.
+const cloudinaryModule = cloudinary.cloudinaryModule;
 
 // Validate that cloudinary is properly configured before creating storage instances
 function assertCloudinaryConfigured() {
-  if (!cloudinary || typeof cloudinary.uploader === 'undefined') {
-    throw new Error('Cloudinary is not properly initialized. Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
+  if (!cloudinary.isCloudinaryConfigured()) {
+    throw new Error(
+      'Cloudinary is not properly initialized. ' +
+      'Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.'
+    );
   }
 }
 
@@ -35,7 +41,7 @@ function getStaffPhotoStorage() {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating staffPhotoStorage instance');
     _staffPhotoStorage = new CloudinaryStorage({
-      cloudinary,
+      cloudinary: cloudinaryModule,
       params: {
         folder: 'staff-photos',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
@@ -59,7 +65,7 @@ function getSchoolLogoStorage() {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating schoolLogoStorage instance');
     _schoolLogoStorage = new CloudinaryStorage({
-      cloudinary,
+      cloudinary: cloudinaryModule,
       params: {
         folder: 'school-logos',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
@@ -79,7 +85,7 @@ function getSchoolStampStorage() {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating schoolStampStorage instance');
     _schoolStampStorage = new CloudinaryStorage({
-      cloudinary,
+      cloudinary: cloudinaryModule,
       params: {
         folder: 'school-logos',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
@@ -99,7 +105,7 @@ function getAuthoritySignatureStorage() {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating authoritySignatureStorage instance');
     _authoritySignatureStorage = new CloudinaryStorage({
-      cloudinary,
+      cloudinary: cloudinaryModule,
       params: {
         folder: 'authority-signatures',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
@@ -119,7 +125,7 @@ function getPatronSaintStorage() {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating patronSaintStorage instance');
     _patronSaintStorage = new CloudinaryStorage({
-      cloudinary,
+      cloudinary: cloudinaryModule,
       params: {
         folder: 'patron-saint-images',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
@@ -139,7 +145,7 @@ function getGalleryPhotoStorage() {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating galleryPhotoStorage instance');
     _galleryPhotoStorage = new CloudinaryStorage({
-      cloudinary,
+      cloudinary: cloudinaryModule,
       params: {
         folder: 'arucase-gallery',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
