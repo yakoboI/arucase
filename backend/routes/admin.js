@@ -1051,7 +1051,7 @@ router.get('/school-logo', async (req, res) => {
 });
 
 // Upload school logo
-router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
+router.post('/school-logo', schoolLogoUpload.single('logo_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -1138,7 +1138,7 @@ router.get('/school-stamp', async (req, res) => {
 });
 
 // Upload school stamp
-router.post('/school-stamp', upload.single('stamp_file'), async (req, res) => {
+router.post('/school-stamp', schoolStampUpload.single('stamp_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -1240,7 +1240,7 @@ router.post('/authority-data', async (req, res) => {
 });
 
 // Upload authority signature image
-router.post('/authority-data/upload-signature', upload.single('signature_file'), async (req, res) => {
+router.post('/authority-data/upload-signature', authoritySignatureUpload.single('signature_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -1344,7 +1344,7 @@ router.get('/patron-saint-image', async (req, res) => {
 });
 
 // Upload patron saint image
-router.post('/patron-saint-image', upload.single('patron_saint_file'), async (req, res) => {
+router.post('/patron-saint-image', patronSaintUpload.single('patron_saint_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -2094,7 +2094,7 @@ router.get('/gallery', async (req, res) => {
 
 // Upload gallery photos with multer error handling
 router.post('/gallery/upload', (req, res, next) => {
-  upload.array('photos', 20)(req, res, (err) => {
+  galleryPhotoUpload.array('photos', 20)(req, res, (err) => {
     if (err) {
       console.error('Multer error:', err);
       if (err instanceof multer.MulterError) {

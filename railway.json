@@ -1,0 +1,12 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "node server.js",
+    "preDeployCommand": [
+      "node database/add_cloudinary_columns.js && node scripts/migrate-existing-photos-to-cloudinary.js"
+    ],
+    "healthcheckPath": "/health"
+  }
+}
