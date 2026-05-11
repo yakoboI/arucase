@@ -59,6 +59,15 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
   // Helper function to get full image URL
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
+    
+    // In production, use the Railway backend URL for static assets
+    if (process.env.NODE_ENV === 'production') {
+      const productionBackendUrl = process.env.RAILWAY_PUBLIC_URL || 'https://arucase-production.up.railway.app';
+      const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+      return `${productionBackendUrl}/static/${cleanPath}`;
+    }
+    
+    // Development: use local API URL
     const baseUrl = apiUrl.replace('/api', '');
     const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
     return `${baseUrl}/static/${cleanPath}`;

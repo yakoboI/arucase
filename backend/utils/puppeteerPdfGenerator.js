@@ -155,11 +155,18 @@ async function generateIndividualReportPDFWithPuppeteer(
     const baseUrl = apiUrl.replace('/api', '');
     
     // Set auth headers for image requests (before setContent so they're used)
+    const imageHeaders = {};
     if (authToken) {
-      await page.setExtraHTTPHeaders({
-        'Authorization': `Bearer ${authToken}`
-      });
+      imageHeaders['Authorization'] = `Bearer ${authToken}`;
     }
+    
+    // In production, allow cross-origin image loading
+    if (process.env.NODE_ENV === 'production') {
+      imageHeaders['Access-Control-Allow-Origin'] = '*';
+      imageHeaders['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+    }
+    
+    await page.setExtraHTTPHeaders(imageHeaders);
     
     // Set content directly from HTML string
     try {

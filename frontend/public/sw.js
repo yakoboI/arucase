@@ -90,7 +90,11 @@ self.addEventListener('fetch', (event) => {
               JSON.stringify({ error: 'Offline', message: 'No internet connection' }),
               {
                 status: 503,
-                headers: { 'Content-Type': 'application/json' },
+                statusText: 'Service Unavailable',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                },
               }
             );
           });
@@ -151,7 +155,11 @@ self.addEventListener('fetch', (event) => {
           return response;
         }).catch(() => {
           // Network failed, return placeholder or error
-          return new Response('', { status: 503 });
+          return new Response('', { 
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Access-Control-Allow-Origin': '*' }
+          });
         });
       })
     );
