@@ -1776,7 +1776,7 @@ router.get('/photo-entry-form/pdf', async (req, res) => {
 // Get student parishes for a class
 router.get('/parishes/list', requireAuth, async (req, res) => {
   try {
-    let { level, stream, year, term } = req.query;
+    let { level, stream, year } = req.query;
     
     // Normalize level to uppercase and handle URL encoding
     if (level) {
@@ -1807,10 +1807,8 @@ router.get('/parishes/list', requireAuth, async (req, res) => {
       queryParams = [level, uniqueStreams[0], uniqueStreams[1], parseInt(year)];
     }
     
-    if (term && term.trim()) {
-      queryText += ` AND term = $${queryParams.length + 1}`;
-      queryParams.push(term.trim());
-    }
+    // Note: student_parishes table does not have a term column
+    // Parishes are stored per class (level, stream, year) only
     
     queryText += ` ORDER BY student_index`;
     
