@@ -23,6 +23,28 @@ const IndividualReportDetail = () => {
   const [logoDataUrl, setLogoDataUrl] = useState(null);
   const [photoDataUrl, setPhotoDataUrl] = useState(null);
 
+  // Extract data from reportData when available
+  const { 
+    student, 
+    subjects, 
+    monthly_results, 
+    comments, 
+    tabia_mwenendo, 
+    subject_rankings,
+    subject_teacher_signatures,
+    overall_rank,
+    total_students,
+    marks_config,
+    months: reportMonths,
+    summary_data,
+    student_parish,
+    student_fees_debt,
+    class_fees_announcements,
+    school_logo,
+    school_stamp,
+    authority_data
+  } = reportData || {};
+
   // Fetch report data
   const { data: reportData, isLoading, error } = useQuery({
     queryKey: ['report-detail', form, stream, year, term, admNo],
@@ -599,27 +621,6 @@ const IndividualReportDetail = () => {
     );
   }
 
-  const { 
-    student, 
-    subjects, 
-    monthly_results, 
-    comments, 
-    tabia_mwenendo, 
-    subject_rankings,
-    subject_teacher_signatures,
-    overall_rank,
-    total_students,
-    marks_config,
-    months: reportMonths,
-    summary_data,
-    student_parish,
-    student_fees_debt,
-    class_fees_announcements,
-    school_logo,
-    school_stamp,
-    authority_data
-  } = reportData;
-  
   const formCode = form.replace('FORM ', '').replace('FORM', '').trim();
   const isForm5Or6 = ['V', 'VI', '5', '6'].includes(formCode) || 
                       (form && (form.toUpperCase().includes('V') && !form.toUpperCase().includes('IV')));
