@@ -23,28 +23,6 @@ const IndividualReportDetail = () => {
   const [logoDataUrl, setLogoDataUrl] = useState(null);
   const [photoDataUrl, setPhotoDataUrl] = useState(null);
 
-  // Extract data from reportData when available
-  const { 
-    student, 
-    subjects, 
-    monthly_results, 
-    comments, 
-    tabia_mwenendo, 
-    subject_rankings,
-    subject_teacher_signatures,
-    overall_rank,
-    total_students,
-    marks_config,
-    months: reportMonths,
-    summary_data,
-    student_parish,
-    student_fees_debt,
-    class_fees_announcements,
-    school_logo,
-    school_stamp,
-    authority_data
-  } = reportData || {};
-
   // Fetch report data
   const { data: reportData, isLoading, error } = useQuery({
     queryKey: ['report-detail', form, stream, year, term, admNo],
@@ -111,6 +89,28 @@ const IndividualReportDetail = () => {
     },
     refetchOnWindowFocus: false
   });
+
+  // Extract data from reportData when available
+  const { 
+    student, 
+    subjects, 
+    monthly_results, 
+    comments, 
+    tabia_mwenendo, 
+    subject_rankings,
+    subject_teacher_signatures,
+    overall_rank,
+    total_students,
+    marks_config,
+    months: reportMonths,
+    summary_data,
+    student_parish,
+    student_fees_debt,
+    class_fees_announcements,
+    school_logo,
+    school_stamp,
+    authority_data
+  } = reportData || {};
 
   // Helper function to get student photo URL
   const getStudentPhotoUrl = (photoPath) => {
