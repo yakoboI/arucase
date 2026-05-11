@@ -168,6 +168,19 @@ async function ensureRefreshTokensTable() {
       );
     `);
     
+    // Add unique constraint on user_id (one refresh token per user)
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint 
+          WHERE conname = 'refresh_tokens_user_id_unique'
+        ) THEN
+          ALTER TABLE refresh_tokens ADD CONSTRAINT refresh_tokens_user_id_unique UNIQUE (user_id);
+        END IF;
+      END $$;
+    `);
+    
     // Create indexes for performance
     await query(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);`);
     await query(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);`);
