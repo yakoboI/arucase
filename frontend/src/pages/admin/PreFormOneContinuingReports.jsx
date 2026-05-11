@@ -19,6 +19,9 @@ const PreFormOneContinuingReports = () => {
 
   const getLogoUrl = (logoPath) => {
     if (!logoPath) return null;
+    if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+      return logoPath;
+    }
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const baseUrl = apiUrl.replace('/api', '');
     const cleanPath = logoPath.startsWith('/') ? logoPath.substring(1) : logoPath;

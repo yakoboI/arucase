@@ -52,7 +52,7 @@ const PublicHeader = () => {
   // Helper to get API URL for images
   const getImageUrl = (path) => {
     if (!path) return null;
-    if (path.startsWith('http')) return path;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const baseUrl = apiUrl.replace('/api', '');
     // Remove leading slash from path if present to avoid double slashes

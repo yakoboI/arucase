@@ -417,6 +417,11 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
   const getPhotoUrl = (filename) => {
     if (!filename) return null;
     
+    // Check for Cloudinary URLs first
+    if (filename.startsWith('http://') || filename.startsWith('https://')) {
+      return photosVersion > 0 ? `${filename}?v=${photosVersion}` : filename;
+    }
+    
     const base = (() => {
       if (import.meta.env.DEV) return `/static/uploads/photos/${filename}`;
       const apiUrl = import.meta.env.VITE_API_URL;

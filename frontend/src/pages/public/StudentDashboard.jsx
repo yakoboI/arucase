@@ -82,6 +82,9 @@ const StudentDashboard = () => {
   // Helper function to get photo URL
   const getPhotoUrl = (filename) => {
     if (!filename) return null;
+    if (filename.startsWith('http://') || filename.startsWith('https://')) {
+      return filename;
+    }
     // In development, use relative URL (Vite proxy handles it)
     if (import.meta.env.DEV) {
       return `/static/uploads/photos/${filename}`;

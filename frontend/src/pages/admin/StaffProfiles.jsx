@@ -123,7 +123,7 @@ export default function StaffProfiles() {
 
   const toImageUrl = (photoPath) => {
     if (!photoPath) return '';
-    if (photoPath.startsWith('http')) return photoPath;
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) return photoPath;
     const cleanPath = photoPath.startsWith('/') ? photoPath.slice(1) : photoPath;
     return import.meta.env.DEV ? `/static/${cleanPath}` : `${(import.meta.env.VITE_API_URL || '/api').replace('/api', '')}/static/${cleanPath}`;
   };

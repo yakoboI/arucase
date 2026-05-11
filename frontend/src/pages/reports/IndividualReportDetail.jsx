@@ -1179,6 +1179,10 @@ const IndividualReportDetail = () => {
                   {authority_data?.signature_image_path && !imageErrors.signatureImage ? (
                     <img
                       src={(() => {
+                        if (!authority_data.signature_image_path) return '';
+                        if (authority_data.signature_image_path.startsWith('http://') || authority_data.signature_image_path.startsWith('https://')) {
+                          return authority_data.signature_image_path;
+                        }
                         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                         const baseUrl = apiUrl.replace('/api', '');
                         const cleanPath = authority_data.signature_image_path.startsWith('/')
@@ -1348,6 +1352,10 @@ const IndividualReportDetail = () => {
               <div className="signature-image-container" style={{ textAlign: 'left', marginBottom: '5px' }}>
                 <img
                   src={(() => {
+                    if (!authority_data.signature_image_path) return '';
+                    if (authority_data.signature_image_path.startsWith('http://') || authority_data.signature_image_path.startsWith('https://')) {
+                      return authority_data.signature_image_path;
+                    }
                     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                     const baseUrl = apiUrl.replace('/api', '');
                     const cleanPath = authority_data.signature_image_path.startsWith('/')

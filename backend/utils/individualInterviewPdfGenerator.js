@@ -103,7 +103,7 @@ async function generateIndividualInterviewPDF(student, result, subjects, scores,
           <!-- School Letterhead -->
           <div class="header">
             <div class="logo">
-              <img src="http://localhost:5000/static/school-logo.png" alt="Arusha Catholic Seminary official school logo" />
+              <img src="${process.env.BASE_URL || 'http://localhost:5000'}/static/school-logo.png" alt="Arusha Catholic Seminary official school logo" />
             </div>
             <div class="school-info">
               <h1>CATHOLIC ARCHDIOCESE OF ARUSHA</h1>
@@ -113,7 +113,7 @@ async function generateIndividualInterviewPDF(student, result, subjects, scores,
               <p>Email: arucase@gmail.com</p>
             </div>
             <div class="logo">
-              <img src="http://localhost:5000/static/school-logo.png" alt="Arusha Catholic Seminary official school logo" />
+              <img src="${process.env.BASE_URL || 'http://localhost:5000'}/static/school-logo.png" alt="Arusha Catholic Seminary official school logo" />
             </div>
           </div>
 

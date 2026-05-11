@@ -741,6 +741,10 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                   {schoolLogoData?.logo_image_path ? (
                     <img
                       src={(() => {
+                        if (!schoolLogoData.logo_image_path) return '';
+                        if (schoolLogoData.logo_image_path.startsWith('http://') || schoolLogoData.logo_image_path.startsWith('https://')) {
+                          return schoolLogoData.logo_image_path;
+                        }
                         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                         const baseUrl = apiUrl.replace('/api', '');
                         const cleanPath = schoolLogoData.logo_image_path.startsWith('/') 
@@ -775,6 +779,10 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                   {schoolLogoData?.logo_image_path ? (
                     <img
                       src={(() => {
+                        if (!schoolLogoData.logo_image_path) return '';
+                        if (schoolLogoData.logo_image_path.startsWith('http://') || schoolLogoData.logo_image_path.startsWith('https://')) {
+                          return schoolLogoData.logo_image_path;
+                        }
                         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                         const baseUrl = apiUrl.replace('/api', '');
                         const cleanPath = schoolLogoData.logo_image_path.startsWith('/') 

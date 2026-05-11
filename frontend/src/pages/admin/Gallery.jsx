@@ -128,6 +128,10 @@ const Gallery = () => {
   const categories = ['general', 'events', 'sports', 'academics', 'campus', 'students', 'staff'];
 
   const getPhotoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
     return `/static/${path}`;
   };
 
