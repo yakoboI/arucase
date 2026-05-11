@@ -8,6 +8,36 @@
 require('dotenv').config();
 const { pool } = require('../config/database');
 
+const RETRY_ATTEMPTS = 5;
+const RETRY_DELAY_MS = 3000;
+
+/**
+ * Attempt to connect to the database, retrying on transient failures.
+ * Returns the result of `SELECT NOW()` once a connection succeeds.
+ * Throws after all attempts are exhausted.
+ */
+async function connectWithRetry() {
+  for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
+    try {
+      const result = await pool.query('SELECT NOW() as current_time');
+      return result;
+    } catch (err) {
+      if (attempt < RETRY_ATTEMPTS) {
+        console.warn(
+          `⚠️  Database connection attempt ${attempt}/${RETRY_ATTEMPTS} failed: ${err.message}`
+        );
+        console.warn(`   Retrying in ${RETRY_DELAY_MS / 1000}s...`);
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      } else {
+        console.error(
+          `❌ All ${RETRY_ATTEMPTS} connection attempts failed. Last error: ${err.message}`
+        );
+        throw err;
+      }
+    }
+  }
+}
+
 async function addCloudinaryPublicId() {
   console.log('='.repeat(80));
   console.log('ADDING cloudinary_public_id COLUMN');
@@ -15,8 +45,8 @@ async function addCloudinaryPublicId() {
   console.log();
 
   try {
-    // Test database connection
-    const connectionTest = await pool.query('SELECT NOW() as current_time');
+    // Test database connection (with retry for transient timeouts)
+    const connectionTest = await connectWithRetry();
     console.log(`✅ Database connected at: ${connectionTest.rows[0].current_time}`);
     console.log();
 
