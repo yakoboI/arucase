@@ -16,7 +16,7 @@ const { extractText } = require('../utils/documentParser');
 const { getClient, callClaude } = require('../utils/anthropic');
 const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
 const { sendError } = require('../utils/safeError');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const CloudinaryStorage = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
 
 // Validate that cloudinary is properly configured before creating storage instances
