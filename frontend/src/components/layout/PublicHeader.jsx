@@ -255,12 +255,11 @@ const PublicHeader = () => {
                       <li key={item.path}>
                         <Link
                           to={item.path}
-                          className={isActive(item.path) ? 'active' : ''}
+                          className={`${isActive(item.path) ? 'active' : ''} icon-only`}
                           onClick={() => setMobileMenuOpen(false)}
                           onMouseEnter={getPrefetchHandler(item.path)}
                         >
                           <i className={`fas ${item.icon}`}></i>
-                          <span className="nav-link-text">{item.label}</span>
                         </Link>
                       </li>
                     ))}
@@ -274,10 +273,9 @@ const PublicHeader = () => {
                   <li>
                     <Link
                       to={homeItem.path}
-                      className={isActive(homeItem.path) ? 'active' : ''}
+                      className={`${isActive(homeItem.path) ? 'active' : ''} icon-only`}
                     >
                       <i className={`fas ${homeItem.icon}`}></i>
-                      <span className="nav-link-text">{homeItem.label}</span>
                     </Link>
                   </li>
                   {navCategories.map((category) => (

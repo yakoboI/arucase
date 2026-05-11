@@ -108,7 +108,7 @@
 }
 
 .patron-saint {
-  width: clamp(56px, 13vw, 80px);
+  width: clamp(76px, 17vw, 104px);
   height: auto;
   min-height: 0;
   background: transparent;
@@ -139,7 +139,7 @@
 }
 
 .header-tropical-frame--patron {
-  width: clamp(52px, 12vw, 72px);
+  width: clamp(76px, 17vw, 104px);
 }
 
 .header-tropical-frame__leaf {
@@ -233,24 +233,26 @@
 
 .header-tropical-frame__img--logo {
   aspect-ratio: 1 / 1;
+  height: clamp(76px, 17vw, 104px);
+  object-fit: contain;
 }
 
 .header-tropical-frame__img--patron {
   aspect-ratio: 3 / 4;
-  max-height: clamp(72px, 16vw, 108px);
+  height: clamp(76px, 17vw, 104px);
   object-fit: contain;
 }
 
 /* Unframed fallbacks (no logo / no patron image) */
 .school-crest:not(:has(.header-tropical-frame)) {
-  width: clamp(50px, 12vw, 75px);
-  height: clamp(50px, 12vw, 75px);
+  width: clamp(76px, 17vw, 104px);
+  height: clamp(76px, 17vw, 104px);
   overflow: hidden;
 }
 
 .patron-saint:not(:has(.header-tropical-frame)) {
-  width: clamp(50px, 12vw, 75px);
-  height: clamp(50px, 12vw, 75px);
+  width: clamp(76px, 17vw, 104px);
+  height: clamp(76px, 17vw, 104px);
   overflow: hidden;
   cursor: pointer;
 }
@@ -429,6 +431,17 @@
 
 .nav-link-text {
   display: inline-block;
+}
+
+/* Icon-only navigation items */
+.nav-links a.icon-only {
+  padding: clamp(8px, 1.8vw, 10px);
+  justify-content: center;
+  min-width: auto;
+}
+
+.nav-links a.icon-only i {
+  margin: 0;
 }
 
 .nav-links a:hover {
@@ -783,17 +796,25 @@
   }
 
   .header-tropical-frame--patron {
-    width: clamp(46px, 12vw, 64px);
+    width: clamp(64px, 16vw, 88px);
+  }
+
+  .header-tropical-frame__img--logo {
+    aspect-ratio: 1 / 1;
+    height: clamp(64px, 16vw, 88px);
+    object-fit: contain;
   }
 
   .header-tropical-frame__img--patron {
-    max-height: clamp(58px, 15vw, 88px);
+    aspect-ratio: 3 / 4;
+    height: clamp(64px, 16vw, 88px);
+    object-fit: contain;
   }
 
   .school-crest:not(:has(.header-tropical-frame)),
   .patron-saint:not(:has(.header-tropical-frame)) {
-    width: clamp(40px, 10vw, 60px);
-    height: clamp(40px, 10vw, 60px);
+    width: clamp(64px, 16vw, 88px);
+    height: clamp(64px, 16vw, 88px);
   }
 
   /* Prevent body scroll when menu is open */
@@ -847,5 +868,102 @@
   .nav-links a i {
     font-size: 1rem;
     width: 22px;
+  }
+}
+
+/* ===========================================
+   LOGIN BUTTON - Top Right Corner
+   =========================================== */
+a.login-button {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  float: none !important;
+  margin: 0 !important;
+  left: auto !important;
+  width: auto !important;
+  height: 40px !important;
+  min-width: 80px !important;
+  max-width: 120px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 8px 12px !important;
+  margin: 0 !important;
+  background: rgba(34, 197, 94, 0.8);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 99999;
+  opacity: 1;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+.login-button:hover {
+  background: rgba(22, 163, 74, 0.8);
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+}
+
+.login-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 3px rgba(34, 197, 94, 0.15);
+}
+
+.login-button i {
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+.login-text {
+  font-size: 12px;
+  font-weight: 600;
+  display: inline; /* Always show text for better visibility */
+}
+
+/* Touch Device Optimizations for Login Button */
+@media (hover: none) and (pointer: coarse) {
+  .login-button {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    max-width: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    top: 10px !important;
+    right: 10px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Ultra Small Devices (very old phones, 320px and below) */
+@media (max-width: 320px) {
+  .login-button {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    font-size: 20px !important;
+    top: 6px !important;
+    right: 6px !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
