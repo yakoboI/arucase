@@ -469,13 +469,20 @@ const IndividualReportDetail = () => {
     // Convert logo to data URL before print to ensure it prints
     const convertLogoToDataUrl = () => {
       if (school_logo?.logo_image_path && !logoDataUrl) {
-        const apiUrl = import.meta.env.VITE_API_URL || 
-                      (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
-        const baseUrl = apiUrl.replace('/api', '');
-        const cleanPath = school_logo.logo_image_path.startsWith('/') 
-          ? school_logo.logo_image_path.substring(1) 
-          : school_logo.logo_image_path;
-        const logoUrl = `${baseUrl}/static/${cleanPath}`;
+        let logoUrl;
+        
+        // If logo_image_path is already a Cloudinary URL, use it directly
+        if (school_logo.logo_image_path.startsWith('http')) {
+          logoUrl = school_logo.logo_image_path;
+        } else {
+          const apiUrl = import.meta.env.VITE_API_URL || 
+                        (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
+          const baseUrl = apiUrl.replace('/api', '');
+          const cleanPath = school_logo.logo_image_path.startsWith('/') 
+            ? school_logo.logo_image_path.substring(1) 
+            : school_logo.logo_image_path;
+          logoUrl = `${baseUrl}/static/${cleanPath}`;
+        }
         
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -1397,6 +1404,11 @@ const IndividualReportDetail = () => {
               <div className="school-stamp-image">
                 <img
                   src={(() => {
+                    // If stamp_image_path is already a Cloudinary URL, use it directly
+                    if (school_stamp.stamp_image_path.startsWith('http')) {
+                      return school_stamp.stamp_image_path;
+                    }
+                    
                     const apiUrl = import.meta.env.VITE_API_URL || 
                                   (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
                     const baseUrl = apiUrl.replace('/api', '');
