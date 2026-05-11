@@ -90,7 +90,7 @@ const Login = () => {
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="input-with-icon">
-              <i className="fas fa-lock input-icon"></i>
+              <i className="fas fa-key input-icon"></i>
               <input
                 type="password"
                 id="password"

@@ -1,184 +1,238 @@
+/* ===========================================
+   CONFLICT-FREE LOGIN PAGE
+   =========================================== */
+
+/* Complete reset for login page */
+.login-page,
+.login-page * {
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 .login-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1a5490 0%, #2d7bc4 100%);
-  padding: 2rem;
-  position: relative;
+  min-height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #ffffff !important;
+  padding: 2rem !important;
+  position: relative !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
 }
 
 .back-button {
-  position: fixed;
-  top: 2rem;
-  left: 2rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: white;
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0;
-  background: rgba(255, 255, 255, 0.15);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.2s ease;
-  z-index: 1000;
-  box-shadow: none;
-  width: max-content;
-  max-width: calc(100vw - 2rem);
+  position: fixed !important;
+  top: 2rem !important;
+  left: 2rem !important;
+  color: #666 !important;
+  text-decoration: none !important;
+  font-size: 0.9rem !important;
+  padding: 0.5rem 1rem !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  transition: all 0.2s ease !important;
+  z-index: 1000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateX(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #333 !important;
+  border-color: #d1d5db !important;
+  background: #f9fafb !important;
 }
 
 .back-button i {
-  font-size: 1rem;
-  /* Debug: Ensure FontAwesome icon is visible */
-  display: inline-block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  margin-right: 0.5rem !important;
 }
 
-.login-container {
-  background: white;
-  border-radius: 0;
-  box-shadow: none;
-  border: 1px solid #d1d5db;
-  padding: 2rem;
-  width: 100%;
-  max-width: 400px;
-  position: relative;
+.login-page .login-container {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  padding: 3rem 2rem !important;
+  width: 100% !important;
+  max-width: 400px !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  position: relative !important;
 }
 
 .login-header {
-  text-align: center;
-  margin-bottom: 2rem;
+  text-align: center !important;
+  margin-bottom: 2.5rem !important;
 }
 
 .login-header h1 {
-  color: #01a72b;
-  margin-bottom: 0.5rem;
-  font-size: 1.75rem;
+  color: #1f2937 !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
 .login-header p {
-  color: #666;
-  font-size: 0.9rem;
+  color: #6b7280 !important;
+  font-size: 0.875rem !important;
+  margin: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
 .login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.75rem !important;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.login-page .form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.625rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-.form-group label {
-  font-weight: 500;
-  color: #333;
-  font-size: 0.9rem;
+.login-page .form-group label {
+  font-weight: 500 !important;
+  color: #374151 !important;
+  font-size: 0.875rem !important;
+  display: block !important;
+  margin: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
 .input-with-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  transition: all 0.2s ease !important;
+  overflow: hidden !important;
 }
 
 .input-icon {
-  position: absolute;
-  left: 0.75rem;
-  color: #9ca3af;
-  font-size: 1rem;
-  pointer-events: none;
-  /* Debug: Ensure FontAwesome icons are visible */
-  display: inline-block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  color: #9ca3af !important;
+  font-size: 0.875rem !important;
+  pointer-events: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2.5rem !important;
+  flex-shrink: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .input-with-icon-field {
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 0.75rem 1rem !important;
+  border: none !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  font-size: 0.875rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  flex: 1 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+  line-height: 1.5 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
-.input-with-icon-field:focus {
-  outline: none;
-  border-color: #01a72b;
+.input-with-icon:focus-within {
+  border-color: #374151 !important;
+  box-shadow: 0 0 0 1px #374151 !important;
 }
 
 .input-with-icon:focus-within .input-icon {
-  color: #01a72b;
+  color: #374151 !important;
 }
 
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.input-with-icon-field:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-.btn-primary {
-  background-color: #01a72b;
-  color: white;
+/* Conflict-free button styling */
+.login-page .btn {
+  width: 100% !important;
+  padding: 0.875rem 1.5rem !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  color: #374151 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-align: center !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  line-height: 1.5 !important;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #028a23;
+.login-page .btn:hover {
+  background: #f9fafb !important;
+  border-color: #9ca3af !important;
+  color: #1f2937 !important;
 }
 
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.login-page .btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: #f9fafb !important;
 }
 
-/* Small screens: show icon only so button stays compact */
+/* Conflict-free responsive adjustments */
 @media (max-width: 768px) {
+  .login-page {
+    padding: 1rem !important;
+  }
+
+  .login-page .login-container {
+    padding: 2rem 1.5rem !important;
+  }
+
   .back-button {
-    top: 1rem;
-    left: 1rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-    max-width: none;
-  }
-
-  .back-button span {
-    display: none;
-  }
-
-  .back-button i {
-    font-size: 1.25rem;
-    margin: 0;
+    top: 1rem !important;
+    left: 1rem !important;
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.8rem !important;
   }
 }
 
-/* Extra small: even more compact */
 @media (max-width: 480px) {
-  .back-button {
-    top: 0.75rem;
-    left: 0.75rem;
-    padding: 0.5rem;
+  .login-page .login-container {
+    padding: 1.5rem 1rem !important;
+  }
+
+  .login-header h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .login-page .form-group label {
+    font-size: 0.8rem !important;
+  }
+
+  .input-with-icon-field {
+    font-size: 0.8rem !important;
+    padding: 0.625rem 0.875rem !important;
+  }
+
+  .login-page .btn {
+    font-size: 0.8rem !important;
+    padding: 0.75rem 1.25rem !important;
   }
 }
 

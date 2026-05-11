@@ -2,7 +2,7 @@
  * Admissions Page - Full Content from Python Template
  */
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -11,6 +11,7 @@ import './Admissions.css';
 import DOMPurify from 'dompurify';
 
 const Admissions = () => {
+  const location = useLocation();
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'admissions'],
     queryFn: () => publicAPI.getPage('admissions'),
@@ -28,7 +29,7 @@ const Admissions = () => {
   const fallbackContent = (
     <div className="admissions-page">
       <Link to="/" className="home-button">
-        <i className="fas fa-home"></i> Rudi Nyumbani
+        <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
       </Link>
 
       <div className="admissions-actions">
@@ -109,7 +110,7 @@ const Admissions = () => {
       {hasCustomContent ? (
         <div className="admissions-page">
           <Link to="/" className="home-button">
-            <i className="fas fa-home"></i> Rudi Nyumbani
+            <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
           </Link>
           <div className="admissions-actions">
             <Link to="/admissions/apply" className="admissions-apply-button">

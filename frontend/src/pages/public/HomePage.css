@@ -1,11 +1,7 @@
-.homepage {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100vw;
-  min-height: 100vh;
-  min-height: 100dvh;
-  overflow-x: hidden;
-}
+/* Import common public page styles */
+@import '../../styles/public-common.css';
+
+/* Homepage specific styles */
 
 /* ===========================================
    HERO / MAIN CONTENT SECTION WITH SLIDESHOW
@@ -20,7 +16,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  -webkit-overflow-scrolling: touch;
+  /* -webkit-overflow-scrolling: touch; Deprecated - removed */
   touch-action: manipulation;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
@@ -699,56 +695,7 @@
   }
 }
 
-/* Login Button - Top Right Corner - Very Small */
-.login-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px !important;
-  height: 48px !important;
-  min-width: 48px !important;
-  max-width: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  background: rgba(34, 197, 94, 0.6);
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 20px;
-  transition: all 0.15s ease;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  z-index: 100;
-  opacity: 0.5;
-  box-sizing: border-box !important;
-  line-height: 1 !important;
-  text-align: center !important;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-}
-
-.login-button:hover {
-  background: rgba(22, 163, 74, 0.8);
-  opacity: 1;
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
-}
-
-.login-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 1px 3px rgba(34, 197, 94, 0.15);
-}
-
-.login-button i {
-  font-size: 10px;
-}
+/* Login button styles moved to PublicHeader.css to avoid conflicts */
 
 /* Ultra Small Devices (very old phones, 320px and below) */
 @media (max-width: 320px) {
@@ -757,19 +704,7 @@
     font-size: 0.875rem;
   }
   
-  .login-button {
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    max-width: 48px !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
-    font-size: 20px !important;
-    top: 6px !important;
-    right: 6px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
+  /* Login button responsive styles moved to PublicHeader.css */
   
   .administration-title {
     font-size: 1.5rem;

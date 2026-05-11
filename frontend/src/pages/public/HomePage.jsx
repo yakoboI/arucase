@@ -217,9 +217,10 @@ const HomePage = () => {
             )}
           </div>
 
-          {/* Login Button - Top Right Corner */}
+          {/* Login Button - Top Right Corner - Relative to main content */}
           <Link to="/login" className="login-button" aria-label="Navigate to login page">
-            <i className="fas fa-sign-in-alt" aria-hidden="true"></i>
+            <i className="fas fa-user" aria-hidden="true"></i>
+            <span className="login-text">Login</span>
           </Link>
 
           {/* Scrolling Text at Bottom - Rector Statement */}

@@ -2,7 +2,7 @@
  * About Page - Full Content from Python Template
  */
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -11,6 +11,7 @@ import './About.css';
 import DOMPurify from 'dompurify';
 
 const About = () => {
+  const location = useLocation();
   // Try to fetch page content from database, but have fallback content
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'about'],
@@ -23,8 +24,8 @@ const About = () => {
   const fallbackContent = (
     <div className="about-page">
       <Link to="/" className="home-button" aria-label="Navigate to homepage">
-        <i className="fas fa-home" aria-hidden="true"></i>
-        <span className="sr-only">Navigate to homepage</span> Rudi Nyumbani
+        <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`} aria-hidden="true"></i>
+        <span className="sr-only">Navigate to homepage</span>
       </Link>
 
       <div className="content-card">
@@ -111,7 +112,7 @@ const About = () => {
       {hasCustomContent ? (
         <div className="about-page">
           <Link to="/" className="home-button">
-            <i className="fas fa-home"></i> Rudi Nyumbani
+            <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
           </Link>
           <div 
             className="content-card"

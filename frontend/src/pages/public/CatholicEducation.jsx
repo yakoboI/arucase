@@ -2,7 +2,7 @@
  * Catholic Education Landing Page - Optimized for Religious School Searches
  */
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -11,6 +11,7 @@ import './CatholicEducation.css';
 import DOMPurify from 'dompurify';
 
 const CatholicEducation = () => {
+  const location = useLocation();
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'catholic-education'],
     queryFn: () => publicAPI.getPage('catholic-education'),
@@ -28,8 +29,8 @@ const CatholicEducation = () => {
   const fallbackContent = (
     <div className="catholic-education-page">
       <Link to="/" className="home-button" aria-label="Navigate to homepage">
-        <i className="fas fa-home" aria-hidden="true"></i>
-        <span className="sr-only">Navigate to homepage</span> Rudi Nyumbani
+        <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`} aria-hidden="true"></i>
+        <span className="sr-only">Navigate to homepage</span>
       </Link>
 
       <div className="hero-section">
@@ -242,7 +243,7 @@ const CatholicEducation = () => {
         <div className="error-message">
           <p>Samahani, kuna tatizo. Tafadhali tena baadaye.</p>
           <Link to="/" className="back-link">
-            <i className="fas fa-arrow-left"></i> Rudi Nyumbani
+            <i className="fas fa-arrow-left"></i>
           </Link>
         </div>
       ) : (

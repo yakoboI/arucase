@@ -2,7 +2,7 @@
  * Staff Page - Full Content from Python Template
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -11,6 +11,7 @@ import './Staff.css';
 import DOMPurify from 'dompurify';
 
 const Staff = () => {
+  const location = useLocation();
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'staff'],
     queryFn: () => publicAPI.getPage('staff'),
@@ -107,7 +108,7 @@ const Staff = () => {
     <PublicLayout>
       <div className="staff-page">
         <Link to="/" className="home-button">
-          <i className="fas fa-home"></i> Rudi Nyumbani
+          <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
         </Link>
 
         {hasCustomContent ? (
