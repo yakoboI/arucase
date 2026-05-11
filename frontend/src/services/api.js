@@ -50,17 +50,13 @@ api.interceptors.request.use(
       // Debug logging disabled
     }
     
-    // Short-circuit protected calls when session is already gone.
-    // This avoids noisy browser 401 network errors during logout/session-expiry transitions.
-    if (!token && isProtectedApiRequest(config) && !isAuthEndpoint(config)) {
-      const authError = new Error('Authentication required');
-      authError.config = config;
-      authError.response = { status: 401, data: { message: 'Authentication required' } };
-      authError.isAxiosError = true;
-      return Promise.reject(authError);
-    }
-    // Only set Authorization if caller didn't set it (supports other auth flows)
-    // Never attach staff token to /public/* — avoids confusing servers and keeps admissions/student flows clean
+    // For enhanced login (httpOnly cookies), we don't need localStorage token
+    // The browser automatically sends cookies with requests
+    // For fallback login (localStorage tokens), we need to set Authorization header
+    const usingEnhancedAuth = !token; // If no localStorage token, assume using enhanced auth
+    
+    // Only set Authorization header if we have a localStorage token
+    // Enhanced auth uses httpOnly cookies which are sent automatically
     if (token && !config.headers?.Authorization && !isPublicApiRequest(config)) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -120,9 +116,11 @@ api.interceptors.response.use(
       // Don't attempt refresh for public endpoints or auth endpoints
       if (!requestIsPublic && !requestIsAuth && !window.__verifyingToken) {
         const token = localStorage.getItem('token');
+        const usingEnhancedAuth = !token; // If no localStorage token, assume using enhanced auth
         
         // If token expired and we haven't tried refreshing yet, attempt refresh
-        if (isTokenExpired && token && !error.config._retry) {
+        // This works for both enhanced auth (cookies) and fallback auth (localStorage)
+        if (isTokenExpired && !error.config._retry) {
           error.config._retry = true;
           
           try {
@@ -161,6 +159,7 @@ api.interceptors.response.use(
       // or if we're already on the login page
       if (!window.__verifyingToken && window.location.pathname !== '/login' && !requestIsPublic && !requestIsAuth) {
         const token = localStorage.getItem('token');
+        const usingEnhancedAuth = !token; // If no localStorage token, assume using enhanced auth
 
         // Set flags so components know about the error
         error.isTokenExpired = isTokenExpired || errorMessage.toLowerCase().includes('invalid token');
@@ -169,8 +168,11 @@ api.interceptors.response.use(
         // For protected endpoints, a 401 means this session is unusable now.
         // Clear immediately to stop repeated unauthorized requests.
         if (token || error.isTokenExpired) {
+          // Clear localStorage tokens (for fallback auth)
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          
+          // Dispatch logout event for both auth types
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('auth:logout'));
           }
