@@ -113,7 +113,6 @@ const IndividualReportDetail = () => {
       return `/static/uploads/photos/${cleanPath}`;
     }
   };
-  };
 
   // Reset image errors when report data changes
   useEffect(() => {
@@ -804,6 +803,11 @@ const IndividualReportDetail = () => {
             {school_logo?.logo_image_path ? (
               <img
                 src={logoDataUrl || (() => {
+                  // If logo_image_path is already a Cloudinary URL, use it directly
+                  if (school_logo.logo_image_path.startsWith('http')) {
+                    return school_logo.logo_image_path;
+                  }
+                  
                   const apiUrl = import.meta.env.VITE_API_URL || 
                                 (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
                   const baseUrl = apiUrl.replace('/api', '');
@@ -1389,7 +1393,7 @@ const IndividualReportDetail = () => {
             </div>
           </div>
           <div className="stamp-block">
-            {school_stamp?.stamp_image_path && !imageErrors.stampImage ? (
+            {(school_stamp?.stamp_image_path && !imageErrors.stampImage) ? (
               <div className="school-stamp-image">
                 <img
                   src={(() => {
