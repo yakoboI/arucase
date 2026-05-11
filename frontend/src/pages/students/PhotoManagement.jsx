@@ -416,12 +416,14 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
 
   const getPhotoUrl = (filename) => {
     if (!filename) return null;
-    
-    // Check for Cloudinary URLs first
+
+    // Cloudinary (and any other absolute) URLs are returned as-is.
+    // Cache-busting via query param is skipped for external URLs to avoid
+    // breaking signed/CDN URLs.
     if (filename.startsWith('http://') || filename.startsWith('https://')) {
-      return photosVersion > 0 ? `${filename}?v=${photosVersion}` : filename;
+      return filename;
     }
-    
+
     const base = (() => {
       if (import.meta.env.DEV) return `/static/uploads/photos/${filename}`;
       const apiUrl = import.meta.env.VITE_API_URL;
