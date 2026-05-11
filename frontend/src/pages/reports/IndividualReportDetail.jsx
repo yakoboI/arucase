@@ -95,28 +95,24 @@ const IndividualReportDetail = () => {
     if (!photoPath) return '';
     
     // If already a full URL, return as-is
-    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+    if (photoPath.startsWith('http')) {
       return photoPath;
     }
     
-    // Remove leading slash if present
-    let cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
+    // For production, use Railway backend URL
+    const apiUrl = import.meta.env.VITE_API_URL || 
+                  (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
+    const baseUrl = apiUrl.replace('/api', '');
+    const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
     
-    // Handle different path formats:
-    // 1. Full path: "uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 2. Just filename: "filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 3. Already has static/: "static/uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    
-    if (cleanPath.startsWith('static/')) {
-      // Already has static/ prefix
-      return `/${cleanPath}`;
-    } else if (cleanPath.startsWith('uploads/')) {
+    if (cleanPath.startsWith('uploads/')) {
       // Has uploads/ prefix, add static/
       return `/static/${cleanPath}`;
     } else {
       // Just filename, assume it's in uploads/photos/
       return `/static/uploads/photos/${cleanPath}`;
     }
+  };
   };
 
   // Reset image errors when report data changes
@@ -474,7 +470,8 @@ const IndividualReportDetail = () => {
     // Convert logo to data URL before print to ensure it prints
     const convertLogoToDataUrl = () => {
       if (school_logo?.logo_image_path && !logoDataUrl) {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiUrl = import.meta.env.VITE_API_URL || 
+                      (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
         const baseUrl = apiUrl.replace('/api', '');
         const cleanPath = school_logo.logo_image_path.startsWith('/') 
           ? school_logo.logo_image_path.substring(1) 
@@ -807,7 +804,8 @@ const IndividualReportDetail = () => {
             {school_logo?.logo_image_path ? (
               <img
                 src={logoDataUrl || (() => {
-                  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                  const apiUrl = import.meta.env.VITE_API_URL || 
+                                (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
                   const baseUrl = apiUrl.replace('/api', '');
                   const cleanPath = school_logo.logo_image_path.startsWith('/') 
                     ? school_logo.logo_image_path.substring(1) 
@@ -1395,7 +1393,8 @@ const IndividualReportDetail = () => {
               <div className="school-stamp-image">
                 <img
                   src={(() => {
-                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                    const apiUrl = import.meta.env.VITE_API_URL || 
+                                  (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
                     const baseUrl = apiUrl.replace('/api', '');
                     const cleanPath = school_stamp.stamp_image_path.startsWith('/')
                       ? school_stamp.stamp_image_path.substring(1)
