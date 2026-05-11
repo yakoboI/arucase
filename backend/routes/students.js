@@ -1584,7 +1584,7 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'student-photos',
         transformation: [
-          { width: STUDENT_PHOTO_TARGET_WIDTH, height: STUDENT_PHOTO_TARGET_HEIGHT, crop: 'fit', background: 'white' },
+          { width: STUDENT_PHOTO_TARGET_WIDTH, height: STUDENT_PHOTO_TARGET_HEIGHT, crop: 'fill', gravity: 'face' },
           { quality: 'auto:good', fetch_format: 'auto' }
         ]
       });
