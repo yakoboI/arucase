@@ -1054,7 +1054,7 @@ router.get('/school-logo', async (req, res) => {
 });
 
 // Upload school logo
-router.post('/school-logo', schoolLogoUpload.single('logo_file'), async (req, res) => {
+router.post('/school-logo', requireRole('admin', 'superadmin'), schoolLogoUpload.single('logo_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -1120,7 +1120,7 @@ router.post('/school-logo', schoolLogoUpload.single('logo_file'), async (req, re
       [logoUrl, cloudinaryPublicId]
     );
 
-    res.json({ message: 'Logo uploaded successfully', logo_path: logoUrl });
+    res.json({ message: 'Logo uploaded successfully', url: logoUrl, public_id: cloudinaryPublicId, logo_path: logoUrl });
   } catch (error) {
     console.error('[SCHOOL LOGO] Upload error:', error);
     return sendError(res, error, 500);
@@ -1141,7 +1141,7 @@ router.get('/school-stamp', async (req, res) => {
 });
 
 // Upload school stamp
-router.post('/school-stamp', schoolStampUpload.single('stamp_file'), async (req, res) => {
+router.post('/school-stamp', requireRole('admin', 'superadmin'), schoolStampUpload.single('stamp_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -1182,7 +1182,7 @@ router.post('/school-stamp', schoolStampUpload.single('stamp_file'), async (req,
       [stampUrl, cloudinaryPublicId]
     );
 
-    res.json({ message: 'Stamp uploaded successfully', stamp_path: stampUrl });
+    res.json({ message: 'Stamp uploaded successfully', url: stampUrl, public_id: cloudinaryPublicId, stamp_path: stampUrl });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -1243,7 +1243,7 @@ router.post('/authority-data', async (req, res) => {
 });
 
 // Upload authority signature image
-router.post('/authority-data/upload-signature', authoritySignatureUpload.single('signature_file'), async (req, res) => {
+router.post('/authority-data/upload-signature', requireRole('admin', 'superadmin'), authoritySignatureUpload.single('signature_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -1295,7 +1295,7 @@ router.post('/authority-data/upload-signature', authoritySignatureUpload.single(
       );
     }
 
-    res.json({ message: 'Signature image uploaded successfully', signature_path: signatureUrl });
+    res.json({ message: 'Signature image uploaded successfully', url: signatureUrl, public_id: cloudinaryPublicId, signature_path: signatureUrl });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -1347,7 +1347,7 @@ router.get('/patron-saint-image', async (req, res) => {
 });
 
 // Upload patron saint image
-router.post('/patron-saint-image', patronSaintUpload.single('patron_saint_file'), async (req, res) => {
+router.post('/patron-saint-image', requireRole('admin', 'superadmin'), patronSaintUpload.single('patron_saint_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -1399,7 +1399,7 @@ router.post('/patron-saint-image', patronSaintUpload.single('patron_saint_file')
       );
     }
 
-    res.json({ message: 'Patron saint image uploaded successfully', patron_saint_image_path: imageUrl });
+    res.json({ message: 'Patron saint image uploaded successfully', url: imageUrl, public_id: cloudinaryPublicId, patron_saint_image_path: imageUrl });
   } catch (error) {
     console.error('[PATRON SAINT] Upload error:', error);
     return sendError(res, error, 500);
@@ -1937,7 +1937,7 @@ router.get('/staff-profiles', async (req, res) => {
   }
 });
 
-router.post('/staff-profiles', staffProfileUpload, async (req, res) => {
+router.post('/staff-profiles', requireRole('admin', 'superadmin'), staffProfileUpload, async (req, res) => {
   try {
     await ensureStaffProfilesTable();
     const {
@@ -2044,6 +2044,52 @@ router.post('/staff-profiles', staffProfileUpload, async (req, res) => {
   }
 });
 
+// Upload staff profile photo (standalone endpoint for updating photo only)
+router.post('/staff-profiles/:id/photo', requireRole('admin', 'superadmin'), staffProfileUpload, async (req, res) => {
+  try {
+    await ensureStaffProfilesTable();
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const existing = await query('SELECT photo_path, cloudinary_public_id FROM staff_profiles WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ message: 'Staff profile not found' });
+    }
+
+    const oldCloudinaryPublicId = existing.rows[0]?.cloudinary_public_id;
+    const oldPhotoPath = existing.rows[0]?.photo_path;
+
+    // Delete previous photo from Cloudinary if it exists
+    if (oldCloudinaryPublicId) {
+      try {
+        await cloudinary.uploader.destroy(oldCloudinaryPublicId);
+      } catch (_) {}
+    } else if (oldPhotoPath && !oldPhotoPath.startsWith('http')) {
+      try {
+        const oldFilePath = path.join(__dirname, '../static', oldPhotoPath);
+        await fs.unlink(oldFilePath);
+      } catch (_) {}
+    }
+
+    // Cloudinary storage sets path to the URL and filename to the public_id
+    const photoUrl = req.file.path;
+    const cloudinaryPublicId = req.file.filename;
+    console.log(`✅ Staff profile photo uploaded to Cloudinary: ${cloudinaryPublicId}`);
+
+    await query(
+      'UPDATE staff_profiles SET photo_path = $1, cloudinary_public_id = $2, updated_at = NOW() WHERE id = $3',
+      [photoUrl, cloudinaryPublicId, id]
+    );
+
+    res.json({ message: 'Staff profile photo uploaded successfully', url: photoUrl, public_id: cloudinaryPublicId });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
 router.delete('/staff-profiles/:id', async (req, res) => {
   try {
     await ensureStaffProfilesTable();
@@ -2096,7 +2142,7 @@ router.get('/gallery', async (req, res) => {
 });
 
 // Upload gallery photos with multer error handling
-router.post('/gallery/upload', (req, res, next) => {
+router.post('/gallery/upload', requireRole('admin', 'superadmin'), (req, res, next) => {
   galleryPhotoUpload.array('photos', 20)(req, res, (err) => {
     if (err) {
       console.error('Multer error:', err);
