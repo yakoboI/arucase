@@ -109,12 +109,53 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle 401 errors with automatic token refresh
     if (error.response?.status === 401) {
       const errorMessage = error.response?.data?.message || 'Authentication required';
       const isTokenExpired = errorMessage.toLowerCase().includes('expired') ||
                             errorMessage.toLowerCase().includes('token expired');
       const requestIsPublic = isPublicApiRequest(error.config || {});
       const requestIsAuth = isAuthEndpoint(error.config || {});
+
+      // Don't attempt refresh for public endpoints or auth endpoints
+      if (!requestIsPublic && !requestIsAuth && !window.__verifyingToken) {
+        const token = localStorage.getItem('token');
+        
+        // If token expired and we haven't tried refreshing yet, attempt refresh
+        if (isTokenExpired && token && !error.config._retry) {
+          error.config._retry = true;
+          
+          try {
+            // Attempt to refresh the token
+            const refreshResponse = await api.post('/auth/refresh');
+            
+            if (refreshResponse.data.message === 'Token refreshed successfully') {
+              // Get the new access token from cookies (server sets it automatically)
+              // The refresh mechanism works via httpOnly cookies, so we don't need to manually update localStorage
+              
+              // Retry the original request with the new token
+              return api.request(error.config);
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            
+            // Refresh failed, clear auth and redirect to login
+            if (window.location.pathname !== '/login') {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:logout'));
+              }
+            }
+            
+            // Set flags so components know about the error
+            error.isTokenExpired = true;
+            error.expirationMessage = 'Your session has expired. Please log in again.';
+            
+            return Promise.reject(error);
+          }
+        }
+      }
 
       // Don't logout if we're verifying token (let AuthContext handle it)
       // or if we're already on the login page

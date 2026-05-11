@@ -155,6 +155,30 @@ async function ensureAdministratorsCloudinaryPublicIdColumn() {
   }
 }
 
+async function ensureRefreshTokensTable() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+          id SERIAL PRIMARY KEY,
+          user_id VARCHAR(50) NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+          token TEXT NOT NULL UNIQUE,
+          expires_at TIMESTAMP NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    
+    // Create indexes for performance
+    await query(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);`);
+    
+    console.log('✅ refresh_tokens table ensured');
+  } catch (error) {
+    console.warn('[schema] ensure refresh_tokens table failed:', error.message);
+  }
+}
+
 
 // Run once at startup.
 setImmediate(() => {
@@ -162,6 +186,7 @@ setImmediate(() => {
   ensureStudentPhotosCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureStudentPhotosCloudinaryPublicIdColumn fatal:', e.message));
   ensureStaffProfilesCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureStaffProfilesCloudinaryPublicIdColumn fatal:', e.message));
   ensureAdministratorsCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureAdministratorsCloudinaryPublicIdColumn fatal:', e.message));
+  ensureRefreshTokensTable().catch((e) => console.warn('[schema] ensureRefreshTokensTable fatal:', e.message));
   validateCloudinaryCredentials().catch((e) => console.warn('[cloudinary] Validation failed:', e.message));
   
   // Migration: Update all DIV scores to A/DIV

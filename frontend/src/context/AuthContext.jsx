@@ -110,30 +110,69 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await api.post('/auth/login', { username, password });
+      // Try enhanced login first (with refresh tokens)
+      const response = await api.post('/auth/login-enhanced', { username, password });
       const data = response?.data;
+      
       // Handle 2xx responses that indicate failure (e.g. code 403 in body)
       if (data && (data.code === 403 || data.success === false)) {
         const msg = data.message || data.error || data.msg || 'Access denied.';
         return { success: false, error: msg };
       }
+      
       const user = data?.user;
-      const token = data?.token;
       if (!user) {
         return { success: false, error: data?.message || 'Invalid response from server.' };
       }
-      // Store token in localStorage for API calls
-      if (token) {
-        localStorage.setItem('token', token);
-        console.log('🔐 AUTH DEBUG: Token stored in localStorage', {
-          tokenLength: token.length,
-          tokenPrefix: token.substring(0, 20) + '...',
-          localStorageKeysAfter: Object.keys(localStorage)
-        });
-      }
+      
+      // Note: With enhanced login, tokens are stored in httpOnly cookies automatically
+      // We don't need to manually store tokens in localStorage anymore
+      console.log('🔐 AUTH DEBUG: Enhanced login successful, tokens stored in httpOnly cookies', {
+        user: user.username,
+        role: user.role
+      });
+      
       setUser(user);
       return { success: true };
     } catch (error) {
+      // If enhanced login fails, fall back to regular login
+      if (error?.response?.status === 404) {
+        try {
+          const fallbackResponse = await api.post('/auth/login', { username, password });
+          const fallbackData = fallbackResponse?.data;
+          
+          if (fallbackData && (fallbackData.code === 403 || fallbackData.success === false)) {
+            const msg = fallbackData.message || fallbackData.error || fallbackData.msg || 'Access denied.';
+            return { success: false, error: msg };
+          }
+          
+          const user = fallbackData?.user;
+          const token = fallbackData?.token;
+          if (!user) {
+            return { success: false, error: fallbackData?.message || 'Invalid response from server.' };
+          }
+          
+          // Store token in localStorage for fallback
+          if (token) {
+            localStorage.setItem('token', token);
+            console.log('🔐 AUTH DEBUG: Fallback login successful, token stored in localStorage', {
+              tokenLength: token.length,
+              tokenPrefix: token.substring(0, 20) + '...',
+              localStorageKeysAfter: Object.keys(localStorage)
+            });
+          }
+          
+          setUser(user);
+          return { success: true };
+        } catch (fallbackError) {
+          const msg = fallbackError?.response?.data?.message ?? fallbackError?.response?.data?.error ?? fallbackError?.message;
+          return {
+            success: false,
+            error: msg && String(msg).trim() ? String(msg) : 'Login failed. Please try again.',
+          };
+        }
+      }
+      
       const msg = error?.response?.data?.message ?? error?.response?.data?.error ?? error?.message;
       return {
         success: false,
@@ -145,12 +184,18 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     playLogoutSound();
     try {
-      await api.post('/auth/logout');
+      // Try enhanced logout first (clears refresh tokens from database)
+      await api.post('/auth/logout-enhanced');
     } catch (error) {
-      // Even if logout API fails, continue with client-side logout
-      console.error('Logout API error:', error);
+      // If enhanced logout fails, try regular logout
+      try {
+        await api.post('/auth/logout');
+      } catch (fallbackError) {
+        // Even if logout API fails, continue with client-side logout
+        console.error('Logout API error:', fallbackError);
+      }
     }
-    // Clear token from localStorage
+    // Clear token from localStorage (for fallback auth)
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
