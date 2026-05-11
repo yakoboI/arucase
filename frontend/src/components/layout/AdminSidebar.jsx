@@ -77,8 +77,8 @@ const AdminSidebar = () => {
     {
       category: 'Student Management',
       items: [
-        { path: '/admin/students/registration/form-i/years', label: 'Registration (Forms I-IV)', icon: 'fa-user-plus', moduleId: 'student_registration_form_i_iv' },
-        { path: '/admin/students/registration/form-v/years', label: 'Registration (Forms V-VI)', icon: 'fa-user-plus', moduleId: 'student_registration_form_v_vi' },
+        { path: '/admin/students/registration', label: 'Registration (Forms I-IV)', icon: 'fa-user-plus', moduleId: 'student_registration_form_i_iv' },
+        { path: '/admin/students/registration', label: 'Registration (Forms V-VI)', icon: 'fa-user-plus', moduleId: 'student_registration_form_v_vi' },
         { path: '/admin/pre-form-one', label: 'Registration (Pre-Form)', icon: 'fa-child', moduleId: 'student_registration_pre_form' },
         { path: '/students/list', label: 'Student List', icon: 'fa-list', moduleId: 'student_registration_form_i_iv' },
         { path: '/admin/students/photos', label: 'Photos', icon: 'fa-camera', moduleId: 'student_photo' },
