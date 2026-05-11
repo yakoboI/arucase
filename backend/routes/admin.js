@@ -16,11 +16,11 @@ const { extractText } = require('../utils/documentParser');
 const { getClient, callClaude } = require('../utils/anthropic');
 const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
 const { sendError } = require('../utils/safeError');
-const CloudinaryStorage = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
-// multer-storage-cloudinary v2.x requires the full cloudinary module (not the
-// v2 sub-object) because it internally accesses cloudinary.v2.uploader.
-const cloudinaryModule = cloudinary.cloudinaryModule;
+// createCloudinaryStorage uses cloudinary.uploader.upload_stream() directly,
+// bypassing multer-storage-cloudinary whose upload() callback was never invoked
+// with the cloudinary v2 SDK (causing 60 s upload timeouts).
+const { createCloudinaryStorage } = cloudinary;
 
 // Validate that cloudinary is properly configured before creating storage instances
 function assertCloudinaryConfigured() {
@@ -32,25 +32,29 @@ function assertCloudinaryConfigured() {
   }
 }
 
-// Lazy CloudinaryStorage factories — instances are created on first upload request,
+// Lazy storage factories — instances are created on first upload request,
 // not at module load time. This ensures cloudinary.uploader is available and env
-// vars have been loaded before multer-storage-cloudinary tries to access them.
+// vars have been loaded before the storage engine tries to access them.
+//
+// All storage engines use createCloudinaryStorage() which calls
+// cloudinary.uploader.upload_stream() directly — the correct v2 streaming API.
+// This replaces multer-storage-cloudinary whose internal upload() callback was
+// never invoked when used with the cloudinary v2 SDK, causing 60 s timeouts.
+
 let _staffPhotoStorage = null;
 function getStaffPhotoStorage() {
   if (!_staffPhotoStorage) {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating staffPhotoStorage instance');
-    _staffPhotoStorage = new CloudinaryStorage({
-      cloudinary: cloudinaryModule,
-      params: (req, file) => ({
-        folder: 'staff-photos',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [
-          { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-          { quality: 'auto:good', fetch_format: 'auto' }
-        ],
-        public_id: `staff-${Date.now()}-${Math.round(Math.random() * 1E9)}`
-      })
+    _staffPhotoStorage = createCloudinaryStorage({
+      folder: 'staff-photos',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+      transformation: [
+        { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+        { quality: 'auto:good', fetch_format: 'auto' },
+      ],
+      publicId: () => `staff-${Date.now()}-${Math.round(Math.random() * 1E9)}`,
+      label: 'STAFF PHOTO storage',
     });
   }
   return _staffPhotoStorage;
@@ -61,16 +65,12 @@ function getSchoolLogoStorage() {
   if (!_schoolLogoStorage) {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating schoolLogoStorage instance');
-    _schoolLogoStorage = new CloudinaryStorage({
-      cloudinary: cloudinaryModule,
-      params: (req, file) => ({
-        folder: 'school-logos',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-        transformation: [
-          { quality: 'auto:good', fetch_format: 'auto' }
-        ],
-        public_id: `school-logo-${Date.now()}`
-      })
+    _schoolLogoStorage = createCloudinaryStorage({
+      folder: 'school-logos',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
+      publicId: () => `school-logo-${Date.now()}`,
+      label: 'SCHOOL LOGO storage',
     });
   }
   return _schoolLogoStorage;
@@ -81,16 +81,12 @@ function getSchoolStampStorage() {
   if (!_schoolStampStorage) {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating schoolStampStorage instance');
-    _schoolStampStorage = new CloudinaryStorage({
-      cloudinary: cloudinaryModule,
-      params: (req, file) => ({
-        folder: 'school-logos',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-        transformation: [
-          { quality: 'auto:good', fetch_format: 'auto' }
-        ],
-        public_id: `school-stamp-${Date.now()}`
-      })
+    _schoolStampStorage = createCloudinaryStorage({
+      folder: 'school-logos',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
+      publicId: () => `school-stamp-${Date.now()}`,
+      label: 'SCHOOL STAMP storage',
     });
   }
   return _schoolStampStorage;
@@ -101,16 +97,12 @@ function getAuthoritySignatureStorage() {
   if (!_authoritySignatureStorage) {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating authoritySignatureStorage instance');
-    _authoritySignatureStorage = new CloudinaryStorage({
-      cloudinary: cloudinaryModule,
-      params: (req, file) => ({
-        folder: 'authority-signatures',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-        transformation: [
-          { quality: 'auto:good', fetch_format: 'auto' }
-        ],
-        public_id: `authority-signature-${Date.now()}`
-      })
+    _authoritySignatureStorage = createCloudinaryStorage({
+      folder: 'authority-signatures',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
+      publicId: () => `authority-signature-${Date.now()}`,
+      label: 'AUTHORITY SIGNATURE storage',
     });
   }
   return _authoritySignatureStorage;
@@ -121,16 +113,12 @@ function getPatronSaintStorage() {
   if (!_patronSaintStorage) {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating patronSaintStorage instance');
-    _patronSaintStorage = new CloudinaryStorage({
-      cloudinary: cloudinaryModule,
-      params: (req, file) => ({
-        folder: 'patron-saint-images',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-        transformation: [
-          { quality: 'auto:good', fetch_format: 'auto' }
-        ],
-        public_id: `patron-saint-${Date.now()}`
-      })
+    _patronSaintStorage = createCloudinaryStorage({
+      folder: 'patron-saint-images',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
+      publicId: () => `patron-saint-${Date.now()}`,
+      label: 'PATRON SAINT storage',
     });
   }
   return _patronSaintStorage;
@@ -141,16 +129,12 @@ function getGalleryPhotoStorage() {
   if (!_galleryPhotoStorage) {
     assertCloudinaryConfigured();
     console.log('[cloudinary] Creating galleryPhotoStorage instance');
-    _galleryPhotoStorage = new CloudinaryStorage({
-      cloudinary: cloudinaryModule,
-      params: (req, file) => ({
-        folder: 'arucase-gallery',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-        transformation: [
-          { quality: 'auto', fetch_format: 'auto' }
-        ],
-        public_id: `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}`
-      })
+    _galleryPhotoStorage = createCloudinaryStorage({
+      folder: 'arucase-gallery',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+      publicId: () => `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}`,
+      label: 'GALLERY PHOTO storage',
     });
   }
   return _galleryPhotoStorage;
@@ -365,7 +349,7 @@ const upload = multer({
 
 // Helper: build a multer instance backed by a lazy Cloudinary storage factory.
 // The storage instance is created on first use so that cloudinary.uploader is
-// guaranteed to be available (env vars loaded) before multer-storage-cloudinary
+// guaranteed to be available (env vars loaded) before the storage engine
 // tries to access it.
 function makeCloudinaryUpload(getStorage, fileSizeLimit) {
   const imageFilter = (req, file, cb) => {
