@@ -16,8 +16,142 @@ const { extractText } = require('../utils/documentParser');
 const { getClient, callClaude } = require('../utils/anthropic');
 const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
 const { sendError } = require('../utils/safeError');
-const CloudinaryStorage = require('multer-storage-cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
+
+// Validate that cloudinary is properly configured before creating storage instances
+function assertCloudinaryConfigured() {
+  if (!cloudinary || typeof cloudinary.uploader === 'undefined') {
+    throw new Error('Cloudinary is not properly initialized. Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
+  }
+}
+
+// Lazy CloudinaryStorage factories — instances are created on first upload request,
+// not at module load time. This ensures cloudinary.uploader is available and env
+// vars have been loaded before multer-storage-cloudinary tries to access them.
+let _staffPhotoStorage = null;
+function getStaffPhotoStorage() {
+  if (!_staffPhotoStorage) {
+    assertCloudinaryConfigured();
+    console.log('[cloudinary] Creating staffPhotoStorage instance');
+    _staffPhotoStorage = new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: 'staff-photos',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [
+          { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+          { quality: 'auto:good', fetch_format: 'auto' }
+        ],
+        public_id: (req, file) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          return `staff-${uniqueSuffix}`;
+        }
+      }
+    });
+  }
+  return _staffPhotoStorage;
+}
+
+let _schoolLogoStorage = null;
+function getSchoolLogoStorage() {
+  if (!_schoolLogoStorage) {
+    assertCloudinaryConfigured();
+    console.log('[cloudinary] Creating schoolLogoStorage instance');
+    _schoolLogoStorage = new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: 'school-logos',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        transformation: [
+          { quality: 'auto:good', fetch_format: 'auto' }
+        ],
+        public_id: (req, file) => `school-logo-${Date.now()}`
+      }
+    });
+  }
+  return _schoolLogoStorage;
+}
+
+let _schoolStampStorage = null;
+function getSchoolStampStorage() {
+  if (!_schoolStampStorage) {
+    assertCloudinaryConfigured();
+    console.log('[cloudinary] Creating schoolStampStorage instance');
+    _schoolStampStorage = new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: 'school-logos',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        transformation: [
+          { quality: 'auto:good', fetch_format: 'auto' }
+        ],
+        public_id: (req, file) => `school-stamp-${Date.now()}`
+      }
+    });
+  }
+  return _schoolStampStorage;
+}
+
+let _authoritySignatureStorage = null;
+function getAuthoritySignatureStorage() {
+  if (!_authoritySignatureStorage) {
+    assertCloudinaryConfigured();
+    console.log('[cloudinary] Creating authoritySignatureStorage instance');
+    _authoritySignatureStorage = new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: 'authority-signatures',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        transformation: [
+          { quality: 'auto:good', fetch_format: 'auto' }
+        ],
+        public_id: (req, file) => `authority-signature-${Date.now()}`
+      }
+    });
+  }
+  return _authoritySignatureStorage;
+}
+
+let _patronSaintStorage = null;
+function getPatronSaintStorage() {
+  if (!_patronSaintStorage) {
+    assertCloudinaryConfigured();
+    console.log('[cloudinary] Creating patronSaintStorage instance');
+    _patronSaintStorage = new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: 'patron-saint-images',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        transformation: [
+          { quality: 'auto:good', fetch_format: 'auto' }
+        ],
+        public_id: (req, file) => `patron-saint-${Date.now()}`
+      }
+    });
+  }
+  return _patronSaintStorage;
+}
+
+let _galleryPhotoStorage = null;
+function getGalleryPhotoStorage() {
+  if (!_galleryPhotoStorage) {
+    assertCloudinaryConfigured();
+    console.log('[cloudinary] Creating galleryPhotoStorage instance');
+    _galleryPhotoStorage = new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: 'arucase-gallery',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        transformation: [
+          { quality: 'auto', fetch_format: 'auto' }
+        ],
+        public_id: (req, file) => `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}`
+      }
+    });
+  }
+  return _galleryPhotoStorage;
+}
 
 // All admin routes require authentication
 router.use(requireAuth);
@@ -189,98 +323,6 @@ router.post('/admission-applications/:id/status', requireRole('admin', 'superadm
   }
 });
 
-// Configure Cloudinary storage for staff profile photos
-const staffPhotoStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'staff-photos',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [
-      { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-      { quality: 'auto:good', fetch_format: 'auto' }
-    ],
-    public_id: (req, file) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      return `staff-${uniqueSuffix}`;
-    }
-  }
-});
-
-// Configure Cloudinary storage for school logos
-const schoolLogoStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'school-logos',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [
-      { quality: 'auto:good', fetch_format: 'auto' }
-    ],
-    public_id: (req, file) => {
-      return `school-logo-${Date.now()}`;
-    }
-  }
-});
-
-// Configure Cloudinary storage for school stamps
-const schoolStampStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'school-logos',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [
-      { quality: 'auto:good', fetch_format: 'auto' }
-    ],
-    public_id: (req, file) => {
-      return `school-stamp-${Date.now()}`;
-    }
-  }
-});
-
-// Configure Cloudinary storage for authority signatures
-const authoritySignatureStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'authority-signatures',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [
-      { quality: 'auto:good', fetch_format: 'auto' }
-    ],
-    public_id: (req, file) => {
-      return `authority-signature-${Date.now()}`;
-    }
-  }
-});
-
-// Configure Cloudinary storage for patron saint images
-const patronSaintStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'patron-saint-images',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [
-      { quality: 'auto:good', fetch_format: 'auto' }
-    ],
-    public_id: (req, file) => {
-      return `patron-saint-${Date.now()}`;
-    }
-  }
-});
-
-// Configure Cloudinary storage for gallery photos
-const galleryPhotoStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'arucase-gallery',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [
-      { quality: 'auto', fetch_format: 'auto' }
-    ],
-    public_id: (req, file) => {
-      return `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    }
-  }
-});
-
 // Configure multer for file uploads (for non-photo uploads)
 // Use sync fs operations for multer destination to avoid async issues
 const fsSync = require('fs');
@@ -318,90 +360,153 @@ const upload = multer({
   }
 });
 
-// Multer instance for school logo uploads (Cloudinary)
-const schoolLogoUpload = multer({
-  storage: schoolLogoStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
+// Helper: build a multer instance backed by a lazy Cloudinary storage factory.
+// The storage instance is created on first use so that cloudinary.uploader is
+// guaranteed to be available (env vars loaded) before multer-storage-cloudinary
+// tries to access it.
+function makeCloudinaryUpload(getStorage, fileSizeLimit) {
+  const imageFilter = (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     if (extname && mimetype) cb(null, true);
     else cb(new Error('Only image files are allowed'));
-  }
-});
+  };
 
-// Multer instance for school stamp uploads (Cloudinary)
-const schoolStampUpload = multer({
-  storage: schoolStampStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) cb(null, true);
-    else cb(new Error('Only image files are allowed'));
-  }
-});
-
-// Multer instance for authority signature uploads (Cloudinary)
-const authoritySignatureUpload = multer({
-  storage: authoritySignatureStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) cb(null, true);
-    else cb(new Error('Only image files are allowed'));
-  }
-});
-
-// Multer instance for patron saint image uploads (Cloudinary)
-const patronSaintUpload = multer({
-  storage: patronSaintStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) cb(null, true);
-    else cb(new Error('Only image files are allowed'));
-  }
-});
-
-// Multer instance for gallery photo uploads (Cloudinary)
-const galleryPhotoUpload = multer({
-  storage: galleryPhotoStorage,
-  limits: { fileSize: 16 * 1024 * 1024 }, // 16MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) cb(null, true);
-    else cb(new Error('Only image files are allowed'));
-  }
-});
-
-// Cloudinary upload for staff profile photos
-const staffPhotoUpload = multer({
-  storage: staffPhotoStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
+  return (req, res, next) => {
+    let storage;
+    try {
+      storage = getStorage();
+    } catch (err) {
+      console.error('[cloudinary] Storage init failed:', err.message);
+      return res.status(500).json({ message: err.message });
     }
+    multer({ storage, limits: { fileSize: fileSizeLimit }, fileFilter: imageFilter })
+      .single('file')(req, res, next);
+  };
+}
+
+// Multer middleware for each upload type (lazy — storage created on first request)
+const schoolLogoUpload = {
+  single: (field) => (req, res, next) => {
+    let storage;
+    try { storage = getSchoolLogoStorage(); } catch (err) {
+      console.error('[cloudinary] schoolLogoStorage init failed:', err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    const imageFilter = (req, file, cb) => {
+      const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase())
+               && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
+      ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+    };
+    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
+      .single(field)(req, res, next);
   }
-});
+};
+
+const schoolStampUpload = {
+  single: (field) => (req, res, next) => {
+    let storage;
+    try { storage = getSchoolStampStorage(); } catch (err) {
+      console.error('[cloudinary] schoolStampStorage init failed:', err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    const imageFilter = (req, file, cb) => {
+      const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase())
+               && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
+      ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+    };
+    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
+      .single(field)(req, res, next);
+  }
+};
+
+const authoritySignatureUpload = {
+  single: (field) => (req, res, next) => {
+    let storage;
+    try { storage = getAuthoritySignatureStorage(); } catch (err) {
+      console.error('[cloudinary] authoritySignatureStorage init failed:', err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    const imageFilter = (req, file, cb) => {
+      const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase())
+               && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
+      ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+    };
+    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
+      .single(field)(req, res, next);
+  }
+};
+
+const patronSaintUpload = {
+  single: (field) => (req, res, next) => {
+    let storage;
+    try { storage = getPatronSaintStorage(); } catch (err) {
+      console.error('[cloudinary] patronSaintStorage init failed:', err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    const imageFilter = (req, file, cb) => {
+      const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase())
+               && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
+      ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+    };
+    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
+      .single(field)(req, res, next);
+  }
+};
+
+const galleryPhotoUpload = {
+  single: (field) => (req, res, next) => {
+    let storage;
+    try { storage = getGalleryPhotoStorage(); } catch (err) {
+      console.error('[cloudinary] galleryPhotoStorage init failed:', err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    const imageFilter = (req, file, cb) => {
+      const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase())
+               && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
+      ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+    };
+    multer({ storage, limits: { fileSize: 16 * 1024 * 1024 }, fileFilter: imageFilter })
+      .single(field)(req, res, next);
+  },
+  array: (field, maxCount) => (req, res, next) => {
+    let storage;
+    try { storage = getGalleryPhotoStorage(); } catch (err) {
+      console.error('[cloudinary] galleryPhotoStorage init failed:', err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    const imageFilter = (req, file, cb) => {
+      const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase())
+               && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
+      ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+    };
+    multer({ storage, limits: { fileSize: 16 * 1024 * 1024 }, fileFilter: imageFilter })
+      .array(field, maxCount)(req, res, next);
+  }
+};
 
 // Staff profile upload: accept common field-name variants to avoid Multer "Unexpected field"
 const staffProfileUpload = (req, res, next) => {
-  const handler = staffPhotoUpload.fields([
+  let storage;
+  try {
+    storage = getStaffPhotoStorage();
+  } catch (err) {
+    console.error('[cloudinary] staffPhotoStorage init failed:', err.message);
+    return res.status(500).json({ message: err.message });
+  }
+
+  const imageFilter = (req, file, cb) => {
+    const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase())
+             && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
+    ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+  };
+
+  const handler = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: imageFilter,
+  }).fields([
     { name: 'photo', maxCount: 1 },
     { name: 'photo_file', maxCount: 1 },
     { name: 'file', maxCount: 1 },
@@ -414,9 +519,9 @@ const staffProfileUpload = (req, res, next) => {
     }
 
     // Normalize file reference to req.file for downstream handlers
-    req.file = (req.files.photo && req.files.photo[0])
-      || (req.files.photo_file && req.files.photo_file[0])
-      || (req.files.file && req.files.file[0])
+    req.file = (req.files && req.files.photo && req.files.photo[0])
+      || (req.files && req.files.photo_file && req.files.photo_file[0])
+      || (req.files && req.files.file && req.files.file[0])
       || null;
     next();
   });

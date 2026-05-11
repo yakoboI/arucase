@@ -14,8 +14,7 @@ const { normalizeStream } = require('../utils/streamNormalizer');
 const { sendError } = require('../utils/safeError');
 const { cacheRoutes } = require('../middleware/cache');
 const sharp = require('sharp');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require('../config/cloudinary');
 const NodeCache = require('node-cache');
 
 // Per-user photo upload rate limiter: max 5 uploads per hour per user
