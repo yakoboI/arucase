@@ -391,10 +391,10 @@ async function generateIndividualReportPDFWithPuppeteer(
       
       console.log('PDF generated using browser native method. Size:', pdfBuffer.length, 'bytes');
       
-      console.log('Screenshot captured successfully. Size:', screenshot.length, 'bytes');
+      console.log('PDF generated successfully. Size:', pdfBuffer.length, 'bytes');
     } catch (pdfError) {
-      console.error('Error generating screenshot:', pdfError);
-      throw new Error(`Failed to generate screenshot: ${pdfError.message}`);
+      console.error('Error generating PDF:', pdfError);
+      throw new Error(`Failed to generate PDF: ${pdfError.message}`);
     }
     
     // Validate PDF buffer
