@@ -389,6 +389,65 @@ function makeCloudinaryUpload(getStorage, fileSizeLimit) {
   };
 }
 
+// Upload timeout in milliseconds — if Cloudinary does not respond within this
+// window the middleware aborts with a 504 so the request does not hang forever.
+const CLOUDINARY_UPLOAD_TIMEOUT_MS = 60_000; // 60 s
+
+/**
+ * Wrap a multer call with:
+ *  - pre-upload logging (file received from client)
+ *  - an explicit error callback so Cloudinary/multer errors are never swallowed
+ *  - a timeout guard that returns 504 if Cloudinary stalls
+ *  - post-upload logging (file path / public_id from Cloudinary)
+ *
+ * @param {string}   label    - human-readable name used in log lines
+ * @param {Function} multerFn - zero-arg factory that returns the bound multer
+ *                              method (e.g. `() => multer({...}).single(field)`)
+ * @param {object}   req
+ * @param {object}   res
+ * @param {Function} next
+ */
+function runCloudinaryUpload(label, multerFn, req, res, next) {
+  console.log(`[${label}] File received from client, starting Cloudinary upload…`);
+
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    console.error(`[${label}] ❌ Upload timed out after ${CLOUDINARY_UPLOAD_TIMEOUT_MS / 1000}s — Cloudinary did not respond`);
+    if (!res.headersSent) {
+      res.status(504).json({ message: 'Upload timed out. Cloudinary did not respond in time.' });
+    }
+  }, CLOUDINARY_UPLOAD_TIMEOUT_MS);
+
+  multerFn()(req, res, (err) => {
+    clearTimeout(timer);
+    if (timedOut) return; // response already sent
+
+    if (err) {
+      console.error(`[${label}] ❌ Multer/Cloudinary error:`, err);
+      if (res.headersSent) return;
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ message: `Upload error: ${err.message}` });
+      }
+      return res.status(500).json({ message: `Upload failed: ${err.message}` });
+    }
+
+    // Log what Cloudinary returned so we can see exactly where things stand
+    const uploadedFile = req.file || (req.files && (
+      (req.files.photo && req.files.photo[0]) ||
+      (req.files.photo_file && req.files.photo_file[0]) ||
+      (req.files.file && req.files.file[0])
+    ));
+    if (uploadedFile) {
+      console.log(`[${label}] ✅ Cloudinary upload complete — public_id: ${uploadedFile.filename}, url: ${uploadedFile.path}`);
+    } else {
+      console.log(`[${label}] ⚠️  Multer finished but no file found on req.file / req.files`);
+    }
+
+    next();
+  });
+}
+
 // Multer middleware for each upload type (lazy — storage created on first request)
 const schoolLogoUpload = {
   single: (field) => (req, res, next) => {
@@ -402,8 +461,11 @@ const schoolLogoUpload = {
                && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
       ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
     };
-    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
-      .single(field)(req, res, next);
+    runCloudinaryUpload(
+      'SCHOOL LOGO',
+      () => multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter }).single(field),
+      req, res, next
+    );
   }
 };
 
@@ -419,8 +481,11 @@ const schoolStampUpload = {
                && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
       ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
     };
-    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
-      .single(field)(req, res, next);
+    runCloudinaryUpload(
+      'SCHOOL STAMP',
+      () => multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter }).single(field),
+      req, res, next
+    );
   }
 };
 
@@ -436,8 +501,11 @@ const authoritySignatureUpload = {
                && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
       ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
     };
-    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
-      .single(field)(req, res, next);
+    runCloudinaryUpload(
+      'AUTHORITY SIGNATURE',
+      () => multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter }).single(field),
+      req, res, next
+    );
   }
 };
 
@@ -453,8 +521,11 @@ const patronSaintUpload = {
                && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
       ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
     };
-    multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
-      .single(field)(req, res, next);
+    runCloudinaryUpload(
+      'PATRON SAINT',
+      () => multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter }).single(field),
+      req, res, next
+    );
   }
 };
 
@@ -470,8 +541,11 @@ const galleryPhotoUpload = {
                && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
       ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
     };
-    multer({ storage, limits: { fileSize: 16 * 1024 * 1024 }, fileFilter: imageFilter })
-      .single(field)(req, res, next);
+    runCloudinaryUpload(
+      'GALLERY PHOTO',
+      () => multer({ storage, limits: { fileSize: 16 * 1024 * 1024 }, fileFilter: imageFilter }).single(field),
+      req, res, next
+    );
   },
   array: (field, maxCount) => (req, res, next) => {
     let storage;
@@ -484,8 +558,11 @@ const galleryPhotoUpload = {
                && /jpeg|jpg|png|gif|webp/.test(file.mimetype);
       ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
     };
-    multer({ storage, limits: { fileSize: 16 * 1024 * 1024 }, fileFilter: imageFilter })
-      .array(field, maxCount)(req, res, next);
+    runCloudinaryUpload(
+      'GALLERY PHOTOS (array)',
+      () => multer({ storage, limits: { fileSize: 16 * 1024 * 1024 }, fileFilter: imageFilter }).array(field, maxCount),
+      req, res, next
+    );
   }
 };
 
@@ -505,29 +582,27 @@ const staffProfileUpload = (req, res, next) => {
     ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
   };
 
-  const handler = multer({
-    storage,
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: imageFilter,
-  }).fields([
-    { name: 'photo', maxCount: 1 },
-    { name: 'photo_file', maxCount: 1 },
-    { name: 'file', maxCount: 1 },
-  ]);
-
-  handler(req, res, (err) => {
-    if (err) {
-      console.error('Multer error:', err);
-      return res.status(400).json({ message: 'File upload error' });
+  runCloudinaryUpload(
+    'STAFF PHOTO',
+    () => multer({
+      storage,
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: imageFilter,
+    }).fields([
+      { name: 'photo', maxCount: 1 },
+      { name: 'photo_file', maxCount: 1 },
+      { name: 'file', maxCount: 1 },
+    ]),
+    req, res, (err) => {
+      if (err) return next(err);
+      // Normalize file reference to req.file for downstream handlers
+      req.file = (req.files && req.files.photo && req.files.photo[0])
+        || (req.files && req.files.photo_file && req.files.photo_file[0])
+        || (req.files && req.files.file && req.files.file[0])
+        || null;
+      next();
     }
-
-    // Normalize file reference to req.file for downstream handlers
-    req.file = (req.files && req.files.photo && req.files.photo[0])
-      || (req.files && req.files.photo_file && req.files.photo_file[0])
-      || (req.files && req.files.file && req.files.file[0])
-      || null;
-    next();
-  });
+  );
 };
 
 // AI Matters: document uploads (PDF, CSV, DOCX)
@@ -1056,6 +1131,9 @@ router.get('/school-logo', async (req, res) => {
 // Upload school logo
 router.post('/school-logo', requireRole('admin', 'superadmin'), schoolLogoUpload.single('logo_file'), async (req, res) => {
   try {
+    console.log('[SCHOOL LOGO] Route handler reached — req.file:', req.file
+      ? { fieldname: req.file.fieldname, originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, filename: req.file.filename, path: req.file.path }
+      : null);
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -1143,6 +1221,9 @@ router.get('/school-stamp', async (req, res) => {
 // Upload school stamp
 router.post('/school-stamp', requireRole('admin', 'superadmin'), schoolStampUpload.single('stamp_file'), async (req, res) => {
   try {
+    console.log('[SCHOOL STAMP] Route handler reached — req.file:', req.file
+      ? { fieldname: req.file.fieldname, originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, filename: req.file.filename, path: req.file.path }
+      : null);
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -1245,6 +1326,9 @@ router.post('/authority-data', async (req, res) => {
 // Upload authority signature image
 router.post('/authority-data/upload-signature', requireRole('admin', 'superadmin'), authoritySignatureUpload.single('signature_file'), async (req, res) => {
   try {
+    console.log('[AUTHORITY SIGNATURE] Route handler reached — req.file:', req.file
+      ? { fieldname: req.file.fieldname, originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, filename: req.file.filename, path: req.file.path }
+      : null);
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -1349,6 +1433,9 @@ router.get('/patron-saint-image', async (req, res) => {
 // Upload patron saint image
 router.post('/patron-saint-image', requireRole('admin', 'superadmin'), patronSaintUpload.single('patron_saint_file'), async (req, res) => {
   try {
+    console.log('[PATRON SAINT] Route handler reached — req.file:', req.file
+      ? { fieldname: req.file.fieldname, originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, filename: req.file.filename, path: req.file.path }
+      : null);
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -1939,6 +2026,9 @@ router.get('/staff-profiles', async (req, res) => {
 
 router.post('/staff-profiles', requireRole('admin', 'superadmin'), staffProfileUpload, async (req, res) => {
   try {
+    console.log('[STAFF PROFILE] Route handler reached — req.file:', req.file
+      ? { fieldname: req.file.fieldname, originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, filename: req.file.filename, path: req.file.path }
+      : null);
     await ensureStaffProfilesTable();
     const {
       id,
@@ -2047,6 +2137,9 @@ router.post('/staff-profiles', requireRole('admin', 'superadmin'), staffProfileU
 // Upload staff profile photo (standalone endpoint for updating photo only)
 router.post('/staff-profiles/:id/photo', requireRole('admin', 'superadmin'), staffProfileUpload, async (req, res) => {
   try {
+    console.log('[STAFF PHOTO] Route handler reached — req.file:', req.file
+      ? { fieldname: req.file.fieldname, originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, filename: req.file.filename, path: req.file.path }
+      : null);
     await ensureStaffProfilesTable();
     const { id } = req.params;
 
@@ -2142,27 +2235,8 @@ router.get('/gallery', async (req, res) => {
 });
 
 // Upload gallery photos with multer error handling
-router.post('/gallery/upload', requireRole('admin', 'superadmin'), (req, res, next) => {
-  galleryPhotoUpload.array('photos', 20)(req, res, (err) => {
-    if (err) {
-      console.error('Multer error:', err);
-      if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ message: 'File size too large. Maximum size is 16MB per file.' });
-        }
-        if (err.code === 'LIMIT_FILE_COUNT') {
-          return res.status(400).json({ message: 'Too many files. Maximum is 20 files.' });
-        }
-        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-          return res.status(400).json({ message: 'Unexpected file field. Use "photos" as the field name.' });
-        }
-        return res.status(400).json({ message: 'Upload error: ' + err.message });
-      }
-      return res.status(400).json({ message: 'File upload error: ' + err.message });
-    }
-    next();
-  });
-}, async (req, res) => {
+// runCloudinaryUpload (inside galleryPhotoUpload.array) handles errors and timeout.
+router.post('/gallery/upload', requireRole('admin', 'superadmin'), galleryPhotoUpload.array('photos', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
