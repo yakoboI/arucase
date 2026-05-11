@@ -67,7 +67,7 @@ const NetworkStatusBanner = () => {
       ) : (
         <>
           <i className="fas fa-signal network-status-banner__icon" aria-hidden />
-          <span>Muunganisho wa polepole umeonekana. Picha zitapakiwa unaposogeza ukurasa ili kupunguza matumizi ya data.</span>
+          <span>Intaneti inasua-sua. Picha zinapakiwa unaposogeza ukurasa.</span>
         </>
       )}
     </div>
