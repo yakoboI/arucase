@@ -4,6 +4,7 @@
  * Import this module wherever cloudinary is needed so all modules
  * share the same pre-configured instance.
  */
+require('dotenv').config();
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
