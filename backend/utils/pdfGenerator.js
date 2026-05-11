@@ -508,10 +508,28 @@ async function generateIndividualReportPDF(form, stream, year, term, admNo) {
       const logoSize = 50;
       if (logoResult.rows[0]?.logo_image_path) {
         try {
-          const logoRelativePath = logoResult.rows[0].logo_image_path;
-          const logoPath = path.join(__dirname, '../static', logoRelativePath);
-          if (await fileExists(logoPath)) {
-            doc.image(logoPath, marginX, currentY, { width: logoSize, height: logoSize });
+          const logoPath = logoResult.rows[0].logo_image_path;
+          
+          // Check if it's a URL (Cloudinary) or local file
+          if (logoPath.startsWith('http')) {
+            // For Cloudinary URLs, we need to fetch the image and convert to buffer
+            try {
+              const axios = require('axios');
+              const response = await axios.get(logoPath, { 
+                responseType: 'arraybuffer',
+                timeout: 10000 
+              });
+              const imageBuffer = Buffer.from(response.data);
+              doc.image(imageBuffer, marginX, currentY, { width: logoSize, height: logoSize });
+            } catch (fetchError) {
+              console.error('Error fetching logo from URL:', fetchError.message);
+            }
+          } else {
+            // Local file path
+            const fullLogoPath = path.join(__dirname, '../static', logoPath);
+            if (await fileExists(fullLogoPath)) {
+              doc.image(fullLogoPath, marginX, currentY, { width: logoSize, height: logoSize });
+            }
           }
         } catch (err) {
           console.error('Error loading logo:', err);
@@ -1208,8 +1226,26 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null, term
       if (logoResult.rows[0] && logoResult.rows[0].logo_image_path) {
         try {
           const logoPath = logoResult.rows[0].logo_image_path;
-          if (await fileExists(logoPath)) {
-            doc.image(logoPath, doc.page.width - 100, headerY, { width: 60, height: 60 });
+          
+          // Check if it's a URL (Cloudinary) or local file
+          if (logoPath.startsWith('http')) {
+            // For Cloudinary URLs, we need to fetch the image and convert to buffer
+            try {
+              const axios = require('axios');
+              const response = await axios.get(logoPath, { 
+                responseType: 'arraybuffer',
+                timeout: 10000 
+              });
+              const imageBuffer = Buffer.from(response.data);
+              doc.image(imageBuffer, doc.page.width - 100, headerY, { width: 60, height: 60 });
+            } catch (fetchError) {
+              console.error('Error fetching logo from URL:', fetchError.message);
+            }
+          } else {
+            // Local file path
+            if (await fileExists(logoPath)) {
+              doc.image(logoPath, doc.page.width - 100, headerY, { width: 60, height: 60 });
+            }
           }
         } catch (err) {
           console.error('Error loading logo:', err);
@@ -1564,22 +1600,43 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
       const logoResult = await query('SELECT logo_image_path FROM school_logo WHERE id = 1');
       if (logoResult.rows.length > 0 && logoResult.rows[0].logo_image_path) {
         const logoPath = logoResult.rows[0].logo_image_path;
-        const fullLogoPath = path.join(__dirname, '../static', logoPath);
         
         try {
-          // Read logo file and convert to base64
-          const logoBuffer = await fs.readFile(fullLogoPath);
+          let logoBuffer;
+          let logoExtension;
+          
+          // Check if it's a URL (Cloudinary) or local file
+          if (logoPath.startsWith('http')) {
+            // For Cloudinary URLs, fetch the image
+            const axios = require('axios');
+            const response = await axios.get(logoPath, { 
+              responseType: 'arraybuffer',
+              timeout: 10000 
+            });
+            logoBuffer = Buffer.from(response.data);
+            
+            // Extract extension from URL or default to jpg
+            const urlPath = new URL(logoPath).pathname;
+            logoExtension = path.extname(urlPath).toLowerCase().substring(1) || 'jpg';
+            console.log(`Logo fetched from URL: ${logoPath}`);
+          } else {
+            // Local file path
+            const fullLogoPath = path.join(__dirname, '../static', logoPath);
+            logoBuffer = await fs.readFile(fullLogoPath);
+            logoExtension = path.extname(logoPath).toLowerCase().substring(1);
+            console.log(`Logo loaded from file: ${logoPath}`);
+          }
+          
+          // Convert to base64
           const logoBase64 = logoBuffer.toString('base64');
-          const logoExtension = path.extname(logoPath).toLowerCase().substring(1);
           const mimeType = logoExtension === 'png' ? 'image/png' : 
                           logoExtension === 'jpg' || logoExtension === 'jpeg' ? 'image/jpeg' : 
                           logoExtension === 'webp' ? 'image/webp' : 'image/jpeg';
           
           leftLogoBase64 = `data:${mimeType};base64,${logoBase64}`;
           rightLogoBase64 = `data:${mimeType};base64,${logoBase64}`; // Use same logo for both sides
-          console.log(`Logo loaded: ${logoPath}`);
         } catch (logoError) {
-          console.warn('Could not load logo file:', logoError.message);
+          console.warn('Could not load logo:', logoError.message);
         }
       }
     } catch (logoQueryError) {
