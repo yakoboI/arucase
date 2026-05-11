@@ -227,6 +227,23 @@ async function generateIndividualReportPDFWithPuppeteer(
     // CRITICAL: Execute the same JavaScript styling enforcement as local development
     // This ensures exact congruence between local and production PDFs
     await page.evaluate(() => {
+      // CRITICAL: Force premium font styling to match local development exactly
+      const forcePremiumFontStyling = () => {
+        const allTextElements = document.querySelectorAll('.report-container *');
+        allTextElements.forEach(element => {
+          // Force Arial font family and proper sizing
+          if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
+            element.style.setProperty('font-family', 'Arial, sans-serif', 'important');
+            // Ensure font sizes are applied correctly
+            const computedStyle = window.getComputedStyle(element);
+            const fontSize = computedStyle.fontSize;
+            if (fontSize && parseFloat(fontSize) > 0) {
+              element.style.setProperty('font-size', fontSize, 'important');
+            }
+          }
+        });
+      };
+
       // Force MAONI column visibility
       const forceMaoniColumnVisible = () => {
         const maoniHeaders = document.querySelectorAll('.academic-table th:nth-child(10)');
@@ -324,23 +341,6 @@ async function generateIndividualReportPDFWithPuppeteer(
           subtree: true
         });
       }
-
-      // CRITICAL: Force premium font styling to match local development exactly
-      const forcePremiumFontStyling = () => {
-        const allTextElements = document.querySelectorAll('.report-container *');
-        allTextElements.forEach(element => {
-          // Force Arial font family and proper sizing
-          if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
-            element.style.setProperty('font-family', 'Arial, sans-serif', 'important');
-            // Ensure font sizes are applied correctly
-            const computedStyle = window.getComputedStyle(element);
-            const fontSize = computedStyle.fontSize;
-            if (fontSize && parseFloat(fontSize) > 0) {
-              element.style.setProperty('font-size', fontSize, 'important');
-            }
-          }
-        });
-      };
 
       // CRITICAL: Force grade key to be visible before PDF generation
       const gradeKeyLegend = document.querySelector('.grade-key-legend');

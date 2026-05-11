@@ -22,6 +22,16 @@ const {
   calculateOverallAverage
 } = require('../utils/calculations');
 
+// Helper function to check if file exists
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function generateIndividualReportPDF(form, stream, year, term, admNo) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -1107,15 +1117,6 @@ async function generateBulkReportPDF(form, year, term, stream = null) {
       reject(error);
     }
   });
-}
-
-async function fileExists(filePath) {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function generatePhotoEntryFormPDF(level, stream, year, month = null, term = null) {
