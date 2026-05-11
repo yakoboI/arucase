@@ -815,6 +815,24 @@
 @media (max-width: 480px) {
   .monthly-results-mgmt-page-container .excel-card-header {
     padding: clamp(0.75rem, 2vw, 0.875rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.5rem, 1.5vw, 1rem);
+  }
+
+  .monthly-results-mgmt-page-container .excel-card-header .header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.5rem, 1.5vw, 1rem);
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .monthly-results-mgmt-page-container .excel-card-header .header-actions .excel-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+    padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
   }
 
   .monthly-results-mgmt-page-container .excel-card-body {

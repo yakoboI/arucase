@@ -137,7 +137,6 @@ const PreFormOneScoreEntry = () => {
           const gradeConfigData = await gradeSystemService.getSystemGradeConfig();
           setGradeConfig(gradeConfigData.data);
         } catch (gradeError) {
-          console.error('🔍 FRONTEND DEBUG: Error loading grade configuration:', gradeError);
           // Continue with default grade configuration
           setGradeConfig({
             oLevel: [
@@ -182,13 +181,11 @@ const PreFormOneScoreEntry = () => {
             setPreFormOneStudents([]);
           }
         } catch (studentError) {
-          console.error('🔍 FRONTEND DEBUG: Error loading Pre-Form One students:', studentError);
           setPreFormOneStudents([]);
           toast.warning('Could not load Pre-Form One students. Please check registration data.');
         }
         
       } catch (error) {
-        console.error('🔍 FRONTEND DEBUG: Error loading data:', error);
         toast.error('Error loading data. Please try again.');
       } finally {
         setLoading(false);
@@ -239,7 +236,6 @@ const PreFormOneScoreEntry = () => {
       navigate(`/admin/pre-form-one/${year}/score-entry/${subject.id}`);
       
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error loading scores:', error);
       toast.error('Error loading existing scores. Please try again.');
       setStudentScores({});
     } finally {
@@ -357,7 +353,6 @@ const PreFormOneScoreEntry = () => {
         break;
         
       default:
-        console.warn('Unknown navigation destination:', destination);
     }
   };
 
@@ -679,7 +674,6 @@ const PreFormOneScoreEntry = () => {
       
       
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error saving individual score:', error);
       toast.error('Error saving score. Please try again.');
     } finally {
       setSaving(false);
@@ -731,7 +725,6 @@ const PreFormOneScoreEntry = () => {
       clearScoresFromPersistence(selectedSubject.id, selectedCard);
       
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error saving all scores:', error);
       toast.error('Error saving scores. Please try again.');
     } finally {
       setSaving(false);
@@ -755,7 +748,6 @@ const PreFormOneScoreEntry = () => {
       toast.success('Scores exported successfully!');
       
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error exporting scores:', error);
       toast.error('Error exporting scores. Please try again.');
     }
   };
@@ -783,7 +775,6 @@ const PreFormOneScoreEntry = () => {
         toast.warning('Some data protection features are not available, but your scores are still saved locally.');
       }
     } catch (error) {
-      console.error('❌ DATA PERSISTENCE: Error saving scores:', error);
       toast.error('Error saving scores to backup storage.');
     }
   };
@@ -793,7 +784,6 @@ const PreFormOneScoreEntry = () => {
       const scores = await dataPersistenceManager.loadData(subjectId, scoreType);
       return scores;
     } catch (error) {
-      console.error('❌ DATA PERSISTENCE: Error loading scores:', error);
       toast.error('Error loading scores from backup storage.');
       return {};
     }
@@ -803,7 +793,6 @@ const PreFormOneScoreEntry = () => {
     try {
       dataPersistenceManager.clearData(subjectId, scoreType);
     } catch (error) {
-      console.error('Error clearing scores:', error);
     }
   };
 
