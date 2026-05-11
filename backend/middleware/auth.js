@@ -19,10 +19,14 @@ const JWT_SECRET = validateJwtSecret();
 
 const requireAuth = (req, res, next) => {
   try {
-    // Try to get token from cookie first, then from header for backward compatibility
-    const cookieToken = req.cookies?.token;
+    // Try to get token from multiple sources for compatibility:
+    // 1. accessToken cookie (enhanced login)
+    // 2. token cookie (legacy)
+    // 3. Authorization header (fallback login)
+    const accessTokenCookie = req.cookies?.accessToken;
+    const legacyTokenCookie = req.cookies?.token;
     const headerToken = req.headers.authorization?.split(' ')[1];
-    const token = cookieToken || headerToken;
+    const token = accessTokenCookie || legacyTokenCookie || headerToken;
 
     if (!token) {
       return res.status(401).json({ message: 'Authentication required' });
