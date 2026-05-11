@@ -17,14 +17,7 @@ const { getClient, callClaude } = require('../utils/anthropic');
 const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
 const { sendError } = require('../utils/safeError');
 const CloudinaryStorage = require('multer-storage-cloudinary');
-const cloudinary = require('cloudinary').v2;
-
-// Configure Cloudinary before any CloudinaryStorage instances are created
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const cloudinary = require('../config/cloudinary');
 
 // All admin routes require authentication
 router.use(requireAuth);
@@ -2081,8 +2074,6 @@ router.post('/gallery/upload', (req, res, next) => {
 // Delete all gallery photos (admin only)
 router.delete('/gallery/delete-all', requireRole('admin'), async (req, res) => {
   try {
-    const cloudinary = require('cloudinary').v2;
-    
     // Step 1: Get all gallery photos from database
     const result = await query('SELECT id, path FROM gallery_photos');
     const photos = result.rows;
@@ -2144,8 +2135,6 @@ router.delete('/gallery/delete-all', requireRole('admin'), async (req, res) => {
 router.delete('/gallery/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const cloudinary = require('cloudinary').v2;
-    
     const photoResult = await query('SELECT path FROM gallery_photos WHERE id = $1', [id]);
     if (photoResult.rows.length === 0) {
       return res.status(404).json({ message: 'Photo not found' });
