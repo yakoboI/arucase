@@ -42,18 +42,15 @@ function getStaffPhotoStorage() {
     console.log('[cloudinary] Creating staffPhotoStorage instance');
     _staffPhotoStorage = new CloudinaryStorage({
       cloudinary: cloudinaryModule,
-      params: {
+      params: (req, file) => ({
         folder: 'staff-photos',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
         transformation: [
           { width: 400, height: 400, crop: 'fill', gravity: 'face' },
           { quality: 'auto:good', fetch_format: 'auto' }
         ],
-        public_id: (req, file) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-          return `staff-${uniqueSuffix}`;
-        }
-      }
+        public_id: `staff-${Date.now()}-${Math.round(Math.random() * 1E9)}`
+      })
     });
   }
   return _staffPhotoStorage;
@@ -66,14 +63,14 @@ function getSchoolLogoStorage() {
     console.log('[cloudinary] Creating schoolLogoStorage instance');
     _schoolLogoStorage = new CloudinaryStorage({
       cloudinary: cloudinaryModule,
-      params: {
+      params: (req, file) => ({
         folder: 'school-logos',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
         transformation: [
           { quality: 'auto:good', fetch_format: 'auto' }
         ],
-        public_id: (req, file) => `school-logo-${Date.now()}`
-      }
+        public_id: `school-logo-${Date.now()}`
+      })
     });
   }
   return _schoolLogoStorage;
@@ -86,14 +83,14 @@ function getSchoolStampStorage() {
     console.log('[cloudinary] Creating schoolStampStorage instance');
     _schoolStampStorage = new CloudinaryStorage({
       cloudinary: cloudinaryModule,
-      params: {
+      params: (req, file) => ({
         folder: 'school-logos',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
         transformation: [
           { quality: 'auto:good', fetch_format: 'auto' }
         ],
-        public_id: (req, file) => `school-stamp-${Date.now()}`
-      }
+        public_id: `school-stamp-${Date.now()}`
+      })
     });
   }
   return _schoolStampStorage;
@@ -106,14 +103,14 @@ function getAuthoritySignatureStorage() {
     console.log('[cloudinary] Creating authoritySignatureStorage instance');
     _authoritySignatureStorage = new CloudinaryStorage({
       cloudinary: cloudinaryModule,
-      params: {
+      params: (req, file) => ({
         folder: 'authority-signatures',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
         transformation: [
           { quality: 'auto:good', fetch_format: 'auto' }
         ],
-        public_id: (req, file) => `authority-signature-${Date.now()}`
-      }
+        public_id: `authority-signature-${Date.now()}`
+      })
     });
   }
   return _authoritySignatureStorage;
@@ -126,14 +123,14 @@ function getPatronSaintStorage() {
     console.log('[cloudinary] Creating patronSaintStorage instance');
     _patronSaintStorage = new CloudinaryStorage({
       cloudinary: cloudinaryModule,
-      params: {
+      params: (req, file) => ({
         folder: 'patron-saint-images',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
         transformation: [
           { quality: 'auto:good', fetch_format: 'auto' }
         ],
-        public_id: (req, file) => `patron-saint-${Date.now()}`
-      }
+        public_id: `patron-saint-${Date.now()}`
+      })
     });
   }
   return _patronSaintStorage;
@@ -146,14 +143,14 @@ function getGalleryPhotoStorage() {
     console.log('[cloudinary] Creating galleryPhotoStorage instance');
     _galleryPhotoStorage = new CloudinaryStorage({
       cloudinary: cloudinaryModule,
-      params: {
+      params: (req, file) => ({
         folder: 'arucase-gallery',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
         transformation: [
           { quality: 'auto', fetch_format: 'auto' }
         ],
-        public_id: (req, file) => `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}`
-      }
+        public_id: `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}`
+      })
     });
   }
   return _galleryPhotoStorage;
