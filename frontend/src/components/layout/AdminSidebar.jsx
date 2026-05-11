@@ -77,8 +77,8 @@ const AdminSidebar = () => {
     {
       category: 'Student Management',
       items: [
-        { path: '/admin/students/registration', label: 'Registration (Forms I-IV)', icon: 'fa-user-plus', moduleId: 'student_registration_form_i_iv' },
-        { path: '/admin/students/registration', label: 'Registration (Forms V-VI)', icon: 'fa-user-plus', moduleId: 'student_registration_form_v_vi' },
+        { path: '/admin/students/registration', label: 'Registration (Forms I-IV)', icon: 'fa-user-plus', moduleId: 'student_registration_form_i_iv', key: 'registration-form-i-iv' },
+        { path: '/admin/students/registration', label: 'Registration (Forms V-VI)', icon: 'fa-user-plus', moduleId: 'student_registration_form_v_vi', key: 'registration-form-v-vi' },
         { path: '/admin/pre-form-one', label: 'Registration (Pre-Form)', icon: 'fa-child', moduleId: 'student_registration_pre_form' },
         { path: '/students/list', label: 'Student List', icon: 'fa-list', moduleId: 'student_registration_form_i_iv' },
         { path: '/admin/students/photos', label: 'Photos', icon: 'fa-camera', moduleId: 'student_photo' },
@@ -277,7 +277,7 @@ const AdminSidebar = () => {
                   )}
                   <ul className={`nav-items category-items ${isExpanded ? 'open' : ''}`}>
                   {category.items.map((item) => (
-                    <li key={item.path}>
+                    <li key={item.key || item.path}>
                       <Link 
                         to={item.path} 
                         className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
@@ -310,7 +310,7 @@ const AdminSidebar = () => {
                   </button>
                   <ul className={`mobile-nav-items mobile-category-items ${isExpanded ? 'open' : ''}`}>
                     {category.items.map((item) => (
-                      <li key={item.path}>
+                      <li key={item.key || item.path}>
                         <Link 
                           to={item.path} 
                           className={`mobile-nav-item ${isActive(item.path) ? 'active' : ''}`}
