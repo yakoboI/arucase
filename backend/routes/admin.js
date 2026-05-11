@@ -206,6 +206,81 @@ const staffPhotoStorage = new CloudinaryStorage({
   }
 });
 
+// Configure Cloudinary storage for school logos
+const schoolLogoStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'school-logos',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    transformation: [
+      { quality: 'auto:good', fetch_format: 'auto' }
+    ],
+    public_id: (req, file) => {
+      return `school-logo-${Date.now()}`;
+    }
+  }
+});
+
+// Configure Cloudinary storage for school stamps
+const schoolStampStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'school-logos',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    transformation: [
+      { quality: 'auto:good', fetch_format: 'auto' }
+    ],
+    public_id: (req, file) => {
+      return `school-stamp-${Date.now()}`;
+    }
+  }
+});
+
+// Configure Cloudinary storage for authority signatures
+const authoritySignatureStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'authority-signatures',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    transformation: [
+      { quality: 'auto:good', fetch_format: 'auto' }
+    ],
+    public_id: (req, file) => {
+      return `authority-signature-${Date.now()}`;
+    }
+  }
+});
+
+// Configure Cloudinary storage for patron saint images
+const patronSaintStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'patron-saint-images',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    transformation: [
+      { quality: 'auto:good', fetch_format: 'auto' }
+    ],
+    public_id: (req, file) => {
+      return `patron-saint-${Date.now()}`;
+    }
+  }
+});
+
+// Configure Cloudinary storage for gallery photos
+const galleryPhotoStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'arucase-gallery',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    transformation: [
+      { quality: 'auto', fetch_format: 'auto' }
+    ],
+    public_id: (req, file) => {
+      return `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    }
+  }
+});
+
 // Configure multer for file uploads (for non-photo uploads)
 // Use sync fs operations for multer destination to avoid async issues
 const fsSync = require('fs');
@@ -228,45 +303,6 @@ const storage = multer.diskStorage({
   }
 });
 
-// Helper function: Upload to Cloudinary with fallback to local storage
-async function uploadWithCloudinaryFallback(file, folder, transformation = {}) {
-  try {
-    // Try Cloudinary first
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder: folder,
-      resource_type: 'image',
-      quality: 'auto',
-      fetch_format: 'auto',
-      ...transformation
-    });
-    return {
-      success: true,
-      url: result.secure_url,
-      public_id: result.public_id,
-      source: 'cloudinary'
-    };
-  } catch (cloudinaryError) {
-    console.warn(`⚠️  Cloudinary upload failed, falling back to local storage:`, cloudinaryError.message);
-    try {
-      // Fallback: Save to local filesystem
-      const relativePath = `uploads/${path.basename(file.path)}`;
-      const localUrl = `/static/${relativePath}`;
-      return {
-        success: true,
-        url: localUrl,
-        public_id: null,
-        source: 'local'
-      };
-    } catch (localError) {
-      console.error('❌ Local storage fallback also failed:', localError.message);
-      return {
-        success: false,
-        error: localError.message
-      };
-    }
-  }
-}
-
 const upload = multer({
   storage,
   limits: { fileSize: 16 * 1024 * 1024 }, // 16MB
@@ -279,6 +315,71 @@ const upload = multer({
     } else {
       cb(new Error('Only image files are allowed'));
     }
+  }
+});
+
+// Multer instance for school logo uploads (Cloudinary)
+const schoolLogoUpload = multer({
+  storage: schoolLogoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  }
+});
+
+// Multer instance for school stamp uploads (Cloudinary)
+const schoolStampUpload = multer({
+  storage: schoolStampStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  }
+});
+
+// Multer instance for authority signature uploads (Cloudinary)
+const authoritySignatureUpload = multer({
+  storage: authoritySignatureStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  }
+});
+
+// Multer instance for patron saint image uploads (Cloudinary)
+const patronSaintUpload = multer({
+  storage: patronSaintStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  }
+});
+
+// Multer instance for gallery photo uploads (Cloudinary)
+const galleryPhotoUpload = multer({
+  storage: galleryPhotoStorage,
+  limits: { fileSize: 16 * 1024 * 1024 }, // 16MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
   }
 });
 
@@ -845,7 +946,7 @@ router.get('/school-logo', async (req, res) => {
 });
 
 // Upload school logo
-router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
+router.post('/school-logo', schoolLogoUpload.single('logo_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -866,6 +967,7 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
         CREATE TABLE IF NOT EXISTS school_logo (
           id INTEGER PRIMARY KEY DEFAULT 1,
           logo_image_path VARCHAR(255),
+          cloudinary_public_id VARCHAR(255),
           school_name VARCHAR(255),
           motto VARCHAR(255),
           address TEXT,
@@ -875,65 +977,42 @@ router.post('/school-logo', upload.single('logo_file'), async (req, res) => {
       `);
     }
 
-    // Get old logo path (handle gracefully if query fails)
-    let oldLogoPath = null;
+    // Ensure cloudinary_public_id column exists on older tables
+    await query(`ALTER TABLE school_logo ADD COLUMN IF NOT EXISTS cloudinary_public_id VARCHAR(255)`);
+
+    // Get old logo Cloudinary public_id (handle gracefully if query fails)
+    let oldCloudinaryPublicId = null;
     try {
-      const oldLogoResult = await query('SELECT logo_image_path FROM school_logo WHERE id = 1');
-      oldLogoPath = oldLogoResult.rows[0]?.logo_image_path;
+      const oldLogoResult = await query('SELECT cloudinary_public_id FROM school_logo WHERE id = 1');
+      oldCloudinaryPublicId = oldLogoResult.rows[0]?.cloudinary_public_id;
     } catch (err) {
       // Could not fetch old logo, continue
     }
 
-    // Delete old logo if exists
-    if (oldLogoPath) {
+    // Delete old logo from Cloudinary if it exists
+    if (oldCloudinaryPublicId) {
       try {
-        const oldFilePath = path.join(__dirname, '../static', oldLogoPath);
-        await fs.unlink(oldFilePath);
+        await cloudinary.uploader.destroy(oldCloudinaryPublicId);
       } catch (err) {
-        // Old logo file not found or already deleted
+        console.warn('[SCHOOL LOGO] Failed to delete old Cloudinary asset:', err.message);
       }
     }
 
-    // Generate unique filename
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const filename = `${uuidv4()}${ext}`;
-    const relativePath = `uploads/photos/${filename}`;
-    const photosDir = path.join(__dirname, '../static/uploads/photos');
-    const newFilePath = path.join(photosDir, filename);
-
-    // Ensure directory exists
-    await fs.mkdir(photosDir, { recursive: true });
-
-    // Move uploaded file from multer's temp location to final location
-    // Multer saves to static/uploads with a generated name, we need to move it
-    try {
-      if (req.file.path && req.file.path !== newFilePath) {
-        // Check if source file exists
-        await fs.access(req.file.path);
-        await fs.rename(req.file.path, newFilePath);
-      }
-    } catch (moveError) {
-      console.error('[SCHOOL LOGO] Error moving file:', moveError);
-      // If move fails, try to copy instead
-      try {
-        await fs.copyFile(req.file.path, newFilePath);
-        await fs.unlink(req.file.path); // Delete original
-      } catch (copyError) {
-        console.error('[SCHOOL LOGO] Error copying file:', copyError);
-        throw new Error(`Failed to save file: ${copyError.message}`);
-      }
-    }
+    // CloudinaryStorage sets req.file.path to the secure URL and req.file.filename to the public_id
+    const logoUrl = req.file.path;
+    const cloudinaryPublicId = req.file.filename;
+    console.log(`✅ School logo uploaded to Cloudinary: ${cloudinaryPublicId}`);
     
     // Save to database
     await query(
-      `INSERT INTO school_logo (id, logo_image_path)
-       VALUES (1, $1)
+      `INSERT INTO school_logo (id, logo_image_path, cloudinary_public_id)
+       VALUES (1, $1, $2)
        ON CONFLICT (id)
-       DO UPDATE SET logo_image_path = EXCLUDED.logo_image_path, updated_at = NOW()`,
-      [relativePath]
+       DO UPDATE SET logo_image_path = EXCLUDED.logo_image_path, cloudinary_public_id = EXCLUDED.cloudinary_public_id, updated_at = NOW()`,
+      [logoUrl, cloudinaryPublicId]
     );
 
-    res.json({ message: 'Logo uploaded successfully', logo_path: relativePath });
+    res.json({ message: 'Logo uploaded successfully', logo_path: logoUrl });
   } catch (error) {
     console.error('[SCHOOL LOGO] Upload error:', error);
     return sendError(res, error, 500);
@@ -954,49 +1033,48 @@ router.get('/school-stamp', async (req, res) => {
 });
 
 // Upload school stamp
-router.post('/school-stamp', upload.single('stamp_file'), async (req, res) => {
+router.post('/school-stamp', schoolStampUpload.single('stamp_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
+    // Ensure cloudinary_public_id column exists on older tables
+    await query(`ALTER TABLE school_stamp ADD COLUMN IF NOT EXISTS cloudinary_public_id VARCHAR(255)`);
 
-    // Get old stamp path
-    const oldStampResult = await query('SELECT stamp_image_path FROM school_stamp WHERE id = 1');
-    const oldStampPath = oldStampResult.rows[0]?.stamp_image_path;
+    // Get old stamp Cloudinary public_id
+    let oldCloudinaryPublicId = null;
+    try {
+      const oldStampResult = await query('SELECT cloudinary_public_id FROM school_stamp WHERE id = 1');
+      oldCloudinaryPublicId = oldStampResult.rows[0]?.cloudinary_public_id;
+    } catch (err) {
+      // Could not fetch old stamp, continue
+    }
 
-    // Delete old stamp if exists
-    if (oldStampPath) {
+    // Delete old stamp from Cloudinary if it exists
+    if (oldCloudinaryPublicId) {
       try {
-        const oldFilePath = path.join(__dirname, '../static', oldStampPath);
-        await fs.unlink(oldFilePath);
+        await cloudinary.uploader.destroy(oldCloudinaryPublicId);
       } catch (err) {
-        // Old stamp file not found or already deleted
+        console.warn('[SCHOOL STAMP] Failed to delete old Cloudinary asset:', err.message);
       }
     }
 
-    // Generate unique filename
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const filename = `${uuidv4()}${ext}`;
-    const relativePath = `uploads/photos/${filename}`;
-    const newFilePath = path.join(__dirname, '../static', relativePath);
-
-    // Ensure directory exists
-    await fs.mkdir(path.dirname(newFilePath), { recursive: true });
-
-    // Move uploaded file
-    await fs.rename(req.file.path, newFilePath);
+    // CloudinaryStorage sets req.file.path to the secure URL and req.file.filename to the public_id
+    const stampUrl = req.file.path;
+    const cloudinaryPublicId = req.file.filename;
+    console.log(`✅ School stamp uploaded to Cloudinary: ${cloudinaryPublicId}`);
 
     // Save to database
     await query(
-      `INSERT INTO school_stamp (id, stamp_image_path)
-       VALUES (1, $1)
+      `INSERT INTO school_stamp (id, stamp_image_path, cloudinary_public_id)
+       VALUES (1, $1, $2)
        ON CONFLICT (id)
-       DO UPDATE SET stamp_image_path = EXCLUDED.stamp_image_path, updated_at = NOW()`,
-      [relativePath]
+       DO UPDATE SET stamp_image_path = EXCLUDED.stamp_image_path, cloudinary_public_id = EXCLUDED.cloudinary_public_id, updated_at = NOW()`,
+      [stampUrl, cloudinaryPublicId]
     );
 
-    res.json({ message: 'Stamp uploaded successfully', stamp_path: relativePath });
+    res.json({ message: 'Stamp uploaded successfully', stamp_path: stampUrl });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -1057,38 +1135,37 @@ router.post('/authority-data', async (req, res) => {
 });
 
 // Upload authority signature image
-router.post('/authority-data/upload-signature', upload.single('signature_file'), async (req, res) => {
+router.post('/authority-data/upload-signature', authoritySignatureUpload.single('signature_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
+    // Ensure cloudinary_public_id column exists on older tables
+    await query(`ALTER TABLE authority_data ADD COLUMN IF NOT EXISTS cloudinary_public_id VARCHAR(255)`);
 
-    // Get old signature path
-    const oldSignatureResult = await query('SELECT signature_image_path FROM authority_data WHERE id = 1');
-    const oldSignaturePath = oldSignatureResult.rows[0]?.signature_image_path;
+    // Get old signature Cloudinary public_id
+    let oldCloudinaryPublicId = null;
+    try {
+      const oldSignatureResult = await query('SELECT cloudinary_public_id FROM authority_data WHERE id = 1');
+      oldCloudinaryPublicId = oldSignatureResult.rows[0]?.cloudinary_public_id;
+    } catch (err) {
+      // Could not fetch old signature, continue
+    }
 
-    // Delete old signature if exists
-    if (oldSignaturePath) {
+    // Delete old signature from Cloudinary if it exists
+    if (oldCloudinaryPublicId) {
       try {
-        const oldFilePath = path.join(__dirname, '../static', oldSignaturePath);
-        await fs.unlink(oldFilePath);
+        await cloudinary.uploader.destroy(oldCloudinaryPublicId);
       } catch (err) {
-        // Old signature file not found or already deleted
+        console.warn('[AUTHORITY SIGNATURE] Failed to delete old Cloudinary asset:', err.message);
       }
     }
 
-    // Generate unique filename
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const filename = `${uuidv4()}${ext}`;
-    const relativePath = `uploads/photos/${filename}`;
-    const newFilePath = path.join(__dirname, '../static', relativePath);
-
-    // Ensure directory exists
-    await fs.mkdir(path.dirname(newFilePath), { recursive: true });
-
-    // Move uploaded file
-    await fs.rename(req.file.path, newFilePath);
+    // CloudinaryStorage sets req.file.path to the secure URL and req.file.filename to the public_id
+    const signatureUrl = req.file.path;
+    const cloudinaryPublicId = req.file.filename;
+    console.log(`✅ Authority signature uploaded to Cloudinary: ${cloudinaryPublicId}`);
 
     // Check if authority data exists
     const existingDataResult = await query('SELECT name, title FROM authority_data WHERE id = 1');
@@ -1096,21 +1173,21 @@ router.post('/authority-data/upload-signature', upload.single('signature_file'),
     if (existingDataResult.rows.length === 0) {
       // No existing data, insert with default values
       await query(
-        `INSERT INTO authority_data (id, name, title, signature_image_path)
-         VALUES (1, $1, $2, $3)`,
-        ['Fr.Moses Assey', 'Rector', relativePath]
+        `INSERT INTO authority_data (id, name, title, signature_image_path, cloudinary_public_id)
+         VALUES (1, $1, $2, $3, $4)`,
+        ['Fr.Moses Assey', 'Rector', signatureUrl, cloudinaryPublicId]
       );
     } else {
-      // Existing data, update only signature_image_path
+      // Existing data, update only signature_image_path and cloudinary_public_id
       await query(
         `UPDATE authority_data 
-         SET signature_image_path = $1, updated_at = NOW() 
+         SET signature_image_path = $1, cloudinary_public_id = $2, updated_at = NOW() 
          WHERE id = 1`,
-        [relativePath]
+        [signatureUrl, cloudinaryPublicId]
       );
     }
 
-    res.json({ message: 'Signature image uploaded successfully', signature_path: relativePath });
+    res.json({ message: 'Signature image uploaded successfully', signature_path: signatureUrl });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -1119,26 +1196,25 @@ router.post('/authority-data/upload-signature', upload.single('signature_file'),
 // Delete authority signature image
 router.post('/authority-data/delete-signature', async (req, res) => {
   try {
-    const path = require('path');
-    const fs = require('fs').promises;
-
-    // Get existing signature path
-    const result = await query('SELECT signature_image_path FROM authority_data WHERE id = 1');
+    // Get existing signature Cloudinary public_id
+    const result = await query('SELECT signature_image_path, cloudinary_public_id FROM authority_data WHERE id = 1');
     const signaturePath = result.rows[0]?.signature_image_path;
+    const cloudinaryPublicId = result.rows[0]?.cloudinary_public_id;
 
-    if (signaturePath) {
-      // Delete file
-      try {
-        const filePath = path.join(__dirname, '../static', signaturePath);
-        await fs.unlink(filePath);
-      } catch (err) {
-        // Signature file not found or already deleted
+    if (signaturePath || cloudinaryPublicId) {
+      // Delete from Cloudinary if public_id exists
+      if (cloudinaryPublicId) {
+        try {
+          await cloudinary.uploader.destroy(cloudinaryPublicId);
+        } catch (err) {
+          console.warn('[AUTHORITY SIGNATURE] Failed to delete Cloudinary asset:', err.message);
+        }
       }
 
       // Update database
       await query(
-        'UPDATE authority_data SET signature_image_path = $1 WHERE id = 1',
-        ['']
+        'UPDATE authority_data SET signature_image_path = $1, cloudinary_public_id = $2 WHERE id = 1',
+        ['', null]
       );
     }
 
@@ -1163,52 +1239,37 @@ router.get('/patron-saint-image', async (req, res) => {
 });
 
 // Upload patron saint image
-router.post('/patron-saint-image', upload.single('patron_saint_file'), async (req, res) => {
+router.post('/patron-saint-image', patronSaintUpload.single('patron_saint_file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Get old patron saint image path
-    const oldImageResult = await query('SELECT patron_saint_image FROM website_settings WHERE id = 1');
-    const oldImagePath = oldImageResult.rows[0]?.patron_saint_image;
+    // Ensure patron_saint_cloudinary_public_id column exists on older tables
+    await query(`ALTER TABLE website_settings ADD COLUMN IF NOT EXISTS patron_saint_cloudinary_public_id VARCHAR(255)`);
 
-    // Delete old image if exists
-    if (oldImagePath) {
-      try {
-        const oldFilePath = path.join(__dirname, '../static', oldImagePath);
-        await fs.unlink(oldFilePath);
-      } catch (err) {
-        // Old patron saint image file not found or already deleted
-      }
-    }
-
-    // Generate unique filename
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const filename = `${uuidv4()}${ext}`;
-    const relativePath = `uploads/photos/${filename}`;
-    const photosDir = path.join(__dirname, '../static/uploads/photos');
-    const newFilePath = path.join(photosDir, filename);
-
-    // Ensure directory exists
-    await fs.mkdir(photosDir, { recursive: true });
-
-    // Move uploaded file from multer's temp location to final location
+    // Get old patron saint image Cloudinary public_id
+    let oldCloudinaryPublicId = null;
     try {
-      if (req.file.path && req.file.path !== newFilePath) {
-        await fs.access(req.file.path);
-        await fs.rename(req.file.path, newFilePath);
-      }
-    } catch (moveError) {
-      console.error('[PATRON SAINT] Error moving file:', moveError);
+      const oldImageResult = await query('SELECT patron_saint_cloudinary_public_id FROM website_settings WHERE id = 1');
+      oldCloudinaryPublicId = oldImageResult.rows[0]?.patron_saint_cloudinary_public_id;
+    } catch (err) {
+      // Could not fetch old image, continue
+    }
+
+    // Delete old image from Cloudinary if it exists
+    if (oldCloudinaryPublicId) {
       try {
-        await fs.copyFile(req.file.path, newFilePath);
-        await fs.unlink(req.file.path);
-      } catch (copyError) {
-        console.error('[PATRON SAINT] Error copying file:', copyError);
-        throw new Error(`Failed to save file: ${copyError.message}`);
+        await cloudinary.uploader.destroy(oldCloudinaryPublicId);
+      } catch (err) {
+        console.warn('[PATRON SAINT] Failed to delete old Cloudinary asset:', err.message);
       }
     }
+
+    // CloudinaryStorage sets req.file.path to the secure URL and req.file.filename to the public_id
+    const imageUrl = req.file.path;
+    const cloudinaryPublicId = req.file.filename;
+    console.log(`✅ Patron saint image uploaded to Cloudinary: ${cloudinaryPublicId}`);
 
     // Check if website_settings exists
     const existingResult = await query('SELECT id FROM website_settings WHERE id = 1');
@@ -1216,21 +1277,21 @@ router.post('/patron-saint-image', upload.single('patron_saint_file'), async (re
     if (existingResult.rows.length === 0) {
       // Insert new record
       await query(
-        `INSERT INTO website_settings (id, patron_saint_image)
-         VALUES (1, $1)`,
-        [relativePath]
+        `INSERT INTO website_settings (id, patron_saint_image, patron_saint_cloudinary_public_id)
+         VALUES (1, $1, $2)`,
+        [imageUrl, cloudinaryPublicId]
       );
     } else {
       // Update existing record
       await query(
         `UPDATE website_settings 
-         SET patron_saint_image = $1 
+         SET patron_saint_image = $1, patron_saint_cloudinary_public_id = $2
          WHERE id = 1`,
-        [relativePath]
+        [imageUrl, cloudinaryPublicId]
       );
     }
 
-    res.json({ message: 'Patron saint image uploaded successfully', patron_saint_image_path: relativePath });
+    res.json({ message: 'Patron saint image uploaded successfully', patron_saint_image_path: imageUrl });
   } catch (error) {
     console.error('[PATRON SAINT] Upload error:', error);
     return sendError(res, error, 500);
@@ -1928,7 +1989,7 @@ router.get('/gallery', async (req, res) => {
 
 // Upload gallery photos with multer error handling
 router.post('/gallery/upload', (req, res, next) => {
-  upload.array('photos', 20)(req, res, (err) => {
+  galleryPhotoUpload.array('photos', 20)(req, res, (err) => {
     if (err) {
       console.error('Multer error:', err);
       if (err instanceof multer.MulterError) {
@@ -1954,7 +2015,6 @@ router.post('/gallery/upload', (req, res, next) => {
     }
     
     const { category = 'general', caption = '', date } = req.body;
-    const cloudinary = require('cloudinary').v2;
     
     const uploadedPhotos = [];
     const errors = [];
@@ -1968,62 +2028,23 @@ router.post('/gallery/upload', (req, res, next) => {
           continue;
         }
 
-        // Validate file size (max 16MB)
-        const MAX_FILE_SIZE = 16 * 1024 * 1024;
-        if (file.size > MAX_FILE_SIZE) {
-          errors.push({ file: file.originalname, error: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit` });
-          try { await fs.unlink(file.path).catch(() => {}); } catch (_) {}
-          continue;
-        }
-
-        // Validate file format
-        const allowedFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
-        if (!allowedFormats.includes(ext)) {
-          errors.push({ file: file.originalname, error: `Invalid format. Allowed: ${allowedFormats.join(', ')}` });
-          try { await fs.unlink(file.path).catch(() => {}); } catch (_) {}
-          continue;
-        }
-
-        // Upload with Cloudinary fallback
-        const uploadResult = await uploadWithCloudinaryFallback(file, 'arucase-gallery', {
-          quality: 'auto',
-          fetch_format: 'auto'
-        });
-
-        if (!uploadResult.success) {
-          errors.push({ file: file.originalname, error: uploadResult.error });
-          try { await fs.unlink(file.path).catch(() => {}); } catch (_) {}
-          continue;
-        }
+        // CloudinaryStorage already uploaded the file; req.file.path is the secure URL
+        const photoUrl = file.path;
+        const cloudinaryPublicId = file.filename;
+        console.log(`✅ Gallery photo uploaded to Cloudinary: ${cloudinaryPublicId}`);
 
         const photoId = `photo_${Date.now()}_${i}`;
 
         await query(
           `INSERT INTO gallery_photos (id, path, category, caption, date, uploaded_by)
            VALUES ($1, $2, $3, $4, $5, $6)`,
-          [photoId, uploadResult.url, category, caption || null, date || new Date().toISOString().split('T')[0], req.user?.username || 'admin']
+          [photoId, photoUrl, category, caption || null, date || new Date().toISOString().split('T')[0], req.user?.username || 'admin']
         );
 
-        uploadedPhotos.push({ id: photoId, path: uploadResult.url, source: uploadResult.source });
-
-        // Clean up temp file
-        try {
-          await fs.unlink(file.path).catch(() => {});
-        } catch (cleanupError) {
-          // Ignore cleanup errors
-        }
+        uploadedPhotos.push({ id: photoId, path: photoUrl, source: 'cloudinary' });
       } catch (fileError) {
         console.error(`Error processing file ${i} (${req.files[i]?.originalname}):`, fileError);
         errors.push({ file: req.files[i]?.originalname || `File ${i}`, error: fileError.message });
-        // Try to clean up temp file
-        try {
-          if (req.files[i]?.path) {
-            await fs.unlink(req.files[i].path).catch(() => {});
-          }
-        } catch (cleanupError) {
-          // Ignore cleanup errors
-        }
       }
     }
     
