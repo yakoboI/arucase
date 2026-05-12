@@ -386,12 +386,12 @@ async function generateIndividualReportPDFWithPuppeteer(
         format: 'A4',
         printBackground: true,
         margin: {
-          top: '10mm',
-          right: '10mm',
-          bottom: '10mm',
-          left: '10mm'
+          top: '5mm',
+          right: '2.5mm',
+          bottom: '5mm',
+          left: '2.5mm'
         },
-        preferCSSPageSize: true,
+        preferCSSPageSize: false,
         displayHeaderFooter: false,
         scale: 1.0
       });

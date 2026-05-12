@@ -157,10 +157,10 @@ table {
     position: relative !important;
 }
 
-/* Print page: enough margin so PDF engines do not clip header logo & student photo at page edges */
+/* @page margin 0: PDF margins come from Puppeteer only (wider content, no double margins). */
 @page {
     size: A4;
-    margin: 6mm 6mm 6mm 6mm;
+    margin: 0;
 }
 
 .report-container {
@@ -264,7 +264,7 @@ table {
     .report-container {
         max-width: 100% !important;
         width: 100% !important;
-        padding: 10px 8px 6px 8px !important;
+        padding: 10px 3px 6px 3px !important;
         line-height: 1.25;
         margin: 0 !important;
         min-height: 0 !important;
@@ -277,7 +277,7 @@ table {
      * Use a 3-column grid in print so logo, title block, and photo stay on one row in normal flow.
      */
     .report-header {
-        padding: 10px 8px 8px 8px !important;
+        padding: 10px 4px 8px 4px !important;
         margin-bottom: 4px !important;
         border-bottom: 0.5pt solid #000000 !important;
         display: grid !important;
