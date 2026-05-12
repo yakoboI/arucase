@@ -49,14 +49,18 @@ const PublicHeader = () => {
   const schoolLogo = settings?.school_logo || '/uploads/photos/9749b4af-7e1c-454b-a482-37a0f64162f1.jpg';
   const patronSaintImage = settings?.patron_saint_image;
 
-  // Helper to get API URL for images
+  // Resolve uploaded/static paths: dev uses same-origin + Vite /static proxy (any host); prod uses API origin
   const getImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    let cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    if (import.meta.env.DEV) {
+      if (cleanPath.startsWith('static/')) return `/${cleanPath}`;
+      if (cleanPath.startsWith('uploads/')) return `/static/${cleanPath}`;
+      return `/static/uploads/photos/${cleanPath}`;
+    }
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const baseUrl = apiUrl.replace('/api', '');
-    // Remove leading slash from path if present to avoid double slashes
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    const baseUrl = apiUrl.replace(/\/api\/?$/, '');
     return `${baseUrl}/static/${cleanPath}`;
   };
 

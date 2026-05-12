@@ -31,9 +31,9 @@ const Announcements = ({ announcements = [], limit = 5 }) => {
             </div>
             <h3 className="announcement-title">{announcement.title}</h3>
             <p className="announcement-content">
-              {announcement.content.length > 150
-                ? `${announcement.content.substring(0, 150)}...`
-                : announcement.content}
+              {(announcement.content || announcement.body || '').length > 150
+                ? `${(announcement.content || announcement.body || '').substring(0, 150)}...`
+                : (announcement.content || announcement.body || '')}
             </p>
             <Link to={`/announcements#${announcement.id}`} className="read-more">
               Read More

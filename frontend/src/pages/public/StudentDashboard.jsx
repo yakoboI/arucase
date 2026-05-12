@@ -26,7 +26,21 @@ const StudentDashboard = () => {
       navigate('/student-login');
       return;
     }
-    const data = JSON.parse(stored);
+    let data;
+    try {
+      data = JSON.parse(stored);
+    } catch {
+      sessionStorage.removeItem('studentData');
+      toast.error('Session data was invalid. Please log in again.');
+      navigate('/student-login');
+      return;
+    }
+    if (!data || String(data.adm_no ?? '').trim() === '') {
+      sessionStorage.removeItem('studentData');
+      toast.error('Please login first');
+      navigate('/student-login');
+      return;
+    }
     setStudentData(data);
     setSelectedYear(data.year);
   }, [navigate]);

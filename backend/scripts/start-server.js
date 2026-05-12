@@ -40,7 +40,8 @@ console.log('✅ server.js found');
 // upload script can find them.
 try {
   console.log('🔄 Running admin photos volume setup...');
-  require('./setup-admin-photos-volume');
+  const { setupAdminPhotosVolume } = require('./setup-admin-photos-volume');
+  setupAdminPhotosVolume();
 } catch (setupError) {
   // Non-fatal: log the error but do not prevent the server from starting.
   console.error('⚠️  Admin photos volume setup encountered an error:', setupError.message);

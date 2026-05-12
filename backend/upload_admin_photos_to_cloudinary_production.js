@@ -19,7 +19,7 @@ const pool = new Pool({
 
 async function uploadAdminPhotosToCloudinaryProduction() {
   console.log('☁️ Uploading admin photos to Cloudinary in production...');
-  
+
   try {
     // Check Cloudinary configuration
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
@@ -28,7 +28,7 @@ async function uploadAdminPhotosToCloudinaryProduction() {
       console.log(`  CLOUDINARY_CLOUD_NAME: ${process.env.CLOUDINARY_CLOUD_NAME || 'MISSING'}`);
       console.log(`  CLOUDINARY_API_KEY: ${process.env.CLOUDINARY_API_KEY ? 'SET' : 'MISSING'}`);
       console.log(`  CLOUDINARY_API_SECRET: ${process.env.CLOUDINARY_API_SECRET ? 'SET' : 'MISSING'}`);
-      return;
+      return { ok: false, reason: 'no_cloudinary_env' };
     }
     
     // Configure Cloudinary
@@ -45,11 +45,14 @@ async function uploadAdminPhotosToCloudinaryProduction() {
     await cloudinary.api.ping();
     console.log('✅ Cloudinary connected');
 
-    // Check that the volume directory exists and list PNG files
+    // Same seeding as start-server.js (release phase often runs before the volume path exists)
+    const { setupAdminPhotosVolume } = require('./scripts/setup-admin-photos-volume');
+    setupAdminPhotosVolume();
+
     if (!fs.existsSync(ADMIN_PHOTOS_DIR)) {
-      console.log(`❌ Volume directory not found: ${ADMIN_PHOTOS_DIR}`);
+      console.log(`❌ Volume directory not available: ${ADMIN_PHOTOS_DIR}`);
       console.log('   Ensure the admin-photos volume is mounted at /app/admin-photos on Railway.');
-      return;
+      return { ok: false, reason: 'no_volume_dir' };
     }
 
     const volumeFiles = fs.readdirSync(ADMIN_PHOTOS_DIR).filter(f => f.toLowerCase().endsWith('.png'));
@@ -58,7 +61,7 @@ async function uploadAdminPhotosToCloudinaryProduction() {
 
     if (volumeFiles.length === 0) {
       console.log('⚠️  No PNG files found in the volume. Nothing to upload.');
-      return;
+      return { ok: true, reason: 'no_png_files' };
     }
     
     // Get administrators with photos
@@ -142,6 +145,7 @@ async function uploadAdminPhotosToCloudinaryProduction() {
       console.log('');
     });
 
+    return { ok: true, reason: 'completed' };
   } catch (error) {
     console.error('❌ Error uploading admin photos to Cloudinary:', error);
     throw error;
@@ -181,8 +185,20 @@ async function uploadAndUpdate(admin, filePath) {
 }
 
 uploadAdminPhotosToCloudinaryProduction()
-  .then(() => {
-    console.log('✅ Admin photos uploaded to Cloudinary successfully');
+  .then((result) => {
+    if (result?.reason === 'no_cloudinary_env') {
+      console.log('⚠️  Admin photo Cloudinary upload skipped (missing Cloudinary env).');
+      process.exit(0);
+    }
+    if (result?.ok === false) {
+      console.log('⚠️  Admin photo Cloudinary upload skipped — see messages above.');
+      process.exit(0);
+    }
+    if (result?.reason === 'no_png_files') {
+      console.log('⚠️  Admin photo Cloudinary upload skipped (no PNGs in volume).');
+      process.exit(0);
+    }
+    console.log('✅ Admin photos Cloudinary step finished successfully');
     process.exit(0);
   })
   .catch((error) => {

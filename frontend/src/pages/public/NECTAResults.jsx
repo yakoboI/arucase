@@ -31,7 +31,7 @@ const NECTAResults = () => {
       // Try to get custom URL from database
       const res = await api.get(`/public/necta-url/${examTypeParam}/${yearParam}`);
       if (res.data.url) {
-        setUrlCache({ ...urlCache, [cacheKey]: res.data.url });
+        setUrlCache((prev) => ({ ...prev, [cacheKey]: res.data.url }));
         return res.data.url;
       }
     } catch (err) {
@@ -55,7 +55,7 @@ const NECTAResults = () => {
       generatedUrl = `https://onlinesys.necta.go.tz/results/${yearParam}/${examTypeParam}/results/${schoolCode}.htm`;
     }
     
-    setUrlCache({ ...urlCache, [cacheKey]: generatedUrl });
+    setUrlCache((prev) => ({ ...prev, [cacheKey]: generatedUrl }));
     return generatedUrl;
   };
 

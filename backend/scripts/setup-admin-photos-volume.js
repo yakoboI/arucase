@@ -133,8 +133,10 @@ function setupAdminPhotosVolume() {
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────
-// When run directly (node scripts/setup-admin-photos-volume.js) execute and exit.
-// When required by start-server.js it runs synchronously before the server starts.
-setupAdminPhotosVolume();
+// Call explicitly from start-server.js, upload_admin_photos_to_cloudinary_production.js, etc.
+// (Avoid side effects on require so release-phase scripts can control order.)
+if (require.main === module) {
+  setupAdminPhotosVolume();
+}
 
 module.exports = { setupAdminPhotosVolume };

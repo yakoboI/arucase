@@ -12,8 +12,20 @@ const logToDatabase = async (logData) => {
   // In production, skip database logging entirely for performance
   // Only log errors to console
   if (process.env.NODE_ENV === 'production') {
-    if (logData.level === 'ERROR' || logData.errorMessage) {
-      console.error(`[PROD ERROR] ${logData.method} ${logData.endpoint} - ${logData.errorMessage || logData.level} - ${logData.responseTime}ms`);
+    const code = logData.statusCode;
+    const isAuthChallenge = code === 401 || code === 403;
+    // 401/403 are normal when staff tabs are open after logout or bots hit /api; don't spam ERROR.
+    const isServerError = logData.level === 'ERROR' || (code != null && code >= 500);
+    const isClientErrorWorthLogging =
+      code != null && code >= 400 && code < 500 && !isAuthChallenge;
+    if (isServerError) {
+      console.error(
+        `[PROD ERROR] ${logData.method} ${logData.endpoint} - ${logData.errorMessage || 'Server error'} - ${logData.responseTime}ms`
+      );
+    } else if (isClientErrorWorthLogging && logData.errorMessage) {
+      console.warn(
+        `[PROD WARN] ${logData.method} ${logData.endpoint} - ${logData.errorMessage} - ${logData.responseTime}ms`
+      );
     }
     return;
   }

@@ -4,8 +4,9 @@ import axios from 'axios';
 // In production, use the full API URL from env
 const getBaseURL = () => {
   if (import.meta.env.DEV) {
-    // Use the correct backend port (3001)
-    return 'http://localhost:3001/api';
+    // Same origin as the Vite dev server so /api and /static proxies work on any host
+    // (e.g. http://192.168.x.x:3001), not only localhost.
+    return '/api';
   }
   return import.meta.env.VITE_API_URL || 'https://arucase-production.up.railway.app/api';
 };
