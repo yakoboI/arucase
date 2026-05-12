@@ -255,25 +255,38 @@ table {
         border: 0.5pt solid #000000 !important;
     }
     
-    /* Force header border */
-    .report-header {
-        border-bottom: 0.5pt solid #000000 !important;
-    }
-    
     .report-container {
         max-width: 100% !important;
         width: 100% !important;
         padding: 4px;
         line-height: 1.25;
         margin: 0 !important;
+        min-height: 0 !important;
     }
-    
+
+    /*
+     * PDF / browser print: flex + position:absolute on logo/photo can orphan the student image on page 2.
+     * Use a 3-column grid in print so logo, title block, and photo stay on one row in normal flow.
+     */
     .report-header {
         padding: 5px !important;
         margin-bottom: 4px !important;
         border-bottom: 0.5pt solid #000000 !important;
+        display: grid !important;
+        grid-template-columns: 90px minmax(0, 1fr) 90px !important;
+        align-items: center !important;
+        gap: 6px !important;
+        min-height: 96px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        position: relative !important;
     }
-    
+
+    .report-header .school-info {
+        grid-column: 2 !important;
+        min-width: 0 !important;
+    }
+
     .logo-section,
     .student-photo {
         width: 90px !important;
@@ -284,6 +297,14 @@ table {
         min-height: 90px !important;
         padding: 2px !important;
         border: 1px solid #000000 !important;
+    }
+
+    .logo-section {
+        grid-column: 1 !important;
+    }
+
+    .student-photo {
+        grid-column: 3 !important;
     }
     
     .school-logo,
@@ -304,7 +325,6 @@ table {
         color-adjust: exact !important;
     }
     
-    /* Ensure logo section and student photo are visible in print */
     .logo-section,
     .student-photo {
         display: flex !important;
@@ -312,19 +332,16 @@ table {
         justify-content: center !important;
         visibility: visible !important;
         opacity: 1 !important;
-        position: absolute !important;
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
         overflow: hidden !important;
         box-sizing: border-box !important;
         background-color: white !important;
         aspect-ratio: 1 / 1 !important;
-    }
-    
-    .logo-section {
-        left: 0 !important;
-    }
-    
-    .student-photo {
-        right: 0 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
     
     /* Ensure logo image loads in print - target all possible selectors */
