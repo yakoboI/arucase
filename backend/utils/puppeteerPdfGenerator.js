@@ -231,9 +231,9 @@ async function generateIndividualReportPDFWithPuppeteer(
       const forcePremiumFontStyling = () => {
         const allTextElements = document.querySelectorAll('.report-container *');
         allTextElements.forEach(element => {
-          // Force Arial font family and proper sizing
+          // Times New Roman for report body (matches IndividualReportDetail.css)
           if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
-            element.style.setProperty('font-family', 'Arial, sans-serif', 'important');
+            element.style.setProperty('font-family', 'Times New Roman, Times, serif', 'important');
             // Ensure font sizes are applied correctly
             const computedStyle = window.getComputedStyle(element);
             const fontSize = computedStyle.fontSize;

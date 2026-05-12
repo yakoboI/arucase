@@ -30,7 +30,7 @@ async function getCSSContent() {
   console.warn('[pdf-report] Could not read IndividualReportDetail.css; using minimal styles (PDF will not match the app).');
   return `
       * { box-sizing: border-box; }
-      body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+      body { font-family: Times New Roman, Times, serif; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
       table { width: 100%; border-collapse: collapse; border: 1px solid #000; }
       th, td { border: 1px solid #000; padding: 4px 5px; font-size: 10px; }

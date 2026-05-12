@@ -30,7 +30,7 @@ async function getCSSContent() {
     console.log('Could not read CSS files, using minimal styles');
     return `
       * { box-sizing: border-box; }
-      body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+      body { font-family: Times New Roman, Times, serif; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
       .bulk-report-page { padding: 1rem; }
       .excel-card { background: white; border-radius: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
@@ -455,9 +455,9 @@ async function generateBulkReportPDFWithBatches(
         const forcePremiumFontStyling = () => {
           const allTextElements = container.querySelectorAll('*');
           allTextElements.forEach(element => {
-            // Force Arial font family and proper sizing
+            // Times New Roman for report body
             if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
-              element.style.setProperty('font-family', 'Arial, sans-serif', 'important');
+              element.style.setProperty('font-family', 'Times New Roman, Times, serif', 'important');
               // Ensure font sizes are applied correctly
               const computedStyle = window.getComputedStyle(element);
               const fontSize = computedStyle.fontSize;
