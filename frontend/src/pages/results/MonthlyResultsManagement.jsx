@@ -32,13 +32,14 @@ const MonthlyResultsManagement = ({ formLevel }) => {
   // Check if this is Form V or VI
   const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
 
-  // Determine term from month
+  // Form V/VI: academic year July–June (same as ScoreEntryEnter + backend students routes).
+  // Term I (≈ Jul–Dec): assessment months Aug–Nov; Term II (≈ Jan–Jun): Feb–May.
   const getTermFromMonth = (month) => {
-    const firstTermMonths = ['January', 'February', 'March', 'April', 'May', 'June'];
-    const secondTermMonths = ['July', 'August', 'September', 'October', 'November', 'December'];
+    const firstTermMonths = ['August', 'September', 'October', 'November'];
+    const secondTermMonths = ['February', 'March', 'April', 'May'];
     if (firstTermMonths.includes(month)) return 'First Term';
     if (secondTermMonths.includes(month)) return 'Second Term';
-    return 'First Term'; // default
+    return 'First Term';
   };
 
   const currentTerm = getTermFromMonth(month);
