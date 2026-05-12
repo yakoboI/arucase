@@ -16,6 +16,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds - increased for better reliability
+  withCredentials: true, // Required for cross-origin cookie support
 });
 
 // Paths that must not receive the staff/admin JWT (public site + alternate portals set their own auth)
