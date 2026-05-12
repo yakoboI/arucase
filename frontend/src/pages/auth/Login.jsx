@@ -35,6 +35,12 @@ const Login = () => {
     setLoading(true);
     try {
       const result = await login(user, pass);
+      if (!result || typeof result !== 'object') {
+        const msg = 'Sign-in failed. Unexpected response.';
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
       if (result.success) {
         toast.success('Signed in successfully.');
         try {

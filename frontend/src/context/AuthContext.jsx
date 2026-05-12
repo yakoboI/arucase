@@ -15,6 +15,20 @@ function shouldRestoreStaffSession(pathname) {
 
 const AuthContext = createContext(null);
 
+/** Normalize API error bodies (string, { message }, validation arrays) for login UI. */
+function pickAuthErrorMessage(data, fallback = 'Invalid response from server.') {
+  if (data == null || data === '') return fallback;
+  if (typeof data === 'string') {
+    const t = data.trim();
+    return t || fallback;
+  }
+  const direct = data.message ?? data.error ?? data.msg;
+  if (typeof direct === 'string' && direct.trim()) return direct.trim();
+  const first = Array.isArray(data.errors) ? data.errors[0] : null;
+  if (first && typeof first.msg === 'string' && first.msg.trim()) return first.msg.trim();
+  return fallback;
+}
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -129,17 +143,26 @@ export const AuthProvider = ({ children }) => {
     try {
       // Try enhanced login first (with refresh tokens)
       const response = await api.post('/auth/login-enhanced', { username, password });
+      const status = response?.status ?? 0;
       const data = response?.data;
-      
+
+      // Interceptor may resolve 401/403 as a response object instead of throwing
+      if (status === 401 || status === 403) {
+        return {
+          success: false,
+          error: pickAuthErrorMessage(data, status === 403 ? 'Access denied.' : 'Invalid credentials.'),
+        };
+      }
+
       // Handle 2xx responses that indicate failure (e.g. code 403 in body)
       if (data && (data.code === 403 || data.success === false)) {
-        const msg = data.message || data.error || data.msg || 'Access denied.';
+        const msg = pickAuthErrorMessage(data, 'Access denied.');
         return { success: false, error: msg };
       }
-      
+
       const user = data?.user;
       if (!user) {
-        return { success: false, error: data?.message || 'Invalid response from server.' };
+        return { success: false, error: pickAuthErrorMessage(data) };
       }
       
       // Note: With enhanced login, tokens are stored in httpOnly cookies automatically
@@ -155,17 +178,24 @@ export const AuthProvider = ({ children }) => {
       if (error?.response?.status === 404) {
         try {
           const fallbackResponse = await api.post('/auth/login', { username, password });
+          const fbStatus = fallbackResponse?.status ?? 0;
           const fallbackData = fallbackResponse?.data;
-          
-          if (fallbackData && (fallbackData.code === 403 || fallbackData.success === false)) {
-            const msg = fallbackData.message || fallbackData.error || fallbackData.msg || 'Access denied.';
-            return { success: false, error: msg };
+
+          if (fbStatus === 401 || fbStatus === 403) {
+            return {
+              success: false,
+              error: pickAuthErrorMessage(fallbackData, fbStatus === 403 ? 'Access denied.' : 'Invalid credentials.'),
+            };
           }
-          
+
+          if (fallbackData && (fallbackData.code === 403 || fallbackData.success === false)) {
+            return { success: false, error: pickAuthErrorMessage(fallbackData, 'Access denied.') };
+          }
+
           const user = fallbackData?.user;
           const token = fallbackData?.token;
           if (!user) {
-            return { success: false, error: fallbackData?.message || 'Invalid response from server.' };
+            return { success: false, error: pickAuthErrorMessage(fallbackData) };
           }
           
           // Store token in localStorage for fallback
@@ -179,18 +209,20 @@ export const AuthProvider = ({ children }) => {
           setUser(user);
           return { success: true };
         } catch (fallbackError) {
-          const msg = fallbackError?.response?.data?.message ?? fallbackError?.response?.data?.error ?? fallbackError?.message;
+          const body = fallbackError?.response?.data;
+          const msg = pickAuthErrorMessage(body, '') || fallbackError?.message;
           return {
             success: false,
-            error: msg && String(msg).trim() ? String(msg) : 'Login failed. Please try again.',
+            error: msg && String(msg).trim() ? String(msg).trim() : 'Login failed. Please try again.',
           };
         }
       }
-      
-      const msg = error?.response?.data?.message ?? error?.response?.data?.error ?? error?.message;
+
+      const body = error?.response?.data;
+      const msg = pickAuthErrorMessage(body, '') || error?.message;
       return {
         success: false,
-        error: msg && String(msg).trim() ? String(msg) : 'Login failed. Please try again.',
+        error: msg && String(msg).trim() ? String(msg).trim() : 'Login failed. Please try again.',
       };
     }
   };
