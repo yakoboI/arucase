@@ -2,13 +2,13 @@
    SOCIAL MEDIA FOOTER
    =========================================== */
 .social-footer {
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
+  background: #f8fafc;
   padding: clamp(15px, 3.5vw, 20px) clamp(15px, 3.5vw, 40px);
   display: flex;
   justify-content: center;
   align-items: center;
   gap: clamp(15px, 3vw, 30px);
-  border-top: clamp(1px, 0.2vw, 2px) solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid #e2e8f0;
   position: relative;
   overflow: hidden;
   width: 100%;
@@ -16,19 +16,7 @@
 }
 
 .social-footer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0%, 100% { transform: translateX(-100%); }
-  50% { transform: translateX(100%); }
+  display: none;
 }
 
 .social-footer-content {
@@ -43,7 +31,7 @@
 }
 
 .social-label {
-  color: white;
+  color: #334155;
   font-weight: 600;
   font-size: clamp(0.85rem, 2.2vw, 1rem);
   letter-spacing: clamp(0.5px, 0.15vw, 1px);
@@ -65,12 +53,12 @@
   width: clamp(40px, 8vw, 50px);
   height: clamp(40px, 8vw, 50px);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: clamp(1px, 0.2vw, 2px) solid rgba(255, 255, 255, 0.3);
+  background: #f1f5f9;
+  border: clamp(1px, 0.2vw, 2px) solid #cbd5e1;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #334155;
   font-size: clamp(18px, 4vw, 22px);
   transition: all 0.3s ease;
   text-decoration: none;
@@ -100,10 +88,10 @@
 }
 
 .social-icons a:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #e2e8f0;
+  border-color: #94a3b8;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
 }
 
 /* Specific icon colors on hover */
@@ -167,7 +155,7 @@
 }
 
 .privacy-link {
-  color: #1e3a8a;
+  color: #334155;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -175,7 +163,7 @@
 }
 
 .privacy-link:hover {
-  color: #2563eb;
+  color: #0f172a;
   text-decoration: underline;
 }
 

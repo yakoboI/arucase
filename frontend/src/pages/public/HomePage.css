@@ -11,7 +11,7 @@
   height: clamp(50vh, 100dvh, 75vh);
   min-height: min(400px, 50dvh);
   max-height: min(900px, 100dvh);
-  background: #1e3a8a;
+  background: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -36,7 +36,7 @@
   width: 100%;
   height: 100%;
   z-index: 1;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+  background: linear-gradient(135deg, #64748b 0%, #475569 45%, #334155 100%);
   background-attachment: fixed;
   overflow: hidden;
   display: block !important;
@@ -159,7 +159,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+  background: linear-gradient(135deg, #64748b 0%, #475569 45%, #334155 100%);
   z-index: 1;
   display: block !important;
   visibility: visible !important;
@@ -274,7 +274,7 @@
 .administration-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #1e3a8a;
+  color: #0f172a;
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
@@ -283,7 +283,7 @@
 }
 
 .administration-title-icon {
-  color: #3b82f6;
+  color: #475569;
   font-size: 1.75rem;
 }
 
@@ -386,8 +386,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: #eff6ff;
-  color: #1e40af;
+  background: #f1f5f9;
+  color: #334155;
   border-radius: 0;
   font-size: 0.875rem;
   font-weight: 500;

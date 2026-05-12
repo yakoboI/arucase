@@ -171,7 +171,6 @@ const PublicHeader = () => {
                         alt="Arusha Catholic Seminary official school logo"
                         className="header-tropical-frame__img header-tropical-frame__img--logo"
                         loading="eager"
-                        fetchpriority="high"
                       />
                     </div>
                   </div>
@@ -197,7 +196,6 @@ const PublicHeader = () => {
                         alt="Picha ya somo wa seminari"
                         className="header-tropical-frame__img header-tropical-frame__img--patron"
                         loading="eager"
-                        fetchpriority="high"
                       />
                     </div>
                   </div>
