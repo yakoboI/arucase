@@ -1078,14 +1078,7 @@ async function generateBulkReportPDF(form, year, term, stream = null) {
         resolve(pdfBuffer);
       });
       
-      // Header
-      doc.fontSize(18).text('BULK STUDENT REPORT', { align: 'center' });
-      doc.fontSize(12).text(`${form} - ${year} - ${term}`, { align: 'center' });
-      if (stream) {
-        doc.text(`Stream: ${stream}`, { align: 'center' });
-      }
-      doc.moveDown();
-      
+            
       // Table
       const tableTop = doc.y;
       const colWidths = [80, 150, 100, 100];

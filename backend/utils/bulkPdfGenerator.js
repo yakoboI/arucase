@@ -278,23 +278,9 @@ async function generateBulkReportPDFWithBatches(
 </head>
 <body>
   <div class="bulk-report-page">
-    <div class="page-header">
-      <h1>Bulk Student Report</h1>
-      <p>Generated for ${form} ${year} ${term} - ${reportHTMLs.length} students</p>
-    </div>
-    
-    <div class="bulk-report-actions">
-      <div class="bulk-report-info">
-        <i class="fas fa-info-circle"></i>
-        Showing ${reportHTMLs.length} student${reportHTMLs.length !== 1 ? 's' : ''} for ${form} ${year} ${term}
-      </div>
-    </div>
 
     <div class="bulk-reports-list">
       <div class="excel-card">
-        <div class="excel-card-header">
-          <i class="fas fa-list"></i> Student Reports - ${form} ${year} ${term}
-        </div>
         <div class="excel-card-body">
           ${reportHTMLs.map((html, index) => `
             <div class="report-container" style="${index > 0 ? 'page-break-before: always;' : ''}">
