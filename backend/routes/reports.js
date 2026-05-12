@@ -97,6 +97,13 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', requireModule('indivi
       );
     }
 
+    // Subject codes configured for this class (dedupe by code; used to filter individual_scores)
+    const uniqueSubjectCodes = new Set(
+      subjectsResult.rows
+        .map((s) => s.subject_code)
+        .filter((c) => c != null && String(c).trim() !== '')
+    );
+
     const formCode = form.replace('FORM ', '').trim();
     const isFormVOrVI = ['V', 'VI', '5', '6'].includes(formCode);
     // Get months based on term
@@ -148,9 +155,6 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', requireModule('indivi
       'SELECT * FROM individual_scores WHERE adm_no = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5 AND month = ANY($6::text[])',
       [admNo, form, actualStream, normalizedStream, parseInt(year), months]
     );
-    
-    // Deduplicate monthly results to match unique subjects and remove duplicates
-    const uniqueSubjectCodes = new Set(uniqueSubjects.map(s => s.subject_code));
     
     // First filter by subject codes, then remove duplicates by subject_code + month combination
     const filteredBySubject = monthlyResult.rows.filter(row => 
