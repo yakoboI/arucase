@@ -230,11 +230,7 @@ const PreFormOneContinuingResults = () => {
   // Fetch continuing scores for all subjects
   useEffect(() => {
     if (subjects.length > 0 && students.length > 0) {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please log in to view scores');
-        return;
-      }
+      // Authentication now uses httpOnly cookies - no localStorage token check needed
 
       const fetchScores = async () => {
         try {

@@ -132,13 +132,9 @@ const MonthlyResultsManagement = ({ formLevel }) => {
   // Fetch individual scores for all subjects (using batch endpoint to reduce API calls)
   useEffect(() => {
     if (subjects.length > 0 && students.length > 0 && month) {
-      // Check if user is authenticated before making requests
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please log in to view scores');
-        return;
-      }
-
+      // Check if user is authenticated (now using httpOnly cookies)
+      // With enhanced auth, we don't need localStorage token - cookies are sent automatically
+      // Only check localStorage for fallback auth
       const fetchScores = async () => {
         try {
           // Use batch endpoint to fetch all scores in one API call

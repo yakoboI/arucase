@@ -15,11 +15,10 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const auth = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (isAuthenticated() && token) {
+    if (auth && auth.isAuthenticated && auth.isAuthenticated()) {
       // Use VITE_WS_URL if set, otherwise construct from VITE_API_URL or window.location
       let wsUrl = import.meta.env.VITE_WS_URL;
       if (!wsUrl) {
@@ -29,15 +28,15 @@ export const SocketProvider = ({ children }) => {
           wsUrl = apiUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace('/api', '');
         } else {
           // Fallback: use same hostname/port as current page
-          wsUrl = `ws://${window.location.hostname}:${window.location.port === '3001' ? '5000' : window.location.port}`;
+          wsUrl = `ws://${window.location.hostname}:${window.location.port === '3001' ? '3001' : window.location.port}`;
         }
       }
       const newSocket = io(wsUrl, {
         transports: ['websocket'],
-        auth: { token: `Bearer ${token}` },
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 3,
+        withCredentials: true, // Include cookies for authentication
       });
 
       newSocket.on('connect', () => {
@@ -70,7 +69,7 @@ export const SocketProvider = ({ children }) => {
         setConnected(false);
       }
     }
-  }, [isAuthenticated]);
+  }, [auth]);
 
   const value = {
     socket,

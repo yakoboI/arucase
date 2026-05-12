@@ -56,7 +56,7 @@ const FeesManagement = ({ formLevel }) => {
         return {};
       }
     },
-    enabled: !!normalizedLevel && !!normalizedStream && !!year && !!normalizedTerm && !!localStorage.getItem('token'),
+    enabled: !!normalizedLevel && !!normalizedStream && !!year && !!normalizedTerm,
     retry: (failureCount, error) => {
       if (error?.response?.status === 401 || error?.response?.status === 404) {
         return false;

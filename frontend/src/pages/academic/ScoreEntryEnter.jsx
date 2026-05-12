@@ -267,7 +267,7 @@ const ScoreEntryEnter = ({ formLevel: formLevelProp }) => {
         throw error;
       }
     },
-    enabled: !!normalizedLevel && !!year && !!apiYear && !!localStorage.getItem('token') && !!subjectCode && !!month,
+    enabled: !!normalizedLevel && !!year && !!apiYear && !!subjectCode && !!month,
     retry: false, // Prevent repeated failed requests
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false, // Prevent refetch on focus to avoid race conditions
@@ -316,7 +316,7 @@ const ScoreEntryEnter = ({ formLevel: formLevelProp }) => {
         throw error; // Re-throw other errors
       }
     },
-    enabled: students.length > 0 && !!normalizedLevel && !!apiYear && !!month && !!subjectCode && !!normalizedStream && !!localStorage.getItem('token'),
+    enabled: students.length > 0 && !!normalizedLevel && !!apiYear && !!month && !!subjectCode && !!normalizedStream,
     retry: false, // Prevent repeated failed requests
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false, // Prevent refetch on focus to avoid race conditions

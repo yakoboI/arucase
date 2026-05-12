@@ -73,12 +73,12 @@ const PreFormOneInterviewReports = () => {
 
     setIsGenerating(prev => ({ ...prev, [student.id]: true }));
     try {
-      // Call individual student PDF endpoint
+      // Call individual student PDF endpoint - authentication uses httpOnly cookies
       const response = await fetch(`http://localhost:5000/api/pre-form-one/${year}/interview-results/${student.id}/pdf`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include' // Include cookies for authentication
       });
       
       if (!response.ok) {

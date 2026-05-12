@@ -11,7 +11,7 @@ import './PublicWebsite.css';
 const Gallery = () => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
-  const hasToken = Boolean(localStorage.getItem('token'));
+  const hasToken = false; // Remove token requirement - let enhanced auth handle it
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadData, setUploadData] = useState({
     category: 'general',

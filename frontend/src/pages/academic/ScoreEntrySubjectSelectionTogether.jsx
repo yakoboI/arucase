@@ -40,7 +40,7 @@ const ScoreEntrySubjectSelectionTogether = () => {
         throw err;
       }
     },
-    enabled: !!normalizedForm && !!year && !!localStorage.getItem('token'),
+    enabled: !!normalizedForm && !!year,
     retry: false,
     onError: (err) => {
       // Prevent unhandled promise rejection

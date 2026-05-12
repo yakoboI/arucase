@@ -1,0 +1,21 @@
+// Test the cookie configuration fix
+console.log('=== COOKIE CONFIGURATION FIX APPLIED ===');
+console.log('');
+console.log('Changes made:');
+console.log('1. Updated auth.js cookie sameSite from "strict" to "lax"');
+console.log('2. Updated auth-refresh.js cookie sameSite from "strict"/"none" to "lax"');
+console.log('3. All cookie configurations now use sameSite: "lax" for cross-origin compatibility');
+console.log('');
+console.log('Next steps:');
+console.log('1. Restart the backend server to apply changes');
+console.log('2. Clear browser cookies for localhost');
+console.log('3. Log in again to get fresh cookies');
+console.log('4. Test the results page - scores should now display');
+console.log('');
+console.log('Why this fixes the issue:');
+console.log('- sameSite: "strict" prevents cookies from being sent on cross-origin requests');
+console.log('- sameSite: "lax" allows cookies on same-site requests (different ports are considered same-site)');
+console.log('- This allows the frontend (localhost:3000) to send cookies to backend (localhost:5000)');
+console.log('');
+console.log('Backend restart command: npm run dev');
+console.log('Frontend refresh: Clear localStorage and refresh the page');

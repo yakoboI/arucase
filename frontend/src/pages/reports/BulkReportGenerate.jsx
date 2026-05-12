@@ -191,6 +191,13 @@ const BulkReportGenerate = () => {
               window.location.href = '/login';
             }, 2000);
           }
+        } else if (error.response.status === 400) {
+          // Handle the specific case where monthly results are required instead of term-based
+          errorMessage = error.response.data?.message || 'Invalid request for bulk PDF generation.';
+          const suggestion = error.response.data?.suggestion;
+          if (suggestion) {
+            errorMessage += `\n\n${suggestion}`;
+          }
         } else if (error.response.status === 404) {
           errorMessage = 'No students found for this class. Please verify the selection.';
         } else if (error.response.status === 500) {
@@ -211,8 +218,9 @@ const BulkReportGenerate = () => {
       }
       
       if (error.response?.status !== 401) {
+        const duration = error.response?.status === 400 ? 10000 : 7000; // Show 400 errors longer
         toast.error(errorMessage, {
-          autoClose: 7000,
+          autoClose: duration,
         });
       }
       

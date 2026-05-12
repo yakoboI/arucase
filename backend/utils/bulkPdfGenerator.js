@@ -8,6 +8,8 @@ const axios = require('axios');
 const { generateReportHTML } = require('./htmlReportRenderer');
 const fs = require('fs').promises;
 const path = require('path');
+const { query } = require('../config/database');
+const { normalizeStream } = require('./streamNormalizer');
 
 /**
  * Read CSS file content
@@ -38,6 +40,103 @@ async function getCSSContent() {
       th { background: #fff; font-weight: bold; }
     `;
   }
+}
+
+/**
+ * Get report data directly from database (internal function to avoid HTTP requests)
+ */
+async function getReportDataInternal(form, stream, year, term, admNo) {
+  // This function replicates the logic from the individual report endpoint
+  // but bypasses authentication and HTTP requests
+  
+  const normalizedStream = normalizeStream(stream);
+  
+  // Normalize term to match database format
+  const normalizeTerm = (termParam) => {
+    if (!termParam) return 'Term I';
+    const t = termParam.trim();
+    if (/^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t)) return 'First Term';
+    if (/^Term\s+II$/i.test(t) || /^Term\s+2$/i.test(t)) return 'Second Term';
+    if (/^First\s+Term$/i.test(t)) return 'First Term';
+    if (/^Second\s+Term$/i.test(t)) return 'Second Term';
+    return t;
+  };
+
+  const normalizedTerm = normalizeTerm(term);
+  const formCode = form.replace('FORM ', '').trim();
+  const isFormVOrVI = ['V', 'VI', '5', '6'].includes(formCode);
+  
+  // Get months based on term
+  const getMonthsForTerm = (termParam) => {
+    if (isFormVOrVI) {
+      return (termParam === 'Term I' || termParam === 'Term 1' || termParam === 'First Term')
+        ? ['August', 'September', 'October', 'November']
+        : ['February', 'March', 'April', 'May'];
+    } else {
+      return (termParam === 'Term I' || termParam === 'Term 1' || termParam === 'First Term')
+        ? ['February', 'March', 'April', 'May']
+        : ['August', 'September', 'October', 'November'];
+    }
+  };
+  const months = getMonthsForTerm(normalizedTerm);
+  
+  // Get student data
+  const streamsToCheck = normalizedStream === 'A' ? ['A', 'NA'] : [normalizedStream, stream];
+  const uniqueStreams = [...new Set(streamsToCheck)];
+  
+  let studentResult;
+  if (uniqueStreams.length === 1) {
+    studentResult = await query(
+      'SELECT * FROM students WHERE adm_no = $1 AND level = $2 AND stream = $3 AND year = $4',
+      [admNo, form, uniqueStreams[0], parseInt(year)]
+    );
+  } else {
+    studentResult = await query(
+      'SELECT * FROM students WHERE adm_no = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5',
+      [admNo, form, uniqueStreams[0], uniqueStreams[1], parseInt(year)]
+    );
+  }
+  
+  if (studentResult.rows.length === 0) {
+    throw new Error(`Student not found: ${admNo} in ${form} ${year}`);
+  }
+  
+  const student = studentResult.rows[0];
+  const actualStream = student.stream;
+  
+  // Get subjects
+  const subjectStreams = actualStream === 'NA' || normalizedStream === 'A' ? ['A', 'NA'] : [actualStream];
+  const uniqueSubjectStreams = [...new Set(subjectStreams)];
+  
+  let subjectsResult;
+  if (uniqueSubjectStreams.length === 1) {
+    subjectsResult = await query(
+      'SELECT * FROM subjects WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY subject_code',
+      [form, uniqueSubjectStreams[0], parseInt(year)]
+    );
+  } else {
+    subjectsResult = await query(
+      'SELECT * FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
+      [form, uniqueSubjectStreams[0], uniqueSubjectStreams[1], parseInt(year)]
+    );
+  }
+  
+  // Get individual scores
+  const monthlyResult = await query(
+    'SELECT * FROM individual_scores WHERE adm_no = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5 AND month = ANY($6::text[])',
+    [admNo, form, actualStream, normalizedStream, parseInt(year), months]
+  );
+  
+  // Get basic report data (simplified for bulk PDF)
+  return {
+    student,
+    subjects: subjectsResult.rows,
+    monthly_results: monthlyResult.rows,
+    months,
+    form,
+    term: normalizedTerm,
+    year
+  };
 }
 
 /**
@@ -112,10 +211,8 @@ async function generateBulkReportPDFWithBatches(
       const studentStream = student.stream || stream;
       
       try {
-        // Fetch report data from API
-        const reportDataUrl = `${apiUrl}/api/reports/individual/${encodedForm}/${encodeURIComponent(studentStream)}/${year}/${encodedTerm}/${admNo}`;
-        const reportDataResponse = await axios.get(reportDataUrl, { headers });
-        const reportData = reportDataResponse.data;
+        // Get report data directly from database (no HTTP requests)
+        const reportData = await getReportDataInternal(form, studentStream, year, term, admNo);
         
         // Generate HTML for this report (just the container content)
         const reportHTML = await generateSingleReportHTML({

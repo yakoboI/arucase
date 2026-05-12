@@ -980,13 +980,16 @@ router.get('/bulk/:form/:year/:term', async (req, res) => {
 
 // Generate bulk report PDF - Uses batch generation with Puppeteer
 router.get('/bulk/:form/:year/:term/pdf', async (req, res) => {
+  // Temporarily bypass auth for debugging
+  // requireAuth middleware is still applied at the router level
   try {
     const { form, year, term } = req.params;
     let { stream, batchSize } = req.query;
 
     const decodedForm = decodeURIComponent(String(form).replace(/\+/g, ' ')).trim();
     const decodedTerm = decodeURIComponent(String(term).replace(/\+/g, ' ')).trim();
-
+    
+    
     // Normalize term to match database format
     const normalizeTerm = (termParam) => {
       if (!termParam) return 'Term I';
@@ -1074,6 +1077,14 @@ router.get('/bulk/:form/:year/:term/pdf', async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('[BULK PDF] Error:', error);
+    console.error('[BULK PDF] Error stack:', error.stack);
+    console.error('[BULK PDF] Error details:', {
+      form: decodedForm,
+      stream: stream,
+      year: year,
+      term: term,
+      studentsCount: students ? students.length : 'undefined'
+    });
     return sendError(res, error, 500);
   }
 });

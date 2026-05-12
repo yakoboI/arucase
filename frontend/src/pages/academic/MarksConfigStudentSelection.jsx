@@ -83,7 +83,7 @@ const MarksConfigStudentSelection = ({ formLevel }) => {
         throw error;
       }
     },
-    enabled: isQueryEnabled && !!localStorage.getItem('token'),
+    enabled: isQueryEnabled,
     retry: false, // Prevent repeated failed requests
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false, // Prevent refetch on focus to avoid race conditions

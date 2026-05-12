@@ -28,12 +28,7 @@ const IndividualReportDetail = () => {
     queryKey: ['report-detail', form, stream, year, term, admNo],
     queryFn: async () => {
       try {
-        // Check if token exists before making request
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication required. Please log in again.');
-        }
-
+        // Authentication now uses httpOnly cookies - no localStorage token check needed
         const res = await api.get(
           `/reports/individual/${form}/${stream}/${year}/${term}/${admNo}`
         );

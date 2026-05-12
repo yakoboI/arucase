@@ -10,7 +10,7 @@ import './AdmissionApplications.css';
 const AdmissionApplications = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hasToken = Boolean(localStorage.getItem('token'));
+  const hasToken = false; // Remove token requirement - let enhanced auth handle it
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selected, setSelected] = useState(null);
   const [feedback, setFeedback] = useState('');

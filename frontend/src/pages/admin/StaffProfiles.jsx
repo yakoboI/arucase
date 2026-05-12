@@ -27,7 +27,7 @@ export default function StaffProfiles() {
   const [photoPreview, setPhotoPreview] = useState('');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const hasToken = Boolean(localStorage.getItem('token'));
+  const hasToken = false; // Remove token requirement - let enhanced auth handle it
 
   const { data: profiles = [], isLoading, isError, error } = useQuery({
     queryKey: ['staff-profiles-admin'],
