@@ -810,14 +810,14 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
           `SELECT adm_no, subject_code, month, score FROM individual_scores 
            WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND term = $5 AND month = ANY($6::text[])
            ORDER BY adm_no, subject_code, month`,
-          [decodedForm, 'A', 'NA', parseInt(year), term, months]
+          [decodedForm, 'A', 'NA', parseInt(year), normalizedTerm, months]
         );
       } else {
         scoresResult = await query(
           `SELECT adm_no, subject_code, month, score FROM individual_scores 
            WHERE level = $1 AND stream = $2 AND year = $3 AND term = $4 AND month = ANY($5::text[])
            ORDER BY adm_no, subject_code, month`,
-          [decodedForm, stream, parseInt(year), term, months]
+          [decodedForm, stream, parseInt(year), normalizedTerm, months]
         );
       }
     } else {
@@ -825,7 +825,7 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
         `SELECT adm_no, subject_code, month, score FROM individual_scores 
          WHERE level = $1 AND year = $2 AND term = $3 AND month = ANY($4::text[])
          ORDER BY adm_no, subject_code, month`,
-        [decodedForm, parseInt(year), term, months]
+        [decodedForm, parseInt(year), normalizedTerm, months]
       );
     }
     
@@ -869,7 +869,7 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
              WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND term = $5 
              AND comment_type = ANY($6::text[])
              ORDER BY student_index, comment_type`,
-            [decodedForm, 'A', 'NA', parseInt(year), term, commentTypes]
+            [decodedForm, 'A', 'NA', parseInt(year), normalizedTerm, commentTypes]
           );
         } else {
           commentsResult = await query(
@@ -877,7 +877,7 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
              WHERE level = $1 AND stream = $2 AND year = $3 AND term = $4 
              AND comment_type = ANY($5::text[])
              ORDER BY student_index, comment_type`,
-            [decodedForm, stream, parseInt(year), term, commentTypes]
+            [decodedForm, stream, parseInt(year), normalizedTerm, commentTypes]
           );
         }
       } else {
@@ -886,7 +886,7 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
            WHERE level = $1 AND year = $2 AND term = $3 
            AND comment_type = ANY($4::text[])
            ORDER BY student_index, comment_type`,
-          [decodedForm, parseInt(year), term, commentTypes]
+          [decodedForm, parseInt(year), normalizedTerm, commentTypes]
         );
       }
       

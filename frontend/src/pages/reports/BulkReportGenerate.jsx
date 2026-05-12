@@ -436,14 +436,6 @@ const BulkReportGenerate = () => {
                 <i className="fas fa-user" /> Individual report wizard
               </Link>
             </div>
-
-            <div className="bulk-generate-info-banner">
-              <i className="fas fa-info-circle" aria-hidden />
-              <div>
-                <strong>Tip:</strong> Use <strong>View report</strong> to open the same full layout as the individual
-                report (print-ready). Use the PDF button above for one file for everyone listed.
-              </div>
-            </div>
           </div>
         </div>
 

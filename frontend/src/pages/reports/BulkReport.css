@@ -557,9 +557,24 @@
   font-weight: 600;
 }
 
+.bulk-report-generate > .breadcrumb {
+  text-align: center;
+}
+
+.bulk-generate-page-header {
+  text-align: center;
+}
+
+.bulk-generate-page-header p {
+  max-width: 40rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .bulk-generate-page-header h1 {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
@@ -713,25 +728,6 @@
   font-size: 0.95rem;
   max-width: 560px;
   line-height: 1.5;
-}
-
-.bulk-generate-info-banner {
-  margin-top: 1rem;
-  padding: 0.875rem 1rem;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 0;
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-  font-size: 0.9rem;
-  color: #14532d;
-  line-height: 1.45;
-}
-
-.bulk-generate-info-banner i {
-  margin-top: 2px;
-  color: #16a34a;
 }
 
 .bulk-generate-loading-hint {

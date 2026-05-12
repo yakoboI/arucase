@@ -216,9 +216,12 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
     
     // Try to find scores using both code and abbreviation
     const getScore = (month) => {
-      const score1 = monthlyData[subjectKey]?.[month];
-      const score2 = subjectAbbr ? monthlyData[subjectAbbr]?.[month] : null;
-      return score1 !== undefined && score1 !== null && score1 !== '' ? score1 : null;
+      const raw1 = monthlyData[subjectKey]?.[month];
+      const raw2 = subjectAbbr ? monthlyData[subjectAbbr]?.[month] : undefined;
+      const ok = (v) => v !== undefined && v !== null && v !== '' && v !== '-';
+      if (ok(raw1)) return raw1;
+      if (ok(raw2)) return raw2;
+      return null;
     };
     
     const month1 = getScore(months[0]);
@@ -339,6 +342,7 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
 </head>
 <body>
   <div class="report-container">
+    <!-- __ARUCASE_REPORT_INNER_START__ -->
     <div class="report-header">
       <div class="logo-section">
         ${school_logo?.logo_image_path ? `<img src="${getImageUrl(school_logo.logo_image_path)}" alt="School Logo" class="school-logo" />` : '<div class="school-logo-placeholder"><i class="fas fa-school"></i></div>'}
@@ -576,6 +580,7 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
         ${school_stamp?.stamp_image_path ? `<img src="${getImageUrl(school_stamp.stamp_image_path)}" alt="School Stamp" class="stamp-img" />` : '<div class="school-stamp"><div class="stamp-border"><div class="stamp-content"><div class="stamp-text-top">ARUSHA CATHOLIC</div><div class="stamp-motto">SEMINARY</div><div class="stamp-text-bottom">OLDONYOSAMBU</div></div></div></div>'}
       </div>
     </div>
+    <!-- __ARUCASE_REPORT_INNER_END__ -->
   </div>
 </body>
 </html>`;
