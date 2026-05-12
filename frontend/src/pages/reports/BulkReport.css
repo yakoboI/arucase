@@ -548,3 +548,251 @@
   .year-grid, .term-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Bulk generate page — parity with individual report (toolbar, stats, PDF)   */
+/* -------------------------------------------------------------------------- */
+
+.bulk-report-generate .breadcrumb-current {
+  color: #111827;
+  font-weight: 600;
+}
+
+.bulk-generate-page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bulk-generate-title-icon {
+  color: #667eea;
+  font-size: 1.5rem;
+}
+
+.bulk-generate-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.bulk-generate-stat {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  padding: 0.875rem 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.bulk-generate-stat--wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 640px) {
+  .bulk-generate-stat--wide {
+    grid-column: span 1;
+  }
+}
+
+.bulk-generate-stat-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.bulk-generate-stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.bulk-generate-stat-value--small {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.bulk-generate-toolbar-card {
+  margin-bottom: 1.25rem;
+}
+
+.bulk-report-generate .download-section {
+  text-align: center;
+  margin: 0 0 1rem 0;
+  padding: 0.5rem 0 0;
+}
+
+.bulk-report-generate .download-btn {
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #111827;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 0;
+}
+
+.bulk-report-generate .download-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.25);
+}
+
+.bulk-report-generate .download-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bulk-report-generate .download-progress-bar {
+  max-width: 420px;
+  margin: 14px auto 0;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bulk-report-generate .download-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transition: width 0.25s ease;
+  border-radius: 999px;
+}
+
+.bulk-generate-pdf-hint {
+  margin: 12px auto 0;
+  max-width: 520px;
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.bulk-generate-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bulk-generate-actions-row--toolbar {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.excel-btn--outline {
+  background: #fff !important;
+  color: #374151 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.excel-btn--outline:hover {
+  border-color: #667eea !important;
+  color: #4f46e5 !important;
+}
+
+.excel-btn--ghost {
+  background: transparent !important;
+  color: #64748b !important;
+  border: 1px dashed #cbd5e1 !important;
+}
+
+.excel-btn--ghost:hover {
+  color: #4f46e5 !important;
+  border-color: #667eea !important;
+}
+
+.bulk-generate-help {
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 0.95rem;
+  max-width: 560px;
+  line-height: 1.5;
+}
+
+.bulk-generate-info-banner {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  color: #14532d;
+  line-height: 1.45;
+}
+
+.bulk-generate-info-banner i {
+  margin-top: 2px;
+  color: #16a34a;
+}
+
+.bulk-generate-loading-hint {
+  text-align: center;
+  color: #64748b;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.bulk-generate-skeleton .excel-card-header {
+  min-height: 52px;
+}
+
+.bulk-generate-skeleton-line {
+  display: block;
+  height: 12px;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: bulk-generate-shimmer 1.2s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.bulk-generate-skeleton-line--short { width: 40%; }
+.bulk-generate-skeleton-line--tiny { width: 35%; height: 8px; margin-bottom: 8px; }
+.bulk-generate-skeleton-line--med { width: 70%; height: 10px; }
+.bulk-generate-skeleton-line--btn { width: 220px; height: 40px; border-radius: 0; }
+
+.bulk-generate-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.bulk-generate-skeleton-stat {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.bulk-generate-skeleton-toolbar {
+  margin-bottom: 1.25rem;
+}
+
+.bulk-generate-skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bulk-generate-skeleton-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.bulk-generate-skeleton-row .bulk-generate-skeleton-line {
+  flex: 1;
+}
+
+@keyframes bulk-generate-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
