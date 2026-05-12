@@ -11,6 +11,7 @@ const { validators } = require('../middleware/validation');
 const { protectByUsername, trackByUsername, clearFailedAttempts } = require('../middleware/bruteForceProtection');
 const { saveUserActivity } = require('../utils/activityLogger');
 const { sendError } = require('../utils/safeError');
+const { cookieShape } = require('../utils/hostingEnv');
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -173,12 +174,7 @@ router.post('/login',
     clearFailedAttempts(req.body.username);
     
     // Set HttpOnly cookie for JWT token (for server-side auth)
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    });
+    res.cookie('token', token, cookieShape(24 * 60 * 60 * 1000));
     
     // Also return token in response body for client-side storage
     res.json({
@@ -274,11 +270,7 @@ router.post('/logout', async (req, res) => {
     }
     
     // Clear HttpOnly cookie
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
-    });
+    res.clearCookie('token', cookieShape());
     
     res.json({ message: 'Logged out successfully' });
   } catch (error) {

@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
 import { publicAPI } from '../../services/public';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './Staff.css';
 import DOMPurify from 'dompurify';
 
@@ -42,14 +43,10 @@ const Staff = () => {
     staleTime: 15 * 60 * 1000, // 15 minutes - settings rarely change
   });
 
-  const getPhotoUrl = useCallback((photoPath) => {
-    if (!photoPath) return null;
-    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) return photoPath;
-    const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (apiUrl) return `${apiUrl.replace('/api', '')}/static/${cleanPath}`;
-    return `/static/${cleanPath}`;
-  }, []);
+  const getPhotoUrl = useCallback(
+    (photoPath) => (photoPath ? resolveStaticUrl(photoPath) : null),
+    []
+  );
 
   // Memoized arrays - must be before early return to follow Rules of Hooks
   const teachers = useMemo(() => (staffProfiles || []).filter((p) => p.is_teaching), [staffProfiles]);

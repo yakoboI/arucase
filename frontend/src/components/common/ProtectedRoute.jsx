@@ -4,7 +4,14 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Loading from './Loading';
 
-const ProtectedRoute = ({ children, requiredRole = null, requiredPermission = null, requiredModule = null, requiredAdmin = false }) => {
+const ProtectedRoute = ({
+  children,
+  requiredRole = null,
+  requiredPermission = null,
+  requiredModule = null,
+  requiredAnyOfModules = null,
+  requiredAdmin = false,
+}) => {
   const auth = useAuth();
   const { isAuthenticated, hasRole, hasPermission, hasModule, isAdminLike, loading, verifyToken } = auth;
   const [isVerifying, setIsVerifying] = useState(false);
@@ -45,6 +52,14 @@ const ProtectedRoute = ({ children, requiredRole = null, requiredPermission = nu
     return <Navigate to="/" replace />;
   }
 
+  // Non-admin must have at least one of these modules (e.g. registration landing)
+  if (Array.isArray(requiredAnyOfModules) && requiredAnyOfModules.length > 0 && !isAdminLike()) {
+    const allowed = requiredAnyOfModules.some((id) => hasModule(id));
+    if (!allowed) {
+      return <Navigate to="/admin" replace />;
+    }
+  }
+
   // Non-admin without the required module (e.g. registration) cannot access
   if (requiredModule && !isAdminLike() && !hasModule(requiredModule)) {
     // Redirect to admin dashboard instead of specific score entry
@@ -64,6 +79,7 @@ ProtectedRoute.propTypes = {
   requiredRole: PropTypes.oneOfType([PropTypes.string, PropTypes.arrayOf(PropTypes.string)]),
   requiredPermission: PropTypes.string,
   requiredModule: PropTypes.string,
+  requiredAnyOfModules: PropTypes.arrayOf(PropTypes.string),
   requiredAdmin: PropTypes.bool,
 };
 

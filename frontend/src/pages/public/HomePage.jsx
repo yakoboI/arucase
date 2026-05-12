@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { publicAPI } from '../../services/public';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './HomePage.css';
 
 const HomePage = () => {
@@ -15,39 +16,7 @@ const HomePage = () => {
   const [failedImages, setFailedImages] = useState(new Set());
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   
-  // Helper function to resolve image URLs (moved to top to avoid reference error)
-  const getImageUrl = useCallback((path) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    
-    // Remove leading slash if present
-    let cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    
-    // Handle Cloudinary URLs (direct URLs from Cloudinary)
-    if (cleanPath.includes('cloudinary.com') || cleanPath.includes('res.cloudinary.com')) {
-      return path; // Return Cloudinary URL as-is
-    }
-    
-    // Handle different path formats:
-    // 1. Cloudinary URL: Return as-is
-    // 2. Local path: "uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 3. Just filename: "filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 4. Already has static/: "static/uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    
-    let resolvedUrl;
-    if (cleanPath.startsWith('static/')) {
-      // Already has static/ prefix
-      resolvedUrl = `/${cleanPath}`;
-    } else if (cleanPath.startsWith('uploads/')) {
-      // Has uploads/ prefix, add static/
-      resolvedUrl = `/static/${cleanPath}`;
-    } else {
-      // Just filename, assume it's in uploads/photos/
-      resolvedUrl = `/static/uploads/photos/${cleanPath}`;
-    }
-    
-    return resolvedUrl;
-  }, []);
+  const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
   
   // Fetch homepage data
   const { data, isLoading, error } = useQuery({
@@ -75,11 +44,8 @@ const HomePage = () => {
     refetchOnWindowFocus: false
   });
 
-  // Extract the actual data - handle both direct data and nested data.data (Axios response)
-  // If data has 'data' property (Axios response), use data.data, otherwise use data directly
-  const actualData = (data && typeof data === 'object' && 'data' in data && !Array.isArray(data)) 
-    ? data.data 
-    : data || {};
+  // queryFn returns res.data (homepage payload), not the full Axios response
+  const actualData = data && typeof data === 'object' ? data : {};
   
   const { settings, gallery_photos, administrators } = actualData;
 

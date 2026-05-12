@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './AdminSidebar.css';
+
+/** Matches routes that use `requiredAdmin` (subjects, etc.) — not all leadership roles. */
+const ADMIN_LIKE_ROLES = ['admin', 'superadmin'];
 
 const AdminSidebar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
-
-  const navigate = useNavigate();
 
   // Accordion: expanded category indices (initialized in useEffect to avoid TDZ)
   const [expandedCategories, setExpandedCategories] = useState([]);
@@ -49,13 +50,17 @@ const AdminSidebar = () => {
   };
 
   const userModules = getUserModules();
-  const isAdminLike = user?.role === 'admin' || user?.role === 'superadmin';
+  const isAdminLike = user?.role && ADMIN_LIKE_ROLES.includes(user.role);
+
+  // Default form for deep analytics links (must match `Analytics.jsx` form slugs)
+  const defaultAnalyticsForm = 'FORM I';
 
   // Check if current user can see a given navigation item
   // - Admin/Superadmin: see everything
   // - Non-admin: must have the item's moduleId (or 'all') if provided
   const canSeeItem = (item) => {
     if (!user) return false;
+    if (item.path === '/admin') return true;
     if (isAdminLike) return true;
 
     if (!item.moduleId) {
@@ -129,9 +134,21 @@ const AdminSidebar = () => {
       category: 'Analytics',
       items: [
         { path: '/admin/analytics', label: 'Analytics View', icon: 'fa-chart-line', moduleId: 'analytics_view' },
-        { path: '/admin/analytics/student-tracking', label: 'Student Tracking', icon: 'fa-user-check', moduleId: 'analytics_student_tracking' },
-        { path: '/admin/analytics/solutions', label: 'Solutions', icon: 'fa-lightbulb', moduleId: 'analytics_solutions' },
-        { path: '/admin/analytics/form-averages', label: 'Form Averages', icon: 'fa-chart-bar', moduleId: 'analytics_form_averages' }
+        {
+          path: `/admin/analytics/${encodeURIComponent(defaultAnalyticsForm)}/student-track`,
+          label: 'Student Tracking',
+          icon: 'fa-user-check',
+          moduleId: 'analytics_student_tracking',
+          key: 'analytics-student-track',
+        },
+        {
+          path: `/admin/analytics/${encodeURIComponent(defaultAnalyticsForm)}/solutions`,
+          label: 'Solutions',
+          icon: 'fa-lightbulb',
+          moduleId: 'analytics_solutions',
+          key: 'analytics-solutions',
+        },
+        { path: '/admin/analytics/all-forms-averages', label: 'Form Averages', icon: 'fa-chart-bar', moduleId: 'analytics_form_averages' },
       ]
     },
     {
@@ -214,7 +231,6 @@ const AdminSidebar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
   };
 
   return (

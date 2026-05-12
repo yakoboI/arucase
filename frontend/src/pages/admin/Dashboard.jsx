@@ -32,11 +32,12 @@ const MODULE_GUIDELINES = [
   { module: 'fees_announcements', icon: 'fa-money-bill-wave', title: 'Fees Announcements', description: 'Communicate fee-related information to students and parents. Be clear about amounts, deadlines, and payment methods.' },
 ];
 
+const ADMIN_LIKE_ROLES = ['admin', 'superadmin', 'rector', 'vice_rector', 'academic_master'];
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { isMuted, toggleMute } = useSound();
-  const isAdmin = user?.role && ['admin', 'superadmin', 'rector', 'vice_rector', 'academic_master'].includes(user.role);
-  const hasToken = !!localStorage.getItem('token');
+  const isAdmin = user?.role && ADMIN_LIKE_ROLES.includes(user.role);
   const formatCappedCoverage = useCallback((assigned, students) => {
     const totalStudents = Number(students) || 0;
     if (totalStudents <= 0) return '0.0%';
@@ -52,14 +53,14 @@ const Dashboard = () => {
     return `${((photoCount / totalStudents) * 100).toFixed(1)}%`;
   }, []);
 
-  // Fetch dashboard statistics (only when user is set to avoid 401 on auth redirect)
+  // Heavy stats + activity log only for admin-like roles; teachers use the guidelines-only view
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       const response = await api.get('/admin/dashboard/stats');
       return response.data;
     },
-    enabled: !!user && hasToken, // Prevent 401 loop when token is already cleared
+    enabled: !!(user?.role && ADMIN_LIKE_ROLES.includes(user.role)),
     refetchOnWindowFocus: false,
     staleTime: 60000, // Cache for 1 minute
     retry: (failureCount, err) => err?.response?.status !== 401 && failureCount < 1,
@@ -76,12 +77,18 @@ const Dashboard = () => {
   }, [user?.permissions]);
 
   
-  const availableGuidelines = useMemo(() => 
-    MODULE_GUIDELINES.filter(guideline => 
-      userPermissions.modules?.includes(guideline.module)
-    ),
-    [userPermissions.modules]
-  );
+  const availableGuidelines = useMemo(() => {
+    const modules = userPermissions.modules || [];
+    if (modules.includes('all')) return MODULE_GUIDELINES;
+    const hasRegistrationSplit =
+      modules.includes('student_registration') ||
+      modules.includes('student_registration_form_i_iv') ||
+      modules.includes('student_registration_form_v_vi');
+    return MODULE_GUIDELINES.filter((guideline) => {
+      if (guideline.module === 'student_registration') return hasRegistrationSplit;
+      return modules.includes(guideline.module);
+    });
+  }, [userPermissions.modules]);
 
   if (isLoading) {
     return (

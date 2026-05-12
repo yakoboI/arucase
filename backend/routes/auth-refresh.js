@@ -10,6 +10,7 @@ const { protectByUsername, trackByUsername, clearFailedAttempts } = require('../
 const { saveUserActivity } = require('../utils/activityLogger');
 const { sendError } = require('../utils/safeError');
 const { validators } = require('../middleware/validation');
+const { cookieShape } = require('../utils/hostingEnv');
 
 const router = express.Router();
 
@@ -138,19 +139,9 @@ router.post('/login-enhanced', protectByUsername, validators.login, trackByUsern
     clearFailedAttempts(username);
     
     // Set secure cookies
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000 // 15 minutes
-    });
-    
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+    res.cookie('accessToken', accessToken, cookieShape(15 * 60 * 1000));
+
+    res.cookie('refreshToken', refreshToken, cookieShape(7 * 24 * 60 * 60 * 1000));
     
     res.json({
       user: userData,
@@ -214,19 +205,9 @@ router.post('/refresh', async (req, res) => {
     await storeRefreshToken(user.username, newRefreshToken, refreshExpiresAt);
     
     // Set new cookies
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000
-    });
-    
-    res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    res.cookie('accessToken', accessToken, cookieShape(15 * 60 * 1000));
+
+    res.cookie('refreshToken', newRefreshToken, cookieShape(7 * 24 * 60 * 60 * 1000));
     
     res.json({
       message: 'Token refreshed successfully',
@@ -271,17 +252,9 @@ router.post('/logout-enhanced', async (req, res) => {
     }
     
     // Clear cookies
-    res.clearCookie('accessToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
-    });
+    res.clearCookie('accessToken', cookieShape());
     
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
-    });
+    res.clearCookie('refreshToken', cookieShape());
     
     res.json({ message: 'Logged out successfully' });
     

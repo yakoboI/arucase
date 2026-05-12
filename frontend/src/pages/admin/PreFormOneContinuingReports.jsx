@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { preFormOneService } from '../../services/preFormOneService';
 import { adminAPI } from '../../services/admin';
 import { useAuth } from '../../context/AuthContext';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './PreFormOneResults.css';
 
 const PreFormOneContinuingReports = () => {
@@ -17,16 +18,7 @@ const PreFormOneContinuingReports = () => {
   const [isGenerating, setIsGenerating] = useState({});
   const queryClient = useQueryClient();
 
-  const getLogoUrl = (logoPath) => {
-    if (!logoPath) return null;
-    if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
-      return logoPath;
-    }
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const baseUrl = apiUrl.replace('/api', '');
-    const cleanPath = logoPath.startsWith('/') ? logoPath.substring(1) : logoPath;
-    return `${baseUrl}/static/${cleanPath}`;
-  };
+  const getLogoUrl = (logoPath) => (logoPath ? resolveStaticUrl(logoPath) : null);
 
   const handleLogoError = (e) => {
     e.target.style.display = 'none';

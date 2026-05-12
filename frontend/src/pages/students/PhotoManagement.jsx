@@ -10,6 +10,7 @@ import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import api from '../../services/api';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import { requiresSpecialAcademicYearLogic, getAcademicYearRange, getCurrentTerm, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './PhotoManagement.css';
 
@@ -424,12 +425,7 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
       return filename;
     }
 
-    const base = (() => {
-      if (import.meta.env.DEV) return `/static/uploads/photos/${filename}`;
-      const apiUrl = import.meta.env.VITE_API_URL;
-      if (apiUrl) return `${apiUrl.replace('/api', '')}/static/uploads/photos/${filename}`;
-      return `/static/uploads/photos/${filename}`;
-    })();
+    const base = resolveStaticUrl(filename);
     // Cache-bust so newly uploaded photos display immediately
     return photosVersion > 0 ? `${base}?v=${photosVersion}` : base;
   };

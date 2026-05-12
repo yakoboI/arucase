@@ -12,7 +12,7 @@ import './Contact.css';
 const Contact = () => {
   const lang = getPreferredLanguage();
   const tt = createT(lang);
-  const { data: settings, isLoading, isError } = useQuery({
+  const { data: settings, isLoading } = useQuery({
     queryKey: ['homepage'],
     queryFn: async () => {
       try {

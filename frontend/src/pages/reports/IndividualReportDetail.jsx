@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './IndividualReport.css';
 import './IndividualReportDetail.css';
 
@@ -30,7 +31,7 @@ const IndividualReportDetail = () => {
       try {
         // Authentication now uses httpOnly cookies - no localStorage token check needed
         const res = await api.get(
-          `/reports/individual/${form}/${stream}/${year}/${term}/${admNo}`
+          `/reports/individual/${encodeURIComponent(form)}/${encodeURIComponent(stream || '')}/${encodeURIComponent(year)}/${encodeURIComponent(term)}/${encodeURIComponent(admNo)}`
         );
         if (!res.data) {
           throw new Error('No data received from server');
@@ -107,29 +108,7 @@ const IndividualReportDetail = () => {
     authority_data
   } = reportData || {};
 
-  // Helper function to get student photo URL
-  const getStudentPhotoUrl = (photoPath) => {
-    if (!photoPath) return '';
-    
-    // If already a full URL, return as-is
-    if (photoPath.startsWith('http')) {
-      return photoPath;
-    }
-    
-    // For production, use Railway backend URL
-    const apiUrl = import.meta.env.VITE_API_URL || 
-                  (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
-    const baseUrl = apiUrl.replace('/api', '');
-    const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
-    
-    if (cleanPath.startsWith('uploads/')) {
-      // Has uploads/ prefix, add static/
-      return `/static/${cleanPath}`;
-    } else {
-      // Just filename, assume it's in uploads/photos/
-      return `/static/uploads/photos/${cleanPath}`;
-    }
-  };
+  const getStudentPhotoUrl = (photoPath) => resolveStaticUrl(photoPath || '');
 
   // Reset image errors when report data changes
   useEffect(() => {
@@ -171,8 +150,9 @@ const IndividualReportDetail = () => {
       const encodedTerm = encodeURIComponent(term);
       
       // Make request with timeout and progress tracking
+      const encodedAdm = encodeURIComponent(admNo || '');
       const res = await api.get(
-        `/reports/individual/${encodedForm}/${encodedStream}/${year}/${encodedTerm}/${admNo}/pdf`,
+        `/reports/individual/${encodedForm}/${encodedStream}/${year}/${encodedTerm}/${encodedAdm}/pdf`,
         { 
           responseType: 'blob',
           timeout: 60000, // 60 second timeout
@@ -492,13 +472,7 @@ const IndividualReportDetail = () => {
         if (school_logo.logo_image_path.startsWith('http')) {
           logoUrl = school_logo.logo_image_path;
         } else {
-          const apiUrl = import.meta.env.VITE_API_URL || 
-                        (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
-          const baseUrl = apiUrl.replace('/api', '');
-          const cleanPath = school_logo.logo_image_path.startsWith('/') 
-            ? school_logo.logo_image_path.substring(1) 
-            : school_logo.logo_image_path;
-          logoUrl = `${baseUrl}/static/${cleanPath}`;
+          logoUrl = resolveStaticUrl(school_logo.logo_image_path);
         }
         
         const img = new Image();
@@ -805,20 +779,12 @@ const IndividualReportDetail = () => {
           <div className="logo-section">
             {school_logo?.logo_image_path ? (
               <img
-                src={logoDataUrl || (() => {
-                  // If logo_image_path is already a Cloudinary URL, use it directly
-                  if (school_logo.logo_image_path.startsWith('http')) {
-                    return school_logo.logo_image_path;
-                  }
-                  
-                  const apiUrl = import.meta.env.VITE_API_URL || 
-                                (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
-                  const baseUrl = apiUrl.replace('/api', '');
-                  const cleanPath = school_logo.logo_image_path.startsWith('/') 
-                    ? school_logo.logo_image_path.substring(1) 
-                    : school_logo.logo_image_path;
-                  return `${baseUrl}/static/${cleanPath}`;
-                })()}
+                src={
+                  logoDataUrl ||
+                  (school_logo.logo_image_path.startsWith('http')
+                    ? school_logo.logo_image_path
+                    : resolveStaticUrl(school_logo.logo_image_path))
+                }
                 alt="Arusha Catholic Seminary official school logo"
                 className="school-logo"
                 crossOrigin="anonymous"
@@ -1183,18 +1149,7 @@ const IndividualReportDetail = () => {
                 <td className="authority-signature">
                   {authority_data?.signature_image_path && !imageErrors.signatureImage ? (
                     <img
-                      src={(() => {
-                        if (!authority_data.signature_image_path) return '';
-                        if (authority_data.signature_image_path.startsWith('http://') || authority_data.signature_image_path.startsWith('https://')) {
-                          return authority_data.signature_image_path;
-                        }
-                        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                        const baseUrl = apiUrl.replace('/api', '');
-                        const cleanPath = authority_data.signature_image_path.startsWith('/')
-                          ? authority_data.signature_image_path.substring(1)
-                          : authority_data.signature_image_path;
-                        return `${baseUrl}/static/${cleanPath}`;
-                      })()}
+                      src={resolveStaticUrl(authority_data.signature_image_path || '')}
                       alt="Signature"
                       className="signature-image"
                       crossOrigin="anonymous"
@@ -1356,18 +1311,7 @@ const IndividualReportDetail = () => {
             {authority_data?.signature_image_path ? (
               <div className="signature-image-container" style={{ textAlign: 'left', marginBottom: '5px' }}>
                 <img
-                  src={(() => {
-                    if (!authority_data.signature_image_path) return '';
-                    if (authority_data.signature_image_path.startsWith('http://') || authority_data.signature_image_path.startsWith('https://')) {
-                      return authority_data.signature_image_path;
-                    }
-                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                    const baseUrl = apiUrl.replace('/api', '');
-                    const cleanPath = authority_data.signature_image_path.startsWith('/')
-                      ? authority_data.signature_image_path.substring(1)
-                      : authority_data.signature_image_path;
-                    return `${baseUrl}/static/${cleanPath}`;
-                  })()}
+                  src={resolveStaticUrl(authority_data.signature_image_path || '')}
                   alt="Signature"
                   className="signature-image"
                   crossOrigin="anonymous"
@@ -1399,20 +1343,11 @@ const IndividualReportDetail = () => {
             {(school_stamp?.stamp_image_path && !imageErrors.stampImage) ? (
               <div className="school-stamp-image">
                 <img
-                  src={(() => {
-                    // If stamp_image_path is already a Cloudinary URL, use it directly
-                    if (school_stamp.stamp_image_path.startsWith('http')) {
-                      return school_stamp.stamp_image_path;
-                    }
-                    
-                    const apiUrl = import.meta.env.VITE_API_URL || 
-                                  (import.meta.env.PROD ? 'https://arucase-production.up.railway.app' : 'http://localhost:5000');
-                    const baseUrl = apiUrl.replace('/api', '');
-                    const cleanPath = school_stamp.stamp_image_path.startsWith('/')
-                      ? school_stamp.stamp_image_path.substring(1)
-                      : school_stamp.stamp_image_path;
-                    return `${baseUrl}/static/${cleanPath}`;
-                  })()}
+                  src={
+                    school_stamp.stamp_image_path.startsWith('http')
+                      ? school_stamp.stamp_image_path
+                      : resolveStaticUrl(school_stamp.stamp_image_path)
+                  }
                   alt="Arusha Catholic Seminary official school stamp"
                   className="stamp-img"
                   crossOrigin="anonymous"

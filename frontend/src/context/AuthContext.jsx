@@ -2,6 +2,17 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import api from '../services/api';
 import { Howl } from 'howler';
 
+/** Staff app areas that may use httpOnly cookies without a localStorage JWT. */
+function shouldRestoreStaffSession(pathname) {
+  if (pathname === '/login' || pathname === '/student-login') return false;
+  if (localStorage.getItem('token')) return true;
+  return (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/students/') ||
+    pathname.startsWith('/reports/')
+  );
+}
+
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
@@ -36,43 +47,46 @@ export const AuthProvider = ({ children }) => {
     };
     window.addEventListener('auth:logout', handleLogout);
 
-    const isLoginPage = window.location.pathname === '/login';
+    const pathname = window.location.pathname;
+    const isAuthScreen = pathname === '/login' || pathname === '/student-login';
 
-    // Avoid noisy /auth/me checks on login screen (especially double-run in StrictMode).
-    if (isLoginPage) {
+    // Avoid noisy /auth/me checks on login screens (especially double-run in StrictMode).
+    if (isAuthScreen) {
       setLoading(false);
       return () => window.removeEventListener('auth:logout', handleLogout);
     }
 
     let cancelled = false;
-    
-    // Check if we're using enhanced authentication (no localStorage token)
-    const hasLocalStorageToken = localStorage.getItem('token');
-    
-    // Only verify token if we have a localStorage token (fallback auth)
-    // Enhanced auth uses httpOnly cookies which are automatically validated by middleware
-    if (hasLocalStorageToken) {
-      window.__verifyingToken = true;
-      api.get('/auth/me')
-        .then((response) => {
-          if (cancelled) return;
-          setUser(response.data.user);
-        })
-        .catch((error) => {
-          if (cancelled) return;
-          // Network errors or other unexpected errors - clear invalid token and set user to null
+
+    if (!shouldRestoreStaffSession(pathname)) {
+      setLoading(false);
+      return () => window.removeEventListener('auth:logout', handleLogout);
+    }
+
+    window.__verifyingToken = true;
+    api
+      .get('/auth/me')
+      .then((response) => {
+        if (cancelled) return;
+        if (response?.status === 401 || response?.status === 403) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
-        })
-        .finally(() => {
-          window.__verifyingToken = false;
-          if (!cancelled) setLoading(false);
-        });
-    } else {
-      // Using enhanced auth - no verification needed, cookies are automatically validated
-      setLoading(false);
-    }
+          return;
+        }
+        const u = response?.data?.user;
+        setUser(u ?? null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      })
+      .finally(() => {
+        window.__verifyingToken = false;
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -88,15 +102,15 @@ export const AuthProvider = ({ children }) => {
       window.__verifyingToken = false;
       
       // Handle 401 responses that are now resolved by the interceptor
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         // Clear invalid token
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
         return false;
       }
-      
-      setUser(response.data.user);
+
+      setUser(response.data?.user ?? null);
       return true;
     } catch (error) {
       // Network errors or other unexpected errors
@@ -130,10 +144,9 @@ export const AuthProvider = ({ children }) => {
       
       // Note: With enhanced login, tokens are stored in httpOnly cookies automatically
       // We don't need to manually store tokens in localStorage anymore
-      console.log('🔐 AUTH DEBUG: Enhanced login successful, tokens stored in httpOnly cookies', {
-        user: user.username,
-        role: user.role
-      });
+      if (import.meta.env.DEV) {
+        console.log('Staff login (cookies):', user.username, user.role);
+      }
       
       setUser(user);
       return { success: true };
@@ -158,11 +171,9 @@ export const AuthProvider = ({ children }) => {
           // Store token in localStorage for fallback
           if (token) {
             localStorage.setItem('token', token);
-            console.log('🔐 AUTH DEBUG: Fallback login successful, token stored in localStorage', {
-              tokenLength: token.length,
-              tokenPrefix: token.substring(0, 20) + '...',
-              localStorageKeysAfter: Object.keys(localStorage)
-            });
+            if (import.meta.env.DEV) {
+              console.log('Staff login (localStorage token):', user.username);
+            }
           }
           
           setUser(user);
@@ -211,15 +222,21 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const hasRole = (role) => {
-    return user?.role === role;
+    if (!user?.role) return false;
+    if (Array.isArray(role)) return role.some((r) => user.role === r);
+    return user.role === role;
   };
 
   const hasPermission = (permission) => {
     if (!user?.permissions) return false;
-    const permissions = typeof user.permissions === 'string' 
-      ? JSON.parse(user.permissions) 
-      : user.permissions;
-    return permissions[permission] === true;
+    try {
+      const permissions = typeof user.permissions === 'string'
+        ? JSON.parse(user.permissions)
+        : user.permissions;
+      return permissions[permission] === true;
+    } catch {
+      return false;
+    }
   };
 
   const isAdminLike = () => {

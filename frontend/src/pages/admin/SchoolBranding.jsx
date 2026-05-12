@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './SchoolBranding.css';
 
 const SchoolBranding = () => {
@@ -160,33 +161,11 @@ const SchoolBranding = () => {
     patronSaintFileInputRef.current?.click();
   };
 
-  const getLogoUrl = () => {
-    if (!logoData?.logo_image_path) return null;
-    
-    const path = logoData.logo_image_path;
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const baseUrl = apiUrl.replace('/api', '');
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return `${baseUrl}/static/${cleanPath}`;
-  };
+  const getLogoUrl = () =>
+    logoData?.logo_image_path ? resolveStaticUrl(logoData.logo_image_path) : null;
 
-  const getPatronSaintUrl = () => {
-    if (!patronSaintData) return null;
-    
-    const path = patronSaintData;
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const baseUrl = apiUrl.replace('/api', '');
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return `${baseUrl}/static/${cleanPath}`;
-  };
+  const getPatronSaintUrl = () =>
+    patronSaintData ? resolveStaticUrl(patronSaintData) : null;
 
   const saveTextBrandingMutation = useMutation({
     mutationFn: async () => {

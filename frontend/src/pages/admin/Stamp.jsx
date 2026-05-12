@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './Branding.css';
 
 const Stamp = () => {
@@ -84,22 +85,8 @@ const Stamp = () => {
     handleFileSelect(file);
   };
 
-  const getStampUrl = () => {
-    if (!stampData?.stamp_image_path) return null;
-    
-    // Use the same URL construction as Logo component
-    const path = stampData.stamp_image_path;
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    
-    // Construct full URL to backend static files
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const baseUrl = apiUrl.replace('/api', '');
-    // Remove leading slash from path if present to avoid double slashes
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return `${baseUrl}/static/${cleanPath}`;
-  };
+  const getStampUrl = () =>
+    stampData?.stamp_image_path ? resolveStaticUrl(stampData.stamp_image_path) : null;
 
   return (
     <AdminLayout>

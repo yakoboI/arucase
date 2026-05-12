@@ -10,6 +10,7 @@ import AdminLayout from '../../components/layout/AdminLayout';
 import { studentsAPI } from '../../services/students';
 import { adminAPI } from '../../services/admin';
 import { useAuth } from '../../context/AuthContext';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './MonthlyResultsManagement.css';
 
 const MonthlyResultsManagement = ({ formLevel }) => {
@@ -736,18 +737,7 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                 <div className="logo-section">
                   {schoolLogoData?.logo_image_path ? (
                     <img
-                      src={(() => {
-                        if (!schoolLogoData.logo_image_path) return '';
-                        if (schoolLogoData.logo_image_path.startsWith('http://') || schoolLogoData.logo_image_path.startsWith('https://')) {
-                          return schoolLogoData.logo_image_path;
-                        }
-                        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                        const baseUrl = apiUrl.replace('/api', '');
-                        const cleanPath = schoolLogoData.logo_image_path.startsWith('/') 
-                          ? schoolLogoData.logo_image_path.substring(1) 
-                          : schoolLogoData.logo_image_path;
-                        return `${baseUrl}/static/${cleanPath}`;
-                      })()}
+                      src={resolveStaticUrl(schoolLogoData.logo_image_path || '')}
                       alt="Arusha Catholic Seminary official school logo"
                       className="school-logo"
                       loading="eager"
@@ -774,18 +764,7 @@ const MonthlyResultsManagement = ({ formLevel }) => {
                 <div className="logo-section-right">
                   {schoolLogoData?.logo_image_path ? (
                     <img
-                      src={(() => {
-                        if (!schoolLogoData.logo_image_path) return '';
-                        if (schoolLogoData.logo_image_path.startsWith('http://') || schoolLogoData.logo_image_path.startsWith('https://')) {
-                          return schoolLogoData.logo_image_path;
-                        }
-                        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                        const baseUrl = apiUrl.replace('/api', '');
-                        const cleanPath = schoolLogoData.logo_image_path.startsWith('/') 
-                          ? schoolLogoData.logo_image_path.substring(1) 
-                          : schoolLogoData.logo_image_path;
-                        return `${baseUrl}/static/${cleanPath}`;
-                      })()}
+                      src={resolveStaticUrl(schoolLogoData.logo_image_path || '')}
                       alt="Arusha Catholic Seminary official school logo"
                       className="school-logo-right"
                       loading="eager"

@@ -3,7 +3,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireModule } = require('../middleware/auth');
 const { query } = require('../config/database');
 const PDFDocument = require('pdfkit');
 const { generateIndividualReportPDF, generateBulkReportPDF } = require('../utils/pdfGenerator');
@@ -28,7 +28,7 @@ const {
 router.use(requireAuth);
 
 // Get individual student report data
-router.get('/individual/:form/:stream/:year/:term/:admNo', async (req, res) => {
+router.get('/individual/:form/:stream/:year/:term/:admNo', requireModule('individual_report'), async (req, res) => {
   try {
     const { form, stream, year, term, admNo } = req.params;
 
@@ -581,7 +581,7 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', async (req, res) => {
 });
 
 // Generate individual report PDF using Puppeteer
-router.get('/individual/:form/:stream/:year/:term/:admNo/pdf', async (req, res) => {
+router.get('/individual/:form/:stream/:year/:term/:admNo/pdf', requireModule('individual_report'), async (req, res) => {
   const { form, stream, year, term, admNo } = req.params;
   
   // Decode URL-encoded parameters (declare outside try for error handler access)
@@ -670,7 +670,7 @@ router.get('/individual/:form/:stream/:year/:term/:admNo/pdf', async (req, res) 
 });
 
 // Get bulk report data - OPTIMIZED for large classes
-router.get('/bulk/:form/:year/:term', async (req, res) => {
+router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, res) => {
   try {
     const startTime = Date.now();
     const { form, year, term } = req.params;
@@ -1009,7 +1009,7 @@ router.get('/bulk/:form/:year/:term', async (req, res) => {
 });
 
 // Generate bulk report PDF - Uses batch generation with Puppeteer
-router.get('/bulk/:form/:year/:term/pdf', async (req, res) => {
+router.get('/bulk/:form/:year/:term/pdf', requireModule('bulk_report'), async (req, res) => {
   // Temporarily bypass auth for debugging
   // requireAuth middleware is still applied at the router level
   try {
@@ -1120,7 +1120,7 @@ router.get('/bulk/:form/:year/:term/pdf', async (req, res) => {
 });
 
 // Export report as CSV
-router.get('/individual/:form/:stream/:year/:term/:admNo/csv', async (req, res) => {
+router.get('/individual/:form/:stream/:year/:term/:admNo/csv', requireModule('individual_report'), async (req, res) => {
   try {
     const { form, stream, year, term, admNo } = req.params;
     

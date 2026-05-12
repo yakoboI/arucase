@@ -11,22 +11,72 @@
 }
 
 .login-page {
+  /* Avoid 100vw — scrollbar / mobile URL bar can cause horizontal overflow */
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
   min-height: 100vh !important;
+  min-height: 100dvh !important;
+  min-height: -webkit-fill-available !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: #ffffff !important;
-  padding: 2rem !important;
   position: relative !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
   overflow-x: hidden !important;
+  padding-top: max(clamp(0.75rem, 3vw, 2rem), env(safe-area-inset-top, 0px)) !important;
+  padding-right: max(clamp(0.75rem, 3vw, 2rem), env(safe-area-inset-right, 0px)) !important;
+  padding-bottom: max(clamp(0.75rem, 3vw, 2rem), env(safe-area-inset-bottom, 0px)) !important;
+  padding-left: max(clamp(0.75rem, 3vw, 2rem), env(safe-area-inset-left, 0px)) !important;
+}
+
+/* Skip link — WCAG 2.4.1 */
+.login-skip-link {
+  position: absolute !important;
+  left: -9999px !important;
+  top: auto !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  z-index: 2000 !important;
+  padding: 0.75rem 1rem !important;
+  background: #1f2937 !important;
+  color: #ffffff !important;
+  font-size: 0.875rem !important;
+  text-decoration: none !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+}
+
+.login-skip-link:focus {
+  left: 1rem !important;
+  top: 1rem !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+.login-page .sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 .back-button {
   position: fixed !important;
-  top: 2rem !important;
-  left: 2rem !important;
+  top: max(0.75rem, env(safe-area-inset-top, 0px)) !important;
+  left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
+  max-width: calc(100vw - 1rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) !important;
+  box-sizing: border-box !important;
   color: #666 !important;
   text-decoration: none !important;
   font-size: 0.9rem !important;
@@ -45,6 +95,11 @@
   background: #f9fafb !important;
 }
 
+.back-button:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
 .back-button i {
   margin-right: 0.5rem !important;
 }
@@ -52,9 +107,10 @@
 .login-page .login-container {
   background: #ffffff !important;
   border: 1px solid #e5e7eb !important;
-  padding: 3rem 2rem !important;
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem) !important;
   width: 100% !important;
-  max-width: 400px !important;
+  max-width: min(28rem, 100%) !important;
+  min-width: 0 !important;
   margin: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
@@ -69,15 +125,47 @@
 .login-header h1 {
   color: #1f2937 !important;
   margin-bottom: 0.5rem !important;
-  font-size: 1.5rem !important;
+  font-size: clamp(1.2rem, 1rem + 1.5vw, 1.5rem) !important;
   font-weight: 600 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+  word-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
 }
 
 .login-header p {
   color: #6b7280 !important;
   font-size: 0.875rem !important;
   margin: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+}
+
+.login-eyebrow {
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  font-size: 0.7rem !important;
+  color: #6b7280 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.login-subtitle {
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  line-height: 1.45 !important;
+  padding-inline: 0.125rem !important;
+}
+
+.login-page .login-container:focus {
+  outline: none !important;
+}
+
+.form-error {
+  padding: 0.75rem 1rem !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  color: #991b1b !important;
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
@@ -109,6 +197,7 @@
   display: flex !important;
   align-items: center !important;
   width: 100% !important;
+  min-width: 0 !important;
   border: 1px solid #d1d5db !important;
   border-radius: 0 !important;
   background: #ffffff !important;
@@ -136,8 +225,9 @@
   border: none !important;
   background: transparent !important;
   color: #1f2937 !important;
-  font-size: 0.875rem !important;
+  font-size: max(16px, 0.875rem) !important;
   width: 100% !important;
+  min-width: 0 !important;
   box-sizing: border-box !important;
   outline: none !important;
   flex: 1 !important;
@@ -150,6 +240,38 @@
 .input-with-icon:focus-within {
   border-color: #374151 !important;
   box-shadow: 0 0 0 1px #374151 !important;
+}
+
+.input-with-icon--password .input-with-icon-field--password {
+  padding-right: 0.25rem !important;
+}
+
+.password-toggle {
+  flex-shrink: 0 !important;
+  width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  border: none !important;
+  background: transparent !important;
+  color: #6b7280 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: color 0.15s ease !important;
+}
+
+.password-toggle:hover {
+  color: #374151 !important;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: -2px !important;
+}
+
+.password-toggle:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
 }
 
 .input-with-icon:focus-within .input-icon {
@@ -194,45 +316,61 @@
   background: #f9fafb !important;
 }
 
-/* Conflict-free responsive adjustments */
+.login-page .btn:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+.login-page .btn.btn-primary {
+  background: #1a5490 !important;
+  border-color: #164a7d !important;
+  color: #ffffff !important;
+}
+
+.login-page .btn.btn-primary:hover:not(:disabled) {
+  background: #164a7d !important;
+  border-color: #123d6a !important;
+  color: #ffffff !important;
+}
+
+.login-submit {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+/* Responsive: fluid layout already uses clamp(); tune only where needed */
 @media (max-width: 768px) {
-  .login-page {
-    padding: 1rem !important;
-  }
-
-  .login-page .login-container {
-    padding: 2rem 1.5rem !important;
-  }
-
   .back-button {
-    top: 1rem !important;
-    left: 1rem !important;
-    font-size: 0.8rem !important;
-    padding: 0.4rem 0.8rem !important;
+    font-size: max(16px, 0.8rem) !important;
+    padding: 0.4rem 0.75rem !important;
   }
 }
 
 @media (max-width: 480px) {
-  .login-page .login-container {
-    padding: 1.5rem 1rem !important;
-  }
-
   .login-header h1 {
-    font-size: 1.25rem !important;
+    font-size: clamp(1.1rem, 4.5vw, 1.35rem) !important;
   }
 
   .login-page .form-group label {
-    font-size: 0.8rem !important;
+    font-size: max(14px, 0.8rem) !important;
   }
 
   .input-with-icon-field {
-    font-size: 0.8rem !important;
-    padding: 0.625rem 0.875rem !important;
+    font-size: max(16px, 0.875rem) !important;
+    padding: 0.625rem 0.75rem !important;
   }
 
   .login-page .btn {
-    font-size: 0.8rem !important;
+    font-size: max(16px, 0.875rem) !important;
     padding: 0.75rem 1.25rem !important;
+  }
+}
+
+@media (min-width: 900px) {
+  .login-page .login-container {
+    max-width: min(30rem, 100%) !important;
   }
 }
 

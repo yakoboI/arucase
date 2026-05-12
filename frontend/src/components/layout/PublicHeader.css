@@ -433,11 +433,24 @@
   display: inline-block;
 }
 
-/* Icon-only navigation items */
+/* Icon-only navigation items (home only on desktop + mobile) */
 .nav-links a.icon-only {
   padding: clamp(8px, 1.8vw, 10px);
   justify-content: center;
   min-width: auto;
+}
+
+.nav-links a.nav-link-with-label {
+  justify-content: flex-start;
+  gap: clamp(6px, 1.2vw, 10px);
+}
+
+.nav-links a.nav-link-with-label .nav-link-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.25;
 }
 
 .nav-links a.icon-only i {
@@ -648,6 +661,17 @@
   .header {
     z-index: 10005;
     position: relative;
+  }
+
+  /* Tablet / narrow: when drawer is open, icon + label alignment before 768px full-screen rules */
+  .nav-links.mobile-open a.nav-link-with-label {
+    justify-content: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .nav-links.mobile-open a.nav-link-home.icon-only {
+    justify-content: center;
   }
 }
 

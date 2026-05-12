@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { preFormOneService } from '../../services/preFormOneService';
 import { adminAPI } from '../../services/admin';
 import { useAuth } from '../../context/AuthContext';
+import { buildFetchUrl } from '../../utils/backendUrl';
 import './PreFormOneResults.css';
 
 const PreFormOneInterviewReports = () => {
@@ -74,11 +75,11 @@ const PreFormOneInterviewReports = () => {
     setIsGenerating(prev => ({ ...prev, [student.id]: true }));
     try {
       // Call individual student PDF endpoint - authentication uses httpOnly cookies
-      const response = await fetch(`http://localhost:5000/api/pre-form-one/${year}/interview-results/${student.id}/pdf`, {
+      const response = await fetch(buildFetchUrl(`/pre-form-one/${year}/interview-results/${student.id}/pdf`), {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        credentials: 'include' // Include cookies for authentication
+        credentials: 'include',
       });
       
       if (!response.ok) {

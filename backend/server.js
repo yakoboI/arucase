@@ -54,19 +54,16 @@ const app = express();
 // the header is present but 'trust proxy' is false (the default).
 app.set('trust proxy', 1);
 
+const { createCorsOriginValidator } = require('./utils/hostingEnv');
+const corsOriginValidator = createCorsOriginValidator();
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || (process.env.NODE_ENV === 'production' ? [
-      'https://arucase.vercel.app'
-    ] : [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:5173',
-      'http://localhost:5174'
-    ]),
-    methods: ['GET', 'POST']
-  }
+    origin: corsOriginValidator,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 });
 
 // Lightweight schema guards for development convenience.
@@ -228,27 +225,14 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cookieParser());
-const cloudinaryDomains = [
-  'https://res.cloudinary.com',
-  'https://api.cloudinary.com'
-];
-const defaultDevOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  ...cloudinaryDomains
-];
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? [...process.env.ALLOWED_ORIGINS.split(','), ...cloudinaryDomains]
-  : (process.env.NODE_ENV === 'production' ? ['https://arucase.vercel.app', ...cloudinaryDomains] : defaultDevOrigins);
-
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: corsOriginValidator,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 app.use(express.json({ limit: '1mb' })); // Reduced from 16MB to prevent memory exhaustion
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
@@ -517,9 +501,11 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const PORT = process.env.PORT || 5000;
+/** Railway / containers: bind all interfaces. Local: override with HOST=127.0.0.1 if needed. */
+const LISTEN_HOST = process.env.HOST !== undefined && process.env.HOST !== '' ? process.env.HOST : '0.0.0.0';
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+server.listen(PORT, LISTEN_HOST, () => {
+  console.log(`🚀 Server running on http://${LISTEN_HOST}:${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET_KEY || process.env.JWT_SECRET_KEY === 'dev-secret-key')) {
     console.warn('⚠️  SECURITY: Set JWT_SECRET_KEY in production to a long random value. Default secret is not safe.');

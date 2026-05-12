@@ -12,6 +12,7 @@ import preFormOneStudentsService from '../../services/preFormOneStudentsService'
 import { adminAPI } from '../../services/admin';
 import { useAuth } from '../../context/AuthContext';
 import YearMonthFilter from '../../components/common/YearMonthFilter';
+import { resolveStaticUrl, buildFetchUrl } from '../../utils/backendUrl';
 import './PreFormOneResults.css';
 
 const PreFormOneContinuingResults = () => {
@@ -59,16 +60,7 @@ const PreFormOneContinuingResults = () => {
     return resultsObj;
   };
 
-  const getLogoUrl = (logoPath) => {
-    if (!logoPath) return null;
-    if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
-      return logoPath;
-    }
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const baseUrl = apiUrl.replace('/api', '');
-    const cleanPath = logoPath.startsWith('/') ? logoPath.substring(1) : logoPath;
-    return `${baseUrl}/static/${cleanPath}`;
-  };
+  const getLogoUrl = (logoPath) => (logoPath ? resolveStaticUrl(logoPath) : null);
 
   const handleLogoError = (e) => {
     e.target.style.display = 'none';
@@ -446,21 +438,21 @@ const PreFormOneContinuingResults = () => {
       // Fallback: Open PDF in new window with authentication
       try {
         const token = localStorage.getItem('token');
-        const pdfUrl = `${process.env.VITE_API_URL || 'http://localhost:5000'}/api/pre-form-one/${year}/continuing-results/pdf`;
-        
+        const pdfUrl = buildFetchUrl(`/pre-form-one/${year}/continuing-results/pdf`);
+        const headers = { Accept: 'application/pdf' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+
         // Create a temporary link with proper headers
         const link = document.createElement('a');
         link.href = pdfUrl;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        
+
         // Add authorization header by creating a fetch request first
         try {
           const response = await fetch(pdfUrl, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/pdf'
-            }
+            headers,
+            credentials: 'include',
           });
           
           if (response.ok) {

@@ -1,18 +1,8 @@
 import axios from 'axios';
-
-// Use Vite proxy in development to avoid CORS issues
-// In production, use the full API URL from env
-const getBaseURL = () => {
-  if (import.meta.env.DEV) {
-    // Same origin as the Vite dev server so /api and /static proxies work on any host
-    // (e.g. http://192.168.x.x:3001), not only localhost.
-    return '/api';
-  }
-  return import.meta.env.VITE_API_URL || 'https://arucase-production.up.railway.app/api';
-};
+import { getAxiosBaseURL } from '../utils/backendUrl';
 
 const api = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: getAxiosBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -118,8 +108,7 @@ api.interceptors.response.use(
       // Don't attempt refresh for public endpoints or auth endpoints
       if (!requestIsPublic && !requestIsAuth && !window.__verifyingToken) {
         const token = localStorage.getItem('token');
-        const usingEnhancedAuth = !token; // If no localStorage token, assume using enhanced auth
-        
+
         // If token expired and we haven't tried refreshing yet, attempt refresh
         // This works for both enhanced auth (cookies) and fallback auth (localStorage)
         if (isTokenExpired && !error.config._retry) {
@@ -161,7 +150,6 @@ api.interceptors.response.use(
       // or if we're already on the login page
       if (!window.__verifyingToken && window.location.pathname !== '/login' && !requestIsPublic && !requestIsAuth) {
         const token = localStorage.getItem('token');
-        const usingEnhancedAuth = !token; // If no localStorage token, assume using enhanced auth
 
         // Set flags so components know about the error
         error.isTokenExpired = isTokenExpired || errorMessage.toLowerCase().includes('invalid token');
@@ -169,15 +157,12 @@ api.interceptors.response.use(
 
         // For protected endpoints, a 401 means this session is unusable now.
         // Clear immediately to stop repeated unauthorized requests.
-        if (token || error.isTokenExpired) {
-          // Clear localStorage tokens (for fallback auth)
+        if (token) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          
-          // Dispatch logout event for both auth types
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('auth:logout'));
-          }
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:logout'));
         }
       }
     }

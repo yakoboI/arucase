@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import PublicLayout from '../../components/layout/PublicLayout';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import { publicAPI } from '../../services/public';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
@@ -93,24 +94,7 @@ const StudentDashboard = () => {
     enabled: !!studentData && !!studentData.level && !!studentData.stream && !!studentData.year,
   });
 
-  // Helper function to get photo URL
-  const getPhotoUrl = (filename) => {
-    if (!filename) return null;
-    if (filename.startsWith('http://') || filename.startsWith('https://')) {
-      return filename;
-    }
-    // In development, use relative URL (Vite proxy handles it)
-    if (import.meta.env.DEV) {
-      return `/static/uploads/photos/${filename}`;
-    }
-    // Production: use VITE_API_URL if available
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (apiUrl) {
-      const baseUrl = apiUrl.replace('/api', '');
-      return `${baseUrl}/static/uploads/photos/${filename}`;
-    }
-    return `/static/uploads/photos/${filename}`;
-  };
+  const getPhotoUrl = (filename) => (filename ? resolveStaticUrl(filename) : null);
 
   const handleLogout = () => {
     sessionStorage.removeItem('studentData');

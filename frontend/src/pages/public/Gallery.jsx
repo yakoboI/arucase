@@ -9,6 +9,7 @@ import { publicAPI } from '../../services/public';
 import Loading from '../../components/common/Loading';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import { getImageLoadingStrategy, getNetworkInfo } from '../../utils/networkUtils';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import '../../components/public/Gallery.css';
 import './GalleryPage.css';
 
@@ -49,24 +50,7 @@ const Gallery = () => {
   // Get network-aware image loading strategy
   const imageStrategy = getImageLoadingStrategy();
 
-  // Helper function to resolve image URLs
-  const getImageUrl = useCallback((path) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    
-    // Remove leading slash if present
-    let cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    
-    // Paths from database are like "uploads/photos/filename.jpg"
-    // We need to prepend "static/" to get "/static/uploads/photos/filename.jpg"
-    if (!cleanPath.startsWith('static/')) {
-      cleanPath = `static/${cleanPath}`;
-    }
-    
-    // In development, use relative URL (Vite proxy at /static forwards to backend)
-    // The proxy is configured to forward /static to http://localhost:5000/static
-    return `/${cleanPath}`;
-  }, []);
+  const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
 
   // Get unique categories from photos
   const categories = useMemo(() => ['all', ...new Set(photos.map(photo => photo.category || 'general'))], [photos]);

@@ -79,10 +79,50 @@ const requirePermission = (permission) => {
   };
 };
 
+const parsePermissionsObject = (raw) => {
+  if (!raw) return {};
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
+  if (typeof raw === 'object') return raw;
+  return {};
+};
+
+const isAdminLikeUser = (user) => {
+  const role = (user?.role && String(user.role).toLowerCase()) || '';
+  return role === 'admin' || role === 'superadmin';
+};
+
+/** Matches frontend hasModule: admin/superadmin, or modules includes `all` or moduleId */
+const requireModule = (moduleId) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (isAdminLikeUser(req.user)) {
+      return next();
+    }
+    const perms = parsePermissionsObject(req.user.permissions);
+    const modules = perms.modules;
+    if (!Array.isArray(modules)) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+    if (modules.includes('all') || modules.includes(moduleId)) {
+      return next();
+    }
+    return res.status(403).json({ message: 'Insufficient permissions' });
+  };
+};
+
 module.exports = {
   requireAuth,
   requireRole,
   requirePermission,
+  requireModule,
   JWT_SECRET
 };
 

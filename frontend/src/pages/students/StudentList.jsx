@@ -10,8 +10,28 @@ import SkeletonLoader from '../../components/common/SkeletonLoader';
 import DataTable from '../../components/common/DataTable';
 import api from '../../services/api';
 import { studentsAPI } from '../../services/students';
-import { requiresSpecialAcademicYearLogic, getApiYearForFormVVI } from '../../utils/academicYearUtils';
 import './StudentList.css';
+
+/** FORM V/VI streams — keep in sync with `ScoreEntryFormVVIStreamSelection.jsx` ALL_STREAMS */
+const COMBINATION_STREAMS = [
+  { value: 'PCB', label: 'PCB — Physics, Chemistry, Biology' },
+  { value: 'PCM', label: 'PCM — Physics, Chemistry, Mathematics' },
+  { value: 'CBG', label: 'CBG — Chemistry, Biology, Geography' },
+  { value: 'HGL', label: 'HGL — History, Geography, Literature' },
+  { value: 'HKL', label: 'HKL — History, Kiswahili, Literature' },
+  { value: 'EGM', label: 'EGM — Economics, Geography, Mathematics' },
+  { value: 'HGE', label: 'HGE — History, Geography, Economics' },
+  { value: 'PGM', label: 'PGM — Physics, Geography, Advanced Mathematics' },
+];
+
+/** Map DB/UI term to report URL segment (matches individual report routes). */
+function reportTermSegmentForPdf(studentTerm, filterTerm) {
+  const raw = String(studentTerm ?? filterTerm ?? 'First Term').trim();
+  if (/^Term\s*II$/i.test(raw) || /^Second\s+Term$/i.test(raw) || /^Term\s*2$/i.test(raw)) return 'Term II';
+  if (/^Term\s*I$/i.test(raw) || /^First\s+Term$/i.test(raw) || /^Term\s*1$/i.test(raw)) return 'Term I';
+  if (/Second|II|2/i.test(raw)) return 'Term II';
+  return 'Term I';
+}
 
 const STUDENT_STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Pending' },
@@ -49,14 +69,8 @@ const StudentList = () => {
     { value: 'B', label: 'B' }
   ];
 
-  // Combination streams for FORM V-VI
-  const combinationStreams = [
-    { value: 'PCB', label: 'PCB - Physics, Chemistry, Biology' },
-    { value: 'PCM', label: 'PCM - Physics, Chemistry, Mathematics' },
-    { value: 'EGM', label: 'EGM - Economics, Geography, Mathematics' },
-    { value: 'HGE', label: 'HGE - History, Geography, Economics' },
-    { value: 'HGL', label: 'HGL - History, Geography, Literature' }
-  ];
+  // Combination streams for FORM V-VI (full set used elsewhere in the app)
+  const combinationStreams = COMBINATION_STREAMS;
 
   // Get available streams based on selected level
   const getAvailableStreams = () => {
@@ -264,8 +278,14 @@ const StudentList = () => {
 
   const handleDownloadPDF = async (student) => {
     try {
+      const encodedForm = encodeURIComponent(String(student.level || '').trim());
+      const encodedStream = encodeURIComponent(String(student.stream || '').trim());
+      const year = student.year;
+      const encodedTerm = encodeURIComponent(reportTermSegmentForPdf(student.term, filters.term));
+      const encodedAdm = encodeURIComponent(String(student.adm_no || '').trim());
+
       const res = await api.get(
-        `/reports/individual/${student.level}/${student.stream}/${student.year}/Term I/${student.adm_no}/pdf`,
+        `/reports/individual/${encodedForm}/${encodedStream}/${year}/${encodedTerm}/${encodedAdm}/pdf`,
         { responseType: 'blob' }
       );
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -317,11 +337,18 @@ const StudentList = () => {
       key: 'sex',
       header: 'Gender',
       width: '100px',
-      render: (value) => (
-        <span className={`gender-badge gender-${value.toLowerCase()}`}>
-          {value}
-        </span>
-      )
+      render: (value) => {
+        const v = value == null || value === '' ? '' : String(value).trim();
+        if (!v) {
+          return <span className="gender-badge gender-unknown">—</span>;
+        }
+        const lower = v.toLowerCase();
+        return (
+          <span className={`gender-badge gender-${lower}`}>
+            {v}
+          </span>
+        );
+      }
     },
     {
       key: 'level',
@@ -343,7 +370,9 @@ const StudentList = () => {
       header: 'Status',
       width: '160px',
       render: (value, row) => {
-        const isUpdating = updateStatusMutation.isLoading && updateStatusMutation.variables?.student?.adm_no === row.adm_no;
+        const isUpdating =
+          updateStatusMutation.isPending &&
+          updateStatusMutation.variables?.student?.adm_no === row.adm_no;
         return (
           <select
             className={`status-select status-${(value || 'PENDING').toLowerCase()}`}
@@ -556,7 +585,7 @@ const StudentList = () => {
             className="bulk-status-select"
             value={bulkStatus}
             onChange={(e) => setBulkStatus(e.target.value)}
-            disabled={bulkStatusMutation.isLoading}
+            disabled={bulkStatusMutation.isPending}
           >
             {STUDENT_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -568,15 +597,15 @@ const StudentList = () => {
             type="button"
             className="btn btn-primary btn-sm bulk-status-btn"
             onClick={handleBulkStatusApply}
-            disabled={bulkStatusMutation.isLoading}
+            disabled={bulkStatusMutation.isPending}
           >
-            {bulkStatusMutation.isLoading ? 'Updating...' : `Mark as ${STUDENT_STATUS_OPTIONS.find((o) => o.value === bulkStatus)?.label}`}
+            {bulkStatusMutation.isPending ? 'Updating...' : `Mark as ${STUDENT_STATUS_OPTIONS.find((o) => o.value === bulkStatus)?.label}`}
           </button>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={() => { setSelectedStudents([]); setTableKey((k) => k + 1); }}
-            disabled={bulkStatusMutation.isLoading}
+            disabled={bulkStatusMutation.isPending}
           >
             Clear selection
           </button>
@@ -596,10 +625,6 @@ const StudentList = () => {
           exportable
           selectable
           onRowSelect={(rows) => setSelectedStudents(rows)}
-          onRowClick={(row) => {
-            // Navigate to student detail or open modal
-            console.log('Student clicked:', row);
-          }}
         />
       ) : (
         <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>

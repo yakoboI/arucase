@@ -2,14 +2,13 @@
  * Year Selection Page for FORM I-IV
  * Non-admin users only see years allocated to them for this class.
  */
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import './YearSelection.css';
 
 const YearSelection = ({ formLevel }) => {
-  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
   const { getAllowedYearsForClass } = useAuth();
 

@@ -531,7 +531,7 @@ router.get('/staff-profiles', async (req, res) => {
 });
 
 // Get public page (returns default empty page for known slugs when not in DB)
-const KNOWN_PAGE_SLUGS = ['school-fee', 'fees', 'about', 'contact', 'admissions', 'staff', 'student-life', 'student_life', 'student_report', 'privacy'];
+const KNOWN_PAGE_SLUGS = ['school-fee', 'fees', 'about', 'contact', 'admissions', 'staff', 'student-life', 'student_life', 'student_report', 'privacy', 'catholic-education'];
 router.get('/page/:pageName', async (req, res) => {
   try {
     const { pageName } = req.params;

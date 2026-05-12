@@ -25,19 +25,26 @@ const StudentLogin = () => {
       return;
     }
 
+    const yearNum = parseInt(formData.year, 10);
+    if (Number.isNaN(yearNum)) {
+      toast.error('Please enter a valid year');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await publicAPI.studentLogin({
         adm_no: formData.adm_no.trim(),
-        year: parseInt(formData.year),
+        year: yearNum,
         pass_id: formData.pass_id.trim().toUpperCase()
       });
 
-      if (res.data.success) {
-        // Store student info in sessionStorage (not localStorage for security)
+      if (res.data?.success && res.data.student) {
         sessionStorage.setItem('studentData', JSON.stringify(res.data.student));
         toast.success('Login successful!');
         navigate('/student/dashboard');
+      } else {
+        toast.error(res.data?.message || 'Login failed. Please check your details.');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Invalid credentials. Please check your information.';

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { getWebSocketUrl } from '../utils/backendUrl';
 
 const SocketContext = createContext(null);
 
@@ -19,17 +20,9 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (auth && auth.isAuthenticated && auth.isAuthenticated()) {
-      // Use VITE_WS_URL if set, otherwise construct from VITE_API_URL or window.location
-      let wsUrl = import.meta.env.VITE_WS_URL;
+      const wsUrl = getWebSocketUrl();
       if (!wsUrl) {
-        const apiUrl = import.meta.env.VITE_API_URL;
-        if (apiUrl) {
-          // Convert http:// to ws:// and remove /api if present
-          wsUrl = apiUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace('/api', '');
-        } else {
-          // Fallback: use same hostname/port as current page
-          wsUrl = `ws://${window.location.hostname}:${window.location.port === '3001' ? '3001' : window.location.port}`;
-        }
+        return undefined;
       }
       const newSocket = io(wsUrl, {
         transports: ['websocket'],

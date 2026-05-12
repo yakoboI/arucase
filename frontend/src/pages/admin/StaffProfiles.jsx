@@ -4,6 +4,7 @@ import { toast } from '../../utils/toast';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './StaffProfiles.css';
 
 const emptyForm = {
@@ -121,12 +122,7 @@ export default function StaffProfiles() {
     setPhotoPreview('');
   };
 
-  const toImageUrl = (photoPath) => {
-    if (!photoPath) return '';
-    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) return photoPath;
-    const cleanPath = photoPath.startsWith('/') ? photoPath.slice(1) : photoPath;
-    return import.meta.env.DEV ? `/static/${cleanPath}` : `${(import.meta.env.VITE_API_URL || '/api').replace('/api', '')}/static/${cleanPath}`;
-  };
+  const toImageUrl = (photoPath) => resolveStaticUrl(photoPath);
 
   const onPhoto = (file) => {
     if (!file) return;

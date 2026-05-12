@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { Link } from 'react-router-dom';
 import { getImageLoadingStrategy } from '../../utils/networkUtils';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './Gallery.css';
 
 const Gallery = ({ photos = [], limit = 12 }) => {
@@ -14,30 +15,7 @@ const Gallery = ({ photos = [], limit = 12 }) => {
   // Get network-aware image loading strategy
   const imageStrategy = getImageLoadingStrategy();
 
-  // Helper function to resolve image URLs (same as HomePage)
-  const getImageUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    
-    // Remove leading slash if present
-    let cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    
-    // Handle different path formats:
-    // 1. Full path: "uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 2. Just filename: "filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    // 3. Already has static/: "static/uploads/photos/filename.jpg" -> "/static/uploads/photos/filename.jpg"
-    
-    if (cleanPath.startsWith('static/')) {
-      // Already has static/ prefix
-      return `/${cleanPath}`;
-    } else if (cleanPath.startsWith('uploads/')) {
-      // Has uploads/ prefix, add static/
-      return `/static/${cleanPath}`;
-    } else {
-      // Just filename, assume it's in uploads/photos/
-      return `/static/uploads/photos/${cleanPath}`;
-    }
-  };
+  const getImageUrl = (path) => resolveStaticUrl(path);
 
   if (displayPhotos.length === 0) {
     return null;

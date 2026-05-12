@@ -1,6 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+/** Dev proxy target: backend origin only (no /api). Railway/Vercel use production build + VITE_API_URL instead. */
+function devProxyTarget() {
+  const direct = (process.env.VITE_DEV_PROXY_TARGET || '').trim().replace(/\/$/, '').replace(/\/api\/?$/i, '');
+  if (direct) return direct;
+  const fromApi = (process.env.VITE_API_URL || '').trim().replace(/\/$/, '').replace(/\/api\/?$/i, '');
+  if (fromApi) return fromApi;
+  return 'http://127.0.0.1:5000';
+}
+
+const apiProxyTarget = devProxyTarget();
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -14,7 +25,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        target: apiProxyTarget,
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {
@@ -24,7 +35,7 @@ export default defineConfig({
         },
       },
       '/static': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        target: apiProxyTarget,
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {

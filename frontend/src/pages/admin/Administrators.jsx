@@ -7,6 +7,7 @@ import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import DataTable from '../../components/common/DataTable';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './Administrators.css';
 
 const Administrators = () => {
@@ -187,25 +188,7 @@ const Administrators = () => {
     }
   };
 
-  const getPhotoUrl = (photoPath) => {
-    if (!photoPath) return null;
-    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
-      return photoPath;
-    }
-    // Use relative URL in development, VITE_API_URL in production
-    if (import.meta.env.DEV) {
-      const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
-      return `/static/${cleanPath}`;
-    }
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (apiUrl) {
-      const baseUrl = apiUrl.replace('/api', '');
-      const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
-      return `${baseUrl}/static/${cleanPath}`;
-    }
-    const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
-    return `/static/${cleanPath}`;
-  };
+  const getPhotoUrl = (photoPath) => (photoPath ? resolveStaticUrl(photoPath) : null);
 
   const columns = [
     { key: 'display_order', label: 'Order' },

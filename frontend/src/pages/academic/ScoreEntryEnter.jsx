@@ -715,7 +715,9 @@ const ScoreEntryEnter = ({ formLevel: formLevelProp }) => {
                 <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
                   {normalizedLevel} | {normalizedStream} | {year} | Students loaded: {students.length}
                 </p>
-                {(isAdminLike() || hasModule('student_registration')) && (
+                {(hasModule('student_registration') ||
+                  hasModule('student_registration_form_i_iv') ||
+                  hasModule('student_registration_form_v_vi')) && (
                   <Link to={getRegistrationPath()} className="excel-btn primary">
                     <i className="fas fa-plus"></i> Register Students
                   </Link>

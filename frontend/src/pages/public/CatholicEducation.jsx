@@ -1,7 +1,7 @@
 /**
  * Catholic Education Landing Page - Optimized for Religious School Searches
  */
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
@@ -17,13 +17,6 @@ const CatholicEducation = () => {
     queryFn: () => publicAPI.getPage('catholic-education'),
     retry: false,
     staleTime: 30 * 60 * 1000,
-  });
-
-  const { data: settings } = useQuery({
-    queryKey: ['homepage'],
-    queryFn: () => publicAPI.getHomepage(),
-    select: (res) => res.data?.settings,
-    staleTime: 10 * 60 * 1000,
   });
 
   const fallbackContent = (
@@ -234,22 +227,41 @@ const CatholicEducation = () => {
     </div>
   );
 
-  // Render page content with fallback or database content
+  if (isLoading) {
+    return (
+      <PublicLayout>
+        <Loading message="Inapakia..." />
+      </PublicLayout>
+    );
+  }
+
+  const page = pageData?.data?.page;
+  const hasCustomContent = !isError && page && (page.html_content || page.content);
+
   return (
     <PublicLayout>
-      {isLoading ? (
-        <Loading />
-      ) : isError ? (
-        <div className="error-message">
-          <p>Samahani, kuna tatizo. Tafadhali tena baadaye.</p>
+      {isError ? (
+        <div className="error-message catholic-education-page">
+          <p>Samahani, kuna tatizo. Tafadhali jaribu tena baadaye.</p>
           <Link to="/" className="back-link">
-            <i className="fas fa-arrow-left"></i>
+            <i className="fas fa-arrow-left" aria-hidden="true" />
+            Nyumbani
           </Link>
         </div>
+      ) : hasCustomContent ? (
+        <div className="catholic-education-page">
+          <Link to="/" className="home-button" aria-label="Navigate to homepage">
+            <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`} aria-hidden="true" />
+          </Link>
+          <div
+            className="content-card"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(page.html_content || page.content || ''),
+            }}
+          />
+        </div>
       ) : (
-        <div dangerouslySetInnerHTML={{ 
-          __html: pageData?.content ? DOMPurify.sanitize(pageData.content) : fallbackContent 
-        }} />
+        fallbackContent
       )}
     </PublicLayout>
   );

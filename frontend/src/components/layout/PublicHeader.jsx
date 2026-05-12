@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { publicAPI } from '../../services/public';
+import { resolveStaticUrl } from '../../utils/backendUrl';
 import './PublicHeader.css';
 
 const MOBILE_BREAKPOINT = 900;
@@ -49,20 +50,7 @@ const PublicHeader = () => {
   const schoolLogo = settings?.school_logo || '/uploads/photos/9749b4af-7e1c-454b-a482-37a0f64162f1.jpg';
   const patronSaintImage = settings?.patron_saint_image;
 
-  // Resolve uploaded/static paths: dev uses same-origin + Vite /static proxy (any host); prod uses API origin
-  const getImageUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    let cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    if (import.meta.env.DEV) {
-      if (cleanPath.startsWith('static/')) return `/${cleanPath}`;
-      if (cleanPath.startsWith('uploads/')) return `/static/${cleanPath}`;
-      return `/static/uploads/photos/${cleanPath}`;
-    }
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const baseUrl = apiUrl.replace(/\/api\/?$/, '');
-    return `${baseUrl}/static/${cleanPath}`;
-  };
+  const getImageUrl = (path) => (path ? resolveStaticUrl(path) : null);
 
   // Navigation: Home standalone + 3 category dropdowns
   const homeItem = { path: '/', label: 'Nyumbani', icon: 'fa-home' };
@@ -259,11 +247,15 @@ const PublicHeader = () => {
                       <li key={item.path}>
                         <Link
                           to={item.path}
-                          className={`${isActive(item.path) ? 'active' : ''} icon-only`}
+                          className={`${isActive(item.path) ? 'active' : ''} ${item.path === '/' ? 'icon-only nav-link-home' : 'nav-link-with-label'}`}
                           onClick={() => setMobileMenuOpen(false)}
                           onMouseEnter={getPrefetchHandler(item.path)}
+                          aria-label={item.path === '/' ? item.label : undefined}
                         >
-                          <i className={`fas ${item.icon}`}></i>
+                          <i className={`fas ${item.icon}`} aria-hidden="true"></i>
+                          {item.path !== '/' && (
+                            <span className="nav-link-text">{item.label}</span>
+                          )}
                         </Link>
                       </li>
                     ))}
@@ -277,9 +269,10 @@ const PublicHeader = () => {
                   <li>
                     <Link
                       to={homeItem.path}
-                      className={`${isActive(homeItem.path) ? 'active' : ''} icon-only`}
+                      className={`${isActive(homeItem.path) ? 'active' : ''} icon-only nav-link-home`}
+                      aria-label={homeItem.label}
                     >
-                      <i className={`fas ${homeItem.icon}`}></i>
+                      <i className={`fas ${homeItem.icon}`} aria-hidden="true"></i>
                     </Link>
                   </li>
                   {navCategories.map((category) => (

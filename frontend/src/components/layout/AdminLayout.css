@@ -10,6 +10,26 @@
   position: relative;
 }
 
+.admin-skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  z-index: 10000;
+  padding: 0.65rem 1rem;
+  background: #1f2937;
+  color: #fff;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border-radius: 0;
+}
+
+.admin-skip-to-content:focus {
+  left: 0.75rem;
+  top: 0.75rem;
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .admin-main-content {
   flex: 1;
   margin-left: 280px;
