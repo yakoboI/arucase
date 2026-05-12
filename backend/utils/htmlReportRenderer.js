@@ -94,6 +94,17 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
     return `${staticOrigin}/static/${cleanPath}`;
   };
 
+  /** Student photos: DB may store Cloudinary https URL (prod) or bare filename (local disk). */
+  const getStudentPortraitUrl = (photoPath) => {
+    if (!photoPath) return null;
+    const p = String(photoPath).trim();
+    if (/^https?:\/\//i.test(p)) return p;
+    if (/^\/\//.test(p)) return `https:${p}`;
+    const clean = p.replace(/^\/+/, '');
+    if (clean.startsWith('uploads/')) return getImageUrl(clean);
+    return getImageUrl(`uploads/photos/${clean}`);
+  };
+
   const formCode = form.replace('FORM ', '').trim();
   const isForm5Or6 = ['V', 'VI', '5', '6'].includes(formCode);
   // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
@@ -342,7 +353,7 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
       <div class="student-photo">
         ${
           student.photo_path
-            ? `<img src="${getImageUrl(`uploads/photos/${student.photo_path}`)}" alt="${student.first_name} ${student.surname}" class="photo" />`
+            ? `<img src="${getStudentPortraitUrl(student.photo_path)}" alt="${student.first_name} ${student.surname}" class="photo" />`
             : '<div class="photo-placeholder"><i class="fas fa-user"></i></div>'
         }
       </div>
