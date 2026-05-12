@@ -157,10 +157,10 @@ table {
     position: relative !important;
 }
 
-/* Print page settings: use almost full A4 width with minimal margins */
+/* Print page: enough margin so PDF engines do not clip header logo & student photo at page edges */
 @page {
     size: A4;
-    margin: 0.5mm 0.5mm 0.5mm 0.5mm; /* very minimal margins to maximize content width */
+    margin: 6mm 6mm 6mm 6mm;
 }
 
 .report-container {
@@ -179,6 +179,12 @@ table {
 
 /* Print-specific optimizations to fit in 2 pages and fill them completely */
 @media print {
+    html,
+    body {
+        overflow: visible !important;
+        max-width: none !important;
+    }
+
     /* Force borders to print - CRITICAL for cell borders */
     * {
         -webkit-print-color-adjust: exact !important;
@@ -258,10 +264,12 @@ table {
     .report-container {
         max-width: 100% !important;
         width: 100% !important;
-        padding: 4px;
+        padding: 10px 8px 6px 8px !important;
         line-height: 1.25;
         margin: 0 !important;
         min-height: 0 !important;
+        overflow: visible !important;
+        overflow-x: visible !important;
     }
 
     /*
@@ -269,17 +277,19 @@ table {
      * Use a 3-column grid in print so logo, title block, and photo stay on one row in normal flow.
      */
     .report-header {
-        padding: 5px !important;
+        padding: 10px 8px 8px 8px !important;
         margin-bottom: 4px !important;
         border-bottom: 0.5pt solid #000000 !important;
         display: grid !important;
         grid-template-columns: 90px minmax(0, 1fr) 90px !important;
         align-items: center !important;
-        gap: 6px !important;
-        min-height: 96px !important;
+        gap: 8px !important;
+        min-height: 104px !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
         position: relative !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
     }
 
     .report-header .school-info {
@@ -320,6 +330,7 @@ table {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
+        overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
@@ -336,7 +347,7 @@ table {
         left: auto !important;
         right: auto !important;
         top: auto !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         box-sizing: border-box !important;
         background-color: white !important;
         aspect-ratio: 1 / 1 !important;
@@ -356,6 +367,7 @@ table {
         height: calc(100% - 4px) !important;
         object-fit: cover !important;
         object-position: center !important;
+        overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
