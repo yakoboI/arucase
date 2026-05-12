@@ -24,6 +24,13 @@ const {
   calculateOverallAverage
 } = require('../utils/calculations');
 
+/** JWT for server-side axios/Puppeteer (browser may authenticate with cookies only). */
+function getAuthTokenForInternalCalls(req) {
+  const h = req.headers.authorization;
+  const fromHeader = h ? (h.split(' ')[1] || h) : null;
+  return fromHeader || req.cookies?.accessToken || req.cookies?.token || null;
+}
+
 // All report routes require authentication
 router.use(requireAuth);
 
@@ -605,9 +612,7 @@ router.get('/individual/:form/:stream/:year/:term/:admNo/pdf', requireModule('in
     // Import Puppeteer PDF generator
     const { generateIndividualReportPDFWithPuppeteer } = require('../utils/puppeteerPdfGenerator');
     
-    // Get auth token from request (already authenticated via requireAuth middleware)
-    const authHeader = req.headers.authorization;
-    const authToken = authHeader ? (authHeader.split(' ')[1] || authHeader) : null;
+    const authToken = getAuthTokenForInternalCalls(req);
     
     // Get API URL (use request protocol and host, or env variable)
     const apiUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
@@ -1085,9 +1090,7 @@ router.get('/bulk/:form/:year/:term/pdf', requireModule('bulk_report'), async (r
       return res.status(404).json({ message: 'No students found for this class' });
     }
     
-    // Get auth token from request headers
-    const authHeader = req.headers.authorization;
-    const authToken = authHeader ? (authHeader.split(' ')[1] || authHeader) : null;
+    const authToken = getAuthTokenForInternalCalls(req);
     
     // Get API URL
     const apiUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
