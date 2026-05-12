@@ -45,31 +45,34 @@ export const AuthProvider = ({ children }) => {
     }
 
     let cancelled = false;
-    window.__verifyingToken = true;
-    api.get('/auth/me')
-      .then((response) => {
-        if (cancelled) return;
-        // Handle 401 responses that are now resolved by the interceptor
-        if (response.status === 401) {
-          // Clear invalid token
+    
+    // Check if we're using enhanced authentication (no localStorage token)
+    const hasLocalStorageToken = localStorage.getItem('token');
+    
+    // Only verify token if we have a localStorage token (fallback auth)
+    // Enhanced auth uses httpOnly cookies which are automatically validated by middleware
+    if (hasLocalStorageToken) {
+      window.__verifyingToken = true;
+      api.get('/auth/me')
+        .then((response) => {
+          if (cancelled) return;
+          setUser(response.data.user);
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          // Network errors or other unexpected errors - clear invalid token and set user to null
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
-          return;
-        }
-        setUser(response.data.user);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        // Network errors or other unexpected errors - clear invalid token and set user to null
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-      })
-      .finally(() => {
-        window.__verifyingToken = false;
-        if (!cancelled) setLoading(false);
-      });
+        })
+        .finally(() => {
+          window.__verifyingToken = false;
+          if (!cancelled) setLoading(false);
+        });
+    } else {
+      // Using enhanced auth - no verification needed, cookies are automatically validated
+      setLoading(false);
+    }
 
     return () => {
       cancelled = true;
