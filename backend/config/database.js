@@ -23,6 +23,14 @@ class DatabaseOverloadError extends Error {
 
 // Pool size for high concurrency (200 users/sec: use POOL_MAX=100; ensure PostgreSQL max_connections >= pool size)
 const poolMax = process.env.POOL_MAX ? Math.min(parseInt(process.env.POOL_MAX, 10) || 20, 200) : 100;
+// Managed Postgres (Railway, etc.) can be slow to accept the first TCP connection; allow override.
+const parsedConnTimeout = parseInt(process.env.PG_CONNECTION_TIMEOUT_MS, 10);
+const connectionTimeoutMillis =
+  Number.isFinite(parsedConnTimeout) && parsedConnTimeout > 0
+    ? parsedConnTimeout
+    : process.env.NODE_ENV === 'production'
+      ? 30000
+      : 5000;
 const pool = new Pool({
   host: process.env.PGHOST || process.env.POSTGRES_HOST || 'localhost',
   port: parseInt(process.env.PGPORT || process.env.POSTGRES_PORT || '5432'),
@@ -33,7 +41,7 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false, // SSL for production, disabled for local
   max: poolMax,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis,
 });
 
 pool.on('connect', () => {
