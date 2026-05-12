@@ -57,11 +57,18 @@ const AdminSidebar = () => {
 
   // Check if current user can see a given navigation item
   // - Admin/Superadmin: see everything
-  // - Non-admin: must have the item's moduleId (or 'all') if provided
+  // - Non-admin: must have the item's moduleId, any of moduleIds, or 'all' if provided
   const canSeeItem = (item) => {
     if (!user) return false;
     if (item.path === '/admin') return true;
     if (isAdminLike) return true;
+
+    if (item.moduleIds && Array.isArray(item.moduleIds)) {
+      return (
+        userModules.includes('all') ||
+        item.moduleIds.some((id) => userModules.includes(id))
+      );
+    }
 
     if (!item.moduleId) {
       // Items without moduleId are admin-only
@@ -82,8 +89,17 @@ const AdminSidebar = () => {
     {
       category: 'Student Management',
       items: [
-        { path: '/admin/students/registration', label: 'Registration (Forms I-IV)', icon: 'fa-user-plus', moduleId: 'student_registration_form_i_iv', key: 'registration-form-i-iv' },
-        { path: '/admin/students/registration', label: 'Registration (Forms V-VI)', icon: 'fa-user-plus', moduleId: 'student_registration_form_v_vi', key: 'registration-form-v-vi' },
+        {
+          path: '/admin/students/registration',
+          label: 'Student Registration',
+          icon: 'fa-user-plus',
+          key: 'student-registration',
+          moduleIds: [
+            'student_registration_form_i_iv',
+            'student_registration_form_v_vi',
+            'student_registration',
+          ],
+        },
         { path: '/admin/pre-form-one', label: 'Registration (Pre-Form)', icon: 'fa-child', moduleId: 'student_registration_pre_form' },
         { path: '/students/list', label: 'Student List', icon: 'fa-list', moduleId: 'student_registration_form_i_iv' },
         { path: '/admin/students/photos', label: 'Photos', icon: 'fa-camera', moduleId: 'student_photo' },
@@ -165,7 +181,6 @@ const AdminSidebar = () => {
         { path: '/admin/administrators', label: 'Admin', icon: 'fa-user-shield' },
         { path: '/admin/users', label: 'Users', icon: 'fa-users-cog' },
         { path: '/admin/promotion', label: 'Promotion', icon: 'fa-graduation-cap' },
-        { path: '/admin/pre-form-one', label: 'Pre-Form One', icon: 'fa-child', moduleId: 'student_registration_pre_form' }
       ]
     },
     {

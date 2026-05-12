@@ -459,19 +459,25 @@ code {
 .excel-card {
   background: white;
   border-radius: 0;
-  box-shadow: 0 var(--fibonacci-8) calc(var(--fibonacci-21) * 2) rgba(0, 0, 0, 0.1); /* 0 8px 42px */
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
   overflow: hidden;
 }
 
 .excel-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
   padding: var(--fibonacci-21); /* 21px */
   font-size: calc(var(--modular-scale-1) * 1.125); /* 1.125rem */
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: var(--fibonacci-13); /* 13px */
+}
+
+.excel-card-header i {
+  color: #000000;
 }
 
 .excel-card-body {

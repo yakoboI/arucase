@@ -188,7 +188,8 @@ const Dashboard = () => {
           <div className="welcome-header-content">
             <div className="welcome-text">
               <h2>
-                <i className="fas fa-graduation-cap" aria-hidden="true"></i> Welcome
+                <i className="fas fa-graduation-cap" aria-hidden="true"></i>{' '}
+                Welcome, Administrator
               </h2>
             </div>
             <button

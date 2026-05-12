@@ -6,24 +6,32 @@
   max-width: 100vw;
   overflow-x: hidden;
   box-sizing: border-box;
+  background: #ffffff;
+  min-height: 0;
 }
 
-.excel-card {
-  background: white;
+.score-entry-year-selection-page-container .excel-card {
+  background: #ffffff;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
   overflow: hidden;
 }
 
-.excel-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+.score-entry-year-selection-page-container .excel-card-header {
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
   padding: clamp(0.5rem, 1.5vw, 1rem);
   font-size: clamp(0.875rem, 2vw, 1rem);
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: clamp(0.375rem, 1vw, 0.5rem);
+}
+
+.score-entry-year-selection-page-container .excel-card-header i {
+  color: #000000;
 }
 
 .header-actions {
@@ -53,22 +61,26 @@
   min-height: clamp(32px, 7vw, 40px);
 }
 
-.excel-btn.secondary {
-  background: rgba(255, 255, 255, 0.2);
+.score-entry-year-selection-page-container .excel-card-header .excel-btn.secondary {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #e5e7eb;
 }
 
-.excel-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.3);
-  color: white;
+.score-entry-year-selection-page-container .excel-card-header .excel-btn.secondary:hover {
+  background: #ffffff;
+  border-color: #000000;
+  color: #000000;
   text-decoration: none;
 }
 
-.excel-btn:active {
-  transform: scale(0.97);
+.score-entry-year-selection-page-container .excel-btn:active {
+  transform: none;
 }
 
-.excel-card-body {
+.score-entry-year-selection-page-container .excel-card-body {
   padding: clamp(0.5rem, 1.5vw, 1rem);
+  background: #ffffff;
 }
 
 .year-selection-grid {
@@ -78,14 +90,14 @@
 }
 
 .year-selection-card-item {
-  background: white;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: clamp(0.75rem, 2vw, 1rem);
   text-align: center;
   text-decoration: none;
-  color: inherit;
-  transition: all 0.2s ease;
+  color: #000000;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -95,16 +107,16 @@
 }
 
 .year-selection-card-item:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
-  color: inherit;
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
+  color: #000000;
   text-decoration: none;
 }
 
 .year-selection-card-item[data-current-year="true"] {
   border-color: #10b981;
-  background: #f0fdf4;
+  background: #ffffff;
 }
 
 .year-status-icon {
@@ -125,12 +137,12 @@
 .year-selection-number {
   font-size: clamp(1.25rem, 4vw, 1.5rem);
   font-weight: 700;
-  color: #3b82f6;
+  color: #000000;
 }
 
 .year-selection-label {
   font-size: clamp(0.65rem, 1.5vw, 0.75rem);
-  color: #6b7280;
+  color: #000000;
 }
 
 /* Smartphone layout */

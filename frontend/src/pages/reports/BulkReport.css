@@ -2,7 +2,10 @@
  * Bulk Report Styles
  */
 .bulk-report-page {
-  padding: 1rem;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
+  min-height: 0;
+  background: #ffffff;
+  box-sizing: border-box;
 }
 
 .page-header {
@@ -11,25 +14,25 @@
 
 .page-header h1 {
   margin: 0 0 0.5rem 0;
-  color: #111827;
-  font-size: 1.75rem;
+  color: #000000;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
 }
 
 .page-header p {
   margin: 0;
-  color: #6b7280;
+  color: #000000;
   font-size: 1rem;
 }
 
 .breadcrumb {
   margin-bottom: 1rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #000000;
 }
 
 .breadcrumb a {
-  color: #3b82f6;
-  text-decoration: none;
+  color: #000000;
+  text-decoration: underline;
 }
 
 .breadcrumb a:hover {
@@ -38,15 +41,17 @@
 
 /* Excel Card Styles */
 .excel-card {
-  background: white;
+  background: #ffffff;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
   overflow: hidden;
 }
 
 .excel-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
   padding: 1rem 1.25rem;
   font-size: 1.125rem;
   font-weight: 600;
@@ -55,13 +60,18 @@
   gap: 0.75rem;
 }
 
+.excel-card-header i {
+  color: #000000;
+}
+
 .excel-card-body {
   padding: 1rem;
+  background: #ffffff;
 }
 
 .instruction-text {
   margin-bottom: 1rem;
-  color: #656d76;
+  color: #000000;
   text-align: center;
   font-size: 1rem;
 }
@@ -74,13 +84,13 @@
 }
 
 .form-card {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 1.25rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -89,9 +99,9 @@
 }
 
 .form-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
 }
 
 .form-card .bulk-report-hover-tick {
@@ -109,7 +119,7 @@
 
 .form-icon {
   font-size: 3rem;
-  color: #3b82f6;
+  color: #000000;
 }
 
 .form-info h3 {
@@ -120,85 +130,94 @@
 
 .form-info p {
   margin: 0.5rem 0 0 0;
-  color: #6b7280;
+  color: #000000;
   font-size: 0.875rem;
 }
 
 .form-arrow {
-  color: #9ca3af;
+  color: #000000;
   font-size: 1.5rem;
-  transition: transform 0.3s ease;
+  transition: none;
 }
 
 .form-card:hover .form-arrow {
-  transform: translateX(4px);
+  transform: none;
 }
 
 /* Form Card with Streams */
 .form-card-with-streams {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   overflow: hidden;
 }
 
 .form-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
   padding: 1rem;
   text-align: center;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease;
 }
 
 .form-card-header:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: #ffffff;
+  border-color: #000000;
 }
 
 .form-card-header h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.25rem;
+  color: #000000;
 }
 
 .form-card-header p {
   margin: 0;
   font-size: 0.875rem;
-  opacity: 0.9;
+  opacity: 1;
+  color: #000000;
 }
 
-/* Streams Grid */
+/* Streams Grid (form pickers that reuse this pattern) */
 .streams-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   padding: 1rem;
+  box-sizing: border-box;
 }
 
 .stream-card {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 1rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  flex: 1 1 160px;
+  min-width: 0;
+  box-sizing: border-box;
+  box-shadow: none;
 }
 
 .stream-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
 }
 
 .stream-card .bulk-report-hover-tick {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  color: #10b981;
+  color: #000000;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -209,19 +228,19 @@
 
 .stream-icon {
   font-size: 2rem;
-  color: #3b82f6;
+  color: #000000;
 }
 
 .stream-info h4 {
   margin: 0;
-  color: #111827;
+  color: #000000;
   font-size: 1rem;
   font-weight: 600;
 }
 
 .stream-info p {
   margin: 0;
-  color: #6b7280;
+  color: #000000;
   font-size: 0.75rem;
 }
 
@@ -234,13 +253,13 @@
 }
 
 .year-card {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 1rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -249,9 +268,9 @@
 }
 
 .year-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
 }
 
 .year-status-icon {
@@ -271,7 +290,7 @@
 
 .year-icon {
   font-size: 2.5rem;
-  color: #3b82f6;
+  color: #000000;
 }
 
 .year-title {
@@ -282,7 +301,7 @@
 
 .year-subtitle {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #000000;
 }
 
 /* Term Grid */
@@ -294,13 +313,13 @@
 }
 
 .term-card {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 1.25rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -308,14 +327,14 @@
 }
 
 .term-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
 }
 
 .term-icon {
   font-size: 3rem;
-  color: #3b82f6;
+  color: #000000;
 }
 
 .term-title {
@@ -326,55 +345,69 @@
 
 .term-subtitle {
   font-size: 1rem;
-  color: #6b7280;
+  color: #000000;
 }
 
 .term-period {
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: #000000;
 }
 
 /* Stream Grid */
 .stream-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.stream-grid .stream-card {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .stream-grid .stream-card,
+  .streams-grid .stream-card {
+    flex: 1 1 100%;
+  }
 }
 
 .stream-card.all-streams {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-color: transparent;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #e5e7eb;
 }
 
 .stream-card.all-streams:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  background: #ffffff;
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .stream-card.all-streams .stream-icon,
 .stream-card.all-streams .stream-name,
 .stream-card.all-streams .stream-subtitle {
-  color: white;
+  color: #000000;
 }
 
 .stream-name {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: #000000;
   margin-bottom: 0.25rem;
 }
 
 .stream-subtitle {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #000000;
 }
 
 /* Info Banner */
 .info-banner {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
@@ -384,7 +417,7 @@
 }
 
 .info-banner i {
-  color: #3b82f6;
+  color: #000000;
   font-size: 1.5rem;
   flex-shrink: 0;
   margin-top: 0.25rem;
@@ -392,13 +425,13 @@
 
 .info-banner strong {
   display: block;
-  color: #1e40af;
+  color: #000000;
   margin-bottom: 0.5rem;
 }
 
 .info-banner p {
   margin: 0;
-  color: #1e3a8a;
+  color: #000000;
   font-size: 0.875rem;
 }
 
@@ -447,21 +480,22 @@
   align-items: center;
   margin-bottom: 2rem;
   padding: 1rem;
-  background: white;
+  background: #ffffff;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .bulk-report-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #6b7280;
+  color: #000000;
   font-size: 0.875rem;
 }
 
 .bulk-report-info i {
-  color: #3b82f6;
+  color: #000000;
 }
 
 .bulk-reports-list {
@@ -487,13 +521,13 @@
 }
 
 .excel-table th {
-  background: #f3f4f6;
+  background: #ffffff;
   font-weight: 600;
-  color: #374151;
+  color: #000000;
 }
 
 .excel-table tbody tr:hover {
-  background: #f9fafb;
+  background: #ffffff;
 }
 
 .error {
@@ -519,7 +553,7 @@
   .form-card-with-streams { grid-column: span 1; }
   .form-card-header { padding: 1rem; }
   .form-card-header h3 { font-size: 1.125rem; }
-  .streams-grid, .stream-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; padding: 1rem; }
+  .streams-grid, .stream-grid { gap: 0.75rem; padding: 1rem; }
   .stream-card { padding: 1rem; }
   .stream-icon { font-size: 1.5rem; }
   .stream-info h4 { font-size: 0.875rem; }
@@ -544,7 +578,7 @@
 /* iPad / tablet layout */
 @media (min-width: 769px) and (max-width: 1024px) {
   .forms-grid { grid-template-columns: repeat(3, 1fr); }
-  .streams-grid, .stream-grid { grid-template-columns: repeat(3, 1fr); }
+  .streams-grid, .stream-grid { gap: 0.75rem; }
   .year-grid, .term-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -553,12 +587,14 @@
 /* -------------------------------------------------------------------------- */
 
 .bulk-report-generate .breadcrumb-current {
-  color: #111827;
+  color: #000000;
   font-weight: 600;
 }
 
 .bulk-report-generate > .breadcrumb {
   text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.45;
 }
 
 .bulk-generate-page-header {
@@ -579,9 +615,16 @@
   flex-wrap: wrap;
 }
 
+/* Generate dashboard: normal UI type scale (not oversized headings / stats) */
+.bulk-report-generate .bulk-generate-page-header h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem 0;
+}
+
 .bulk-generate-title-icon {
-  color: #667eea;
-  font-size: 1.5rem;
+  color: #000000;
+  font-size: 1rem;
 }
 
 .bulk-generate-summary-grid {
@@ -596,7 +639,11 @@
   border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 0.875rem 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: none;
+}
+
+.bulk-report-generate .bulk-generate-stat {
+  padding: 0.625rem 0.75rem;
 }
 
 .bulk-generate-stat--wide {
@@ -611,23 +658,23 @@
 
 .bulk-generate-stat-label {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #64748b;
+  color: #000000;
   margin-bottom: 0.35rem;
 }
 
 .bulk-generate-stat-value {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000000;
   line-height: 1.2;
 }
 
 .bulk-generate-stat-value--small {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 500;
   line-height: 1.35;
 }
 
@@ -645,17 +692,17 @@
   background: #ffffff;
   color: #000000;
   border: 2px solid #111827;
-  padding: 12px 28px;
-  font-size: 1rem;
-  font-weight: 700;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, box-shadow 0.2s ease;
   border-radius: 0;
 }
 
 .bulk-report-generate .download-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.25);
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .bulk-report-generate .download-btn:disabled {
@@ -674,7 +721,7 @@
 
 .bulk-report-generate .download-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: #000000;
   transition: width 0.25s ease;
   border-radius: 999px;
 }
@@ -682,8 +729,8 @@
 .bulk-generate-pdf-hint {
   margin: 12px auto 0;
   max-width: 520px;
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: 0.8125rem;
+  color: #000000;
   line-height: 1.45;
 }
 
@@ -700,6 +747,34 @@
   border-top: 1px solid #e5e7eb;
 }
 
+.bulk-report-generate .bulk-generate-actions-row .excel-btn {
+  font-size: 0.8125rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.bulk-report-generate .excel-card-header {
+  font-size: 0.9375rem;
+  padding: 0.625rem 0.875rem;
+}
+
+.bulk-report-generate .excel-card-body {
+  padding: 0.75rem;
+}
+
+.bulk-report-generate .excel-table {
+  font-size: 0.8125rem;
+}
+
+.bulk-report-generate .excel-table th,
+.bulk-report-generate .excel-table td {
+  padding: 0.5rem 0.625rem;
+}
+
+.bulk-report-generate .excel-btn.small {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.5rem;
+}
+
 .excel-btn--outline {
   background: #fff !important;
   color: #374151 !important;
@@ -707,34 +782,34 @@
 }
 
 .excel-btn--outline:hover {
-  border-color: #667eea !important;
-  color: #4f46e5 !important;
+  border-color: #000000 !important;
+  color: #000000 !important;
 }
 
 .excel-btn--ghost {
   background: transparent !important;
-  color: #64748b !important;
+  color: #000000 !important;
   border: 1px dashed #cbd5e1 !important;
 }
 
 .excel-btn--ghost:hover {
-  color: #4f46e5 !important;
-  border-color: #667eea !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
 }
 
 .bulk-generate-help {
   margin-top: 12px;
-  color: #64748b;
-  font-size: 0.95rem;
+  color: #000000;
+  font-size: 0.8125rem;
   max-width: 560px;
   line-height: 1.5;
 }
 
 .bulk-generate-loading-hint {
   text-align: center;
-  color: #64748b;
+  color: #000000;
   margin-top: 0.75rem;
-  font-size: 0.9rem;
+  font-size: 0.8125rem;
 }
 
 .bulk-generate-skeleton .excel-card-header {
@@ -744,7 +819,7 @@
 .bulk-generate-skeleton-line {
   display: block;
   height: 12px;
-  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background: linear-gradient(90deg, #f9fafb 0%, #e5e7eb 50%, #f9fafb 100%);
   background-size: 200% 100%;
   animation: bulk-generate-shimmer 1.2s ease-in-out infinite;
   border-radius: 4px;

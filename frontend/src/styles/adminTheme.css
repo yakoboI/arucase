@@ -1,0 +1,145 @@
+/**
+ * Admin area: white shell, flat card headers, full-width page containers.
+ * Loaded from main.jsx — uses .admin-layout .admin-main-content to beat page-level gradient overrides.
+ */
+
+.admin-layout {
+  background: #ffffff;
+}
+
+/* Primary admin cards (Excel pattern + selection flows) */
+.admin-layout .admin-main-content .excel-card {
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+}
+
+.admin-layout .admin-main-content .excel-card-header,
+.admin-layout .admin-main-content .year-selection-card-header,
+.admin-layout .admin-main-content .stream-selection-card-header,
+.admin-layout .admin-main-content .registration-card-header,
+.admin-layout .admin-main-content .registration-form-card-header,
+.admin-layout .admin-main-content .bulk-upload-card-header,
+.admin-layout .admin-main-content .registered-students-card-header,
+.admin-layout .admin-main-content .parish-stream-selection-card-header,
+.admin-layout .admin-main-content .parish-year-selection-card-header,
+.admin-layout .admin-main-content .photo-year-selection-card-header,
+.admin-layout .admin-main-content .photo-stream-selection-card-header,
+.admin-layout .admin-main-content .photo-card-header,
+.admin-layout .admin-main-content .subjects-year-selection-card-header,
+.admin-layout .admin-main-content .subjects-stream-selection-card-header,
+.admin-layout .admin-main-content .subjects-mgmt-card-header,
+.admin-layout .admin-main-content .subjects-card-header,
+.admin-layout .admin-main-content .subject-teachers-card-header,
+.admin-layout .admin-main-content .subject-teachers-mgmt-card-header,
+.admin-layout .admin-main-content .marks-config-card-header,
+.admin-layout .admin-main-content .action-selection-card-header,
+.admin-layout .admin-main-content .comments-card-header,
+.admin-layout .admin-main-content .parish-card-header,
+.admin-layout .admin-main-content .parish-mgmt-card-header,
+.admin-layout .admin-main-content .photos-mgmt-card-header,
+.admin-layout .admin-main-content .individual-score-card-header,
+.admin-layout .admin-main-content .form-card-header,
+.admin-layout .admin-main-content .recommendation-card-header,
+.admin-layout .admin-main-content .branding-card-header,
+.admin-layout .admin-main-content .admin-card-header,
+.admin-layout .admin-main-content .mobile-student-card-header,
+.admin-layout .admin-main-content .subject-card-header,
+.admin-layout .admin-main-content .score-type-card-header {
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #000000 !important;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-layout .admin-main-content .excel-card-header i,
+.admin-layout .admin-main-content .year-selection-card-header i,
+.admin-layout .admin-main-content .stream-selection-card-header i,
+.admin-layout .admin-main-content .registration-card-header i,
+.admin-layout .admin-main-content .registration-form-card-header i,
+.admin-layout .admin-main-content .bulk-upload-card-header i,
+.admin-layout .admin-main-content .registered-students-card-header i,
+.admin-layout .admin-main-content .parish-stream-selection-card-header i,
+.admin-layout .admin-main-content .parish-year-selection-card-header i,
+.admin-layout .admin-main-content .photo-year-selection-card-header i,
+.admin-layout .admin-main-content .photo-stream-selection-card-header i,
+.admin-layout .admin-main-content .photo-card-header i,
+.admin-layout .admin-main-content .subjects-year-selection-card-header i,
+.admin-layout .admin-main-content .subjects-stream-selection-card-header i,
+.admin-layout .admin-main-content .subjects-mgmt-card-header i,
+.admin-layout .admin-main-content .subjects-card-header i,
+.admin-layout .admin-main-content .subject-teachers-card-header i,
+.admin-layout .admin-main-content .subject-teachers-mgmt-card-header i,
+.admin-layout .admin-main-content .marks-config-card-header i,
+.admin-layout .admin-main-content .action-selection-card-header i,
+.admin-layout .admin-main-content .comments-card-header i,
+.admin-layout .admin-main-content .parish-card-header i,
+.admin-layout .admin-main-content .parish-mgmt-card-header i,
+.admin-layout .admin-main-content .photos-mgmt-card-header i,
+.admin-layout .admin-main-content .individual-score-card-header i,
+.admin-layout .admin-main-content .form-card-header i,
+.admin-layout .admin-main-content .recommendation-card-header i,
+.admin-layout .admin-main-content .branding-card-header i,
+.admin-layout .admin-main-content .admin-card-header i,
+.admin-layout .admin-main-content .mobile-student-card-header i,
+.admin-layout .admin-main-content .subject-card-header i,
+.admin-layout .admin-main-content .score-type-card-header i {
+  color: #000000 !important;
+}
+
+/* Monthly results landing uses its own page wrapper */
+.admin-layout .admin-main-content .monthly-results {
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+/* Full-width selection / step pages (avoid narrow centered strips on large screens) */
+.admin-layout .admin-main-content [class$="-page-container"] {
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+.admin-layout .admin-main-content .parish-stream-selection-grid {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.admin-layout .admin-main-content .subjects-stream-selection-grid {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Main content already has horizontal padding — drop duplicate inset on these wrappers */
+.admin-layout .admin-main-content .subjects-year-selection-page-container,
+.admin-layout .admin-main-content .subjects-stream-selection-page-container,
+.admin-layout .admin-main-content .parish-stream-selection-page-container,
+.admin-layout .admin-main-content .marks-config-page-container,
+.admin-layout .admin-main-content .score-entry-year-selection-page-container,
+.admin-layout .admin-main-content .score-entry-stream-selection-page-container,
+.admin-layout .admin-main-content .score-entry-subject-selection-page-container,
+.admin-layout .admin-main-content .score-entry-month-selection-page-container {
+  padding-left: 0;
+  padding-right: 0;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.admin-layout .admin-main-content .subject-teachers-page-container,
+.admin-layout .admin-main-content .subject-teachers-mgmt-page-container,
+.admin-layout .admin-main-content .marks-config-term-selection-page-container,
+.admin-layout .admin-main-content .individual-report-page,
+.admin-layout .admin-main-content .bulk-report-page,
+.admin-layout .admin-main-content .report-container,
+.admin-layout .admin-main-content .marks-config-student-selection-page-container,
+.admin-layout .admin-main-content .marks-config-mgmt-page-container,
+.admin-layout .admin-main-content .score-entry-year-selection-page-container,
+.admin-layout .admin-main-content .score-entry-stream-selection-page-container,
+.admin-layout .admin-main-content .score-entry-subject-selection-page-container,
+.admin-layout .admin-main-content .score-entry-month-selection-page-container,
+.admin-layout .admin-main-content .score-entry-enter-page-container {
+  background: #ffffff !important;
+  background-image: none !important;
+}

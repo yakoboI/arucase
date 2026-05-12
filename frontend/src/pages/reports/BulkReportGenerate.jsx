@@ -356,10 +356,6 @@ const BulkReportGenerate = () => {
             <i className="fas fa-layer-group bulk-generate-title-icon" aria-hidden />
             Bulk student reports
           </h1>
-          <p>
-            Review summaries, open any student&apos;s full report, or download one PDF for the whole class. Same data
-            pipeline as individual reports.
-          </p>
         </div>
 
         <div className="bulk-generate-summary-grid" aria-label="Class summary">

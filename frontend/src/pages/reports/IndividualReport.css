@@ -3,18 +3,27 @@
  */
 .individual-report-page {
   padding: clamp(0.5rem, 1.5vw, 1rem);
-  min-height: 100vh;
+  min-height: 0;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.page-header h1 {
+  margin: 0 0 clamp(0.5rem, 1.5vw, 1rem) 0;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  font-weight: 600;
+  color: #000000;
 }
 
 .breadcrumb {
   margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
   font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-  color: #6b7280;
+  color: #000000;
 }
 
 .breadcrumb a {
-  color: #3b82f6;
-  text-decoration: none;
+  color: #000000;
+  text-decoration: underline;
 }
 
 .breadcrumb a:hover {
@@ -23,16 +32,18 @@
 
 /* Excel Card Styles */
 .excel-card {
-  background: white;
+  background: #ffffff;
   border-radius: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
   overflow: hidden;
   margin-bottom: 0.75rem;
 }
 
 .excel-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
   padding: clamp(0.5rem, 1.5vw, 1rem);
   font-size: clamp(0.8rem, 2vw, 1rem);
   font-weight: 600;
@@ -42,8 +53,13 @@
   flex-wrap: wrap;
 }
 
+.excel-card-header i {
+  color: #000000;
+}
+
 .excel-card-body {
   padding: clamp(0.5rem, 1.5vw, 1rem);
+  background: #ffffff;
 }
 
 /* Forms Grid */
@@ -54,7 +70,7 @@
 }
 
 .form-card {
-  background: white;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: clamp(0.75rem, 2vw, 1.5rem);
@@ -71,9 +87,9 @@
 }
 
 .form-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
 }
 
 .form-card .individual-student-report-hover-tick {
@@ -91,7 +107,7 @@
 
 .form-icon {
   font-size: clamp(1.5rem, 4vw, 2.5rem);
-  color: #3b82f6;
+  color: #000000;
 }
 
 .form-info h3 {
@@ -102,12 +118,12 @@
 
 .form-info p {
   margin: 0.125rem 0 0 0;
-  color: #6b7280;
+  color: #000000;
   font-size: clamp(0.65rem, 1.5vw, 0.8rem);
 }
 
 .form-arrow {
-  color: #9ca3af;
+  color: #000000;
   font-size: clamp(0.875rem, 2vw, 1.25rem);
 }
 
@@ -133,7 +149,7 @@
 
 .form-card-header p {
   margin: 0;
-  color: #6b7280;
+  color: #000000;
   font-size: clamp(0.65rem, 1.5vw, 0.8rem);
 }
 
@@ -144,12 +160,12 @@
 }
 
 .stream-card {
-  background: #f9fafb;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: clamp(0.5rem, 1.5vw, 0.875rem);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -160,9 +176,10 @@
 }
 
 .stream-card:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  transform: translateY(-1px);
+  border-color: #000000;
+  background: #ffffff;
+  transform: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .stream-card .individual-student-report-hover-tick {
@@ -180,7 +197,7 @@
 
 .stream-icon {
   font-size: clamp(1.25rem, 3vw, 1.75rem);
-  color: #3b82f6;
+  color: #000000;
 }
 
 .stream-info h4 {
@@ -191,7 +208,7 @@
 
 .stream-info p {
   margin: 0 0 0 0;
-  color: #6b7280;
+  color: #000000;
   font-size: clamp(0.6rem, 1.2vw, 0.7rem);
 }
 
@@ -221,9 +238,9 @@
 }
 
 .year-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
 }
 
 .year-status-icon {
@@ -243,7 +260,7 @@
 
 .year-icon {
   font-size: clamp(1.5rem, 3.5vw, 2rem);
-  color: #3b82f6;
+  color: #000000;
 }
 
 .year-title {
@@ -254,7 +271,7 @@
 
 .year-subtitle {
   font-size: clamp(0.65rem, 1.5vw, 0.8rem);
-  color: #6b7280;
+  color: #000000;
 }
 
 /* Term Grid */
@@ -282,14 +299,14 @@
 }
 
 .term-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
 }
 
 .term-icon {
   font-size: clamp(1.5rem, 3.5vw, 2.25rem);
-  color: #3b82f6;
+  color: #000000;
 }
 
 .term-title {
@@ -300,12 +317,12 @@
 
 .term-subtitle {
   font-size: clamp(0.75rem, 1.8vw, 0.9rem);
-  color: #6b7280;
+  color: #000000;
 }
 
 .term-period {
   font-size: clamp(0.6rem, 1.5vw, 0.75rem);
-  color: #9ca3af;
+  color: #000000;
 }
 
 /* Excel Table */
@@ -325,13 +342,13 @@
 }
 
 .excel-table th {
-  background: #f3f4f6;
+  background: #ffffff;
   font-weight: 600;
-  color: #374151;
+  color: #000000;
 }
 
 .excel-table tbody tr:hover {
-  background: #f9fafb;
+  background: #ffffff;
 }
 
 .excel-btn {
@@ -363,7 +380,7 @@
 
 .instruction-text {
   margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
-  color: #6b7280;
+  color: #000000;
   font-size: clamp(0.65rem, 1.5vw, 0.8rem);
 }
 

@@ -489,8 +489,12 @@ const TabiaMwenendoManagement = ({ formLevel }) => {
       <div className="tabia-mwenendo-mgmt-page-container">
         <div className="excel-card">
           <div className="excel-card-header">
-            <i className="fas fa-balance-scale"></i>
-            {year} - Tabia na Mwenendo - {normalizedTerm}
+            <div className="tabia-mwenendo-header-title">
+              <i className="fas fa-balance-scale" aria-hidden="true"></i>
+              <span className="tabia-mwenendo-header-title-text">
+                {year} - Tabia na Mwenendo - {normalizedTerm}
+              </span>
+            </div>
             <div className="header-actions">
               <button
                 type="button"

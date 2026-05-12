@@ -94,13 +94,20 @@
   border-radius: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
   margin-bottom: clamp(1rem, 2vw, 2rem);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .filter-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: clamp(0.5rem, 1vw, 1rem);
   margin-bottom: 1rem;
-  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .filter-row:last-child {
@@ -108,13 +115,22 @@
 }
 
 .filter-input {
-  flex: 1;
-  min-width: 140px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: clamp(0.5rem, 1vw, 0.75rem);
   border: 1px solid #e5e7eb;
   border-radius: 0;
   font-size: clamp(0.75rem, 1vw, 0.875rem);
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-row .btn-secondary,
+.filter-row .btn-clear {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .filter-input:focus {
@@ -516,13 +532,12 @@
   }
 
   .filter-row {
-    flex-direction: column;
-    gap: 0.5rem;
+    grid-template-columns: 1fr;
   }
 
   .filter-input {
     width: 100%;
-    min-width: unset;
+    min-width: 0;
   }
 
   .data-table {
@@ -551,11 +566,12 @@
   }
 
   .filter-row {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
     gap: 0.75rem;
   }
 
   .filter-input {
-    min-width: 120px;
+    min-width: 0;
   }
 
   .data-table th,
@@ -571,7 +587,7 @@
   }
 
   .filter-input {
-    min-width: 150px;
+    min-width: 0;
   }
 }
 

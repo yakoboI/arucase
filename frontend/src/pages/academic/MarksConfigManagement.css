@@ -4,9 +4,11 @@
  */
 
 .marks-config-mgmt-page-container {
-  padding: 1.5rem;
-  background: #f6f8fa;
-  min-height: 100vh;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  background: #ffffff;
+  min-height: 0;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .loading-state {
@@ -27,8 +29,8 @@
 
 /* Configuration Section - Matching Python Template */
 .config-section {
-  background-color: #f6f8fa;
-  border: 2px solid #000;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 15px;
   margin-bottom: 20px;
@@ -99,12 +101,12 @@
   overflow-x: auto !important;
   margin-bottom: 30px;
   width: 100%;
-  border: 3px solid #2c3e50 !important;
-  background: white;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff;
   position: relative;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: none;
   border-radius: 0;
 }
 
@@ -112,11 +114,11 @@
   width: max-content !important;
   min-width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #ffffff;
   font-size: 12px;
   table-layout: auto;
-  border: 3px solid #2c3e50;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
   border-radius: 0;
   overflow: hidden;
   border-spacing: 0;
@@ -132,7 +134,7 @@
   padding: 10px 8px;
   text-align: center;
   font-weight: 700;
-  border: 2px solid #000000 !important;
+  border: 1px solid #e5e7eb !important;
   font-size: 11px;
   vertical-align: middle;
   white-space: nowrap;
@@ -144,7 +146,7 @@
 .comprehensive-marks-table td {
   padding: 10px 8px;
   text-align: center;
-  border: 2px solid #000000 !important;
+  border: 1px solid #e5e7eb !important;
   font-size: 12px;
   vertical-align: middle;
   background: #ffffff;
@@ -153,7 +155,7 @@
 
 /* Month Header */
 .month-header {
-  background: #e7f3ff !important;
+  background: #ffffff !important;
   font-weight: 800 !important;
   font-size: 12px !important;
 }
@@ -172,7 +174,7 @@
 
 /* Weight Input in Header - Matching Python Template */
 .weight-header {
-  background: #fff3cd !important;
+  background: #ffffff !important;
   padding: 8px !important;
 }
 
@@ -186,7 +188,7 @@
 .weight-input-header {
   width: 80px;
   padding: 6px 8px;
-  border: 2px solid #000 !important;
+  border: 1px solid #e5e7eb !important;
   border-radius: 0;
   font-size: 11px;
   font-weight: 700;
@@ -198,14 +200,14 @@
 
 .weight-input-header:focus {
   outline: none;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  background: #f0f9ff;
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
 }
 
 .weight-input-header.has-value {
   border-color: #10b981 !important;
-  background: #f0fdf4;
+  background: #ffffff;
 }
 
 .weight-percent-header {
@@ -215,7 +217,7 @@
 }
 
 .raw-score-header {
-  background: #f6f8fa !important;
+  background: #ffffff !important;
 }
 
 /* Table Body Rows */
@@ -224,26 +226,26 @@
 }
 
 .month-row:hover {
-  background-color: #f9fafb !important;
+  background-color: #ffffff !important;
 }
 
 .month-row.has-weight {
-  background-color: #f0fdf4 !important;
+  background-color: #ffffff !important;
 }
 
 .month-row.has-weight:hover {
-  background-color: #dcfce7 !important;
+  background-color: #ffffff !important;
 }
 
 .sn-cell {
   font-weight: 600;
-  background: #f6f8fa !important;
+  background: #ffffff !important;
 }
 
 .month-name-cell {
   text-align: left !important;
   font-weight: 600;
-  background: #f6f8fa !important;
+  background: #ffffff !important;
 }
 
 .month-name-cell strong {
@@ -271,7 +273,7 @@
 .weight-value-display {
   font-size: 11px;
   font-weight: 700;
-  color: #1e40af;
+  color: #000000;
 }
 
 .weight-indicator-cell {
@@ -281,7 +283,7 @@
 
 .weight-bar {
   height: 20px;
-  background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+  background: #e5e7eb;
   border-radius: 0;
   transition: width 0.3s ease;
   margin-bottom: 4px;
@@ -301,20 +303,20 @@
 
 .total-cell {
   font-weight: 700;
-  background: #f9fafb !important;
+  background: #ffffff !important;
   font-size: 13px;
 }
 
 /* Total Row */
 .total-row {
-  background: #f9fafb !important;
+  background: #ffffff !important;
   font-weight: 700;
 }
 
 .total-label-cell {
   text-align: left !important;
   padding: 12px !important;
-  background: #f9fafb !important;
+  background: #ffffff !important;
 }
 
 .total-label-cell strong {
@@ -331,7 +333,7 @@
 
 .total-value-cell {
   padding: 12px !important;
-  background: #f9fafb !important;
+  background: #ffffff !important;
 }
 
 .total-display {
@@ -432,36 +434,55 @@
   font-size: 0.875rem;
 }
 
-/* Excel Card Styles */
-.excel-card {
-  background: white;
+.marks-config-mgmt-page-container .excel-card {
+  background: #ffffff;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
   overflow: hidden;
 }
 
-.excel-card-header {
-  background: #2c3e50;
-  color: white;
+.marks-config-mgmt-page-container .excel-card-header {
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
   font-size: 1.1rem;
-}
-
-.excel-card-header i {
-  margin-right: 0.5rem;
-}
-
-.header-actions {
-  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.excel-card-body {
+.marks-config-mgmt-page-container .excel-card-header i {
+  margin-right: 0.5rem;
+  color: #000000;
+}
+
+.marks-config-mgmt-page-container .header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.marks-config-mgmt-page-container .excel-card-body {
   padding: 1.5rem;
+  background: #ffffff;
+}
+
+.marks-config-mgmt-page-container .excel-btn.secondary {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #e5e7eb;
+}
+
+.marks-config-mgmt-page-container .excel-btn.secondary:hover {
+  background: #ffffff;
+  border-color: #000000;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Responsive Design */

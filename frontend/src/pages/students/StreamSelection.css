@@ -9,17 +9,17 @@
 
 .stream-selection-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
 
 .stream-selection-card-header {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: #ffffff;
+  color: #000000;
   padding: 16px 20px;
   font-size: 18px;
   font-weight: 600;
@@ -29,13 +29,14 @@
   gap: 10px;
   min-height: 56px;
   box-sizing: border-box;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .stream-selection-card-header i {
   font-size: 20px;
   width: 24px;
   text-align: center;
+  color: #000000;
 }
 
 .stream-selection-card-body {
@@ -43,31 +44,14 @@
   box-sizing: border-box;
 }
 
+/* Flex so few items (e.g. two Form I–IV streams) split the row evenly instead of leaving empty grid tracks */
 .stream-selection-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 20px;
-}
-
-@media (min-width: 768px) {
-  .stream-selection-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (min-width: 600px) and (max-width: 767px) {
-  .stream-selection-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 599px) {
-  .stream-selection-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .stream-selection-card-item {
@@ -77,31 +61,39 @@
   justify-content: center;
   text-decoration: none;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: clamp(1rem, 2.5vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
   text-align: center;
-  color: #1e293b;
+  color: #000000;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   min-height: clamp(90px, 12vw, 120px);
   box-sizing: border-box;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+@media (max-width: 599px) {
+  .stream-selection-card-item {
+    flex: 1 1 100%;
+  }
 }
 
 .stream-selection-card-item:active {
   transform: scale(0.98);
   box-shadow: none;
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 .stream-selection-card-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  background: #f8fafc;
-  border-color: #01a72b;
+  transform: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  border-color: #000000;
 }
 
 .stream-selection-name {
@@ -109,14 +101,14 @@
   font-weight: 600;
   margin-bottom: clamp(0.25rem, 0.8vw, 0.5rem);
   line-height: 1.3;
-  color: #1e293b;
+  color: #000000;
 }
 
 .stream-selection-code {
   font-size: clamp(0.75rem, 1.5vw, 0.875rem);
   font-weight: 500;
   line-height: 1.3;
-  color: #64748b;
+  color: #000000;
 }
 
 .stream-selection-back-btn {
@@ -124,22 +116,29 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #f1f5f9;
-  color: #1e293b;
+  background: #ffffff;
+  color: #000000;
   text-decoration: none;
   border-radius: 0;
   font-weight: 500;
   transition: all 0.2s ease;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   margin-top: 10px;
 }
 
 .stream-selection-back-btn:hover {
-  background: #e2e8f0;
-  transform: translateX(-2px);
+  background: #f9fafb;
+  transform: none;
 }
 
 .stream-selection-back-btn i {
   font-size: 14px;
+  color: #000000;
+}
+
+.stream-selection-empty {
+  color: #000000;
+  text-align: center;
+  margin: 0;
 }
 

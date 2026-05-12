@@ -3,7 +3,44 @@
  */
 .marks-config-term-selection-page-container {
   padding: clamp(0.75rem, 2vw, 1.5rem);
-  min-height: 100vh;
+  min-height: 0;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.marks-config-term-selection-page-container .excel-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.marks-config-term-selection-page-container .excel-card-header {
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.marks-config-term-selection-page-container .excel-card-header i {
+  color: #000000;
+}
+
+.marks-config-term-selection-page-container .excel-card-body {
+  background: #ffffff;
+}
+
+.marks-config-term-selection-page-container .excel-card-header .excel-btn.secondary {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #e5e7eb;
+}
+
+.marks-config-term-selection-page-container .excel-card-header .excel-btn.secondary:hover {
+  background: #ffffff;
+  border-color: #000000;
+  color: #000000;
+  text-decoration: none;
 }
 
 .term-selection-grid {
@@ -13,7 +50,7 @@
 }
 
 .term-selection-card-item {
-  background: white;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: clamp(1rem, 3vw, 2rem);
@@ -29,9 +66,9 @@
 }
 
 .term-selection-card-item:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
   color: inherit;
   text-decoration: none;
 }
@@ -39,12 +76,12 @@
 .term-selection-name {
   font-size: clamp(1rem, 2.5vw, 1.5rem);
   font-weight: 700;
-  color: #111827;
+  color: #000000;
 }
 
 .term-selection-subtitle {
   font-size: clamp(0.7rem, 1.8vw, 0.875rem);
-  color: #6b7280;
+  color: #000000;
 }
 
 @media (max-width: 768px) {

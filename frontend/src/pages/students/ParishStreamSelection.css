@@ -6,15 +6,17 @@
 }
 
 .parish-stream-selection-card {
-  background: white;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   overflow: hidden;
 }
 
 .parish-stream-selection-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 1px solid #e5e7eb;
   padding: clamp(1rem, 2.5vw, 1.5rem);
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   font-weight: 600;
@@ -28,45 +30,52 @@
   padding: clamp(1rem, 3vw, 2rem);
 }
 
+/* Flex so few items (e.g. two Form I–IV streams) share the row evenly */
 .parish-stream-selection-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: clamp(1rem, 2.5vw, 1.5rem);
-  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.75rem, 2vw, 1rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .parish-stream-selection-card-item {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: clamp(1rem, 2.5vw, 1.5rem);
   text-align: center;
   text-decoration: none;
-  color: inherit;
-  transition: all 0.3s ease;
+  color: #000000;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   min-height: clamp(80px, 12vw, 100px);
+  flex: 1 1 220px;
+  min-width: 0;
+  box-sizing: border-box;
+  box-shadow: none;
 }
 
 .parish-stream-selection-card-item:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
-  color: inherit;
+  border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: none;
+  color: #000000;
   text-decoration: none;
 }
 
 .parish-stream-selection-name {
   font-size: clamp(1rem, 2.5vw, 1.125rem);
   font-weight: 600;
-  color: #111827;
+  color: #000000;
 }
 
 .parish-stream-selection-code {
   font-size: clamp(0.75rem, 1.5vw, 0.875rem);
-  color: #6b7280;
+  color: #000000;
 }
 
 .parish-stream-selection-back-btn {
@@ -74,58 +83,50 @@
   align-items: center;
   gap: 0.5rem;
   padding: clamp(0.625rem, 2vw, 0.75rem) clamp(1rem, 2.5vw, 1.5rem);
-  background: #6b7280;
-  color: white;
+  background: #ffffff;
+  color: #000000;
   text-decoration: none;
   border-radius: 0;
-  transition: background 0.2s;
+  transition: background 0.2s ease;
   font-size: clamp(0.875rem, 2vw, 1rem);
+  border: 1px solid #e5e7eb;
 }
 
 .parish-stream-selection-back-btn:hover {
-  background: #4b5563;
-  color: white;
+  background: #f9fafb;
+  color: #000000;
   text-decoration: none;
 }
 
-/* Smartphone layout */
-@media (max-width: 768px) {
-  .parish-stream-selection-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-  
+.parish-stream-selection-back-btn i {
+  color: #000000;
+}
+
+.parish-stream-selection-empty {
+  color: #000000;
+  text-align: center;
+  margin: 0;
+}
+
+/* Single column on very narrow screens */
+@media (max-width: 480px) {
   .parish-stream-selection-card-item {
-    min-height: 90px;
+    flex: 1 1 100%;
   }
 }
 
-/* iPad / tablet layout */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .parish-stream-selection-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
+/* Slightly larger tap targets on wide screens only */
 @media (min-width: 1200px) {
-  .parish-stream-selection-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  
   .parish-stream-selection-card-item {
-    padding: 2rem;
-    min-height: 120px;
+    padding: 1.25rem 1.5rem;
+    min-height: 110px;
   }
-  
+
   .parish-stream-selection-name {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
   }
-  
+
   .parish-stream-selection-code {
-    font-size: 1rem;
+    font-size: 0.9375rem;
   }
 }
-
