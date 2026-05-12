@@ -19,7 +19,8 @@
     "restore-students-1800-2000": "node scripts/restoreStudentsFromSQLite.js",
     "count-students-by-form": "node scripts/countStudentsByForm.js",
     "setup-photos": "node scripts/setup-admin-photos-volume.js",
-    "upload-admin-photos": "node upload_admin_photos_to_cloudinary_production.js"
+    "upload-admin-photos": "node upload_admin_photos_to_cloudinary_production.js",
+    "sync-report-pdf-css": "node scripts/syncReportPdfCss.js"
   },
   "keywords": [
     "express",

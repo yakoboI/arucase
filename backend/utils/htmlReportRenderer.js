@@ -6,15 +6,29 @@ const fs = require('fs').promises;
 const path = require('path');
 
 /**
- * Read CSS file content
+ * Read CSS for the PDF HTML. Prefer a copy shipped with the backend so Railway/backend-only
+ * deploys match localhost (the frontend tree is often not present in the container).
+ * After editing `frontend/src/pages/reports/IndividualReportDetail.css`, run:
+ *   npm run sync-report-pdf-css
+ * from the backend folder.
  */
 async function getCSSContent() {
-  try {
-    const cssPath = path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css');
-    return await fs.readFile(cssPath, 'utf-8');
-  } catch (e) {
-    console.log('Could not read CSS file, using minimal styles');
-    return `
+  const candidates = [
+    path.join(__dirname, '../assets/pdf-report/IndividualReportDetail.css'),
+    path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css'),
+    path.join(process.cwd(), 'frontend/src/pages/reports/IndividualReportDetail.css'),
+  ];
+  for (const cssPath of candidates) {
+    try {
+      const content = await fs.readFile(cssPath, 'utf-8');
+      console.log('[pdf-report] Using CSS:', cssPath);
+      return content;
+    } catch {
+      /* try next */
+    }
+  }
+  console.warn('[pdf-report] Could not read IndividualReportDetail.css; using minimal styles (PDF will not match the app).');
+  return `
       * { box-sizing: border-box; }
       body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
@@ -22,7 +36,6 @@ async function getCSSContent() {
       th, td { border: 1px solid #000; padding: 4px 5px; font-size: 10px; }
       th { background: #fff; font-weight: bold; }
     `;
-  }
 }
 
 /**
@@ -55,27 +68,30 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
     term,
     year
   } = reportData;
-  
-  // Helper function to get full image URL
+
+  // Same origin Puppeteer uses to load /static/* as the JSON API base (avoids prod vs dev drift).
+  const staticOrigin = (() => {
+    const fromApi = (apiUrl || '').trim().replace(/\/api\/?$/i, '').replace(/\/$/, '');
+    if (fromApi) return fromApi;
+    const envOrigin = (
+      process.env.PDF_STATIC_ORIGIN ||
+      process.env.PUBLIC_BACKEND_URL ||
+      process.env.RAILWAY_PUBLIC_URL ||
+      ''
+    )
+      .trim()
+      .replace(/\/$/, '');
+    if (envOrigin) return envOrigin;
+    return 'http://localhost:5000';
+  })();
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-    
-    // If already a full URL (Cloudinary, etc.), use it directly
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    
-    // In production, use the Railway backend URL for static assets
-    if (process.env.NODE_ENV === 'production') {
-      const productionBackendUrl = process.env.RAILWAY_PUBLIC_URL || 'https://arucase-production.up.railway.app';
-      const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-      return `${productionBackendUrl}/static/${cleanPath}`;
-    }
-    
-    // Development: use local API URL
-    const baseUrl = apiUrl.replace('/api', '');
     const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-    return `${baseUrl}/static/${cleanPath}`;
+    return `${staticOrigin}/static/${cleanPath}`;
   };
 
   const formCode = form.replace('FORM ', '').trim();
