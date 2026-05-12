@@ -149,6 +149,36 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', async (req, res) => {
       [admNo, form, actualStream, normalizedStream, parseInt(year), months]
     );
     
+    // Deduplicate monthly results to match unique subjects and remove duplicates
+    const uniqueSubjectCodes = new Set(uniqueSubjects.map(s => s.subject_code));
+    
+    // First filter by subject codes, then remove duplicates by subject_code + month combination
+    const filteredBySubject = monthlyResult.rows.filter(row => 
+      uniqueSubjectCodes.has(row.subject_code)
+    );
+    
+    // Sort to prefer NA stream over A stream for consistency
+    const sortedByPreference = filteredBySubject.sort((a, b) => {
+      // Prefer NA over A for consistency with subject deduplication
+      if (a.subject_code === b.subject_code && a.month === b.month) {
+        if (a.stream === 'NA' && b.stream !== 'NA') return -1;
+        if (a.stream !== 'NA' && b.stream === 'NA') return 1;
+      }
+      return 0;
+    });
+    
+    // Remove duplicates by keeping only one entry per subject_code + month combination
+    const seen = new Set();
+    const deduplicatedMonthlyResults = sortedByPreference.filter(row => {
+      const key = `${row.subject_code}_${row.month}`;
+      if (seen.has(key)) {
+        console.log(`[DEBUG] Skipping duplicate monthly result: ${key} (stream: ${row.stream})`);
+        return false; // Skip duplicate
+      }
+      seen.add(key);
+      return true;
+    });
+    
     // Get all students in the same class for ranking (check both streams)
     // For Form V/VI, filter by term. For Form I-IV, include all students for the year.
     let allStudentsQuery = 'SELECT adm_no FROM students WHERE level = $1 AND stream IN ($2, $3) AND year = $4';
