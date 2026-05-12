@@ -95,23 +95,49 @@ async function inlineBulkReportImages(html, origin, authToken) {
 }
 
 /**
- * Read CSS file content
+ * Read CSS for bulk PDF HTML. Same resolution order as htmlReportRenderer: prefer copies under
+ * backend/assets/pdf-report/ (Railway/backend-only), then repo frontend paths.
+ * After editing frontend CSS, run: cd backend && npm run sync-report-pdf-css
  */
+async function readFirstExisting(paths) {
+  for (const cssPath of paths) {
+    try {
+      const content = await fs.readFile(cssPath, 'utf-8');
+      console.log('[bulk-pdf-report] Using CSS:', cssPath);
+      return content;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
 async function getCSSContent() {
-  try {
-    // For bulk reports, we need both IndividualReportDetail.css (for report content) 
-    // and BulkReport.css (for the bulk report interface styling)
-    const individualReportCSSPath = path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css');
-    const bulkReportCSSPath = path.join(__dirname, '../../frontend/src/pages/reports/BulkReport.css');
-    
-    const individualReportCSS = await fs.readFile(individualReportCSSPath, 'utf-8');
-    const bulkReportCSS = await fs.readFile(bulkReportCSSPath, 'utf-8');
-    
-    // Combine both CSS files - bulk report styling first, then individual report styling
+  const individualCandidates = [
+    path.join(__dirname, '../assets/pdf-report/IndividualReportDetail.css'),
+    path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css'),
+    path.join(process.cwd(), 'frontend/src/pages/reports/IndividualReportDetail.css')
+  ];
+  const bulkCandidates = [
+    path.join(__dirname, '../assets/pdf-report/BulkReport.css'),
+    path.join(__dirname, '../../frontend/src/pages/reports/BulkReport.css'),
+    path.join(process.cwd(), 'frontend/src/pages/reports/BulkReport.css')
+  ];
+
+  const individualReportCSS = await readFirstExisting(individualCandidates);
+  const bulkReportCSS = await readFirstExisting(bulkCandidates);
+
+  if (individualReportCSS && bulkReportCSS) {
     return `${bulkReportCSS}\n\n${individualReportCSS}`;
-  } catch (e) {
-    console.log('Could not read CSS files, using minimal styles');
-    return `
+  }
+
+  if (individualReportCSS) {
+    console.warn('[bulk-pdf-report] BulkReport.css missing; using IndividualReportDetail.css only');
+    return individualReportCSS;
+  }
+
+  console.warn('[bulk-pdf-report] Could not read report CSS files; using minimal styles (PDF will not match the app).');
+  return `
       * { box-sizing: border-box; }
       body { font-family: 'Tinos', 'Times New Roman', 'Liberation Serif', 'Times', serif; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
@@ -122,7 +148,6 @@ async function getCSSContent() {
       th, td { border: 1px solid #000; padding: 4px 5px; font-size: 10px; }
       th { background: #fff; font-weight: bold; }
     `;
-  }
 }
 
 /** Logo, stamp, and signing authority — same rows as /reports/individual (fetch once per bulk job). */

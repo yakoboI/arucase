@@ -1,21 +1,38 @@
 #!/usr/bin/env node
 /**
- * Keeps backend/assets/pdf-report/IndividualReportDetail.css in sync with the frontend
- * source used for on-screen reports. Run from repo root or backend after CSS edits:
+ * Keeps backend/assets/pdf-report/*.css in sync with frontend sources so Puppeteer PDFs
+ * (individual + bulk) match production when the frontend tree is not in the container.
+ * Run after CSS edits:
  *   cd backend && npm run sync-report-pdf-css
  */
 const fs = require('fs');
 const path = require('path');
 
-const src = path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css');
 const destDir = path.join(__dirname, '../assets/pdf-report');
-const dest = path.join(destDir, 'IndividualReportDetail.css');
+const pairs = [
+  {
+    name: 'IndividualReportDetail.css',
+    src: path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css')
+  },
+  {
+    name: 'BulkReport.css',
+    src: path.join(__dirname, '../../frontend/src/pages/reports/BulkReport.css')
+  }
+];
 
-if (!fs.existsSync(src)) {
-  console.warn('[sync-report-pdf-css] Source not found (skip in backend-only trees):', src);
-  process.exit(0);
+let copied = 0;
+for (const { name, src } of pairs) {
+  if (!fs.existsSync(src)) {
+    console.warn('[sync-report-pdf-css] Source not found (skip):', src);
+    continue;
+  }
+  fs.mkdirSync(destDir, { recursive: true });
+  const dest = path.join(destDir, name);
+  fs.copyFileSync(src, dest);
+  console.log('[sync-report-pdf-css] Updated', dest);
+  copied += 1;
 }
 
-fs.mkdirSync(destDir, { recursive: true });
-fs.copyFileSync(src, dest);
-console.log('[sync-report-pdf-css] Updated', dest);
+if (copied === 0) {
+  process.exit(0);
+}
