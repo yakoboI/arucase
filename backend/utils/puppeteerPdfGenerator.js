@@ -5,6 +5,7 @@
 const puppeteer = require('puppeteer');
 const axios = require('axios');
 const { normalizeStream } = require('./streamNormalizer');
+const { FONT_STACK } = require('./reportPdfFontSnippets');
 
 /**
  * Generate PDF from the individual report page using Puppeteer
@@ -179,6 +180,12 @@ async function generateIndividualReportPDFWithPuppeteer(
       console.error('Error setting page content:', contentError);
       throw new Error(`Failed to load HTML content: ${contentError.message}`);
     }
+
+    try {
+      await page.evaluate(() => document.fonts.ready);
+    } catch (e) {
+      console.warn('[PUPPETEER] document.fonts.ready:', e.message);
+    }
     
     // Wait for student photo (if present) to fully load before generating the PDF.
     // Some iPhone/safari-like environments defer image load events; this avoids capturing a blank slot.
@@ -226,14 +233,14 @@ async function generateIndividualReportPDFWithPuppeteer(
     
     // CRITICAL: Execute the same JavaScript styling enforcement as local development
     // This ensures exact congruence between local and production PDFs
-    await page.evaluate(() => {
+    await page.evaluate((stack) => {
       // CRITICAL: Force premium font styling to match local development exactly
       const forcePremiumFontStyling = () => {
         const allTextElements = document.querySelectorAll('.report-container *');
         allTextElements.forEach(element => {
-          // Times New Roman for report body (matches IndividualReportDetail.css)
+          // Times-like stack: Tinos loads from Google Fonts in report HTML (Linux PDF parity)
           if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
-            element.style.setProperty('font-family', 'Times New Roman, Times, serif', 'important');
+            element.style.setProperty('font-family', stack, 'important');
             // Ensure font sizes are applied correctly
             const computedStyle = window.getComputedStyle(element);
             const fontSize = computedStyle.fontSize;
@@ -369,7 +376,7 @@ async function generateIndividualReportPDFWithPuppeteer(
           strong.style.setProperty('font-weight', 'bold', 'important');
         });
       }
-    });
+    }, FONT_STACK);
     
     // Another grace period after JavaScript execution
     await new Promise(resolve => setTimeout(resolve, 1000));

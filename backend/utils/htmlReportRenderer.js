@@ -4,6 +4,7 @@
  */
 const fs = require('fs').promises;
 const path = require('path');
+const { HEAD_FONT_LINKS, FONT_STACK } = require('./reportPdfFontSnippets');
 
 /**
  * Read CSS for the PDF HTML. Prefer a copy shipped with the backend so Railway/backend-only
@@ -30,7 +31,7 @@ async function getCSSContent() {
   console.warn('[pdf-report] Could not read IndividualReportDetail.css; using minimal styles (PDF will not match the app).');
   return `
       * { box-sizing: border-box; }
-      body { font-family: Times New Roman, Times, serif; margin: 0; padding: 0; }
+      body { font-family: ${FONT_STACK}; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
       table { width: 100%; border-collapse: collapse; border: 1px solid #000; }
       th, td { border: 1px solid #000; padding: 4px 5px; font-size: 10px; }
@@ -327,6 +328,7 @@ async function generateReportHTML(reportData, apiUrl = 'http://localhost:5000') 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Report - ${student.first_name} ${student.surname}</title>
+  ${HEAD_FONT_LINKS}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     ${cssContent}

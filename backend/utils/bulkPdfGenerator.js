@@ -10,6 +10,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { query } = require('../config/database');
 const { normalizeStream } = require('./streamNormalizer');
+const { HEAD_FONT_LINKS, FONT_STACK } = require('./reportPdfFontSnippets');
 
 /**
  * Read CSS file content
@@ -30,7 +31,7 @@ async function getCSSContent() {
     console.log('Could not read CSS files, using minimal styles');
     return `
       * { box-sizing: border-box; }
-      body { font-family: Times New Roman, Times, serif; margin: 0; padding: 0; }
+      body { font-family: 'Tinos', 'Times New Roman', 'Liberation Serif', 'Times', serif; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
       .bulk-report-page { padding: 1rem; }
       .excel-card { background: white; border-radius: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
@@ -254,6 +255,7 @@ async function generateBulkReportPDFWithBatches(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bulk Student Report - ${form} ${year} ${term}</title>
+  ${HEAD_FONT_LINKS}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     ${cssContent}
@@ -367,6 +369,12 @@ async function generateBulkReportPDFWithBatches(
       }
     }
     
+    try {
+      await page.evaluate(() => document.fonts.ready);
+    } catch (e) {
+      console.warn('[BULK PDF] document.fonts.ready:', e.message);
+    }
+    
     // Wait a bit for all images/fonts to load (increased wait time for bulk PDFs)
     console.log('[BULK PDF] Waiting for resources to load...');
     await new Promise(resolve => setTimeout(resolve, 5000)); // Increased from 2s to 5s
@@ -374,7 +382,7 @@ async function generateBulkReportPDFWithBatches(
     // CRITICAL: Execute the same JavaScript styling enforcement as local development
     // This ensures exact congruence between local and production PDFs for each report
     console.log('[BULK PDF] Applying JavaScript styling enforcement for exact congruence...');
-    await page.evaluate(() => {
+    await page.evaluate((fontStack) => {
       // Apply styling enforcement to all report containers
       const reportContainers = document.querySelectorAll('.report-container');
       
@@ -457,7 +465,7 @@ async function generateBulkReportPDFWithBatches(
           allTextElements.forEach(element => {
             // Times New Roman for report body
             if (element.tagName !== 'IMG' && element.tagName !== 'SVG') {
-              element.style.setProperty('font-family', 'Times New Roman, Times, serif', 'important');
+              element.style.setProperty('font-family', fontStack, 'important');
               // Ensure font sizes are applied correctly
               const computedStyle = window.getComputedStyle(element);
               const fontSize = computedStyle.fontSize;
@@ -522,7 +530,7 @@ async function generateBulkReportPDFWithBatches(
           });
         }
       });
-    });
+    }, FONT_STACK);
     
     // Final grace period after JavaScript execution
     await new Promise(resolve => setTimeout(resolve, 1000));
