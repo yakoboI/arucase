@@ -11,13 +11,18 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../config/database');
 
 const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
 const ADMIN_FULL_NAME = 'Administrator';
 const ADMIN_ROLE = 'admin';
 const ADMIN_STATUS = 'active';
 
 async function seedAdminUser() {
   try {
+    if (!ADMIN_PASSWORD) {
+      throw new Error(
+        'SEED_ADMIN_PASSWORD is not set. Add it to backend/.env (see backend/.env.example).'
+      );
+    }
     console.log('🔐 Seeding admin user...');
 
     // Check whether the admin user already exists

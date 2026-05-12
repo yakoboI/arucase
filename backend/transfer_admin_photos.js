@@ -1,15 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
+const { poolFromEnv } = require('./utils/scriptDbPool');
 
-// Railway database connection
-const railwayPool = new Pool({
-  host: 'turntable.proxy.rlwy.net',
-  port: 10105,
-  user: 'postgres',
-  password: 'xqvmJmNREUpfMdMtbtcpLktoWiedvrst',
-  database: 'railway'
-});
+const railwayPool = poolFromEnv('RAILWAY_DATABASE_URL', 'DATABASE_URL');
 
 async function transferAdminPhotos() {
   console.log('📸 Transferring administrator photos...');

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { poolFromEnv } = require('./utils/scriptDbPool');
 
 async function createMissingAdminPhotosFinal() {
   console.log('📸 Creating missing admin photos for Railway deployment...');
@@ -45,14 +46,7 @@ async function createMissingAdminPhotosFinal() {
     });
     
     // Update Railway database with all 5 photos
-    const { Pool } = require('pg');
-    const railwayPool = new Pool({
-      host: 'turntable.proxy.rlwy.net',
-      port: 10105,
-      user: 'postgres',
-      password: 'xqvmJmNREUpfMdMtbtcpLktoWiedvrst',
-      database: 'railway'
-    });
+    const railwayPool = poolFromEnv('RAILWAY_DATABASE_URL', 'DATABASE_URL');
     
     const adminResult = await railwayPool.query(`
       SELECT id, name, display_order 

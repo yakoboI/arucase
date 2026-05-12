@@ -9,7 +9,10 @@ const { query } = require('../config/database');
 async function createAdmin() {
   try {
     const username = process.env.ADMIN_USERNAME || 'admin';
-    const password = process.env.ADMIN_PASSWORD || 'admin123';
+    const password = process.env.ADMIN_PASSWORD;
+    if (!password) {
+      throw new Error('Set ADMIN_PASSWORD in backend/.env before running createAdmin.js');
+    }
     const fullName = process.env.ADMIN_FULL_NAME || 'Administrator';
     const email = process.env.ADMIN_EMAIL || 'admin@arucase.co.tz';
     

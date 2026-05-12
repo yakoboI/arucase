@@ -1,11 +1,6 @@
-const { Pool } = require('pg');
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'arucase',
-  password: 'Mkalanga1994!@',
-  port: 5432,
-});
+const { poolFromEnv } = require('./utils/scriptDbPool');
+
+const pool = poolFromEnv('DATABASE_URL', 'LOCAL_DATABASE_URL');
 
 async function checkResults() {
   try {

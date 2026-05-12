@@ -1,8 +1,15 @@
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const sessionJwt = process.env.DEV_AUTO_LOGIN_JWT;
+if (!sessionJwt) {
+  console.error('Set DEV_AUTO_LOGIN_JWT in backend/.env (JWT from /api/auth/login, dev only).');
+  process.exit(1);
+}
 
 // Create a simple HTML file that automatically logs you in
-const createAutoLoginHTML = () => {
+const createAutoLoginHTML = (jwtForBrowser) => {
   const html = `
 <!DOCTYPE html>
 <html>
@@ -98,8 +105,7 @@ const createAutoLoginHTML = () => {
             
             status.innerHTML = '⏳ Logging you in...';
             
-            // Create admin token
-            const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X2FkbWluIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6ImFkbWluIiwicGVybWlzc2lvbnMiOnsibW9kdWxlcyI6WyJhbGwiXSwiY2xhc3Nfc3ViamVjdHMiOnt9LCJjbGFzc2VzIjpbImFsbCJdLCJzdWJqZWN0cyI6WyJhbGwiXSwic2NvcmVfZW50cnlfbW9udGhzIjpbImFsbCJdLCJjbGFzc19wZXJtaXNzaW9ucyI6e319LCJpYXQiOjE3NzgyNDAyMDgsImV4cCI6MTc3ODMyNjYwOH0.N5EFqbW2Z1TkXlvaIfPz8y5BAP20gX_MQbU6I6ThOwo';
+            const token = ${JSON.stringify(jwtForBrowser)};
             
             const user = {
                 id: 1,
@@ -149,7 +155,7 @@ const createAutoLoginHTML = () => {
 };
 
 // Write the HTML file
-const htmlContent = createAutoLoginHTML();
+const htmlContent = createAutoLoginHTML(sessionJwt);
 const filePath = path.join(__dirname, 'auto_login.html');
 
 fs.writeFileSync(filePath, htmlContent);

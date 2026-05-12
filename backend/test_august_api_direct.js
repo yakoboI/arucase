@@ -3,12 +3,16 @@ const axios = require('axios');
 
 async function testAugustAPI() {
   try {
+    const password = process.env.TEST_LOGIN_PASSWORD;
+    if (!password) {
+      throw new Error('Set TEST_LOGIN_PASSWORD in environment for this dev-only script.');
+    }
     console.log('=== TESTING AUGUST API WITH AUTH ===');
     
     // First, test login to get token
     const loginResponse = await axios.post('http://localhost:5000/api/auth/login', {
-      username: 'admin',
-      password: 'admin123'
+      username: process.env.TEST_LOGIN_USERNAME || 'admin',
+      password,
     });
     
     const token = loginResponse.data.token;

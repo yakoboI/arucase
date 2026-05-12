@@ -1,22 +1,7 @@
-const { Pool } = require('pg');
+const { poolFromEnv } = require('./utils/scriptDbPool');
 
-// Local database connection
-const localPool = new Pool({
-  host: 'localhost',
-  port: 5432,
-  user: 'postgres',
-  password: 'Mkalanga1994!@',
-  database: 'arucase'
-});
-
-// Railway database connection
-const railwayPool = new Pool({
-  host: 'turntable.proxy.rlwy.net',
-  port: 10105,
-  user: 'postgres',
-  password: 'xqvmJmNREUpfMdMtbtcpLktoWiedvrst',
-  database: 'railway'
-});
+const localPool = poolFromEnv('LOCAL_DATABASE_URL');
+const railwayPool = poolFromEnv('RAILWAY_DATABASE_URL');
 
 async function transferData() {
   console.log('🚀 Starting data transfer from localhost to Railway...');

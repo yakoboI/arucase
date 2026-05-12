@@ -2,13 +2,18 @@ const axios = require('axios');
 
 async function testAuthFlow() {
   try {
+    const username = process.env.TEST_LOGIN_USERNAME || 'admin';
+    const password = process.env.TEST_LOGIN_PASSWORD;
+    if (!password) {
+      throw new Error('Set TEST_LOGIN_PASSWORD (and optionally TEST_LOGIN_USERNAME) for this dev script.');
+    }
     console.log('Testing authentication flow...');
     
     // First, try to login to get a valid token
     console.log('\n=== Testing Login ===');
     const loginResponse = await axios.post('http://localhost:5000/api/auth/login', {
-      username: 'admin', // You might need to change this
-      password: 'admin'   // You might need to change this
+      username,
+      password,
     }, {
       headers: {
         'Content-Type': 'application/json'
