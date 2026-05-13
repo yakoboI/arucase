@@ -310,6 +310,22 @@ router.post('/admission-applications/:id/status', requireRole('admin', 'superadm
   }
 });
 
+router.delete('/admission-applications/:id', requireRole('admin', 'superadmin'), async (req, res) => {
+  try {
+    await ensureAdmissionsTables();
+    const { id } = req.params;
+    await query(
+      `UPDATE admission_applications SET previous_application_id = NULL WHERE previous_application_id = $1`,
+      [id]
+    );
+    const del = await query(`DELETE FROM admission_applications WHERE id = $1 RETURNING id`, [id]);
+    if (del.rows.length === 0) return res.status(404).json({ message: 'Application not found' });
+    res.json({ message: 'Application deleted', id: del.rows[0].id });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
 // Configure multer for file uploads (for non-photo uploads)
 // Use sync fs operations for multer destination to avoid async issues
 const fsSync = require('fs');
@@ -627,31 +643,8 @@ router.get('/dashboard/stats', cacheRoutes.dashboardStats, async (req, res) => {
     const isAdmin = ['admin', 'superadmin', 'rector', 'vice_rector', 'academic_master'].includes(userRole);
     
     const stats = {
-      total_students: 0,
-      form_i_students: 0,
-      form_ii_students: 0,
-      form_iii_students: 0,
-      form_iv_students: 0,
-      form_v_students: 0,
-      form_vi_students: 0,
-      students_by_year: [], // [{ year: 2025, count: 56 }, { year: 2026, count: 55 }, ...]
-      students_by_year_and_form: [], // [{ year: 2025, form_i: 40, form_ii: 35, ... , total: 75 }, ...]
-      academic_by_form: {
-        form_i: { subjects: 0, photos: 0, parishes: 0 },
-        form_ii: { subjects: 0, photos: 0, parishes: 0 },
-        form_iii: { subjects: 0, photos: 0, parishes: 0 },
-        form_iv: { subjects: 0, photos: 0, parishes: 0 },
-        form_v: { subjects: 0, photos: 0, parishes: 0 },
-        form_vi: { subjects: 0, photos: 0, parishes: 0 }
-      },
-      academic_by_year: [], // [{ year, by_form: {form_i...}, totals: {subjects, photos, parishes, students} }]
-      total_subjects: 0,
-      total_photos: 0,
-      monthly_results_count: 0,
-      individual_scores_count: 0,
-      comments_count: 0,
-      debt_records: 0,
-      parishes_assigned: 0
+      students_by_year: [],
+      students_by_year_and_form: [],
     };
     
     // Only calculate stats for admin users
@@ -711,177 +704,6 @@ router.get('/dashboard/stats', cacheRoutes.dashboardStats, async (req, res) => {
         });
       }
 
-      // Single query for all student counts by form level
-      const studentCountsResult = await query(`
-        SELECT 
-          COUNT(*) as total,
-          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM I' THEN 1 ELSE 0 END) as form_i,
-          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM II' THEN 1 ELSE 0 END) as form_ii,
-          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM III' THEN 1 ELSE 0 END) as form_iii,
-          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM IV' THEN 1 ELSE 0 END) as form_iv,
-          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM V' THEN 1 ELSE 0 END) as form_v,
-          SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM VI' THEN 1 ELSE 0 END) as form_vi
-        FROM students
-      `);
-      
-      if (studentCountsResult.rows.length > 0) {
-        const counts = studentCountsResult.rows[0];
-        stats.total_students = parseInt(counts.total) || 0;
-        stats.form_i_students = parseInt(counts.form_i) || 0;
-        stats.form_ii_students = parseInt(counts.form_ii) || 0;
-        stats.form_iii_students = parseInt(counts.form_iii) || 0;
-        stats.form_iv_students = parseInt(counts.form_iv) || 0;
-        stats.form_v_students = parseInt(counts.form_v) || 0;
-        stats.form_vi_students = parseInt(counts.form_vi) || 0;
-      }
-      
-      // Batch count queries for better performance
-      const batchCountsResult = await query(`
-        SELECT 
-          (SELECT COUNT(DISTINCT subject_code) FROM subjects) as subjects,
-          (SELECT COUNT(*) FROM student_photos) as photos,
-          (SELECT COUNT(*) FROM monthly_results) as monthly_results,
-          (SELECT COUNT(*) FROM individual_scores) as scores,
-          (SELECT COUNT(*) FROM comments) as comments,
-          (SELECT COUNT(*) FROM tabia_mwenendo) as tabia_mwenendo,
-          (SELECT COUNT(*) FROM individual_debt) as debts,
-          (SELECT COUNT(*) FROM student_parishes) as parishes
-      `);
-      
-      if (batchCountsResult.rows.length > 0 && batchCountsResult.rows[0]) {
-        const counts = batchCountsResult.rows[0];
-        stats.total_subjects = parseInt(counts.subjects) || 0;
-        stats.total_photos = parseInt(counts.photos) || 0;
-        stats.monthly_results_count = parseInt(counts.monthly_results) || 0;
-        stats.individual_scores_count = parseInt(counts.scores) || 0;
-        stats.comments_count = (parseInt(counts.comments) || 0) + (parseInt(counts.tabia_mwenendo) || 0);
-        stats.debt_records = parseInt(counts.debts) || 0;
-        stats.parishes_assigned = parseInt(counts.parishes) || 0;
-      }
-
-      // Per-form academic breakdown (subjects/photos/parishes)
-      const [subjectsByFormResult, photosByFormResult, parishesByFormResult] = await Promise.all([
-        query(`
-          SELECT UPPER(TRIM(level)) AS level, COUNT(DISTINCT subject_code) AS count
-          FROM subjects
-          GROUP BY UPPER(TRIM(level))
-        `),
-        query(`
-          SELECT UPPER(TRIM(level)) AS level, COUNT(*) AS count
-          FROM student_photos
-          GROUP BY UPPER(TRIM(level))
-        `),
-        query(`
-          SELECT UPPER(TRIM(level)) AS level, COUNT(*) AS count
-          FROM student_parishes
-          GROUP BY UPPER(TRIM(level))
-        `)
-      ]);
-
-      const toFormKey = (level) => {
-        const map = {
-          'FORM I': 'form_i',
-          'FORM II': 'form_ii',
-          'FORM III': 'form_iii',
-          'FORM IV': 'form_iv',
-          'FORM V': 'form_v',
-          'FORM VI': 'form_vi'
-        };
-        return map[level] || null;
-      };
-
-      subjectsByFormResult.rows.forEach((row) => {
-        const key = toFormKey(row.level);
-        if (key) stats.academic_by_form[key].subjects = parseInt(row.count) || 0;
-      });
-      photosByFormResult.rows.forEach((row) => {
-        const key = toFormKey(row.level);
-        if (key) stats.academic_by_form[key].photos = parseInt(row.count) || 0;
-      });
-      parishesByFormResult.rows.forEach((row) => {
-        const key = toFormKey(row.level);
-        if (key) stats.academic_by_form[key].parishes = parseInt(row.count) || 0;
-      });
-
-      // Per-year academic breakdown (duplicate overview table per year with data)
-      const [subjectsByYearFormResult, photosByYearFormResult, parishesByYearFormResult, studentsByYearFormRawResult] = await Promise.all([
-        query(`
-          SELECT year, UPPER(TRIM(level)) AS level, COUNT(DISTINCT subject_code) AS count
-          FROM subjects
-          GROUP BY year, UPPER(TRIM(level))
-        `),
-        query(`
-          SELECT year, UPPER(TRIM(level)) AS level, COUNT(*) AS count
-          FROM student_photos
-          GROUP BY year, UPPER(TRIM(level))
-        `),
-        query(`
-          SELECT year, UPPER(TRIM(level)) AS level, COUNT(*) AS count
-          FROM student_parishes
-          GROUP BY year, UPPER(TRIM(level))
-        `),
-        query(`
-          SELECT year, UPPER(TRIM(level)) AS level, COUNT(*) AS count
-          FROM students
-          GROUP BY year, UPPER(TRIM(level))
-        `)
-      ]);
-
-      const formKeys = ['form_i', 'form_ii', 'form_iii', 'form_iv', 'form_v', 'form_vi'];
-      const makeEmptyByForm = () => ({
-        form_i: { subjects: 0, photos: 0, parishes: 0, students: 0 },
-        form_ii: { subjects: 0, photos: 0, parishes: 0, students: 0 },
-        form_iii: { subjects: 0, photos: 0, parishes: 0, students: 0 },
-        form_iv: { subjects: 0, photos: 0, parishes: 0, students: 0 },
-        form_v: { subjects: 0, photos: 0, parishes: 0, students: 0 },
-        form_vi: { subjects: 0, photos: 0, parishes: 0, students: 0 }
-      });
-
-      const byYearMap = new Map();
-      const ensureYear = (year) => {
-        if (!byYearMap.has(year)) {
-          byYearMap.set(year, { year, by_form: makeEmptyByForm() });
-        }
-        return byYearMap.get(year);
-      };
-
-      subjectsByYearFormResult.rows.forEach((row) => {
-        const year = parseInt(row.year) || 0;
-        const key = toFormKey(row.level);
-        if (!key || !year) return;
-        ensureYear(year).by_form[key].subjects = parseInt(row.count) || 0;
-      });
-      photosByYearFormResult.rows.forEach((row) => {
-        const year = parseInt(row.year) || 0;
-        const key = toFormKey(row.level);
-        if (!key || !year) return;
-        ensureYear(year).by_form[key].photos = parseInt(row.count) || 0;
-      });
-      parishesByYearFormResult.rows.forEach((row) => {
-        const year = parseInt(row.year) || 0;
-        const key = toFormKey(row.level);
-        if (!key || !year) return;
-        ensureYear(year).by_form[key].parishes = parseInt(row.count) || 0;
-      });
-      studentsByYearFormRawResult.rows.forEach((row) => {
-        const year = parseInt(row.year) || 0;
-        const key = toFormKey(row.level);
-        if (!key || !year) return;
-        ensureYear(year).by_form[key].students = parseInt(row.count) || 0;
-      });
-
-      stats.academic_by_year = Array.from(byYearMap.values())
-        .map((item) => {
-          const totals = formKeys.reduce((acc, key) => {
-            acc.subjects += item.by_form[key].subjects;
-            acc.photos += item.by_form[key].photos;
-            acc.parishes += item.by_form[key].parishes;
-            acc.students += item.by_form[key].students;
-            return acc;
-          }, { subjects: 0, photos: 0, parishes: 0, students: 0 });
-          return { ...item, totals };
-        })
-        .sort((a, b) => b.year - a.year);
     }
     
     // Log activity

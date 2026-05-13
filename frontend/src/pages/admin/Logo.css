@@ -1,0 +1,229 @@
+/**
+ * School Logo admin (/admin/branding/logo) — full-width white UI, faint borders, normal black text (aligned with Stamp).
+ */
+
+.logo-admin-page {
+  --l-line: #e5e7eb;
+  --l-line-focus: #d1d5db;
+  --l-bg: #ffffff;
+  --l-text: #000000;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  background: var(--l-bg);
+  color: var(--l-text);
+  font-weight: 400;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.logo-admin-page,
+.logo-admin-page button {
+  font-weight: 400;
+}
+
+.logo-admin-page .logo-root-card {
+  background: var(--l-bg) !important;
+  border: 1px solid var(--l-line) !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.logo-admin-page .excel-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  background: var(--l-bg) !important;
+  color: var(--l-text) !important;
+  border-bottom: 1px solid var(--l-line) !important;
+  font-weight: 400 !important;
+}
+
+.logo-admin-page .excel-card-header i {
+  color: var(--l-text) !important;
+}
+
+.logo-admin-page .excel-card-body {
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  background: var(--l-bg);
+}
+
+.logo-admin-page .loading-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--l-text);
+  border: 1px solid var(--l-line);
+  background: var(--l-bg);
+}
+
+.logo-admin-page .error-state {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border: 1px solid var(--l-line);
+  background: var(--l-bg);
+  color: var(--l-text);
+}
+
+.logo-admin-page .error-state .error-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.55;
+}
+
+.logo-admin-page .error-state h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.logo-admin-page .error-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.logo-admin-page .current-logo-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--l-line);
+}
+
+.logo-admin-page .current-logo-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.logo-admin-page .current-logo-section > h3,
+.logo-admin-page .upload-section > h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--l-text);
+}
+
+.logo-admin-page .logo-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1rem;
+  background: var(--l-bg);
+  border: 1px solid var(--l-line);
+  border-radius: 0;
+}
+
+.logo-admin-page .logo-image {
+  max-width: min(280px, 100%);
+  max-height: min(220px, 45vh);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.logo-admin-page .logo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  background: var(--l-bg);
+  border: 1px dashed var(--l-line);
+  border-radius: 0;
+  color: var(--l-text);
+  text-align: center;
+}
+
+.logo-admin-page .logo-placeholder .placeholder-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--l-text);
+  opacity: 0.45;
+}
+
+.logo-admin-page .logo-placeholder p {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--l-text);
+}
+
+.logo-admin-page .logo-path,
+.logo-admin-page .logo-url {
+  font-size: 0.8rem;
+  margin-top: 0.5rem !important;
+  font-weight: 400;
+  color: var(--l-text);
+  opacity: 0.7;
+  word-break: break-all;
+  max-width: 100%;
+}
+
+.logo-admin-page .upload-section {
+  margin-top: 0.5rem;
+}
+
+.logo-admin-page .upload-area {
+  border: 1px dashed var(--l-line);
+  border-radius: 0;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--l-bg);
+  transition: background 0.15s ease, border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.logo-admin-page .upload-area:hover {
+  border-color: var(--l-line-focus);
+  background: #fafafa;
+}
+
+.logo-admin-page .upload-area.drag-active {
+  border-color: var(--l-line-focus);
+  background: #f5f5f5;
+}
+
+.logo-admin-page .upload-icon {
+  font-size: 1.75rem;
+  color: var(--l-text);
+  opacity: 0.45;
+  margin-bottom: 0.5rem;
+}
+
+.logo-admin-page .upload-text {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--l-text);
+  margin: 0.35rem 0;
+}
+
+.logo-admin-page .upload-hint {
+  font-size: 0.8rem;
+  color: var(--l-text);
+  opacity: 0.75;
+  margin: 0.35rem 0 0;
+}
+
+.logo-admin-page .upload-progress {
+  margin-top: 0.75rem;
+  text-align: center;
+  color: var(--l-text);
+  font-size: 0.9rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+  .logo-admin-page {
+    max-width: none;
+  }
+
+  .logo-admin-page .logo-image {
+    max-width: 100%;
+  }
+}

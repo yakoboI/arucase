@@ -1,0 +1,329 @@
+/**
+ * Authority admin (/admin/branding/authority) — white UI, faint borders, normal black text (same principles as School Branding / Gallery).
+ */
+
+.authority-admin-page {
+  --a-line: #e5e7eb;
+  --a-line-focus: #d1d5db;
+  --a-bg: #ffffff;
+  --a-text: #000000;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  background: var(--a-bg);
+  color: var(--a-text);
+  font-weight: 400;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.authority-admin-page,
+.authority-admin-page button,
+.authority-admin-page input {
+  font-weight: 400;
+}
+
+.authority-admin-page .authority-root-card {
+  background: var(--a-bg) !important;
+  border: 1px solid var(--a-line) !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.authority-admin-page .excel-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  background: var(--a-bg) !important;
+  color: var(--a-text) !important;
+  border-bottom: 1px solid var(--a-line) !important;
+  font-weight: 400 !important;
+}
+
+.authority-admin-page .excel-card-header i {
+  color: var(--a-text) !important;
+}
+
+.authority-admin-page .excel-card-body {
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  background: var(--a-bg);
+}
+
+.authority-admin-page .loading-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--a-text);
+  border: 1px solid var(--a-line);
+  background: var(--a-bg);
+}
+
+.authority-admin-page .error-state {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border: 1px solid var(--a-line);
+  background: var(--a-bg);
+  color: var(--a-text);
+}
+
+.authority-admin-page .error-state .error-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.55;
+}
+
+.authority-admin-page .error-state h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.authority-admin-page .error-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.authority-admin-page .authority-form {
+  width: 100%;
+}
+
+.authority-admin-page .form-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--a-line);
+}
+
+.authority-admin-page .form-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.authority-admin-page .form-section > h3,
+.authority-admin-page .signature-section > h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--a-text);
+}
+
+.authority-admin-page .form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.authority-admin-page .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.authority-admin-page .form-group label {
+  font-weight: 400;
+  color: var(--a-text);
+  font-size: 0.9rem;
+}
+
+.authority-admin-page .excel-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--a-line) !important;
+  border-radius: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+  min-height: 48px;
+  background: var(--a-bg) !important;
+  color: var(--a-text) !important;
+}
+
+.authority-admin-page .excel-input:focus {
+  outline: 2px solid var(--a-line-focus);
+  outline-offset: 1px;
+  border-color: var(--a-line-focus) !important;
+  box-shadow: none !important;
+}
+
+.authority-admin-page .form-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.authority-admin-page .form-actions .excel-btn {
+  border: 1px solid var(--a-line) !important;
+  background: var(--a-bg) !important;
+  color: var(--a-text) !important;
+  font-weight: 400 !important;
+  min-height: 48px;
+  padding: 0.55rem 1.15rem;
+}
+
+.authority-admin-page .form-actions .excel-btn:hover:not(:disabled) {
+  background: #f5f5f5 !important;
+}
+
+.authority-admin-page .form-actions .excel-btn:disabled {
+  opacity: 0.55;
+}
+
+.authority-admin-page .excel-btn.small {
+  min-height: 44px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.875rem;
+}
+
+.authority-admin-page .signature-section {
+  margin-top: 1.25rem;
+  padding-top: 0.25rem;
+}
+
+.authority-admin-page .signature-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.authority-admin-page .signature-preview-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--a-line);
+  background: var(--a-bg);
+}
+
+.authority-admin-page .signature-image-small {
+  max-width: 100%;
+  max-height: 56px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.authority-admin-page .logo-placeholder-small {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--a-bg);
+  border: 1px dashed var(--a-line);
+  color: var(--a-text);
+  min-height: 56px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.authority-admin-page .logo-placeholder-small p {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--a-text);
+  opacity: 0.85;
+}
+
+.authority-admin-page .placeholder-icon-small {
+  font-size: 1.35rem;
+  color: var(--a-text);
+  opacity: 0.45;
+  margin-bottom: 0.25rem;
+}
+
+.authority-admin-page .signature-preview-compact .excel-btn {
+  border: 1px solid var(--a-line) !important;
+  background: var(--a-bg) !important;
+  color: var(--a-text) !important;
+  font-weight: 400 !important;
+}
+
+.authority-admin-page .signature-preview-compact .excel-btn.danger {
+  border-color: var(--a-line) !important;
+  color: var(--a-text) !important;
+}
+
+.authority-admin-page .upload-section-compact {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 0.5rem 0;
+}
+
+.authority-admin-page .upload-area-small {
+  border: 1px dashed var(--a-line);
+  border-radius: 0;
+  padding: 1rem 0.85rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--a-bg);
+  min-height: 100px;
+  box-sizing: border-box;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.authority-admin-page .upload-area-small:hover {
+  border-color: var(--a-line-focus);
+  background: #fafafa;
+}
+
+.authority-admin-page .upload-area-small.drag-active {
+  border-color: var(--a-line-focus);
+  background: #f5f5f5;
+}
+
+.authority-admin-page .upload-icon-small {
+  font-size: 1.35rem;
+  color: var(--a-text);
+  opacity: 0.5;
+  margin-bottom: 0.35rem;
+}
+
+.authority-admin-page .upload-text-small {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--a-text);
+  margin: 0.35rem 0;
+}
+
+.authority-admin-page .upload-hint-small {
+  font-size: 0.75rem;
+  color: var(--a-text);
+  opacity: 0.75;
+  margin: 0.25rem 0 0;
+}
+
+.authority-admin-page .upload-progress-small {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--a-text);
+  font-size: 0.875rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+  .authority-admin-page .signature-row {
+    flex-direction: column;
+  }
+
+  .authority-admin-page .signature-preview-compact,
+  .authority-admin-page .upload-section-compact {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .authority-admin-page .form-actions .excel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

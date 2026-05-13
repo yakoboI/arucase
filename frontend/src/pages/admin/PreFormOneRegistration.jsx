@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { preFormOneService } from '../../services/preFormOneService';
+import AdminLayout from '../../components/layout/AdminLayout';
 import './PreFormOneRegistration.css';
 
 const PreFormOneRegistration = () => {
@@ -390,7 +391,8 @@ const PreFormOneRegistration = () => {
   };
 
   return (
-    <div className="registration-form-page-container">
+    <AdminLayout>
+    <div className="preform-one-registration-route registration-form-page-container">
       {/* Registration Form Card */}
       <div className="registration-form-card">
         <div className="registration-form-card-header">
@@ -500,46 +502,51 @@ const PreFormOneRegistration = () => {
               </div>
               
               <div className="form-field form-actions-field">
-                <div className="form-actions">
-                  <button
-                    type="submit"
-                    className="form-btn primary"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <i className="fas fa-spinner fa-spin"></i>
-                        <span className="btn-text">Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-save"></i>
-                        <span className="btn-text">
-                          {currentStudent.id ? 'Update Student' : 'Register Student'}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                  
-                  {currentStudent.id && (
+                <div className="form-group">
+                  <span className="form-actions-label-gap" aria-hidden="true">
+                    &nbsp;
+                  </span>
+                  <div className="form-actions">
                     <button
-                      type="button"
-                      onClick={() => setCurrentStudent({
-                        serialNumber: '',
-                        firstName: '',
-                        middleName: '',
-                        surname: '',
-                        sex: '',
-                        parish: '',
-                        year: year
-                      })}
-                      className="form-btn secondary"
+                      type="submit"
+                      className="form-btn primary"
                       disabled={loading}
                     >
-                      <i className="fas fa-times"></i>
-                      <span className="btn-text">Cancel</span>
+                      {loading ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin"></i>
+                          <span className="btn-text">Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save"></i>
+                          <span className="btn-text">
+                            {currentStudent.id ? 'Update' : 'Register'}
+                          </span>
+                        </>
+                      )}
                     </button>
-                  )}
+
+                    {currentStudent.id && (
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStudent({
+                          serialNumber: '',
+                          firstName: '',
+                          middleName: '',
+                          surname: '',
+                          sex: '',
+                          parish: '',
+                          year: year
+                        })}
+                        className="form-btn secondary"
+                        disabled={loading}
+                      >
+                        <i className="fas fa-times"></i>
+                        <span className="btn-text">Cancel</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -668,13 +675,6 @@ const PreFormOneRegistration = () => {
                 </label>
               </div>
             </div>
-            <div className="bulk-upload-help">
-              <small>
-                <strong>Instructions:</strong> Download template, fill in student data, then upload CSV file. 
-                Required columns: S/N, First Name, Surname, Sex (Male/Female). 
-                Middle Name is optional.
-              </small>
-            </div>
           </div>
         </div>
       </div>
@@ -686,6 +686,7 @@ const PreFormOneRegistration = () => {
         </Link>
       </div>
     </div>
+    </AdminLayout>
   );
 };
 

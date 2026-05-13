@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Pre-Form One Score Entry Component
  * Main interface with Excel-style sharp-edged design
  * Shows Interview Score and Continuing Score cards
@@ -12,6 +12,7 @@ import preFormOneContinuingSubjectsService from '../../services/preFormOneContin
 import preFormOneStudentsService from '../../services/preFormOneStudentsService';
 import gradeSystemService from '../../services/gradeSystemService';
 import dataPersistenceManager from '../../utils/dataPersistenceManager';
+import AdminLayout from '../../components/layout/AdminLayout';
 import './PreFormOneScoreEntry.css';
 
 const PreFormOneScoreEntry = () => {
@@ -882,6 +883,7 @@ const PreFormOneScoreEntry = () => {
   
   // Main render function
   return (
+    <AdminLayout>
     <div className="pre-form-one-score-entry">
       {/* Page Header */}
       <div className="score-entry-page-header">
@@ -983,6 +985,7 @@ const PreFormOneScoreEntry = () => {
         </Link>
       </div>
     </div>
+    </AdminLayout>
   );
 
 };

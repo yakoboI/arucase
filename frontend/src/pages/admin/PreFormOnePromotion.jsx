@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { preFormOnePromotionService } from '../../services/preFormOnePromotionService';
+import AdminLayout from '../../components/layout/AdminLayout';
 import './PreFormOnePromotion.css';
 
 const PreFormOnePromotion = () => {
@@ -181,6 +182,7 @@ const PreFormOnePromotion = () => {
 
   if (loading) {
     return (
+      <AdminLayout>
       <div className="promotion-page-container">
         <div className="loading-state">
           <i className="fas fa-spinner fa-spin"></i>
@@ -188,10 +190,12 @@ const PreFormOnePromotion = () => {
           <p>Please wait while we load the promotion information.</p>
         </div>
       </div>
+      </AdminLayout>
     );
   }
 
   return (
+    <AdminLayout>
     <div className="promotion-page-container">
       {/* Header */}
       <div className="promotion-header">
@@ -336,6 +340,7 @@ const PreFormOnePromotion = () => {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 };
 

@@ -6,12 +6,14 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 import { adminAPI } from '../../services/admin';
 import { resolveStaticUrl } from '../../utils/backendUrl';
 import './SchoolBranding.css';
 
 const SchoolBranding = () => {
   const queryClient = useQueryClient();
+  const { loading: authLoading } = useAuth();
   const logoFileInputRef = useRef(null);
   const patronSaintFileInputRef = useRef(null);
   
@@ -26,6 +28,7 @@ const SchoolBranding = () => {
       const res = await adminAPI.getSchoolBranding();
       return res.data?.branding || null;
     },
+    enabled: !authLoading,
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
@@ -49,6 +52,7 @@ const SchoolBranding = () => {
         return null;
       }
     },
+    enabled: !authLoading,
     retry: false,
   });
 
@@ -60,7 +64,7 @@ const SchoolBranding = () => {
       return adminAPI.uploadSchoolLogo(formData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['school-logo']);
+      queryClient.invalidateQueries({ queryKey: ['school-logo'] });
       toast.success('Logo uploaded successfully!');
       if (logoFileInputRef.current) {
         logoFileInputRef.current.value = '';
@@ -83,6 +87,7 @@ const SchoolBranding = () => {
         return null;
       }
     },
+    enabled: !authLoading,
     retry: false,
   });
 
@@ -94,7 +99,7 @@ const SchoolBranding = () => {
       return adminAPI.uploadPatronSaintImage(formData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['patron-saint-image']);
+      queryClient.invalidateQueries({ queryKey: ['patron-saint-image'] });
       toast.success('Patron Saint image uploaded successfully!');
       if (patronSaintFileInputRef.current) {
         patronSaintFileInputRef.current.value = '';
@@ -176,8 +181,8 @@ const SchoolBranding = () => {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['school-branding']);
-      queryClient.invalidateQueries(['homepage']); // public header/footer/settings use this
+      queryClient.invalidateQueries({ queryKey: ['school-branding'] });
+      queryClient.invalidateQueries({ queryKey: ['homepage'] });
       toast.success('Text branding saved successfully!');
     },
     onError: (error) => {
@@ -195,28 +200,28 @@ const SchoolBranding = () => {
 
   return (
     <AdminLayout>
-      <div style={{ padding: '2rem' }}>
-        <div className="excel-card">
+      <div className="school-branding-page">
+        <div className="excel-card school-branding-root-card">
           <div className="excel-card-header">
-            <i className="fas fa-school"></i>
+            <i className="fas fa-school" aria-hidden="true"></i>
             School Branding Management
             <div className="header-actions">
               <Link to="/admin" className="excel-btn secondary small">
-                <i className="fas fa-arrow-left"></i> Back
+                <i className="fas fa-arrow-left" aria-hidden="true"></i> Back
               </Link>
             </div>
           </div>
           <div className="excel-card-body">
-            <p style={{ marginBottom: '2rem', color: '#656d76', textAlign: 'center' }}>
+            <p className="school-branding-intro">
               Manage school name, logos, tagline, and banner text
             </p>
 
             <div className="branding-container">
               {/* Text Branding Section */}
               <div className="branding-card">
-                <div className="branding-card-header blue-gradient">
+                <div className="branding-card-header">
                   <h3>
-                    <i className="fas fa-text-height"></i> Text Branding
+                    <i className="fas fa-text-height" aria-hidden="true"></i> Text Branding
                   </h3>
                 </div>
                 <div className="branding-card-body">
@@ -253,7 +258,8 @@ const SchoolBranding = () => {
                     />
                   </div>
 
-                  <button 
+                  <button
+                    type="button"
                     className="branding-btn-primary"
                     onClick={handleSaveTextBranding}
                     disabled={saveTextBrandingMutation.isPending}
@@ -273,9 +279,9 @@ const SchoolBranding = () => {
 
               {/* Logos Section */}
               <div className="branding-card">
-                <div className="branding-card-header green-gradient">
+                <div className="branding-card-header">
                   <h3>
-                    <i className="fas fa-images"></i> Logos & Images
+                    <i className="fas fa-images" aria-hidden="true"></i> Logos &amp; Images
                   </h3>
                 </div>
                 <div className="branding-card-body">
@@ -320,6 +326,7 @@ const SchoolBranding = () => {
                         style={{ display: 'none' }}
                       />
                       <button
+                        type="button"
                         className="branding-btn-success"
                         onClick={handleLogoUploadClick}
                         disabled={uploadLogoMutation.isPending}
@@ -376,6 +383,7 @@ const SchoolBranding = () => {
                         style={{ display: 'none' }}
                       />
                       <button
+                        type="button"
                         className="branding-btn-success"
                         onClick={handlePatronSaintUploadClick}
                         disabled={uploadPatronSaintMutation.isPending}

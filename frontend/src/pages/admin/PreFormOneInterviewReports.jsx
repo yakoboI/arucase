@@ -11,6 +11,7 @@ import { adminAPI } from '../../services/admin';
 import { useAuth } from '../../context/AuthContext';
 import { buildFetchUrl } from '../../utils/backendUrl';
 import './PreFormOneResults.css';
+import AdminLayout from '../../components/layout/AdminLayout';
 
 const PreFormOneInterviewReports = () => {
   const { year } = useParams();
@@ -114,6 +115,7 @@ const PreFormOneInterviewReports = () => {
   });
 
   return (
+    <AdminLayout>
     <div className="preform-one-results-page-container">
       <div className="excel-card preform-one-results">
         <div className="excel-card-header">
@@ -210,6 +212,7 @@ const PreFormOneInterviewReports = () => {
         </div>
       </div>
     </div>
+    </AdminLayout>
   );
 };
 

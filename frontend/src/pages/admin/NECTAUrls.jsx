@@ -7,6 +7,7 @@ import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './PublicWebsite.css';
+import './NECTAUrls.css';
 
 const NECTAUrls = () => {
   const queryClient = useQueryClient();
@@ -218,7 +219,7 @@ const NECTAUrls = () => {
 
   return (
     <AdminLayout>
-      <div className="public-website-page-container">
+      <div className="public-website-page-container necta-urls-page">
         <div className="excel-card">
           <div className="excel-card-header">
             <i className="fas fa-link"></i>
@@ -238,23 +239,17 @@ const NECTAUrls = () => {
                 {examTypes.map((examType) => {
                   const examUrls = groupedUrls[examType.value] || {};
                   return (
-                    <div key={examType.value} style={{ marginBottom: '2rem' }}>
-                      <div style={{ 
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        color: 'white',
-                        padding: '1rem 1.5rem',
-                        borderRadius: '8px 8px 0 0',
-                        marginBottom: '0'
-                      }}>
-                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div key={examType.value} className="necta-exam-block">
+                      <div className="necta-exam-section-header">
+                        <h3 className="necta-exam-section-title">
                           <i className={`fas ${examType.value === 'ftna' ? 'fa-book' : examType.value === 'csee' ? 'fa-certificate' : 'fa-user-graduate'}`}></i>
                           {examType.label} - URL Management
                         </h3>
-                        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9, fontSize: '0.9rem' }}>
+                        <p className="necta-exam-section-desc">
                           Manage custom URLs for each year. Years without custom URLs will use auto-generated URLs.
                         </p>
                       </div>
-                      <div className="table-container" style={{ border: '1px solid #e5e7eb', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+                      <div className="table-container necta-exam-table-frame">
                         <table className="excel-table">
                           <thead>
                             <tr>
@@ -275,40 +270,32 @@ const NECTAUrls = () => {
                                   <td>
                                     <strong>{year}</strong>
                                     {!existingUrl && (
-                                      <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                                      <div className="necta-row-hint">
                                         (Using generated URL)
                                       </div>
                                     )}
                                   </td>
                                   <td className="url-cell">
                                     {existingUrl ? (
-                                      <a 
-                                        href={existingUrl.url} 
-                                        target="_blank" 
+                                      <a
+                                        href={existingUrl.url}
+                                        target="_blank"
                                         rel="noopener noreferrer"
-                                        style={{ 
-                                          color: '#3b82f6', 
-                                          textDecoration: 'underline',
-                                          wordBreak: 'break-all'
-                                        }}
+                                        className="necta-url-link"
                                       >
                                         {existingUrl.url.length > 60 ? `${existingUrl.url.substring(0, 60)}...` : existingUrl.url}
                                       </a>
                                     ) : (
-                                      <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                                        <a 
-                                          href={defaultUrl} 
-                                          target="_blank" 
+                                      <div className="necta-url-fallback">
+                                        <a
+                                          href={defaultUrl}
+                                          target="_blank"
                                           rel="noopener noreferrer"
-                                          style={{ 
-                                            color: '#9ca3af', 
-                                            textDecoration: 'underline',
-                                            wordBreak: 'break-all'
-                                          }}
+                                          className="necta-url-link--muted"
                                         >
                                           {defaultUrl.length > 60 ? `${defaultUrl.substring(0, 60)}...` : defaultUrl}
                                         </a>
-                                        <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                                        <div className="necta-row-hint">
                                           Auto-generated
                                         </div>
                                       </div>
@@ -321,7 +308,7 @@ const NECTAUrls = () => {
                                         {existingUrl.active ? 'Active' : 'Inactive'}
                                       </span>
                                     ) : (
-                                      <span className="status-badge badge-warning" style={{ opacity: 0.6 }}>
+                                      <span className="status-badge badge-warning">
                                         Auto
                                       </span>
                                     )}
@@ -393,7 +380,7 @@ const NECTAUrls = () => {
                           <i className="fas fa-times"></i>
                         </button>
                       </div>
-                      <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }}>
+                      <form onSubmit={handleSubmit} className="necta-modal-form">
                         <div className="form-group">
                           <label>Exam Type</label>
                           <select
@@ -430,8 +417,7 @@ const NECTAUrls = () => {
                             <button
                               type="button"
                               onClick={handleGenerateUrl}
-                              className="excel-btn secondary small"
-                              style={{ marginLeft: '0.5rem', padding: '0.25rem 0.75rem' }}
+                              className="excel-btn secondary small necta-generate-default-btn"
                             >
                               <i className="fas fa-magic"></i> Generate Default
                             </button>
@@ -444,8 +430,8 @@ const NECTAUrls = () => {
                             placeholder="https://..."
                             required
                           />
-                          <small style={{ color: '#6b7280', marginTop: '0.5rem', display: 'block' }}>
-                            Enter the full URL to the NECTA results page. Click "Generate Default" to use the standard format.
+                          <small className="necta-form-hint">
+                            Enter the full URL to the NECTA results page. Click &quot;Generate Default&quot; to use the standard format.
                           </small>
                         </div>
                         <div className="form-group">
@@ -464,7 +450,7 @@ const NECTAUrls = () => {
                               type="checkbox"
                               checked={formData.active}
                               onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                              style={{ marginRight: '0.5rem' }}
+                              className="necta-checkbox-inline"
                             />
                             Active (URL will be used on public page)
                           </label>

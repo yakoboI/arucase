@@ -8,6 +8,7 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import preFormOneContinuingSubjectsService from '../../services/preFormOneContinuingSubjectsService';
 import './PreFormOneContinuingSubjects.css';
+import AdminLayout from '../../components/layout/AdminLayout';
 
 const PreFormOneContinuingSubjects = () => {
   const { year } = useParams();
@@ -204,12 +205,18 @@ const PreFormOneContinuingSubjects = () => {
   };
 
   return (
+    <AdminLayout>
     <div className="continuing-subjects-page-container">
       <div className="continuing-subjects-page-header">
-        <h2>
-          <i className="fas fa-book"></i>
-          Pre-Form One Continuing Subjects
-        </h2>
+        <div className="continuing-subjects-page-title-block">
+          <h2 className="continuing-subjects-page-heading">
+            <i className="fas fa-book" aria-hidden="true"></i>
+            Pre-Form One Continuing Subjects
+          </h2>
+          <p className="continuing-subjects-page-subtitle">
+            Academic Year: {year}
+          </p>
+        </div>
         <div className="header-buttons">
           <button 
             onClick={() => setShowAddForm(true)}
@@ -403,6 +410,7 @@ const PreFormOneContinuingSubjects = () => {
         </Link>
       </div>
     </div>
+    </AdminLayout>
   );
 };
 

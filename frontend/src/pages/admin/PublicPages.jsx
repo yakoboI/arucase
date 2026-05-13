@@ -5,12 +5,12 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import './PublicPages.css';
 import DOMPurify from 'dompurify';
 import MDEditor from '@uiw/react-md-editor';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import './PublicWebsite.css';
+import './PublicPages.css';
 
 const PublicPages = () => {
   const queryClient = useQueryClient();
@@ -422,8 +422,8 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
 
   return (
     <AdminLayout>
-      <div className="public-website-page-container">
-        <div className="excel-card">
+      <div className="public-pages-admin-page public-website-page-container">
+        <div className="excel-card public-pages-root-card">
           <div className="excel-card-header">
             <i className="fas fa-globe"></i>
             Usimamizi wa Kurasa za Umma

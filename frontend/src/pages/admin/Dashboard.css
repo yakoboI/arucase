@@ -227,10 +227,6 @@
   grid-template-columns: 1.4fr repeat(var(--year-cols, 1), 1fr) 1.1fr;
 }
 
-.year-table--academic-grid .year-table-row {
-  grid-template-columns: 1.6fr repeat(6, 1fr) 1fr;
-}
-
 .year-table-row:nth-child(even):not(.year-table-row--head) {
   background-color: #f8fafc;
 }
@@ -298,11 +294,6 @@
 
   .year-table--forms .year-table-row {
     grid-template-columns: 1.2fr repeat(var(--year-cols, 1), minmax(60px, 1fr)) 1.1fr;
-    overflow-x: auto;
-  }
-
-  .year-table--academic-grid .year-table-row {
-    grid-template-columns: 1.2fr repeat(6, minmax(70px, 1fr)) minmax(80px, 1fr);
     overflow-x: auto;
   }
 

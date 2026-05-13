@@ -1,178 +1,297 @@
 /**
- * School Branding Styles
+ * School Branding admin — white surfaces, normal-weight black text, faint card lines (same principles as Gallery admin).
  */
-.branding-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
+
+.school-branding-page {
+  --sb-line: #e5e7eb;
+  --sb-line-focus: #d1d5db;
+  --sb-bg: #ffffff;
+  --sb-text: #000000;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  background: var(--sb-bg);
+  color: var(--sb-text);
+  font-weight: 400;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
-.branding-card {
-  background: white;
+.school-branding-page,
+.school-branding-page button,
+.school-branding-page input,
+.school-branding-page select {
+  font-weight: 400;
+}
+
+.school-branding-page .school-branding-root-card {
+  background: var(--sb-bg) !important;
+  border: 1px solid var(--sb-line) !important;
+  box-shadow: none !important;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
-.branding-card-header {
-  padding: 1.5rem;
-  color: white;
+.school-branding-page .excel-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  background: var(--sb-bg) !important;
+  color: var(--sb-text) !important;
+  border-bottom: 1px solid var(--sb-line) !important;
+  font-weight: 400 !important;
 }
 
-.branding-card-header h3 {
+.school-branding-page .excel-card-header i {
+  color: var(--sb-text) !important;
+}
+
+.school-branding-page .header-actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.school-branding-page .header-actions .excel-btn {
+  border: 1px solid var(--sb-line) !important;
+  background: var(--sb-bg) !important;
+  color: var(--sb-text) !important;
+  font-weight: 400 !important;
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.school-branding-page .header-actions .excel-btn:hover {
+  background: #f5f5f5 !important;
+}
+
+.school-branding-page .excel-card-body {
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  background: var(--sb-bg);
+}
+
+.school-branding-page .school-branding-intro {
+  margin: 0 0 1.25rem;
+  color: var(--sb-text);
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.school-branding-page .branding-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 900px) {
+  .school-branding-page .branding-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    align-items: start;
+  }
+}
+
+.school-branding-page .branding-card {
+  background: var(--sb-bg);
+  border: 1px solid var(--sb-line);
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.school-branding-page .branding-card-header {
+  padding: 0.85rem 1rem;
+  background: var(--sb-bg);
+  color: var(--sb-text);
+  border-bottom: 1px solid var(--sb-line);
+}
+
+.school-branding-page .branding-card-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1rem;
+  font-weight: 400;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.blue-gradient {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+.school-branding-page .branding-card-header h3 i {
+  color: var(--sb-text);
+  opacity: 0.75;
 }
 
-.green-gradient {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+.school-branding-page .branding-card-body {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.branding-card-body {
-  padding: 1.5rem;
+.school-branding-page .branding-form-group {
+  margin-bottom: 1rem;
 }
 
-.branding-form-group {
-  margin-bottom: 1.5rem;
+.school-branding-page .branding-form-group:last-of-type {
+  margin-bottom: 1.25rem;
 }
 
-.branding-form-label {
+.school-branding-page .branding-form-label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: var(--sb-text);
+  font-weight: 400;
+  font-size: 0.9rem;
 }
 
-.branding-form-control {
+.school-branding-page .branding-form-control {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
+  box-sizing: border-box;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--sb-line);
   border-radius: 0;
   font-size: 1rem;
+  line-height: 1.45;
+  min-height: 48px;
+  background: var(--sb-bg);
+  color: var(--sb-text);
+}
 
-.branding-btn-primary,
-.branding-btn-success {
-  padding: 0.75rem 1.5rem;
-  border: none;
+.school-branding-page .branding-form-control:focus {
+  outline: 2px solid var(--sb-line-focus);
+  outline-offset: 1px;
+  border-color: var(--sb-line-focus);
+}
+
+.school-branding-page .branding-btn-primary,
+.school-branding-page .branding-btn-success {
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--sb-line);
   border-radius: 0;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 400;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-}
-
-.branding-btn-primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.branding-btn-primary:hover {
-  background: #2563eb;
-}
-
-.branding-btn-success {
-  background: #10b981;
-  color: white;
-}
-
-.branding-btn-success:hover {
-  background: #059669;
-}
-
-.branding-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-}
-
-.branding-section-title {
-  margin: 0 0 1rem 0;
-  color: #333;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.branding-empty-state {
-  text-align: center;
-  padding: 2rem;
-  background: #f9fafb;
-  border-radius: 0;
-  margin-bottom: 1rem;
-}
-
-.branding-empty-state i {
-  font-size: 3rem;
-  color: #9ca3af;
-  margin-bottom: 0.5rem;
-  display: block;
-}
-
-.branding-empty-state p {
-  margin: 0;
-  color: #6b7280;
-}
-
-.branding-file-input {
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 48px;
+  background: var(--sb-bg);
+  color: var(--sb-text);
+  transition: background 0.15s ease;
   width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 0;
-}
-
-.branding-image-preview {
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.branding-preview-image {
   max-width: 100%;
-  max-height: 200px;
-  border-radius: 0;
-  border: 2px solid #e5e7eb;
-  object-fit: contain;
 }
 
-.branding-btn-success:disabled {
-  opacity: 0.6;
+.school-branding-page .branding-btn-primary:hover:not(:disabled),
+.school-branding-page .branding-btn-success:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.school-branding-page .branding-btn-primary:disabled,
+.school-branding-page .branding-btn-success:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #6b7280;
-  color: white;
-  text-decoration: none;
+.school-branding-page .branding-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .school-branding-page .branding-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.school-branding-page .branding-section-title {
+  margin: 0 0 0.65rem;
+  color: var(--sb-text);
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.school-branding-page .branding-empty-state {
+  text-align: center;
+  padding: 1.25rem 1rem;
+  background: var(--sb-bg);
+  border: 1px solid var(--sb-line);
   border-radius: 0;
-  margin-top: 1rem;
+  margin-bottom: 0.75rem;
 }
 
-.btn-secondary:hover {
-  background: #4b5563;
-  color: white;
+.school-branding-page .branding-empty-state i {
+  font-size: 2rem;
+  color: var(--sb-text);
+  opacity: 0.45;
+  margin-bottom: 0.35rem;
+  display: block;
 }
 
-@media (max-width: 768px) {
-  .branding-container {
-    grid-template-columns: 1fr;
+.school-branding-page .branding-empty-state p {
+  margin: 0;
+  color: var(--sb-text);
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.school-branding-page .branding-image-preview {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  padding: 0.75rem;
+  border: 1px solid var(--sb-line);
+  background: var(--sb-bg);
+}
+
+.school-branding-page .branding-preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0;
+  border: none;
+}
+
+.school-branding-page .branding-file-input {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .school-branding-page .excel-card-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .branding-grid {
+  .school-branding-page .header-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .school-branding-page .header-actions .excel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .school-branding-page .branding-grid {
     grid-template-columns: 1fr;
   }
 }
-

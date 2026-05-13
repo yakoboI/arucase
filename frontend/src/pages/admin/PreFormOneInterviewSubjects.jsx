@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import './PreFormOneInterviewSubjects.css';
 import { preFormOneInterviewSubjectsService } from '../../services/preFormOneInterviewSubjectsService';
+import AdminLayout from '../../components/layout/AdminLayout';
 
 const PreFormOneInterviewSubjects = () => {
   const { year } = useParams();
@@ -195,12 +196,18 @@ const PreFormOneInterviewSubjects = () => {
   };
 
   return (
+    <AdminLayout>
     <div className="interview-subjects-page-container">
       <div className="interview-subjects-page-header">
-        <h2>
-          <i className="fas fa-graduation-cap"></i>
-          Pre-Form One Interview Subjects
-        </h2>
+        <div className="interview-subjects-page-title-block">
+          <h2 className="interview-subjects-page-heading">
+            <i className="fas fa-graduation-cap" aria-hidden="true"></i>
+            Pre-Form One Interview Subjects
+          </h2>
+          <p className="interview-subjects-page-subtitle">
+            Academic Year: {year}
+          </p>
+        </div>
         <div className="header-buttons">
           <button 
             onClick={() => setShowAddForm(true)}
@@ -398,6 +405,7 @@ const PreFormOneInterviewSubjects = () => {
         </Link>
       </div>
     </div>
+    </AdminLayout>
   );
 };
 

@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import YearMonthFilter from '../../components/common/YearMonthFilter';
 import { resolveStaticUrl, buildFetchUrl } from '../../utils/backendUrl';
 import './PreFormOneResults.css';
+import AdminLayout from '../../components/layout/AdminLayout';
 
 const PreFormOneContinuingResults = () => {
   const { year } = useParams();
@@ -569,6 +570,7 @@ const PreFormOneContinuingResults = () => {
   };
 
   return (
+    <AdminLayout>
     <div className="preform-one-results-page-container">
       <div className="excel-card preform-one-results">
         <div className="excel-card-header">
@@ -623,38 +625,23 @@ const PreFormOneContinuingResults = () => {
             <button type="button" onClick={handlePrint} id="downloadResultsBtn" className="download-btn-monthly">
               <i className="fas fa-file-pdf"></i> <span id="downloadBtnText">Download Continuing Results (PDF)</span>
             </button>
-            <button type="button" onClick={handleDownloadCSV} className="download-btn-monthly" style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)' }}>
+            <button type="button" onClick={handleDownloadCSV} className="download-btn-monthly download-btn-monthly--secondary">
               <i className="fas fa-file-csv"></i> Download CSV
             </button>
           </div>
 
           {/* Download Instructions */}
-          <div style={{ 
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-            padding: '20px',
-            borderRadius: '8px',
-            marginTop: '20px',
-            border: '1px solid #e9ecef',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-          }}>
-            <h4 style={{ color: '#2c3e50', marginBottom: '10px' }}>
+          <div className="preform-one-download-instructions">
+            <h4>
               <i className="fas fa-info-circle"></i> How to Download PDF
             </h4>
-            <ol style={{ color: '#495057', lineHeight: '1.6', paddingLeft: '20px' }}>
+            <ol>
               <li><strong>Step 1:</strong> Ensure you're logged in as admin with full permissions</li>
               <li><strong>Step 2:</strong> Click the "Download Continuing Results (PDF)" button above</li>
               <li><strong>Step 3:</strong> Wait for PDF generation (may take 10-30 seconds)</li>
               <li><strong>Step 4:</strong> PDF will download automatically when ready</li>
             </ol>
-            <div style={{ 
-              background: '#fff3cd', 
-              color: '#856404', 
-              padding: '10px 15px', 
-              borderRadius: '5px',
-              marginTop: '10px',
-              fontSize: '14px',
-              border: '1px solid #ffeaa7'
-            }}>
+            <div className="preform-one-tip-box">
               <i className="fas fa-lightbulb"></i> <strong>Tip:</strong> If download fails, refresh the page and try again. The system has been optimized for reliable PDF generation.
             </div>
           </div>
@@ -782,6 +769,7 @@ const PreFormOneContinuingResults = () => {
         </>
       )}
     </div>
+    </AdminLayout>
   );
 };
 

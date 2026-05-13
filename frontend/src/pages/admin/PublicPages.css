@@ -1,288 +1,108 @@
 /**
- * Public Pages Management Styles
- * Styles for managing public website pages
+ * Public Pages admin (/admin/public-pages) — full-width shell + neutral outer card
+ * (same principles as Logo / Stamp). Load after PublicWebsite.css; rules are scoped
+ * so shared class names from PublicWebsite are only overridden inside this page.
  */
 
-.public-pages-container {
-  padding: 20px;
-}
-
-.public-pages-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.public-pages-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
-}
-
-.add-page-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 0;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.add-page-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.pages-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.page-card {
-  background: white;
-  border-radius: 0;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.page-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.page-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.page-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.page-action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 0;
-  transition: all 0.2s ease;
-}
-
-.page-action-btn:hover {
-  background: #f3f4f6;
-}
-
-.edit-btn {
-  color: #3b82f6;
-}
-
-.delete-btn {
-  color: #ef4444;
-}
-
-.page-content {
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 10px;
-}
-
-.page-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  color: #999;
-}
-
-.page-slug {
-  font-family: monospace;
-  background: #f3f4f6;
-  padding: 2px 6px;
-  border-radius: 0;
-}
-
-.page-updated {
-  color: #666;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0;
-  padding: 30px;
-  max-width: 800px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.modal-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.close-modal-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 0;
-  transition: all 0.2s ease;
-}
-
-.close-modal-btn:hover {
-  background: #f3f4f6;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-label {
-  display: block;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.form-input {
+.public-pages-admin-page.public-website-page-container {
+  --pp-line: #e5e7eb;
+  --pp-line-focus: #d1d5db;
+  --pp-bg: #ffffff;
+  --pp-text: #000000;
+  max-width: none;
   width: 100%;
-  padding: 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 0;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 200px;
-  font-family: inherit;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.btn-cancel {
-  background: #f3f4f6;
-  color: #333;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 0;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.btn-cancel:hover {
-  background: #e5e7eb;
-}
-
-.btn-save {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 0;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.btn-save:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.loading-spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid #f3f4f6;
-  border-top: 2px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-}
-
-.empty-state-icon {
-  font-size: 48px;
-  color: #d1d5db;
-  margin-bottom: 20px;
-}
-
-.empty-state h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-  color: #333;
-}
-
-.empty-state p {
-  color: #666;
   margin: 0;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  background: var(--pp-bg);
+  color: var(--pp-text);
+  font-weight: 400;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.public-pages-admin-page.public-website-page-container,
+.public-pages-admin-page.public-website-page-container button {
+  font-weight: 400;
+}
+
+.public-pages-admin-page.public-website-page-container .public-pages-root-card {
+  background: var(--pp-bg) !important;
+  border: 1px solid var(--pp-line) !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.public-pages-admin-page.public-website-page-container .excel-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  background: var(--pp-bg) !important;
+  color: var(--pp-text) !important;
+  border-bottom: 1px solid var(--pp-line) !important;
+  font-weight: 400 !important;
+}
+
+.public-pages-admin-page.public-website-page-container .excel-card-header i {
+  color: var(--pp-text) !important;
+}
+
+.public-pages-admin-page.public-website-page-container .excel-card-body {
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  background: var(--pp-bg);
+}
+
+.public-pages-admin-page.public-website-page-container .loading-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--pp-text);
+  border: 1px solid var(--pp-line);
+  background: var(--pp-bg);
+  font-weight: 400;
+}
+
+/* Inner page cards keep gradient headers; body text stays readable */
+.public-pages-admin-page.public-website-page-container .admin-card-body p {
+  color: var(--pp-text);
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+/* Wider editor modal on this route only (modal is inside this container) */
+.public-pages-admin-page.public-website-page-container .modal-content.large {
+  max-width: min(1100px, 96vw);
+  width: 94%;
+}
+
+.public-pages-admin-page.public-website-page-container .modal-header {
+  border-bottom: 1px solid var(--pp-line);
+}
+
+.public-pages-admin-page.public-website-page-container .modal-header h3 {
+  font-weight: 400;
+  color: var(--pp-text);
+}
+
+.public-pages-admin-page.public-website-page-container .excel-input {
+  border-width: 1px;
+  border-color: var(--pp-line);
+  font-weight: 400;
+}
+
+.public-pages-admin-page.public-website-page-container .excel-input:focus {
+  border-color: var(--pp-line-focus);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04);
+}
+
+.public-pages-admin-page.public-website-page-container .form-group label {
+  font-weight: 400;
+  color: var(--pp-text);
+}
+
+@media (max-width: 768px) {
+  .public-pages-admin-page.public-website-page-container .modal-content.large {
+    max-width: 100%;
+    width: 100%;
+  }
 }

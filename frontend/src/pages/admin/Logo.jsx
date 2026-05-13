@@ -7,7 +7,7 @@ import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import { resolveStaticUrl } from '../../utils/backendUrl';
-import './Branding.css';
+import './Logo.css';
 
 const Logo = () => {
   const queryClient = useQueryClient();
@@ -91,8 +91,8 @@ const Logo = () => {
 
   return (
     <AdminLayout>
-      <div className="branding-page-container">
-        <div className="excel-card">
+      <div className="logo-admin-page">
+        <div className="excel-card logo-root-card">
           <div className="excel-card-header">
             <i className="fas fa-image"></i>
             School Logo Management
@@ -129,15 +129,11 @@ const Logo = () => {
                       <div className="logo-placeholder" style={{ display: 'none' }}>
                         <i className="fas fa-image placeholder-icon"></i>
                         <p>Logo image not found</p>
-                        <p className="logo-path" style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
-                          Path: {logoData.logo_image_path}
-                        </p>
-                        <p className="logo-url" style={{ fontSize: '12px', color: '#999' }}>
-                          URL: {getLogoUrl()}
-                        </p>
+                        <p className="logo-path">Path: {logoData.logo_image_path}</p>
+                        <p className="logo-url">URL: {getLogoUrl()}</p>
                       </div>
                       <p className="logo-path">Path: {logoData.logo_image_path}</p>
-                      <p className="logo-url" style={{ fontSize: '12px', color: '#666' }}>URL: {getLogoUrl()}</p>
+                      <p className="logo-url">URL: {getLogoUrl()}</p>
                     </div>
                   ) : (
                     <div className="logo-placeholder">

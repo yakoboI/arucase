@@ -4,20 +4,46 @@
  */
 .promotion-page-container {
   padding: clamp(1.5rem, 4vw, 2.5rem);
-  font-size: clamp(18px, 4vw, 20px);
-  line-height: 1.75;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #000000;
+}
+
+/* Main shell — pure white, black typography */
+.promotion-page-container .excel-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.promotion-page-container .excel-card-header {
+  background: #ffffff;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.promotion-page-container .excel-card-header i {
+  color: #000000;
+}
+
+.promotion-page-container .excel-card-body {
+  background: #ffffff;
+  color: #000000;
+  font-size: 1rem;
 }
 
 .loading-state {
   text-align: center;
   padding: 3rem;
-  color: #6b7280;
+  color: #000000;
+  font-size: 1rem;
 }
 
 .no-data {
   text-align: center;
   padding: 3rem;
-  color: #6b7280;
+  color: #000000;
+  font-size: 1rem;
   font-style: italic;
 }
 
@@ -33,27 +59,29 @@
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  background: #f9fafb;
+  background: #ffffff;
   border-radius: 0;
   border: 1px solid #e5e7eb;
 }
 
 .stat-icon {
-  font-size: 2rem;
-  color: #3b82f6;
+  font-size: 1.5rem;
+  color: #000000;
 }
 
 .stat-content h3 {
   margin: 0;
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
-  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #000000;
   line-height: 1.2;
 }
 
 .stat-content p {
-  margin: clamp(0.25rem, 1vw, 0.5rem) 0 0 0;
-  color: #6b7280;
-  font-size: clamp(1rem, 3vw, 1.125rem);
+  margin: 0.35rem 0 0 0;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 400;
   line-height: 1.5;
 }
 
@@ -62,10 +90,10 @@
 }
 
 .sessions-table-container h3 {
-  margin: 0 0 clamp(1rem, 3vw, 1.5rem) 0;
-  color: #111827;
-  font-size: clamp(1.5rem, 5vw, 2rem);
-  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #000000;
+  font-size: 1.125rem;
+  font-weight: 600;
   line-height: 1.35;
 }
 
@@ -75,53 +103,55 @@
 }
 
 .empty-icon {
-  font-size: 4rem;
-  color: #9ca3af;
+  font-size: 2.5rem;
+  color: #000000;
   margin-bottom: 1rem;
   display: block;
 }
 
 .empty-state p {
   margin: 0 0 2rem 0;
-  color: #6b7280;
+  color: #000000;
+  font-size: 1rem;
 }
 
 .excel-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #ffffff;
 }
 
 .excel-table th {
-  background: #f3f4f6;
-  padding: clamp(1rem, 3vw, 1.25rem);
+  background: #ffffff;
+  padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
-  color: #374151;
+  color: #000000;
   border-bottom: 2px solid #e5e7eb;
-  font-size: clamp(1rem, 3vw, 1.125rem);
+  font-size: 1rem;
   line-height: 1.5;
 }
 
 .excel-table td {
-  padding: clamp(1rem, 3vw, 1.25rem);
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #e5e7eb;
-  font-size: clamp(1rem, 3vw, 1.125rem);
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #000000;
 }
 
 .excel-table tbody tr:hover {
-  background: #f9fafb;
+  background: #ffffff;
 }
 
 .success-text {
-  color: #059669;
-  font-weight: 600;
+  color: #000000;
+  font-weight: 400;
 }
 
 .warning-text {
-  color: #d97706;
-  font-weight: 600;
+  color: #000000;
+  font-weight: 400;
 }
 
 .warning-banner {
@@ -129,11 +159,55 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: #fef3c7;
-  border-left: 4px solid #f59e0b;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #000000;
   border-radius: 0;
   margin-bottom: 1.5rem;
-  color: #92400e;
+  color: #000000;
+  font-size: 1rem;
+}
+
+.warning-banner i {
+  color: #000000;
+}
+
+.stream-selection {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 0;
+  border: 1px solid #e5e7eb;
+}
+
+.stream-selection label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #000000;
+  font-size: 1rem;
+}
+
+.excluded-row {
+  background: #ffffff;
+  opacity: 1;
+  color: #000000;
+}
+
+.excluded-row td {
+  color: #000000;
+}
+
+.badge-active {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
+}
+
+.badge-inactive {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
 }
 
 .promotion-info {
@@ -145,40 +219,25 @@
 
 .info-card {
   padding: 1rem;
-  background: #f9fafb;
+  background: #ffffff;
   border-radius: 0;
   border: 1px solid #e5e7eb;
 }
 
 .info-card h4 {
-  margin: 0 0 clamp(0.5rem, 2vw, 0.75rem) 0;
-  color: #6b7280;
-  font-size: clamp(1rem, 3vw, 1.125rem);
-  font-weight: 500;
+  margin: 0 0 0.5rem 0;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 600;
   line-height: 1.5;
 }
 
 .info-card p {
   margin: 0;
-  color: #111827;
-  font-size: clamp(1.25rem, 4vw, 1.5rem);
+  color: #000000;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.4;
-}
-
-.stream-selection {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: #eff6ff;
-  border-radius: 0;
-  border: 1px solid #bfdbfe;
-}
-
-.stream-selection label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #1e40af;
 }
 
 .students-list-section {
@@ -187,22 +246,19 @@
 
 .students-list-section h3 {
   margin: 0 0 0.5rem 0;
-  color: #111827;
+  color: #000000;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .section-hint {
   margin: 0 0 1rem 0;
-  color: #6b7280;
-  font-size: 0.875rem;
+  color: #000000;
+  font-size: 1rem;
 }
 
 .students-table-container {
   overflow-x: auto;
-}
-
-.excluded-row {
-  background: #fee2e2;
-  opacity: 0.7;
 }
 
 .status-badge {
@@ -213,16 +269,6 @@
   display: inline-block;
 }
 
-.badge-active {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.badge-inactive {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
 .promotion-actions {
   display: flex;
   justify-content: center;
@@ -230,19 +276,19 @@
 }
 
 .excel-btn {
-  padding: clamp(1rem, 3.5vw, 1.25rem) clamp(1.5rem, 5vw, 2rem);
+  padding: 0.65rem 1.25rem;
   border: none;
   border-radius: 0;
   cursor: pointer;
-  font-size: clamp(1rem, 4vw, 1.125rem);
+  font-size: 1rem;
   font-weight: 600;
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
-  gap: clamp(0.5rem, 2vw, 0.75rem);
+  gap: 0.5rem;
   text-decoration: none;
-  color: white;
-  min-height: 52px;
+  color: #ffffff;
+  min-height: 44px;
   line-height: 1.5;
 }
 
@@ -278,14 +324,16 @@
 }
 
 .excel-input {
-  padding: clamp(1rem, 3.5vw, 1.25rem);
+  padding: 0.65rem 1rem;
   border: 2px solid #d1d5db;
   border-radius: 0;
-  font-size: clamp(1rem, 4vw, 1.125rem);
+  font-size: 1rem;
   font-family: inherit;
   width: 100%;
-  line-height: 1.6;
-  min-height: 52px;
+  line-height: 1.5;
+  min-height: 44px;
+  color: #000000;
+  background: #ffffff;
   transition: all 0.2s;
 }
 

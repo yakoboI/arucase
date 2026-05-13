@@ -170,5 +170,6 @@ export const adminAPI = {
   },
   updateAdmissionApplicationStatus: (id, status, feedback) =>
     api.post(`/admin/admission-applications/${id}/status`, { status, feedback }),
+  deleteAdmissionApplication: (id) => api.delete(`/admin/admission-applications/${id}`),
 };
 

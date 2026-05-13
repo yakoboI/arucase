@@ -1,6 +1,8 @@
 /**
- * Analytics Styles
+ * Analytics landing (/admin/analytics) — all rules scoped under .analytics-page
+ * so shared class names (.excel-card, .form-card, .category-header, etc.) never leak app-wide.
  */
+
 .analytics-page {
   padding: clamp(1rem, 4vw, 2rem);
   max-width: 100%;
@@ -8,11 +10,11 @@
   margin: 0;
 }
 
-.page-header {
+.analytics-page .page-header {
   margin-bottom: 2rem;
 }
 
-.page-header h1 {
+.analytics-page .page-header h1 {
   margin: 0 0 0.5rem 0;
   color: #111827;
   font-size: 2rem;
@@ -21,14 +23,14 @@
   gap: 0.75rem;
 }
 
-.page-header p {
+.analytics-page .page-header p {
   margin: 0;
   color: #6b7280;
   font-size: 1rem;
 }
 
 /* Excel Card Styles */
-.excel-card {
+.analytics-page .excel-card {
   background: white;
   border-radius: 0;
   box-shadow: 0 var(--fibonacci-8) calc(var(--fibonacci-21) * 2) rgba(0, 0, 0, 0.1);
@@ -37,7 +39,7 @@
   max-width: 100%;
 }
 
-.excel-card-header {
+.analytics-page .excel-card-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: clamp(1rem, 3vw, var(--fibonacci-21));
@@ -48,11 +50,11 @@
   gap: clamp(0.5rem, 1.5vw, var(--fibonacci-13));
 }
 
-.excel-card-body {
+.analytics-page .excel-card-body {
   padding: clamp(1rem, 4vw, var(--fibonacci-34));
 }
 
-.instruction-text {
+.analytics-page .instruction-text {
   margin-bottom: 2rem;
   color: #656d76;
   text-align: center;
@@ -67,24 +69,24 @@
   font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
-.excel-card-header-centered {
+.analytics-page .excel-card-header-centered {
   justify-content: center;
 }
 
-.all-forms-button-container {
+.analytics-page .all-forms-button-container {
   margin-bottom: clamp(2rem, 5vw, 40px);
   text-align: center;
 }
 
 /* Forms Grid */
-.form-grid {
+.analytics-page .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 90vw), 1fr));
   gap: clamp(1rem, 3vw, var(--fibonacci-21));
   width: 100%;
 }
 
-.form-card {
+.analytics-page .form-card {
   background: white;
   border: 2px solid #e5e7eb;
   border-radius: 0;
@@ -101,13 +103,13 @@
   min-height: clamp(160px, 25vw, 200px);
 }
 
-.form-card:hover {
+.analytics-page .form-card:hover {
   border-color: #3b82f6;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
   transform: translateY(-2px);
 }
 
-.form-card .analytics-hover-tick {
+.analytics-page .form-card .analytics-hover-tick {
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
@@ -116,29 +118,29 @@
   transition: opacity 0.3s ease;
 }
 
-.form-card:hover .analytics-hover-tick {
+.analytics-page .form-card:hover .analytics-hover-tick {
   opacity: 1;
 }
 
-.form-icon {
+.analytics-page .form-icon {
   font-size: clamp(2rem, 5vw, 3rem);
   color: #3b82f6;
 }
 
-.form-name {
+.analytics-page .form-name {
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   font-weight: 600;
   color: #111827;
   margin: 0;
 }
 
-.form-info h3 {
+.analytics-page .form-info h3 {
   margin: 0;
   color: #111827;
   font-size: 1.25rem;
 }
 
-.form-badge {
+.analytics-page .form-badge {
   display: inline-block;
   margin-top: 0.5rem;
   padding: 0.25rem 0.75rem;
@@ -150,7 +152,7 @@
 }
 
 /* All Forms Button - Prominent Style */
-.all-forms-button {
+.analytics-page .all-forms-button {
   display: inline-flex;
   align-items: center;
   gap: clamp(0.75rem, 2vw, 12px);
@@ -166,24 +168,24 @@
   max-width: 100%;
 }
 
-.all-forms-button:hover {
+.analytics-page .all-forms-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
   color: white;
   text-decoration: none;
 }
 
-.all-forms-button i {
+.analytics-page .all-forms-button i {
   font-size: clamp(1.25rem, 3vw, 20px);
 }
 
-.form-arrow {
+.analytics-page .form-arrow {
   color: #9ca3af;
   font-size: 1.5rem;
   transition: transform 0.3s ease;
 }
 
-.form-card:hover .form-arrow {
+.analytics-page .form-card:hover .form-arrow {
   transform: translateX(4px);
 }
 
@@ -193,21 +195,21 @@
     padding: clamp(0.75rem, 3vw, 1rem);
   }
 
-  .excel-card-body {
+  .analytics-page .excel-card-body {
     padding: clamp(1rem, 4vw, 1.5rem);
   }
 
-  .form-grid {
+  .analytics-page .form-grid {
     grid-template-columns: 1fr;
     gap: clamp(0.75rem, 2.5vw, 1rem);
   }
 
-  .form-card {
+  .analytics-page .form-card {
     padding: clamp(1rem, 3vw, 1.5rem);
     min-height: clamp(140px, 20vw, 160px);
   }
 
-  .all-forms-button {
+  .analytics-page .all-forms-button {
     padding: clamp(0.875rem, 2.5vw, 1rem) clamp(1.5rem, 4vw, 2rem);
     font-size: clamp(0.875rem, 2.5vw, 1rem);
     gap: clamp(0.5rem, 1.5vw, 0.75rem);
@@ -216,27 +218,26 @@
 
 /* Tablet Devices - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .form-grid {
+  .analytics-page .form-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(250px, 45vw), 1fr));
     gap: clamp(1.25rem, 2.5vw, var(--fibonacci-21));
   }
 
-  .form-card {
+  .analytics-page .form-card {
     padding: clamp(1.25rem, 3.5vw, var(--fibonacci-34));
   }
 }
 
 /* Large Tablets - 1025px to 1440px */
 @media (min-width: 1025px) and (max-width: 1440px) {
-  .form-grid {
+  .analytics-page .form-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(260px, 40vw), 1fr));
   }
 }
 
 /* Large Desktops - 1441px and above */
 @media (min-width: 1441px) {
-  .form-grid {
+  .analytics-page .form-grid {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 }
-

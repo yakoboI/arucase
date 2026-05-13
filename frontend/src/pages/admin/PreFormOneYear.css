@@ -1,17 +1,28 @@
+/* Pre-Form One year hub — scoped to avoid leaking .back-button / .navigation-* to other admin pages.
+   Layout defers to AdminLayout (.admin-main-content padding + white background). */
+
 .pre-form-one-year-page {
-  padding: clamp(1rem, 4vw, 2.5rem);
-  background: #f8fafc;
-  min-height: 100vh;
+  padding: 0;
+  margin: 0;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
+  min-height: 0;
   overflow-x: hidden;
+  box-sizing: border-box;
+  background: transparent;
 }
 
-.pre-form-one-year-header {
-  margin-bottom: clamp(1.5rem, 5vw, 2.5rem);
+.pre-form-one-year-page .pre-form-one-year-header-top {
+  margin-bottom: clamp(0.75rem, 2.5vw, 1.25rem);
 }
 
-.back-button {
+.pre-form-one-year-page .pre-form-one-year-header {
+  margin-bottom: clamp(1.25rem, 4vw, 2rem);
+  padding-bottom: clamp(1rem, 3vw, 1.5rem);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pre-form-one-year-page .back-button {
   display: inline-flex;
   align-items: center;
   gap: clamp(0.25rem, 1vw, 0.75rem);
@@ -23,159 +34,146 @@
   border: 1px solid #e2e8f0;
   background: #ffffff;
   border-radius: 0;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
   min-height: clamp(36px, 8vw, 44px);
   touch-action: manipulation;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.back-button:hover {
+.pre-form-one-year-page .back-button:hover {
   color: #1e293b;
   border-color: #cbd5e1;
-  background: #f8fafc;
+  background: #f9fafb;
   transform: translateY(-1px);
 }
 
-.back-button i {
+.pre-form-one-year-page .back-button i {
   font-size: clamp(0.625rem, 2vw, 0.875rem);
 }
 
-.pre-form-one-year-header h1 {
-  color: #1e293b;
-  font-size: clamp(1.5rem, 5vw, 2.25rem);
-  font-weight: 700;
-  margin-bottom: clamp(0.375rem, 1.25vw, 0.75rem);
-  line-height: 1.2;
-}
-
-.pre-form-one-year-header p {
-  color: #64748b;
-  font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+.pre-form-one-year-page .pre-form-one-year-lead {
+  color: #475569;
+  font-size: clamp(0.95rem, 2.5vw, 1.125rem);
+  font-weight: 500;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.55;
+  max-width: 52rem;
 }
 
-.navigation-grid {
+.pre-form-one-year-page .navigation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-  gap: clamp(1.25rem, 3vw, 1.75rem);
-  max-width: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: clamp(0.75rem, 2vw, 1rem);
+  max-width: 1200px;
+  margin: 0 auto clamp(1.5rem, 5vw, 2.5rem);
   width: 100%;
-  margin-bottom: clamp(2rem, 6vw, 3rem);
 }
 
-.navigation-card {
+.pre-form-one-year-page .navigation-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0;
   padding: 0;
   text-decoration: none;
   color: inherit;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   width: 100%;
-  min-height: clamp(100px, 18vw, 140px);
+  min-height: clamp(88px, 16vw, 120px);
 }
 
-.navigation-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: var(--card-color);
+.pre-form-one-year-page .navigation-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
 }
 
-.navigation-card-content {
+.pre-form-one-year-page .navigation-card-content {
   display: flex;
   align-items: center;
-  padding: clamp(1.25rem, 3.5vw, 1.75rem);
-  gap: clamp(1rem, 2.5vw, 1.5rem);
+  padding: clamp(1rem, 3vw, 1.35rem);
+  gap: clamp(0.75rem, 2vw, 1.25rem);
   width: 100%;
-  min-height: clamp(100px, 18vw, 140px);
+  min-height: clamp(88px, 16vw, 120px);
 }
 
-.navigation-icon {
+.pre-form-one-year-page .navigation-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(48px, 10vw, 64px);
-  height: clamp(48px, 10vw, 64px);
-  background: var(--card-color);
-  color: #ffffff;
+  width: clamp(44px, 9vw, 56px);
+  height: clamp(44px, 9vw, 56px);
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   flex-shrink: 0;
 }
 
-.navigation-icon i {
-  font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+.pre-form-one-year-page .navigation-icon i {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
 }
 
-.navigation-info {
+.pre-form-one-year-page .navigation-info {
   flex: 1;
   min-width: 0;
 }
 
-.navigation-info h3 {
-  font-size: clamp(1rem, 3vw, 1.375rem);
+.pre-form-one-year-page .navigation-info h3 {
+  font-size: clamp(0.95rem, 2.75vw, 1.2rem);
   font-weight: 600;
   color: #1e293b;
-  margin: 0 0 clamp(0.125rem, 0.5vw, 0.375rem) 0;
+  margin: 0 0 clamp(0.125rem, 0.5vw, 0.25rem) 0;
   line-height: 1.3;
 }
 
-.navigation-info p {
-  font-size: clamp(0.75rem, 2vw, 0.9375rem);
+.pre-form-one-year-page .navigation-info p {
+  font-size: clamp(0.7rem, 1.75vw, 0.875rem);
   color: #64748b;
   margin: 0;
   line-height: 1.4;
 }
 
-.navigation-arrow {
+.pre-form-one-year-page .navigation-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(32px, 6vw, 48px);
-  height: clamp(32px, 6vw, 48px);
+  width: clamp(28px, 5vw, 40px);
+  height: clamp(28px, 5vw, 40px);
   color: #94a3b8;
   transition: color 0.2s ease;
   flex-shrink: 0;
 }
 
-.navigation-card:hover .navigation-arrow {
-  color: var(--card-color);
+.pre-form-one-year-page .navigation-card:hover .navigation-arrow {
+  color: #374151;
 }
 
-.navigation-arrow i {
-  font-size: clamp(0.75rem, 2vw, 1.125rem);
+.pre-form-one-year-page .navigation-arrow i {
+  font-size: clamp(0.7rem, 2vw, 1rem);
 }
 
-.back-navigation-bottom {
-  margin-top: clamp(2rem, 6vw, 3rem);
+.pre-form-one-year-page .back-navigation-bottom {
+  margin-top: clamp(1.5rem, 5vw, 2.5rem);
+  padding-top: clamp(1rem, 3vw, 1.5rem);
+  border-top: 1px solid #e5e7eb;
   text-align: center;
 }
 
-/* Touch Device Optimizations */
 @media (hover: none) and (pointer: coarse) {
-  .navigation-card:active {
-    transform: scale(0.98);
+  .pre-form-one-year-page .navigation-card:active {
+    transform: scale(0.99);
   }
 
-  .back-button:active {
-    transform: scale(0.98);
-  }
-
-  .navigation-card {
-    min-height: clamp(60px, 14vw, 100px);
-  }
-
-  .navigation-card-content {
-    min-height: clamp(60px, 14vw, 100px);
+  .pre-form-one-year-page .back-button:active {
+    transform: scale(0.99);
   }
 }
 
-/* Extra Large Screens */
 @media (min-width: 1400px) {
-  .navigation-grid {
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: clamp(1.5rem, 2.5vw, 2rem);
+  .pre-form-one-year-page .navigation-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: clamp(1rem, 2vw, 1.25rem);
   }
 }

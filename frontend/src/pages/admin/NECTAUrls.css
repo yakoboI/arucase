@@ -1,0 +1,215 @@
+/**
+ * NECTA URLs admin (/admin/necta-urls) — sharp corners, #fff surfaces, black text/icons
+ */
+.necta-urls-page {
+  background: #ffffff;
+  color: #000000;
+}
+
+.necta-urls-page .excel-card,
+.necta-urls-page .excel-card-header,
+.necta-urls-page .excel-card-body {
+  background: #ffffff !important;
+  color: #000000;
+  border-radius: 0 !important;
+  box-shadow: none;
+}
+
+.necta-urls-page .excel-card-header i {
+  color: #000000;
+}
+
+.necta-urls-page .loading-state {
+  color: #000000;
+}
+
+.necta-urls-page .excel-table th {
+  background: #ffffff;
+  color: #000000;
+}
+
+.necta-urls-page .excel-table td {
+  color: #000000;
+}
+
+.necta-urls-page .excel-table tbody tr:hover {
+  background: #ffffff;
+}
+
+.necta-exam-block {
+  margin-bottom: 2rem;
+}
+
+.necta-exam-section-header {
+  background: #ffffff;
+  color: #000000;
+  padding: 1rem 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+  border-radius: 0;
+}
+
+.necta-exam-section-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #000000;
+}
+
+.necta-exam-section-title i {
+  color: #000000;
+}
+
+.necta-exam-section-desc {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #000000;
+}
+
+.necta-exam-table-frame {
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0;
+  background: #ffffff;
+  overflow-x: auto;
+}
+
+.necta-row-hint {
+  font-size: 0.75rem;
+  color: #000000;
+  margin-top: 0.25rem;
+}
+
+.necta-url-link:visited,
+.necta-url-link--muted:visited {
+  color: #000000;
+}
+
+.necta-url-link--muted {
+  color: #000000;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.necta-urls-page .excel-btn,
+.necta-urls-page .excel-btn.primary,
+.necta-urls-page .excel-btn.secondary {
+  border-radius: 0 !important;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
+}
+
+.necta-urls-page .excel-btn i {
+  color: #000000;
+}
+
+.necta-urls-page .excel-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  color: #000000;
+}
+
+.necta-urls-page .excel-btn:disabled {
+  opacity: 0.45;
+}
+
+.necta-urls-page .action-btn,
+.necta-urls-page .action-btn.edit-btn,
+.necta-urls-page .action-btn.toggle-btn,
+.necta-urls-page .action-btn.delete-btn {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+}
+
+.necta-urls-page .action-btn i {
+  color: #000000;
+}
+
+.necta-urls-page .action-btn:hover {
+  background: #f0f0f0 !important;
+  color: #000000 !important;
+}
+
+.necta-urls-page .badge-active,
+.necta-urls-page .badge-inactive,
+.necta-urls-page .badge-warning {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
+  border-radius: 0;
+}
+
+.necta-urls-page .modal-content,
+.necta-urls-page .modal-content.large {
+  border-radius: 0 !important;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #e5e7eb;
+}
+
+.necta-urls-page .modal-header {
+  background: #ffffff;
+  border-radius: 0;
+}
+
+.necta-urls-page .modal-header h3,
+.necta-urls-page .modal-header i {
+  color: #000000;
+}
+
+.necta-urls-page .modal-close {
+  color: #000000;
+  border-radius: 0;
+}
+
+.necta-urls-page .modal-close:hover {
+  background: #f0f0f0;
+  color: #000000;
+}
+
+.necta-urls-page .form-group label {
+  color: #000000;
+}
+
+.necta-urls-page .excel-input,
+.necta-urls-page select.excel-input {
+  border-radius: 0;
+  background: #ffffff;
+  color: #000000;
+}
+
+.necta-modal-form {
+  padding: 1.5rem;
+  background: #ffffff;
+}
+
+.necta-form-hint {
+  color: #000000;
+  margin-top: 0.5rem;
+  display: block;
+  font-size: 0.875rem;
+}
+
+.necta-urls-page .form-actions .excel-btn {
+  border-radius: 0 !important;
+}
+
+.necta-generate-default-btn {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  vertical-align: middle;
+}
+
+.necta-url-fallback {
+  font-size: 0.875rem;
+  color: #000000;
+}
+
+.necta-checkbox-inline {
+  margin-right: 0.5rem;
+}

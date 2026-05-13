@@ -295,9 +295,11 @@ const AdminSidebar = () => {
                 <div key={catIndex} className={`nav-category ${isExpanded ? 'expanded' : ''}`}>
                   {!sidebarCollapsed && (
                     <button
+                      type="button"
                       className="category-header"
                       onClick={() => toggleCategory(catIndex)}
                       aria-expanded={isExpanded}
+                      title={category.category}
                     >
                       <span className="category-title-text">{category.category}</span>
                       <i className={`fas fa-chevron-right category-chevron ${isExpanded ? 'rotated' : ''}`}></i>
@@ -332,9 +334,11 @@ const AdminSidebar = () => {
               return (
                 <div key={catIndex} className={`mobile-nav-category ${isExpanded ? 'expanded' : ''}`}>
                   <button
+                    type="button"
                     className="mobile-category-header"
                     onClick={() => toggleCategory(catIndex)}
                     aria-expanded={isExpanded}
+                    title={category.category}
                   >
                     <span className="category-title-text">{category.category}</span>
                     <i className={`fas fa-chevron-right category-chevron ${isExpanded ? 'rotated' : ''}`}></i>

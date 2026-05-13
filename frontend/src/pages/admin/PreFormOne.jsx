@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import AdminLayout from '../../components/layout/AdminLayout';
 import './PreFormOne.css';
 
 const PreFormOne = () => {
@@ -14,6 +15,7 @@ const PreFormOne = () => {
   }
 
   return (
+    <AdminLayout>
     <div className="pre-form-one-page">
       <div className="pre-form-one-header">
         <h1>Pre-Form One Management</h1>
@@ -50,6 +52,7 @@ const PreFormOne = () => {
         </Link>
       </div>
     </div>
+    </AdminLayout>
   );
 };
 

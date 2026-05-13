@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '../../components/layout/AdminLayout';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
@@ -38,20 +38,6 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { isMuted, toggleMute } = useSound();
   const isAdmin = user?.role && ADMIN_LIKE_ROLES.includes(user.role);
-  const formatCappedCoverage = useCallback((assigned, students) => {
-    const totalStudents = Number(students) || 0;
-    if (totalStudents <= 0) return '0.0%';
-    const assignedCount = Number(assigned) || 0;
-    const cappedAssigned = Math.min(assignedCount, totalStudents);
-    return `${((cappedAssigned / totalStudents) * 100).toFixed(1)}%`;
-  }, []);
-
-  const formatPhotoCoverage = useCallback((photos, students) => {
-    const totalStudents = Number(students) || 0;
-    if (totalStudents <= 0) return '0.0%';
-    const photoCount = Number(photos) || 0;
-    return `${((photoCount / totalStudents) * 100).toFixed(1)}%`;
-  }, []);
 
   // Heavy stats + activity log only for admin-like roles; teachers use the guidelines-only view
   const { data: dashboardData, isLoading, error } = useQuery({
@@ -330,156 +316,6 @@ const Dashboard = () => {
                   </div>
                 );
               })()}
-            </div>
-
-            {/* Academic Statistics Section */}
-            <div className="dashboard-section">
-              <h3 className="section-title">
-                <i className="fas fa-book" aria-hidden="true"></i> Academic Statistics
-              </h3>
-              <div className="year-table-container">
-                <div className="year-table-header">Academic Statistics Overview</div>
-                <div className="year-table year-table--academic-grid">
-                  <div className="year-table-row year-table-row--head">
-                    <div className="year-table-cell year-table-cell--head">Metric</div>
-                    <div className="year-table-cell year-table-cell--head">Form I</div>
-                    <div className="year-table-cell year-table-cell--head">Form II</div>
-                    <div className="year-table-cell year-table-cell--head">Form III</div>
-                    <div className="year-table-cell year-table-cell--head">Form IV</div>
-                    <div className="year-table-cell year-table-cell--head">Form V</div>
-                    <div className="year-table-cell year-table-cell--head">Form VI</div>
-                    <div className="year-table-cell year-table-cell--head">Total</div>
-                  </div>
-
-                  <div className="year-table-row">
-                    <div className="year-table-cell year-table-cell--year">Total Subjects</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_i?.subjects || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_ii?.subjects || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_iii?.subjects || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_iv?.subjects || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_v?.subjects || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_vi?.subjects || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.total_subjects || 0}</div>
-                  </div>
-
-                  <div className="year-table-row">
-                    <div className="year-table-cell year-table-cell--year">Photos Uploaded</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_i?.photos || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_ii?.photos || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_iii?.photos || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_iv?.photos || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_v?.photos || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_vi?.photos || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.total_photos || 0}</div>
-                  </div>
-
-                  <div className="year-table-row">
-                    <div className="year-table-cell year-table-cell--year">Photo Coverage</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(stats.academic_by_form?.form_i?.photos, stats.form_i_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(stats.academic_by_form?.form_ii?.photos, stats.form_ii_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(stats.academic_by_form?.form_iii?.photos, stats.form_iii_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(stats.academic_by_form?.form_iv?.photos, stats.form_iv_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(stats.academic_by_form?.form_v?.photos, stats.form_v_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(stats.academic_by_form?.form_vi?.photos, stats.form_vi_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(stats.total_photos, stats.total_students)}</div>
-                  </div>
-
-                  <div className="year-table-row">
-                    <div className="year-table-cell year-table-cell--year">Parish Assigned</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_i?.parishes || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_ii?.parishes || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_iii?.parishes || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_iv?.parishes || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_v?.parishes || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.academic_by_form?.form_vi?.parishes || 0}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{stats.parishes_assigned || 0}</div>
-                  </div>
-
-                  <div className="year-table-row">
-                    <div className="year-table-cell year-table-cell--year">Parish Coverage</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(stats.academic_by_form?.form_i?.parishes, stats.form_i_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(stats.academic_by_form?.form_ii?.parishes, stats.form_ii_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(stats.academic_by_form?.form_iii?.parishes, stats.form_iii_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(stats.academic_by_form?.form_iv?.parishes, stats.form_iv_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(stats.academic_by_form?.form_v?.parishes, stats.form_v_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(stats.academic_by_form?.form_vi?.parishes, stats.form_vi_students)}</div>
-                    <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(stats.parishes_assigned, stats.total_students)}</div>
-                  </div>
-                </div>
-              </div>
-
-              {Array.isArray(stats.academic_by_year) && stats.academic_by_year.length > 0 && stats.academic_by_year.map((yearStat) => (
-                <div className="year-table-container" key={`academic-${yearStat.year}`}>
-                  <div className="year-table-header">Academic Statistics Overview - {yearStat.year}</div>
-                  <div className="year-table year-table--academic-grid">
-                    <div className="year-table-row year-table-row--head">
-                      <div className="year-table-cell year-table-cell--head">Metric</div>
-                      <div className="year-table-cell year-table-cell--head">Form I</div>
-                      <div className="year-table-cell year-table-cell--head">Form II</div>
-                      <div className="year-table-cell year-table-cell--head">Form III</div>
-                      <div className="year-table-cell year-table-cell--head">Form IV</div>
-                      <div className="year-table-cell year-table-cell--head">Form V</div>
-                      <div className="year-table-cell year-table-cell--head">Form VI</div>
-                      <div className="year-table-cell year-table-cell--head">Total</div>
-                    </div>
-
-                    <div className="year-table-row">
-                      <div className="year-table-cell year-table-cell--year">Total Subjects</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_i?.subjects || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_ii?.subjects || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_iii?.subjects || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_iv?.subjects || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_v?.subjects || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_vi?.subjects || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.totals?.subjects || 0}</div>
-                    </div>
-
-                    <div className="year-table-row">
-                      <div className="year-table-cell year-table-cell--year">Photos Uploaded</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_i?.photos || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_ii?.photos || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_iii?.photos || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_iv?.photos || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_v?.photos || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_vi?.photos || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.totals?.photos || 0}</div>
-                    </div>
-
-                    <div className="year-table-row">
-                      <div className="year-table-cell year-table-cell--year">Photo Coverage</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(yearStat.by_form?.form_i?.photos, yearStat.by_form?.form_i?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(yearStat.by_form?.form_ii?.photos, yearStat.by_form?.form_ii?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(yearStat.by_form?.form_iii?.photos, yearStat.by_form?.form_iii?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(yearStat.by_form?.form_iv?.photos, yearStat.by_form?.form_iv?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(yearStat.by_form?.form_v?.photos, yearStat.by_form?.form_v?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(yearStat.by_form?.form_vi?.photos, yearStat.by_form?.form_vi?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatPhotoCoverage(yearStat.totals?.photos, yearStat.totals?.students)}</div>
-                    </div>
-
-                    <div className="year-table-row">
-                      <div className="year-table-cell year-table-cell--year">Parish Assigned</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_i?.parishes || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_ii?.parishes || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_iii?.parishes || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_iv?.parishes || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_v?.parishes || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.by_form?.form_vi?.parishes || 0}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{yearStat.totals?.parishes || 0}</div>
-                    </div>
-
-                    <div className="year-table-row">
-                      <div className="year-table-cell year-table-cell--year">Parish Coverage</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(yearStat.by_form?.form_i?.parishes, yearStat.by_form?.form_i?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(yearStat.by_form?.form_ii?.parishes, yearStat.by_form?.form_ii?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(yearStat.by_form?.form_iii?.parishes, yearStat.by_form?.form_iii?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(yearStat.by_form?.form_iv?.parishes, yearStat.by_form?.form_iv?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(yearStat.by_form?.form_v?.parishes, yearStat.by_form?.form_v?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(yearStat.by_form?.form_vi?.parishes, yearStat.by_form?.form_vi?.students)}</div>
-                      <div className="year-table-cell year-table-cell--count-no-suffix">{formatCappedCoverage(yearStat.totals?.parishes, yearStat.totals?.students)}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>

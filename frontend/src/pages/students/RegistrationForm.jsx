@@ -668,13 +668,6 @@ const RegistrationForm = () => {
                   </button>
                 </div>
               </div>
-              <div className="bulk-upload-help">
-                <small>
-                  <strong>Instructions:</strong> Download template, fill in student data, then upload CSV file. 
-                  Required columns: Adm No, First Name, Surname, Sex (Male/Female). 
-                  Middle Name is optional.
-                </small>
-              </div>
             </div>
           </div>
         </div>

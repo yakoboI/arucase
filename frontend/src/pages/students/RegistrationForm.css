@@ -236,11 +236,6 @@
   cursor: not-allowed;
 }
 
-.bulk-upload-help {
-  color: #64748b;
-  font-size: clamp(0.65rem, 1.5vw, 0.7rem);
-}
-
 /* Table */
 .table-responsive {
   overflow-x: auto;

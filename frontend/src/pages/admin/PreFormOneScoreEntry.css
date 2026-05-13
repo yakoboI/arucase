@@ -3,15 +3,7 @@
  * Excel-style sharp-edged design with modern appearance
  */
 
-/* Clean background for the entire page */
-body, html {
-  background: #f5f5f5;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-}
-
-/* Main app container clean background */
+/* Page shell only — do not set body/html (avoids leaking styles across admin routes). */
 .pre-form-one-score-entry {
   background: #f5f5f5;
   min-height: 100vh;
@@ -57,9 +49,9 @@ body, html {
   align-items: center;
   margin-bottom: 8px;
   padding: 8px;
-  background: #f8f9fa;
-  color: #333;
-  border: 1px solid #dee2e6;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
 }
 
 .score-entry-page-header h2 {
@@ -82,8 +74,9 @@ body, html {
 }
 
 .year-badge {
-  background: #e9ecef;
-  color: #333;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 0;
   font-size: var(--font-size-xs);
@@ -99,8 +92,9 @@ body, html {
 }
 
 .status-badge.active {
-  background: #e9ecef;
-  color: #333;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
 }
 
 /* Score Cards Container */
@@ -112,7 +106,7 @@ body, html {
   text-align: center;
   margin-bottom: 30px;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
 }
 
@@ -168,7 +162,7 @@ body, html {
   align-items: center;
   gap: 15px;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -183,13 +177,15 @@ body, html {
 }
 
 .score-type-card.interview .score-type-icon {
-  background: #6c757d;
-  color: white;
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
 }
 
 .score-type-card.continuing .score-type-icon {
-  background: #6c757d;
-  color: white;
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
 }
 
 .score-type-card-header h4 {
@@ -220,7 +216,7 @@ body, html {
   flex-direction: column;
   align-items: center;
   padding: 10px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   flex: 1;
   text-align: center;
@@ -246,7 +242,7 @@ body, html {
 
 .score-type-card-footer {
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-top: 1px solid #e5e7eb;
 }
 
@@ -260,7 +256,7 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   margin-bottom: 20px;
 }
@@ -276,8 +272,9 @@ body, html {
 }
 
 .subject-count {
-  background: #e9ecef;
-  color: #333;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   padding: 6px 12px;
   border-radius: 0;
   font-size: 12px;
@@ -301,7 +298,7 @@ body, html {
 }
 
 .subject-card:hover {
-  border-color: #667eea;
+  border-color: #d1d5db;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
@@ -311,7 +308,7 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -323,8 +320,9 @@ body, html {
 }
 
 .subject-code {
-  background: #667eea;
-  color: white;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   padding: 4px 8px;
   border-radius: 0;
   font-size: 12px;
@@ -344,15 +342,15 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
-  color: #6c757d;
+  color: #4b5563;
   font-size: 16px;
 }
 
 .subject-card-footer {
   padding: 15px 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-top: 1px solid #e5e7eb;
 }
 
@@ -366,7 +364,7 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   margin-bottom: 20px;
 }
@@ -382,8 +380,9 @@ body, html {
 }
 
 .subject-info {
-  background: #e9ecef;
-  color: #333;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   padding: 6px 12px;
   border-radius: 0;
   font-size: 14px;
@@ -411,7 +410,7 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -482,7 +481,7 @@ body, html {
 
 .score-form-actions {
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-top: 1px solid #e5e7eb;
   display: flex;
   gap: 12px;
@@ -492,12 +491,12 @@ body, html {
   padding: 20px;
 }
 
-/* Enhanced Excel-style Buttons */
-.excel-btn {
+/* Excel-style buttons — neutral monochrome */
+.pre-form-one-score-entry .excel-btn {
   padding: var(--spacing-md) var(--spacing-xl);
-  border: 2px solid transparent;
-  background: #6c757d;
-  color: white;
+  border: 1px solid #111827;
+  background: #ffffff;
+  color: #111827;
   font-size: var(--font-size-base);
   font-weight: 500;
   cursor: pointer;
@@ -509,7 +508,7 @@ body, html {
   min-width: 44px; /* Touch-friendly size */
 }
 
-.excel-btn::before {
+.pre-form-one-score-entry .excel-btn::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -522,27 +521,27 @@ body, html {
   transition: width 0.6s, height 0.6s;
 }
 
-.excel-btn:active::before {
+.pre-form-one-score-entry .excel-btn:active::before {
   width: 300px;
   height: 300px;
 }
 
-.excel-btn:hover {
+.pre-form-one-score-entry .excel-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.excel-btn:focus {
-  outline: 2px solid #667eea;
+.pre-form-one-score-entry .excel-btn:focus {
+  outline: 2px solid #9ca3af;
   outline-offset: 2px;
 }
 
-.excel-btn.loading {
+.pre-form-one-score-entry .excel-btn.loading {
   color: transparent;
   pointer-events: none;
 }
 
-.excel-btn.loading::after {
+.pre-form-one-score-entry .excel-btn.loading::after {
   content: '';
   position: absolute;
   width: 16px;
@@ -554,47 +553,47 @@ body, html {
   border: 2px solid transparent;
   border-top-color: currentColor;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: preform-one-score-entry-spin 1s linear infinite;
 }
 
-@keyframes spin {
+@keyframes preform-one-score-entry-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-.excel-btn.primary {
-  background: #6c757d;
-  color: white;
-  border-color: #6c757d;
+.pre-form-one-score-entry .excel-btn.primary {
+  background: #ffffff;
+  color: #111827;
+  border-color: #111827;
 }
 
-.excel-btn.primary:hover {
-  background: #5a6268;
-  border-color: #5a6268;
+.pre-form-one-score-entry .excel-btn.primary:hover {
+  background: #f9fafb;
+  border-color: #111827;
 }
 
-.excel-btn.secondary {
-  background: #e9ecef;
-  color: #333;
-  border-color: #e9ecef;
+.pre-form-one-score-entry .excel-btn.secondary {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
 }
 
-.excel-btn.secondary:hover {
-  background: #dee2e6;
-  border-color: #dee2e6;
+.pre-form-one-score-entry .excel-btn.secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
-.excel-btn.small {
+.pre-form-one-score-entry .excel-btn.small {
   padding: 8px 12px;
   font-size: 12px;
 }
 
-.excel-btn.full-width {
+.pre-form-one-score-entry .excel-btn.full-width {
   width: 100%;
   justify-content: center;
 }
 
-.excel-btn:disabled {
+.pre-form-one-score-entry .excel-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
@@ -643,18 +642,8 @@ body, html {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  background: #e5e7eb;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .skeleton-text {
@@ -697,29 +686,29 @@ body, html {
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  background: #f0f9ff;
-  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   font-size: 12px;
-  color: #1e40af;
+  color: #374151;
 }
 
 .progress-indicator.success {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #166534;
+  background: #fafafa;
+  border-color: #e5e7eb;
+  color: #374151;
 }
 
 .progress-indicator.warning {
-  background: #fffbeb;
-  border-color: #fde68a;
-  color: #92400e;
+  background: #fafafa;
+  border-color: #e5e7eb;
+  color: #6b7280;
 }
 
 .progress-indicator.error {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #991b1b;
+  background: #fafafa;
+  border-color: #e5e7eb;
+  color: #6b7280;
 }
 
 /* Toast notifications */
@@ -771,7 +760,7 @@ body, html {
   justify-content: center;
   gap: 10px;
   padding: 15px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0;
 }
@@ -910,12 +899,12 @@ body, html {
     font-size: 12px;
   }
   
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     padding: 8px 12px;
     font-size: 12px;
   }
   
-  .excel-btn.small {
+  .pre-form-one-score-entry .excel-btn.small {
     padding: 6px 8px;
     font-size: 11px;
   }
@@ -963,7 +952,7 @@ body, html {
     font-size: 13px;
   }
   
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     padding: 10px 16px;
     font-size: 13px;
   }
@@ -1022,16 +1011,16 @@ body, html {
 }
 
 /* Focus visible styles */
-.excel-btn:focus-visible,
+.pre-form-one-score-entry .excel-btn:focus-visible,
 .form-input:focus-visible,
 .form-textarea:focus-visible {
-  outline: 2px solid #667eea;
+  outline: 2px solid #9ca3af;
   outline-offset: 2px;
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     border-width: 3px;
   }
   
@@ -1105,7 +1094,7 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   margin-bottom: 20px;
 }
@@ -1127,8 +1116,9 @@ body, html {
 }
 
 .subject-info {
-  background: #e9ecef;
-  color: #333;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   padding: 4px 8px;
   border-radius: 0;
   font-size: 12px;
@@ -1209,7 +1199,7 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 6px;
-  background: #f8fafc;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -1268,7 +1258,7 @@ body, html {
 }
 
 .students-table th {
-  background: #f8fafc;
+  background: #ffffff;
   font-weight: 600;
   color: #374151;
   border-bottom: 1px solid #e5e7eb;
@@ -1276,15 +1266,15 @@ body, html {
 }
 
 .students-table tbody tr:hover {
-  background: #f8fafc;
+  background: #fafafa;
 }
 
 .scored-row {
-  background: #f8f9fa;
+  background: #ffffff;
 }
 
 .pending-row {
-  background: #f8f9fa;
+  background: #ffffff;
 }
 
 .admission-number .student-id {
@@ -1323,13 +1313,15 @@ body, html {
 }
 
 .status-badge.completed {
-  background: #6c757d;
-  color: white;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
 }
 
 .status-badge.pending {
-  background: #e9ecef;
-  color: #333;
+  background: #fafafa;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
 }
 
 .action-buttons-row {
@@ -1337,7 +1329,7 @@ body, html {
   gap: 5px;
 }
 
-.excel-btn.small {
+.pre-form-one-score-entry .excel-btn.small {
   padding: 6px 10px;
   font-size: 12px;
   border-radius: 0;
@@ -1354,7 +1346,7 @@ body, html {
 
 .score-summary-header {
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -1382,7 +1374,7 @@ body, html {
 .summary-item {
   text-align: center;
   padding: 15px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0;
 }
@@ -1440,11 +1432,13 @@ body, html {
   transition: width 0.3s ease;
 }
 
-.grade-fill.a { background: #10b981; }
-.grade-fill.b { background: #3b82f6; }
-.grade-fill.c { background: #f59e0b; }
-.grade-fill.d { background: #ef4444; }
-.grade-fill.f { background: #6b7280; }
+.grade-fill.a,
+.grade-fill.b,
+.grade-fill.c,
+.grade-fill.d,
+.grade-fill.f {
+  background: #9ca3af;
+}
 
 .grade-count {
   width: 30px;
@@ -1578,7 +1572,7 @@ body, html {
     gap: 12px;
   }
   
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     padding: 11px 18px;
     font-size: 14px;
   }
@@ -1663,7 +1657,7 @@ body, html {
     gap: 10px;
   }
   
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     width: 100%;
     justify-content: center;
     padding: 12px 16px;
@@ -1753,7 +1747,7 @@ body, html {
     font-size: 16px; /* Prevent zoom on iOS */
   }
   
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     padding: 14px 16px;
     font-size: 16px;
   }
@@ -1832,7 +1826,7 @@ body, html {
     font-size: 14px;
   }
   
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     padding: 12px 14px;
     font-size: 14px;
   }
@@ -1843,7 +1837,7 @@ body, html {
     font-size: 10px;
   }
   
-  .action-buttons-row .excel-btn {
+  .pre-form-one-score-entry .action-buttons-row .excel-btn {
     padding: 8px 10px;
     font-size: 12px;
   }
@@ -1871,12 +1865,12 @@ body, html {
   }
   
   .subject-card:hover {
-    border-color: #667eea;
+    border-color: #9ca3af;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   }
   
-  .excel-btn:hover {
+  .pre-form-one-score-entry .excel-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
@@ -1884,7 +1878,7 @@ body, html {
 
 /* Touch device optimizations */
 @media (pointer: coarse) {
-  .excel-btn {
+  .pre-form-one-score-entry .excel-btn {
     min-height: 48px;
     padding: var(--spacing-lg) var(--spacing-xl);
   }
@@ -1901,7 +1895,7 @@ body, html {
   }
   
   /* Larger touch targets for mobile */
-  .action-buttons-row .excel-btn {
+  .pre-form-one-score-entry .action-buttons-row .excel-btn {
     min-height: 44px;
     padding: var(--spacing-md) var(--spacing-lg);
   }
@@ -1923,7 +1917,8 @@ body, html {
   }
   
   .score-entry-page-header {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    background: #374151;
+    border-bottom: 1px solid #4b5563;
   }
   
   .score-type-card-header,

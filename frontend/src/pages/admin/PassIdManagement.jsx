@@ -143,7 +143,7 @@ const PassIdManagement = () => {
   return (
     <AdminLayout>
       <div className="pass-id-management-page">
-        <div className="excel-card">
+        <div className="excel-card pass-id-root-card">
           <div className="excel-card-header">
             <i className="fas fa-key"></i>
             Pass ID Management
@@ -252,6 +252,7 @@ const PassIdManagement = () => {
                   ) : (
                     <div className="pass-ids-table-container">
                       <DataTable
+                        className="pass-ids-datatable"
                         data={passIds}
                         columns={columns}
                         showActions={false}
@@ -276,13 +277,13 @@ const PassIdManagement = () => {
               </div>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Form: <strong>{selectedForm}</strong></label>
+                  <label>Form: <span className="pass-id-modal-value">{selectedForm}</span></label>
                 </div>
                 <div className="form-group">
-                  <label>Month: <strong>{selectedMonth}</strong></label>
+                  <label>Month: <span className="pass-id-modal-value">{selectedMonth}</span></label>
                 </div>
                 <div className="form-group">
-                  <label>Year: <strong>{selectedYear}</strong></label>
+                  <label>Year: <span className="pass-id-modal-value">{selectedYear}</span></label>
                 </div>
                 <p className="modal-warning">
                   <i className="fas fa-exclamation-triangle"></i> This will generate Pass IDs for all students in {selectedForm} for {selectedMonth} {selectedYear}. 

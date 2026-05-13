@@ -1,28 +1,19 @@
-/* Pre-Form One Parishes Page Styles - Matching Admin RegistrationForm */
-.registration-form-page-container {
+.preform-one-registration-route .registration-form-page-container{
   width: 100%;
   max-width: 100vw;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   overflow-x: hidden;
-}
-
-.registration-form-card,
-.bulk-upload-card,
-.registered-students-card {
+}.preform-one-registration-route .registration-form-card, .preform-one-registration-route .bulk-upload-card, .preform-one-registration-route .registered-students-card{
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   margin-bottom: clamp(0.75rem, 2vw, 1rem);
   overflow: hidden;
-}
-
-.registration-form-card-header,
-.bulk-upload-card-header,
-.registered-students-card-header {
-  background: #f1f5f9;
+}.preform-one-registration-route .registration-form-card-header, .preform-one-registration-route .bulk-upload-card-header, .preform-one-registration-route .registered-students-card-header{
+  background: #ffffff;
   color: #1e293b;
   padding: clamp(0.5rem, 1.5vw, 0.75rem);
   font-size: clamp(0.875rem, 2vw, 1rem);
@@ -31,75 +22,47 @@
   align-items: center;
   gap: clamp(0.375rem, 1vw, 0.5rem);
   border-bottom: 1px solid #e2e8f0;
-}
-
-.registration-form-card-header i,
-.bulk-upload-card-header i,
-.registered-students-card-header i {
+}.preform-one-registration-route .registration-form-card-header i, .preform-one-registration-route .bulk-upload-card-header i, .preform-one-registration-route .registered-students-card-header i{
   font-size: clamp(0.875rem, 2vw, 1rem);
-  color: #01a72b;
-}
-
-.academic-year-info {
+  color: #4b5563;
+}.preform-one-registration-route .academic-year-info{
   display: block;
   margin-top: clamp(0.125rem, 0.5vw, 0.25rem);
   font-weight: 400;
   color: #64748b;
-}
-
-.academic-year-info small {
+}.preform-one-registration-route .academic-year-info small{
   font-size: clamp(0.65rem, 1.5vw, 0.7rem);
   line-height: 1.4;
-}
-
-.registration-form-card-body,
-.bulk-upload-card-body,
-.registered-students-card-body {
+}.preform-one-registration-route .registration-form-card-body, .preform-one-registration-route .bulk-upload-card-body, .preform-one-registration-route .registered-students-card-body{
   padding: clamp(0.5rem, 1.5vw, 0.75rem);
-}
-
-/* Student Info Display */
-.student-info-display {
-  background: #f8fafc;
+}.preform-one-registration-route .student-info-display{
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0;
   padding: clamp(0.75rem, 2vw, 1rem);
   margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
-}
-
-.student-details-grid {
+}.preform-one-registration-route .student-details-grid{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: clamp(0.75rem, 2vw, 1rem);
-}
-
-.detail-item {
+}.preform-one-registration-route .detail-item{
   display: flex;
   flex-direction: column;
-}
-
-.detail-item label {
+}.preform-one-registration-route .detail-item label{
   font-weight: 500;
   color: #1e293b;
   font-size: clamp(0.7rem, 1.5vw, 0.8rem);
   margin-bottom: clamp(0.125rem, 0.5vw, 0.25rem);
-}
-
-.detail-item span {
+}.preform-one-registration-route .detail-item span{
   color: #374151;
   font-size: clamp(0.875rem, 2vw, 1rem);
-}
-
-.no-editing {
+}.preform-one-registration-route .no-editing{
   text-align: center;
   padding: clamp(2rem, 5vw, 3rem);
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0;
-}
-
-/* Form Grid and Styles */
-.registration-form-grid {
+}.preform-one-registration-route .registration-form-grid{
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
@@ -108,54 +71,37 @@
   align-items: end;
 }
 
-@media (max-width: 768px) {
-  .registration-form-grid {
+@media (max-width: 768px) {.preform-one-registration-route .registration-form-grid{
     grid-template-columns: 1fr;
   }
-}
-
-.form-field {
+}.preform-one-registration-route .form-field{
   display: flex;
   flex-direction: column;
-}
-
-.form-group {
+}.preform-one-registration-route .form-group{
   display: flex;
   flex-direction: column;
-}
-
-.form-group label {
+}.preform-one-registration-route .form-group label{
   font-weight: 500;
   margin-bottom: clamp(0.25rem, 0.75vw, 0.375rem);
   color: #1e293b;
   font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-}
-
-.form-group .req {
-  color: #ef4444;
-}
-
-.form-input {
+}.preform-one-registration-route .form-group .req{
+  color: #6b7280;
+}.preform-one-registration-route .form-input{
   padding: clamp(0.375rem, 1vw, 0.5rem) clamp(0.5rem, 1.25vw, 0.625rem);
   border: 1px solid #e2e8f0;
   border-radius: 0;
   font-size: clamp(0.8rem, 1.5vw, 0.9rem);
   transition: all 0.2s ease;
   background: #ffffff;
-}
-
-.form-input:focus {
+}.preform-one-registration-route .form-input:focus{
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
-}
-
-.form-actions-field {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04);
+}.preform-one-registration-route .form-actions-field{
   display: flex;
   align-items: flex-end;
-}
-
-.form-btn {
+}.preform-one-registration-route .form-btn{
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -169,244 +115,159 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: clamp(32px, 5vw, 40px);
-}
-
-.form-btn.primary {
-  background: #01a72b;
-  color: #ffffff;
-  border-color: #01a72b;
-}
-
-.form-btn.primary:hover:not(:disabled) {
-  background: #028e3d;
-  border-color: #028e3d;
+}.preform-one-registration-route .form-btn.primary{
+  background: #ffffff;
+  color: #111827;
+  border-color: #111827;
+}.preform-one-registration-route .form-btn.primary:hover:not(:disabled){
+  background: #f9fafb;
+  border-color: #111827;
   transform: translateY(-1px);
-}
-
-.form-btn.secondary {
+}.preform-one-registration-route .form-btn.secondary{
   background: #ffffff;
   color: #374151;
   border-color: #d1d5db;
-}
-
-.form-btn.secondary:hover:not(:disabled) {
+}.preform-one-registration-route .form-btn.secondary:hover:not(:disabled){
   background: #f9fafb;
   border-color: #9ca3af;
   transform: translateY(-1px);
-}
-
-.form-btn:disabled {
+}.preform-one-registration-route .form-btn:disabled{
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-}
-
-.form-btn.small {
+}.preform-one-registration-route .form-btn.small{
   padding: clamp(0.25rem, 0.75vw, 0.375rem) clamp(0.5rem, 1vw, 0.625rem);
   font-size: clamp(0.7rem, 1.25vw, 0.75rem);
   min-height: clamp(28px, 4vw, 32px);
-}
-
-.btn-text {
+}.preform-one-registration-route .btn-text{
   white-space: nowrap;
-}
-
-.no-editing {
-  text-align: center;
-  padding: clamp(2rem, 5vw, 3rem);
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0;
-}
-
-.instruction {
+}.preform-one-registration-route .instruction{
   color: #64748b;
   font-size: clamp(0.875rem, 2vw, 1rem);
   margin: 0;
   line-height: 1.6;
-}
-
-/* Students Controls */
-.students-controls {
+}.preform-one-registration-route .students-controls{
   display: flex;
   flex-wrap: wrap;
   gap: clamp(0.75rem, 2vw, 1rem);
   align-items: center;
   margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
   padding: clamp(0.75rem, 2vw, 1rem);
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0;
-}
-
-.search-filter {
+}.preform-one-registration-route .search-filter{
   flex: 1;
   min-width: 200px;
-}
-
-.filter-controls {
+}.preform-one-registration-route .filter-controls{
   display: flex;
   gap: clamp(0.5rem, 1vw, 0.75rem);
   align-items: center;
-}
-
-.filter-controls select {
+}.preform-one-registration-route .filter-controls select{
   min-width: 150px;
-}
-
-/* Table Styles */
-.students-table-container {
+}.preform-one-registration-route .students-table-container{
   overflow-x: auto;
   border: 1px solid #e2e8f0;
   border-radius: 0;
-}
-
-.students-table {
+}.preform-one-registration-route .students-table{
   width: 100%;
   border-collapse: collapse;
   font-size: clamp(0.8rem, 1.5vw, 0.9rem);
-}
-
-.students-table th,
-.students-table td {
+}.preform-one-registration-route .students-table th, .preform-one-registration-route .students-table td{
   padding: clamp(0.5rem, 1vw, 0.75rem);
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
-}
-
-.students-table th {
-  background: #f8fafc;
+}.preform-one-registration-route .students-table th{
+  background: #ffffff;
   font-weight: 600;
   color: #1e293b;
   position: sticky;
   top: 0;
   z-index: 1;
-}
-
-.students-table tr:hover {
-  background: #f8fafc;
-}
-
-.students-table tr:nth-child(even) td {
-  background: #fafbfc;
-}
-
-.students-table tr:nth-child(even):hover td {
-  background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
-}
-
-/* Badges */
-.sex-badge {
+  border-bottom: 1px solid #e2e8f0;
+}.preform-one-registration-route .students-table tr:hover{
+  background: #fafafa;
+}.preform-one-registration-route .students-table tr:nth-child(even) td{
+  background: #ffffff;
+}.preform-one-registration-route .students-table tr:nth-child(even):hover td{
+  background: #fafafa;
+}.preform-one-registration-route .sex-badge{
   display: inline-block;
   padding: clamp(0.125rem, 0.5vw, 0.25rem) clamp(0.375rem, 1vw, 0.5rem);
   font-size: clamp(0.7rem, 1.25vw, 0.75rem);
   font-weight: 500;
   border-radius: 0;
   text-transform: uppercase;
-}
-
-.sex-badge.male {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.sex-badge.female {
-  background: #fce7f3;
-  color: #a21caf;
-}
-
-.parish-badge {
+}.preform-one-registration-route .sex-badge.male{
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}.preform-one-registration-route .sex-badge.female{
+  background: #fafafa;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}.preform-one-registration-route .parish-badge{
   display: inline-block;
   padding: clamp(0.125rem, 0.5vw, 0.25rem) clamp(0.375rem, 1vw, 0.5rem);
   font-size: clamp(0.7rem, 1.25vw, 0.75rem);
   font-weight: 500;
-  background: #f0f9ff;
-  color: #0369a1;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
-}
-
-/* Action Buttons */
-.action-buttons {
+}.preform-one-registration-route .action-buttons{
   display: flex;
   gap: clamp(0.25rem, 0.75vw, 0.5rem);
-}
-
-/* Loading and Empty States */
-.loading-state,
-.empty-state {
+}.preform-one-registration-route .loading-state, .preform-one-registration-route .empty-state{
   text-align: center;
   padding: clamp(2rem, 5vw, 3rem);
   color: #64748b;
-}
-
-.loading-state i,
-.empty-state i {
+}.preform-one-registration-route .loading-state i, .preform-one-registration-route .empty-state i{
   font-size: clamp(2rem, 4vw, 3rem);
   margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
   color: #94a3b8;
-}
-
-.loading-state p,
-.empty-state p {
+}.preform-one-registration-route .loading-state p, .preform-one-registration-route .empty-state p{
   font-size: clamp(0.875rem, 2vw, 1rem);
   margin: 0;
-}
-
-.students-header {
+}.preform-one-registration-route .students-header{
   display: flex;
   flex-direction: column;
   gap: clamp(1rem, 2.5vw, 1.5rem);
   margin-bottom: clamp(1.5rem, 4vw, 2rem);
-}
-
-.students-header h3 {
+}.preform-one-registration-route .students-header h3{
   color: #1e293b;
   font-size: clamp(1.125rem, 3vw, 1.375rem);
   font-weight: 600;
-}
-
-.students-controls {
+}.preform-one-registration-route .students-controls{
   display: flex;
   flex-direction: column;
   gap: clamp(1rem, 2.5vw, 1.5rem);
-}
-
-.search-filter {
+}.preform-one-registration-route .search-filter{
   display: flex;
-}
-
-.search-input {
+}.preform-one-registration-route .search-input{
   width: 100%;
   padding: clamp(0.75rem, 1.5vw, 0.875rem);
   border: 1px solid #d1d5db;
   border-radius: 0;
   font-size: clamp(0.875rem, 2vw, 0.9375rem);
   transition: all 0.2s ease;
-}
-
-.search-input:focus {
+}.preform-one-registration-route .search-input:focus{
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.filter-controls {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04);
+}.preform-one-registration-route .filter-controls{
   display: flex;
   flex-wrap: wrap;
   gap: clamp(0.75rem, 1.5vw, 1rem);
   align-items: center;
-}
-
-.filter-select {
+}.preform-one-registration-route .filter-select{
   padding: clamp(0.5rem, 1.5vw, 0.75rem);
   border: 1px solid #d1d5db;
   border-radius: 0;
   font-size: clamp(0.75rem, 2vw, 0.875rem);
   background: #ffffff;
   min-width: clamp(120px, 15vw, 150px);
-}
-
-.sort-toggle {
+}.preform-one-registration-route .sort-toggle{
   display: flex;
   align-items: center;
   justify-content: center;
@@ -418,67 +279,52 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: clamp(40px, 5vw, 50px);
-}
-
-.sort-toggle:hover {
+}.preform-one-registration-route .sort-toggle:hover{
   background: #e5e7eb;
-}
-
-.action-buttons {
+}.preform-one-registration-route .action-buttons{
   display: flex;
   gap: clamp(0.75rem, 1.5vw, 1rem);
   flex-wrap: wrap;
-}
-
-.export-button {
+}.preform-one-registration-route .export-button{
   display: flex;
   align-items: center;
   gap: clamp(0.375rem, 1vw, 0.5rem);
   padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2.5vw, 1.25rem);
-  background: #10b981;
-  color: #ffffff;
-  border: 1px solid #10b981;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #111827;
   font-size: clamp(0.75rem, 2vw, 0.875rem);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: 0;
-}
-
-.export-button:hover {
-  background: #059669;
+}.preform-one-registration-route .export-button:hover{
+  background: #f9fafb;
   transform: translateY(-1px);
-}
-
-.clear-button {
+}.preform-one-registration-route .clear-button{
   display: flex;
   align-items: center;
   gap: clamp(0.375rem, 1vw, 0.5rem);
   padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2.5vw, 1.25rem);
-  background: #ef4444;
-  color: #ffffff;
-  border: 1px solid #ef4444;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
   font-size: clamp(0.75rem, 2vw, 0.875rem);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: 0;
-}
-
-.clear-button:hover {
-  background: #dc2626;
+}.preform-one-registration-route .clear-button:hover{
+  background: #f9fafb;
+  border-color: #9ca3af;
   transform: translateY(-1px);
-}
-
-.students-list {
+}.preform-one-registration-route .students-list{
   display: flex;
   flex-direction: column;
   gap: clamp(0.75rem, 1.5vw, 1rem);
   max-height: clamp(400px, 50vh, 600px);
   overflow-y: auto;
-}
-
-.student-item {
+}.preform-one-registration-route .student-item{
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -487,190 +333,138 @@
   border: 1px solid #e2e8f0;
   border-radius: 0;
   transition: all 0.2s ease;
-}
-
-.student-item:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.student-info {
+}.preform-one-registration-route .student-item:hover{
+  border-color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}.preform-one-registration-route .student-info{
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: clamp(0.5rem, 1vw, 0.625rem);
-}
-
-.student-primary {
+}.preform-one-registration-route .student-primary{
   display: flex;
   align-items: center;
   gap: clamp(0.75rem, 1.5vw, 1rem);
-}
-
-.student-primary strong {
+}.preform-one-registration-route .student-primary strong{
   color: #1e293b;
   font-size: clamp(0.875rem, 2.5vw, 1rem);
   font-weight: 600;
   min-width: clamp(100px, 12vw, 120px);
-}
-
-.student-name {
+}.preform-one-registration-route .student-name{
   color: #374151;
   font-size: clamp(0.875rem, 2.5vw, 1rem);
-}
-
-.student-secondary {
+}.preform-one-registration-route .student-secondary{
   display: flex;
   align-items: center;
   gap: clamp(0.5rem, 1vw, 0.75rem);
-}
-
-.sex-badge,
-.parish-badge {
+}.preform-one-registration-route .sex-badge, .preform-one-registration-route .parish-badge{
   padding: clamp(0.25rem, 0.75vw, 0.375rem) clamp(0.5rem, 1vw, 0.625rem);
   font-size: clamp(0.75rem, 1.5vw, 0.8125rem);
   font-weight: 500;
   border-radius: 0;
-}
-
-.sex-badge {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #3b82f6;
-}
-
-.parish-badge {
-  background: #f3e8ff;
-  color: #6b21a8;
-  border: 1px solid #8b5cf6;
-}
-
-.student-actions {
+}.preform-one-registration-route .sex-badge{
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}.preform-one-registration-route .parish-badge{
+  background: #fafafa;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}.preform-one-registration-route .student-actions{
   display: flex;
   align-items: center;
   gap: clamp(0.5rem, 1vw, 0.75rem);
-}
-
-.edit-button {
+}.preform-one-registration-route .edit-button{
   display: flex;
   align-items: center;
   justify-content: center;
   gap: clamp(0.25rem, 0.5vw, 0.375rem);
   padding: clamp(0.375rem, 1vw, 0.625rem);
-  background: #3b82f6;
-  color: #ffffff;
-  border: 1px solid #3b82f6;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #111827;
   font-size: clamp(0.625rem, 1.5vw, 0.75rem);
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: 0;
   min-width: clamp(32px, 6vw, 40px);
   min-height: clamp(32px, 6vw, 40px);
-}
-
-.edit-button:hover {
-  background: #2563eb;
+}.preform-one-registration-route .edit-button:hover{
+  background: #f9fafb;
   transform: translateY(-1px);
-}
-
-.delete-button {
+}.preform-one-registration-route .delete-button{
   display: flex;
   align-items: center;
   justify-content: center;
   gap: clamp(0.25rem, 0.5vw, 0.375rem);
   padding: clamp(0.375rem, 1vw, 0.625rem);
-  background: #ef4444;
-  color: #ffffff;
-  border: 1px solid #ef4444;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
   font-size: clamp(0.625rem, 1.5vw, 0.75rem);
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: 0;
   min-width: clamp(32px, 6vw, 40px);
   min-height: clamp(32px, 6vw, 40px);
-}
-
-.delete-button:hover {
-  background: #dc2626;
+}.preform-one-registration-route .delete-button:hover{
+  background: #f9fafb;
+  border-color: #9ca3af;
   transform: translateY(-1px);
-}
-
-.no-students {
+}.preform-one-registration-route .no-students{
   text-align: center;
   padding: clamp(3rem, 6vw, 4rem);
   color: #64748b;
   font-size: clamp(0.875rem, 2.5vw, 1rem);
-}
-
-.no-students i {
+}.preform-one-registration-route .no-students i{
   font-size: clamp(2rem, 4vw, 3rem);
   color: #cbd5e1;
   margin-bottom: clamp(1rem, 2vw, 1.5rem);
-}
-
-.no-students p {
+}.preform-one-registration-route .no-students p{
   margin: 0;
   line-height: 1.5;
-}
-
-/* CSV Template Section */
-.bulk-upload-actions {
+}.preform-one-registration-route .bulk-upload-actions{
   display: flex;
   flex-direction: column;
   gap: clamp(0.75rem, 2vw, 1rem);
   align-items: center;
 }
 
-/* Large screen layout - buttons in one row with equal space */
-@media (min-width: 768px) {
-  .bulk-upload-actions {
+
+
+@media (min-width: 768px) {.preform-one-registration-route .bulk-upload-actions{
     flex-direction: row;
     justify-content: space-between;
     align-items: stretch;
-  }
-  
-  .bulk-upload-actions .form-btn {
+  }.preform-one-registration-route .bulk-upload-actions .form-btn{
+    flex: 1;
+    min-width: 0;
+  }.preform-one-registration-route .bulk-upload-actions .file-upload-wrapper{
     flex: 1;
     min-width: 0;
   }
-  
-  .bulk-upload-actions .file-upload-wrapper {
-    flex: 1;
-    min-width: 0;
-  }
-}
-
-.csv-template-section {
+}.preform-one-registration-route .csv-template-section{
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0;
   padding: clamp(1.5rem, 4vw, 2rem);
   margin-bottom: clamp(2rem, 5vw, 2.5rem);
-}
-
-.csv-template-section h3 {
+}.preform-one-registration-route .csv-template-section h3{
   color: #1e293b;
   font-size: clamp(1.125rem, 3vw, 1.375rem);
   margin-bottom: clamp(0.75rem, 2vw, 1rem);
-}
-
-.csv-template-section p {
+}.preform-one-registration-route .csv-template-section p{
   color: #64748b;
   font-size: clamp(0.875rem, 2.5vw, 1rem);
   margin-bottom: clamp(1.5rem, 4vw, 2rem);
   line-height: 1.5;
-}
-
-.csv-template-grid {
+}.preform-one-registration-route .csv-template-grid{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: clamp(2rem, 4vw, 2.5rem);
   align-items: stretch;
-}
-
-.csv-template-download,
-.csv-template-upload {
-  background: #f8fafc;
+}.preform-one-registration-route .csv-template-download, .preform-one-registration-route .csv-template-upload{
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0;
   padding: clamp(1.5rem, 3vw, 2rem);
@@ -680,18 +474,12 @@
   justify-content: space-between;
   min-height: clamp(220px, 30vw, 280px);
   position: relative;
-}
-
-.csv-template-download h4,
-.csv-template-upload h4 {
+}.preform-one-registration-route .csv-template-download h4, .preform-one-registration-route .csv-template-upload h4{
   color: #1e293b;
   font-size: clamp(1rem, 2.5vw, 1.125rem);
   font-weight: 600;
   margin-bottom: clamp(1.5rem, 3.5vw, 2rem);
-}
-
-.download-template-button,
-.upload-label {
+}.preform-one-registration-route .download-template-button, .preform-one-registration-route .upload-label{
   display: flex;
   align-items: center;
   justify-content: center;
@@ -708,21 +496,15 @@
   margin: 0 auto;
   text-align: center;
   min-height: clamp(44px, 6vw, 52px);
-}
-
-.download-template-button {
-  background: #10b981;
-  color: #ffffff;
-  border-color: #10b981;
-}
-
-.download-template-button:hover {
-  background: #059669;
-  border-color: #059669;
+}.preform-one-registration-route .download-template-button{
+  background: #ffffff;
+  color: #111827;
+  border-color: #111827;
+}.preform-one-registration-route .download-template-button:hover{
+  background: #f9fafb;
+  border-color: #111827;
   transform: translateY(-1px);
-}
-
-.upload-area {
+}.preform-one-registration-route .upload-area{
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -730,38 +512,23 @@
   justify-content: center;
   flex: 1;
   width: 100%;
-}
-
-.file-input {
+}.preform-one-registration-route .file-input{
   display: none;
-}
-
-.upload-label {
-  background: #3b82f6;
-  color: #ffffff;
-  border-color: #3b82f6;
-}
-
-.upload-label:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+}.preform-one-registration-route .upload-label{
+  background: #ffffff;
+  color: #374151;
+  border-color: #d1d5db;
+}.preform-one-registration-route .upload-label:hover{
+  background: #f9fafb;
+  border-color: #9ca3af;
   transform: translateY(-1px);
-}
-
-/* File input styling for better UX */
-.file-input:focus + .upload-label,
-.upload-label:focus {
-  outline: 2px solid #3b82f6;
+}.preform-one-registration-route .file-input:focus + .upload-label, .preform-one-registration-route .upload-label:focus{
+  outline: 2px solid #9ca3af;
   outline-offset: 2px;
-}
-
-/* Back Navigation */
-.back-navigation-bottom {
+}.preform-one-registration-route .back-navigation-bottom{
   text-align: center;
   margin-top: clamp(2rem, 6vw, 3rem);
-}
-
-.back-button {
+}.preform-one-registration-route .back-button{
   display: inline-flex;
   align-items: center;
   gap: clamp(0.5rem, 1vw, 0.75rem);
@@ -774,76 +541,47 @@
   text-decoration: none;
   transition: all 0.2s ease;
   border-radius: 0;
-}
-
-.back-button:hover {
+}.preform-one-registration-route .back-button:hover{
   background: #4b5563;
   transform: translateY(-1px);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .form-grid {
+
+
+@media (max-width: 768px) {.preform-one-registration-route .form-grid{
     grid-template-columns: 1fr;
-  }
-  
-  .students-controls {
+  }.preform-one-registration-route .students-controls{
     align-items: stretch;
-  }
-  
-  .filter-controls {
+  }.preform-one-registration-route .filter-controls{
     flex-direction: column;
     align-items: stretch;
-  }
-  
-  .filter-select {
+  }.preform-one-registration-route .filter-select{
     min-width: auto;
-  }
-  
-  .action-buttons {
+  }.preform-one-registration-route .action-buttons{
     justify-content: center;
-  }
-  
-  .student-item {
+  }.preform-one-registration-route .student-item{
     flex-direction: column;
     align-items: flex-start;
     gap: clamp(0.75rem, 2vw, 1rem);
-  }
-  
-  .student-actions {
+  }.preform-one-registration-route .student-actions{
     align-self: flex-end;
-  }
-  
-  .csv-template-grid {
+  }.preform-one-registration-route .csv-template-grid{
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 480px) {
-  .pre-form-one-parishes-page {
+@media (max-width: 480px) {.preform-one-registration-route .pre-form-one-parishes-page{
     padding: clamp(0.75rem, 2vw, 1rem);
-  }
-  
-  .form-actions {
+  }.preform-one-registration-route .form-actions{
     flex-direction: column;
-  }
-  
-  .action-buttons {
+  }.preform-one-registration-route .action-buttons{
     flex-direction: column;
   }
 }
 
-/* Touch Device Optimizations */
-@media (hover: none) and (pointer: coarse) {
-  .register-button:active,
-  .cancel-button:active,
-  .export-button:active,
-  .clear-button:active,
-  .download-template-button:active,
-  .upload-label:active,
-  .edit-button:active,
-  .delete-button:active,
-  .back-button:active {
+
+
+@media (hover: none) and (pointer: coarse) {.preform-one-registration-route .register-button:active, .preform-one-registration-route .cancel-button:active, .preform-one-registration-route .export-button:active, .preform-one-registration-route .clear-button:active, .preform-one-registration-route .download-template-button:active, .preform-one-registration-route .upload-label:active, .preform-one-registration-route .edit-button:active, .preform-one-registration-route .delete-button:active, .preform-one-registration-route .back-button:active{
     transform: scale(0.98);
   }
 }

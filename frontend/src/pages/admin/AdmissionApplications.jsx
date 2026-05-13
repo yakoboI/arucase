@@ -1,16 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
-import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 import { adminAPI } from '../../services/admin';
 import './PublicWebsite.css';
 import './AdmissionApplications.css';
 
 const AdmissionApplications = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hasToken = false; // Remove token requirement - let enhanced auth handle it
+  const { loading: authLoading } = useAuth();
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selected, setSelected] = useState(null);
   const [feedback, setFeedback] = useState('');
@@ -23,7 +22,7 @@ const AdmissionApplications = () => {
       const res = await adminAPI.getAdmissionApplications({});
       return res.data?.applications || [];
     },
-    enabled: hasToken,
+    enabled: !authLoading,
     retry: false,
   });
 
@@ -34,6 +33,17 @@ const AdmissionApplications = () => {
       toast.success('Application updated');
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to update application'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => adminAPI.deleteAdmissionApplication(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-admission-applications'] });
+      setSelected(null);
+      setFeedback('');
+      toast.success('Application deleted');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete application'),
   });
 
   const selectedId = selected?.id;
@@ -85,16 +95,26 @@ const AdmissionApplications = () => {
   };
 
   const applyStatus = (status) => {
-    if (!hasToken) {
-      toast.error('Kikao kimeisha. Tafadhali ingia tena.');
-      navigate('/login', { replace: true });
-      return;
-    }
     if (!selectedId) return;
     if (status === 'approved' && !window.confirm('Approve this application? The applicant will see your feedback.')) return;
     if (status === 'rejected' && !window.confirm('Reject this application? The applicant will see your feedback.')) return;
     updateMutation.mutate({ id: selectedId, status, feedback: feedback || null });
   };
+
+  const confirmDeleteApplication = () => {
+    if (!selectedId || !selected) return;
+    const name = selected.full_name || 'this applicant';
+    if (
+      !window.confirm(
+        `Permanently delete this application for "${name}"? The applicant record stays; only this submission is removed. This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    deleteMutation.mutate(selectedId);
+  };
+
+  const actionsBusy = updateMutation.isPending || deleteMutation.isPending;
 
   const pillClass = (status) => {
     const s = (status || 'pending').toLowerCase();
@@ -179,11 +199,7 @@ const AdmissionApplications = () => {
             </div>
 
             <div className="apps-list">
-              {!hasToken ? (
-                <div className="apps-empty">
-                  Kikao kimeisha. <button type="button" className="btn" onClick={() => navigate('/login', { replace: true })}>Ingia tena</button>
-                </div>
-              ) : isLoading ? (
+              {authLoading || isLoading ? (
                 <div className="apps-empty">Loading applications…</div>
               ) : filtered.length === 0 ? (
                 <div className="apps-empty">
@@ -199,7 +215,7 @@ const AdmissionApplications = () => {
                   >
                     <div className="app-row-top">
                       <div className="app-name">{app.full_name || 'Applicant'}</div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <div className="app-row-badges">
                         {app.is_reapplication ? (
                           <span className="status-pill pill-pending" title="This applicant submitted again">
                             Re-applied{app.application_no ? ` #${app.application_no}` : ''}
@@ -212,7 +228,8 @@ const AdmissionApplications = () => {
                       {app.email} · {app.phone}
                     </div>
                     <div className="app-meta">
-                      <strong>Entry:</strong> {app.desired_entry || '-'} · <strong>Edu:</strong> {app.education_level || '-'}{' '}
+                      <span className="app-meta-label">Entry:</span> {app.desired_entry || '-'} ·{' '}
+                      <span className="app-meta-label">Edu:</span> {app.education_level || '-'}{' '}
                       {app.is_transfer ? '(transfer)' : ''}
                     </div>
                   </button>
@@ -315,7 +332,7 @@ const AdmissionApplications = () => {
                       type="button"
                       className="btn btn-primary"
                       onClick={() => applyStatus('approved')}
-                      disabled={updateMutation.isPending}
+                      disabled={actionsBusy}
                     >
                       Approve
                     </button>
@@ -323,7 +340,7 @@ const AdmissionApplications = () => {
                       type="button"
                       className="btn btn-danger"
                       onClick={() => applyStatus('rejected')}
-                      disabled={updateMutation.isPending}
+                      disabled={actionsBusy}
                     >
                       Reject
                     </button>
@@ -331,13 +348,24 @@ const AdmissionApplications = () => {
                       type="button"
                       className="btn"
                       onClick={() => applyStatus('pending')}
-                      disabled={updateMutation.isPending}
+                      disabled={actionsBusy}
                     >
                       Set Pending
                     </button>
                     <div className="detail-hint">
-                      Current status: <strong>{selectedStatus}</strong>
+                      Current status: {selectedStatus}
                     </div>
+                  </div>
+
+                  <div className="detail-actions detail-actions-delete">
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={confirmDeleteApplication}
+                      disabled={actionsBusy}
+                    >
+                      Delete application
+                    </button>
                   </div>
                 </>
               )}

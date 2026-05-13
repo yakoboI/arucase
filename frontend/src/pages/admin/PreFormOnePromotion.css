@@ -1,129 +1,94 @@
-/**
- * Pre-Form One Promotion Page Styles
- */
-
-.promotion-page-container {
+.promotion-page-container{
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Header */
-.promotion-header {
+}.promotion-page-container .promotion-header{
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #ffffff;
+  color: #111827;
   border-radius: 0px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.promotion-header h1 {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}.promotion-page-container .promotion-header h1{
   margin: 0;
   font-size: 28px;
   font-weight: 600;
-}
-
-.promotion-header p {
+  color: #111827;
+}.promotion-page-container .promotion-header p{
   margin: 5px 0 0 0;
-  opacity: 0.9;
+  opacity: 1;
   font-size: 14px;
-}
-
-.back-button {
+  color: #6b7280;
+}.promotion-page-container .back-button{
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: #ffffff;
+  color: #374151;
   text-decoration: none;
   border-radius: 0px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid #d1d5db;
   font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-/* Promotion Status Card */
-.promotion-status-card {
+  transition: all 0.2s ease;
+}.promotion-page-container .back-button:hover{
+  background: #f9fafb;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}.promotion-page-container .promotion-status-card{
   background: white;
   border-radius: 0px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   margin-bottom: 30px;
   border: 1px solid #e1e8ed;
-}
-
-.status-header {
+}.promotion-page-container .status-header{
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-bottom: 1px solid #e1e8ed;
   border-radius: 0px;
-}
-
-.status-header h3 {
+}.promotion-page-container .status-header h3{
   margin: 0;
   font-size: 18px;
   font-weight: 600;
   color: #2d3748;
-}
-
-.status-content {
+}.promotion-page-container .status-content{
   padding: 20px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
-}
-
-.status-item {
+}.promotion-page-container .status-item{
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.status-item .label {
+}.promotion-page-container .status-item .label{
   font-size: 12px;
   color: #718096;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.status-item .value {
+}.promotion-page-container .status-item .value{
   font-size: 16px;
   font-weight: 600;
   color: #2d3748;
-}
-
-.status-item .value.completed {
-  color: #38a169;
-}
-
-.status-item .value.pending {
-  color: #d69e2e;
-}
-
-/* Tabs */
-.promotion-tabs {
+}.promotion-page-container .status-item .value.completed{
+  color: #374151;
+}.promotion-page-container .status-item .value.pending{
+  color: #6b7280;
+}.promotion-page-container .promotion-tabs{
   display: flex;
   gap: 10px;
   margin-bottom: 30px;
   border-bottom: 2px solid #e1e8ed;
   padding-bottom: 0;
-}
-
-.tab-button {
+}.promotion-page-container .tab-button{
   display: flex;
   align-items: center;
   gap: 8px;
@@ -137,136 +102,94 @@
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: -2px;
-}
-
-.tab-button:hover {
+}.promotion-page-container .tab-button:hover{
   color: #4a5568;
-  background: #f7fafc;
-}
-
-.tab-button.active {
-  color: #667eea;
-  border-bottom-color: #667eea;
-  background: #f0f4ff;
-}
-
-/* Content Area */
-.promotion-content {
+  background: #fafafa;
+}.promotion-page-container .tab-button.active{
+  color: #111827;
+  border-bottom-color: #111827;
+  background: #ffffff;
+}.promotion-page-container .promotion-content{
   background: white;
   border-radius: 0px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   border: 1px solid #e1e8ed;
   overflow: hidden;
-}
-
-/* Actions Bar */
-.promotion-actions {
+}.promotion-page-container .promotion-actions{
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border-bottom: 1px solid #e1e8ed;
-}
-
-.selection-actions {
+}.promotion-page-container .selection-actions{
   display: flex;
   align-items: center;
   gap: 15px;
-}
-
-.select-all-btn {
+}.promotion-page-container .select-all-btn{
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #667eea;
-  color: white;
-  border: none;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #111827;
   border-radius: 0px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.select-all-btn:hover {
-  background: #5a67d8;
+  transition: all 0.2s ease;
+}.promotion-page-container .select-all-btn:hover{
+  background: #f9fafb;
   transform: translateY(-1px);
-}
-
-.selection-count {
+}.promotion-page-container .selection-count{
   font-size: 14px;
   color: #718096;
   font-weight: 500;
-}
-
-.promotion-buttons {
+}.promotion-page-container .promotion-buttons{
   display: flex;
   gap: 12px;
-}
-
-.promote-selected-btn,
-.promote-all-btn {
+}.promotion-page-container .promote-selected-btn, .promotion-page-container .promote-all-btn{
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  border: none;
   border-radius: 0px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.promote-selected-btn {
-  background: #38a169;
-  color: white;
-}
-
-.promote-selected-btn:hover:not(:disabled) {
-  background: #2f855a;
+}.promotion-page-container .promote-selected-btn{
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #111827;
+}.promotion-page-container .promote-selected-btn:hover:not(:disabled){
+  background: #f3f4f6;
   transform: translateY(-1px);
-}
-
-.promote-all-btn {
-  background: #d69e2e;
-  color: white;
-}
-
-.promote-all-btn:hover:not(:disabled) {
-  background: #b7791f;
+}.promotion-page-container .promote-all-btn{
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}.promotion-page-container .promote-all-btn:hover:not(:disabled){
+  background: #f9fafb;
+  border-color: #9ca3af;
   transform: translateY(-1px);
-}
-
-.promote-selected-btn:disabled,
-.promote-all-btn:disabled {
+}.promotion-page-container .promote-selected-btn:disabled, .promotion-page-container .promote-all-btn:disabled{
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-}
-
-/* Table Container */
-.students-table-container {
+}.promotion-page-container .students-table-container{
   overflow-x: auto;
-}
-
-.promotion-table {
+}.promotion-page-container .promotion-table{
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-}
-
-.promotion-table th,
-.promotion-table td {
+}.promotion-page-container .promotion-table th, .promotion-page-container .promotion-table td{
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #e1e8ed;
-}
-
-.promotion-table th {
-  background: #f8fafc;
+}.promotion-page-container .promotion-table th{
+  background: #ffffff;
   font-weight: 600;
   color: #2d3748;
   font-size: 13px;
@@ -275,27 +198,17 @@
   position: sticky;
   top: 0;
   z-index: 10;
-}
-
-.promotion-table tr:hover {
-  background: #f7fafc;
-}
-
-.promotion-table tr.selected {
-  background: #edf2ff;
-  border-left: 4px solid #667eea;
-}
-
-.promotion-table tr.selected td {
+}.promotion-page-container .promotion-table tr:hover{
+  background: #fafafa;
+}.promotion-page-container .promotion-table tr.selected{
+  background: #fafafa;
+  border-left: 4px solid #9ca3af;
+}.promotion-page-container .promotion-table tr.selected td{
   font-weight: 500;
-}
-
-.select-column {
+}.promotion-page-container .select-column{
   width: 50px;
   text-align: center;
-}
-
-.stream-select {
+}.promotion-page-container .stream-select{
   padding: 6px 10px;
   border: 1px solid #d1d5db;
   border-radius: 0px;
@@ -303,127 +216,82 @@
   background: white;
   cursor: pointer;
   transition: border-color 0.3s ease;
-}
-
-.stream-select:focus {
+}.promotion-page-container .stream-select:focus{
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* History Container */
-.history-container {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04);
+}.promotion-page-container .history-container{
   padding: 20px;
-}
-
-.history-table-container {
+}.promotion-page-container .history-table-container{
   overflow-x: auto;
-}
-
-.history-table {
+}.promotion-page-container .history-table{
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-}
-
-.history-table th,
-.history-table td {
+}.promotion-page-container .history-table th, .promotion-page-container .history-table td{
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #e1e8ed;
-}
-
-.history-table th {
-  background: #f8fafc;
+}.promotion-page-container .history-table th{
+  background: #ffffff;
   font-weight: 600;
   color: #2d3748;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.history-table tr:hover {
-  background: #f7fafc;
-}
-
-/* Loading and Empty States */
-.loading-state,
-.empty-state {
+}.promotion-page-container .history-table tr:hover{
+  background: #fafafa;
+}.promotion-page-container .loading-state, .promotion-page-container .empty-state{
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
-}
-
-.loading-state i,
-.empty-state i {
+}.promotion-page-container .loading-state i, .promotion-page-container .empty-state i{
   font-size: 48px;
   color: #cbd5e0;
   margin-bottom: 20px;
-}
-
-.loading-state h3,
-.empty-state h3 {
+}.promotion-page-container .loading-state h3, .promotion-page-container .empty-state h3{
   margin: 0 0 10px 0;
   color: #4a5568;
   font-size: 18px;
   font-weight: 600;
-}
-
-.loading-state p,
-.empty-state p {
+}.promotion-page-container .loading-state p, .promotion-page-container .empty-state p{
   margin: 0;
   color: #718096;
   font-size: 14px;
+}.promotion-page-container .fa-spinner{
+  animation: preform-one-promotion-spin 1s linear infinite;
 }
 
-.fa-spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
+@keyframes preform-one-promotion-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .promotion-page-container {
+
+
+@media (max-width: 768px) {.promotion-page-container{
     padding: 15px;
-  }
-  
-  .promotion-header {
+  }.promotion-page-container .promotion-header{
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
-  }
-  
-  .promotion-actions {
+  }.promotion-page-container .promotion-actions{
     flex-direction: column;
     align-items: stretch;
     gap: 15px;
-  }
-  
-  .selection-actions {
+  }.promotion-page-container .selection-actions{
     justify-content: space-between;
-  }
-  
-  .promotion-buttons {
+  }.promotion-page-container .promotion-buttons{
     justify-content: center;
-  }
-  
-  .status-content {
+  }.promotion-page-container .status-content{
     grid-template-columns: 1fr;
     gap: 15px;
-  }
-  
-  .promotion-tabs {
+  }.promotion-page-container .promotion-tabs{
     flex-wrap: wrap;
-  }
-  
-  .tab-button {
+  }.promotion-page-container .tab-button{
     flex: 1;
     min-width: 120px;
     justify-content: center;

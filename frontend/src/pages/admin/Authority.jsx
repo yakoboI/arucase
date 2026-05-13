@@ -5,12 +5,14 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 import { adminAPI } from '../../services/admin';
 import { resolveStaticUrl } from '../../utils/backendUrl';
-import './Branding.css';
+import './Authority.css';
 
 const Authority = () => {
   const queryClient = useQueryClient();
+  const { loading: authLoading } = useAuth();
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,6 +34,8 @@ const Authority = () => {
         throw err;
       }
     },
+    enabled: !authLoading,
+    retry: false,
   });
 
   // Initialize form data when authority data loads
@@ -52,7 +56,7 @@ const Authority = () => {
       return adminAPI.saveAuthorityData(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['authority-data']);
+      queryClient.invalidateQueries({ queryKey: ['authority-data'] });
       toast.success('Authority information saved successfully!');
     },
     onError: (error) => {
@@ -68,7 +72,7 @@ const Authority = () => {
       return adminAPI.uploadAuthoritySignature(formData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['authority-data']);
+      queryClient.invalidateQueries({ queryKey: ['authority-data'] });
       toast.success('Signature image uploaded successfully!');
     },
     onError: (error) => {
@@ -82,7 +86,7 @@ const Authority = () => {
       return adminAPI.deleteAuthoritySignature();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['authority-data']);
+      queryClient.invalidateQueries({ queryKey: ['authority-data'] });
       toast.success('Signature image deleted successfully!');
     },
     onError: (error) => {
@@ -147,18 +151,18 @@ const Authority = () => {
 
   return (
     <AdminLayout>
-      <div className="branding-page-container">
-        <div className="excel-card">
+      <div className="authority-admin-page">
+        <div className="excel-card authority-root-card">
           <div className="excel-card-header">
-            <i className="fas fa-signature"></i>
+            <i className="fas fa-signature" aria-hidden="true"></i>
             Authority Data Management
           </div>
           <div className="excel-card-body">
-            {isLoading ? (
+            {authLoading || isLoading ? (
               <div className="loading-state">Loading...</div>
             ) : authorityError ? (
               <div className="error-state">
-                <i className="fas fa-exclamation-triangle error-icon"></i>
+                <i className="fas fa-exclamation-triangle error-icon" aria-hidden="true"></i>
                 <h3>Error Loading Authority Data</h3>
                 <p>{authorityError.message || 'Failed to load authority information'}</p>
               </div>
@@ -214,8 +218,9 @@ const Authority = () => {
                       </div>
                     </div>
                     <div className="form-actions">
-                      <button type="submit" className="excel-btn primary" disabled={saveMutation.isLoading}>
-                        <i className="fas fa-save"></i> {saveMutation.isLoading ? 'Saving...' : 'Save Authority Data'}
+                      <button type="submit" className="excel-btn primary" disabled={saveMutation.isPending}>
+                        <i className="fas fa-save" aria-hidden="true"></i>{' '}
+                        {saveMutation.isPending ? 'Saving...' : 'Save Authority Data'}
                       </button>
                     </div>
                   </div>
@@ -240,28 +245,30 @@ const Authority = () => {
                           }}
                         />
                         <div className="logo-placeholder-small" style={{ display: 'none' }}>
-                          <i className="fas fa-signature placeholder-icon-small"></i>
-                          <p style={{ fontSize: '0.75rem', margin: '0.25rem 0' }}>Signature image not found</p>
+                          <i className="fas fa-signature placeholder-icon-small" aria-hidden="true"></i>
+                          <p>Signature image not found</p>
                         </div>
                         <button
+                          type="button"
                           onClick={handleDeleteSignature}
                           className="excel-btn danger small"
-                          disabled={deleteSignatureMutation.isLoading}
+                          disabled={deleteSignatureMutation.isPending}
                         >
-                          <i className="fas fa-trash"></i> Delete
+                          <i className="fas fa-trash" aria-hidden="true"></i> Delete
                         </button>
                       </div>
                     ) : (
                       <div className="signature-preview-compact">
                         <div className="logo-placeholder-small">
-                          <i className="fas fa-signature placeholder-icon-small"></i>
-                          <p style={{ fontSize: '0.75rem', margin: '0.25rem 0' }}>No signature uploaded</p>
+                          <i className="fas fa-signature placeholder-icon-small" aria-hidden="true"></i>
+                          <p>No signature uploaded</p>
                         </div>
                         <button
+                          type="button"
                           onClick={() => fileInputRef.current?.click()}
                           className="excel-btn primary small"
                         >
-                          <i className="fas fa-upload"></i> Upload
+                          <i className="fas fa-upload" aria-hidden="true"></i> Upload
                         </button>
                       </div>
                     )}
@@ -290,9 +297,9 @@ const Authority = () => {
                         </p>
                       </div>
 
-                      {uploadSignatureMutation.isLoading && (
+                      {uploadSignatureMutation.isPending && (
                         <div className="upload-progress-small">
-                          <i className="fas fa-spinner fa-spin"></i> Uploading...
+                          <i className="fas fa-spinner fa-spin" aria-hidden="true"></i> Uploading...
                         </div>
                       )}
                     </div>

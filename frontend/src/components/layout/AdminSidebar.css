@@ -122,12 +122,19 @@
 }
 
 .category-title-text {
+  flex: 1;
+  min-width: 0;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   pointer-events: none;
   color: #64748b;
+  /* One line like other categories — long names were wrapping and centering oddly */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
 }
 
 .category-chevron {
@@ -411,6 +418,12 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     pointer-events: none;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
   }
 
   .mobile-category-header .category-chevron {

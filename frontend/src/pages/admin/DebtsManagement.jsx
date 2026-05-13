@@ -662,9 +662,6 @@ const DebtsManagement = ({ formLevel }) => {
 
                 <div className="csv-section">
                   <h3><i className="fas fa-file-csv"></i> CSV Bulk Operations</h3>
-                  <p className="csv-help">
-                    Download template CSV, fill in debt amounts and descriptions, then upload to bulk update all student debt records.
-                  </p>
                   <div className="csv-actions">
                     <button
                       className="excel-btn primary"

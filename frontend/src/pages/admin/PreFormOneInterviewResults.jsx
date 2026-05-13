@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import YearMonthFilter from '../../components/common/YearMonthFilter';
 import { resolveStaticUrl } from '../../utils/backendUrl';
 import './PreFormOneResults.css';
+import AdminLayout from '../../components/layout/AdminLayout';
 
 const PreFormOneInterviewResults = () => {
   const { year } = useParams();
@@ -175,6 +176,7 @@ const PreFormOneInterviewResults = () => {
   };
 
   return (
+    <AdminLayout>
     <div className="preform-one-results-page-container">
       <div className="excel-card preform-one-results">
         <div className="excel-card-header">
@@ -289,6 +291,7 @@ const PreFormOneInterviewResults = () => {
         </>
       )}
     </div>
+    </AdminLayout>
   );
 };
 

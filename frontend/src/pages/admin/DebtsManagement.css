@@ -161,31 +161,52 @@
 
 .csv-section {
   margin-top: 2rem;
-  padding: clamp(1rem, 3vw, 1.5rem);
+  padding: clamp(0.875rem, 2.5vw, 1.25rem);
   background: #f9fafb;
   border-radius: 0;
   border: 1px solid #e5e7eb;
 }
 
 .csv-section h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.4rem 0;
   color: #111827;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: clamp(1rem, 3vw, 1.25rem);
-}
-
-.csv-help {
-  margin: 0 0 1rem 0;
-  color: #6b7280;
-  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  font-size: clamp(0.95rem, 2.4vw, 1.1rem);
+  font-weight: 600;
 }
 
 .csv-actions {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+@media (min-width: 640px) {
+  .csv-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+/* Compact actions in this section only (header Back link keeps .excel-btn.small) */
+.csv-section .csv-actions .excel-btn,
+.csv-section .csv-actions label.excel-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+
+.csv-section .csv-actions label.excel-btn {
+  display: inline-flex;
+  align-items: center;
 }
 
 .excel-btn {
@@ -393,16 +414,18 @@
 
   .csv-section {
     margin-top: 1.5rem;
-    padding: clamp(1rem, 3vw, 1.5rem);
+    padding: clamp(0.875rem, 2.5vw, 1.25rem);
   }
 
   .csv-actions {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
-  .csv-actions .excel-btn {
-    width: 100%;
-    justify-content: center;
+  .csv-section .csv-actions .excel-btn,
+  .csv-section .csv-actions label.excel-btn {
+    min-height: 48px;
+    padding: 0.55rem 0.875rem;
+    font-size: clamp(0.875rem, 2.5vw, 0.9375rem);
   }
 }
 

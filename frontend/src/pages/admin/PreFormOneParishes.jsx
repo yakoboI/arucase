@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import './PreFormOneParishes.css';
 import { preFormOneService } from '../../services/preFormOneService';
+import AdminLayout from '../../components/layout/AdminLayout';
 
 const PreFormOneParishes = () => {
   const { year } = useParams();
@@ -411,7 +412,8 @@ const PreFormOneParishes = () => {
   };
 
   return (
-    <div className="registration-form-page-container">
+    <AdminLayout>
+    <div className="preform-one-registration-route registration-form-page-container">
       {/* Edit Parish Card */}
       {editingId && (
         <div className="registration-form-card">
@@ -520,13 +522,6 @@ const PreFormOneParishes = () => {
                   </span>
                 </label>
               </div>
-            </div>
-            <div className="bulk-upload-help">
-              <small>
-                <strong>Instructions:</strong> Download template, fill in parish data, then upload CSV file. 
-                Required columns: S/N, First Name, Surname, Sex, Parish. 
-                Middle Name is optional.
-              </small>
             </div>
           </div>
         </div>
@@ -646,7 +641,15 @@ const PreFormOneParishes = () => {
           )}
         </div>
       </div>
+
+      <div className="back-navigation-bottom">
+        <Link to={`/admin/pre-form-one/${year}`} className="back-button">
+          <i className="fas fa-arrow-left"></i>
+          Back to Modules
+        </Link>
+      </div>
     </div>
+    </AdminLayout>
   );
 };
 
