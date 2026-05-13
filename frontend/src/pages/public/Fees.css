@@ -219,7 +219,7 @@
 
   .fees-page .content-card {
     padding: 2.5rem;
-    max-width: 1200px;
+    max-width: 100%;
   }
 
   .fees-page .content-card h1 {

@@ -1,9 +1,12 @@
-import { useState, useCallback, useId } from 'react';
+import { useState, useCallback, useId, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from '../../utils/toast';
 import { useSound } from '../../utils/useSound';
 import './Login.css';
+
+/** Match Login.css — paint full viewport (fixes white strip below card on mobile / overscroll) */
+const LOGIN_PAGE_SURFACE = '#e2e8f0';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -16,6 +19,35 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { playLogin } = useSound();
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const root = document.getElementById('root');
+    const prev = {
+      htmlBg: html.style.backgroundColor,
+      bodyBg: body.style.backgroundColor,
+      bodyMinH: body.style.minHeight,
+      rootMinH: root?.style.minHeight ?? '',
+      rootBg: root?.style.backgroundColor ?? '',
+    };
+    html.style.backgroundColor = LOGIN_PAGE_SURFACE;
+    body.style.backgroundColor = LOGIN_PAGE_SURFACE;
+    body.style.minHeight = '100dvh';
+    if (root) {
+      root.style.minHeight = '100dvh';
+      root.style.backgroundColor = LOGIN_PAGE_SURFACE;
+    }
+    return () => {
+      html.style.backgroundColor = prev.htmlBg;
+      body.style.backgroundColor = prev.bodyBg;
+      body.style.minHeight = prev.bodyMinH;
+      if (root) {
+        root.style.minHeight = prev.rootMinH;
+        root.style.backgroundColor = prev.rootBg;
+      }
+    };
+  }, []);
 
   const clearFormError = useCallback(() => {
     setFormError('');
@@ -76,110 +108,112 @@ const Login = () => {
         Skip to sign-in form
       </a>
 
-      <Link to="/" className="back-button">
-        <i className="fas fa-arrow-left" aria-hidden="true" />
-        <span>Back to public site</span>
-      </Link>
+      <div className="login-card-stack">
+        <main id="staff-login-main" className="login-container" tabIndex={-1}>
+          <header className="login-header">
+            <p className="login-eyebrow">Arusha Catholic Seminary</p>
+            <h1 id={`${formId}-title`}>Staff sign in</h1>
+            <p className="login-subtitle">School management system — authorized staff only.</p>
+          </header>
 
-      <main id="staff-login-main" className="login-container" tabIndex={-1}>
-        <header className="login-header">
-          <p className="login-eyebrow">Arusha Catholic Seminary</p>
-          <h1 id={`${formId}-title`}>Staff sign in</h1>
-          <p className="login-subtitle">School management system — authorized staff only.</p>
-        </header>
-
-        <form
-          onSubmit={handleSubmit}
-          className="login-form"
-          aria-labelledby={`${formId}-title`}
-          aria-describedby={formError ? errorId : undefined}
-          noValidate
-        >
-
-          {formError ? (
-            <div id={errorId} className="form-error" role="alert">
-              {formError}
-            </div>
-          ) : null}
-
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <div className="input-with-icon">
-              <i className="fas fa-user input-icon" aria-hidden="true" />
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  clearFormError();
-                }}
-                autoComplete="username"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                autoFocus
-                required
-                disabled={loading}
-                className="input-with-icon-field"
-                aria-invalid={Boolean(formError)}
-                aria-required="true"
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <div className="input-with-icon input-with-icon--password">
-              <i className="fas fa-lock input-icon" aria-hidden="true" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  clearFormError();
-                }}
-                autoComplete="current-password"
-                required
-                disabled={loading}
-                className="input-with-icon-field input-with-icon-field--password"
-                aria-invalid={Boolean(formError)}
-                aria-required="true"
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Hide password' : 'Show password as plain text'}
-                aria-pressed={showPassword}
-                disabled={loading}
-              >
-                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary login-submit"
-            disabled={loading}
-            aria-busy={loading}
+          <form
+            onSubmit={handleSubmit}
+            className="login-form"
+            aria-labelledby={`${formId}-title`}
+            aria-describedby={formError ? errorId : undefined}
+            noValidate
           >
-            {loading ? (
-              <>
-                <i className="fas fa-spinner fa-spin" aria-hidden="true" />
-                <span>Signing in…</span>
-                <span className="sr-only">Please wait</span>
-              </>
-            ) : (
-              'Sign in'
-            )}
-          </button>
-        </form>
-      </main>
+
+            {formError ? (
+              <div id={errorId} className="form-error" role="alert">
+                {formError}
+              </div>
+            ) : null}
+
+            <div className="form-group">
+              <label htmlFor="username">Username</label>
+              <div className="input-with-icon">
+                <i className="fas fa-user input-icon" aria-hidden="true" />
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    clearFormError();
+                  }}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoFocus
+                  required
+                  disabled={loading}
+                  className="input-with-icon-field"
+                  aria-invalid={Boolean(formError)}
+                  aria-required="true"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <div className="input-with-icon input-with-icon--password">
+                <i className="fas fa-lock input-icon" aria-hidden="true" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearFormError();
+                  }}
+                  autoComplete="current-password"
+                  required
+                  disabled={loading}
+                  className="input-with-icon-field input-with-icon-field--password"
+                  aria-invalid={Boolean(formError)}
+                  aria-required="true"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password as plain text'}
+                  aria-pressed={showPassword}
+                  disabled={loading}
+                >
+                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary login-submit"
+              disabled={loading}
+              aria-busy={loading}
+            >
+              {loading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin" aria-hidden="true" />
+                  <span>Signing in…</span>
+                  <span className="sr-only">Please wait</span>
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </button>
+          </form>
+        </main>
+
+        <Link to="/" className="back-button">
+          <i className="fas fa-arrow-left" aria-hidden="true" />
+          <span>Back to public site</span>
+        </Link>
+      </div>
     </div>
   );
 };

@@ -16,7 +16,7 @@ function getIsMobile() {
 const PublicHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
-  /* Set from first paint so menu is portaled immediately on mobile and never scrolls with header */
+  /* Mobile: menyu strip in header; overlay + drawer portaled to fixed-ui-root */
   const [isMobile, setIsMobile] = useState(getIsMobile);
   const location = useLocation();
 
@@ -95,6 +95,9 @@ const PublicHeader = () => {
     ...navCategories.flatMap((cat) => cat.items),
   ];
 
+  /** Only listed when mobile menu is open — staff portal sign-in */
+  const staffPortalOffisiItem = { path: '/login', label: 'Ofisi tu', icon: 'fa-building' };
+
   const isActive = (path) => {
     if (path === '/') {
       return location.pathname === '/';
@@ -149,11 +152,27 @@ const PublicHeader = () => {
   const getPrefetchHandler = (path) => {
     if (path === '/gallery') return () => { import('../../pages/public/Gallery'); };
     if (path === '/student-login') return () => { import('../../pages/public/StudentLogin'); };
+    if (path === '/login') return () => { import('../../pages/auth/Login'); };
     return undefined;
   };
 
   return (
     <header className="header">
+      {/* Small screens: coloured menyu strip — first row of the public header (above branding) */}
+      {isMobile && (
+        <div className="public-mobile-top-bar">
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Funga menyu' : 'Fungua menyu'}
+            aria-expanded={mobileMenuOpen}
+          >
+            <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+            <span className="menu-toggle-text">{mobileMenuOpen ? 'Funga' : 'Menyu'}</span>
+          </button>
+        </div>
+      )}
       <div className="header-content">
         {/* School Branding Section */}
         <div className="school-branding">
@@ -219,20 +238,10 @@ const PublicHeader = () => {
         {/* Navigation Section */}
         <nav className="navigation">
           <div className="nav-container">
-            {/* Desktop: inline nav. Mobile: toggle/overlay/panel portaled to body so always at viewport top */}
+            {/* Desktop: inline nav. Mobile: overlay + full-screen panel portaled; toggle lives in .public-mobile-top-bar */}
             {isMobile ? (
               createPortal(
                 <>
-                  <button
-                    type="button"
-                    className="mobile-menu-toggle"
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    aria-label={mobileMenuOpen ? 'Funga menyu' : 'Fungua menyu'}
-                    aria-expanded={mobileMenuOpen}
-                  >
-                    <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-                    <span className="menu-toggle-text">{mobileMenuOpen ? 'Funga' : 'Menyu'}</span>
-                  </button>
                   {mobileMenuOpen && (
                     <div
                       className="mobile-menu-overlay"
@@ -241,19 +250,19 @@ const PublicHeader = () => {
                     />
                   )}
                   <ul className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-                    {mobileNavItems.map((item) => (
-                      <li key={item.path}>
+                    {(mobileMenuOpen
+                      ? [...mobileNavItems, staffPortalOffisiItem]
+                      : mobileNavItems
+                    ).map((item) => (
+                      <li key={item.path === '/login' ? 'staff-portal-ofisi' : item.path}>
                         <Link
                           to={item.path}
-                          className={`${isActive(item.path) ? 'active' : ''} ${item.path === '/' ? 'icon-only nav-link-home' : 'nav-link-with-label'}`}
+                          className={`${isActive(item.path) ? 'active' : ''} nav-link-with-label${item.path === '/' ? ' nav-link-home' : ''}`}
                           onClick={() => setMobileMenuOpen(false)}
                           onMouseEnter={getPrefetchHandler(item.path)}
-                          aria-label={item.path === '/' ? item.label : undefined}
                         >
                           <i className={`fas ${item.icon}`} aria-hidden="true"></i>
-                          {item.path !== '/' && (
-                            <span className="nav-link-text">{item.label}</span>
-                          )}
+                          <span className="nav-link-text">{item.label}</span>
                         </Link>
                       </li>
                     ))}

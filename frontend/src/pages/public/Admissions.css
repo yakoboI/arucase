@@ -6,8 +6,11 @@
 /* Home button styles moved to public-common.css */
 
 .admissions-actions {
-  max-width: 900px;
-  margin: 0 auto 1rem;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 1rem;
+  padding: 0 clamp(1rem, 3vw, 2.5rem);
   display: flex;
   justify-content: flex-end;
 }

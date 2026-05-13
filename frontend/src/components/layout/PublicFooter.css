@@ -53,20 +53,58 @@
   width: clamp(40px, 8vw, 50px);
   height: clamp(40px, 8vw, 50px);
   border-radius: 50%;
-  background: #f1f5f9;
-  border: clamp(1px, 0.2vw, 2px) solid #cbd5e1;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #334155;
   font-size: clamp(18px, 4vw, 22px);
-  transition: all 0.3s ease;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   text-decoration: none;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
   min-width: 44px;
   min-height: 44px;
+}
+
+/* Brand-coloured tiles (true platform colours + white glyphs) */
+.social-icons a.youtube {
+  background: #ff0000;
+  border: clamp(1px, 0.2vw, 2px) solid #cc0000;
+  color: #ffffff;
+}
+
+.social-icons a.youtube i {
+  color: #ffffff;
+}
+
+.social-icons a.email {
+  background: #ea4335;
+  border: clamp(1px, 0.2vw, 2px) solid #c5221f;
+  color: #ffffff;
+}
+
+.social-icons a.email i {
+  color: #ffffff;
+}
+
+.social-icons a.whatsapp {
+  background: #25d366;
+  border: clamp(1px, 0.2vw, 2px) solid #1ebe57;
+  color: #ffffff;
+}
+
+.social-icons a.whatsapp i {
+  color: #ffffff;
+}
+
+.social-icons a.location {
+  background: #4285f4;
+  border: clamp(1px, 0.2vw, 2px) solid #1967d2;
+  color: #ffffff;
+}
+
+.social-icons a.location i {
+  color: #ffffff;
 }
 
 .social-icons a::before {
@@ -88,31 +126,32 @@
 }
 
 .social-icons a:hover {
-  background: #e2e8f0;
-  border-color: #94a3b8;
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
 }
 
-/* Specific icon colors on hover */
 .social-icons a.youtube:hover {
-  background: #ff0000;
-  border-color: #ff0000;
+  background: #e60000;
+  border-color: #b30000;
+  color: #ffffff;
 }
 
 .social-icons a.email:hover {
-  background: #ea4335;
-  border-color: #ea4335;
+  background: #d93025;
+  border-color: #b31412;
+  color: #ffffff;
 }
 
 .social-icons a.whatsapp:hover {
-  background: #25d366;
-  border-color: #25d366;
+  background: #1ebe57;
+  border-color: #128c7e;
+  color: #ffffff;
 }
 
 .social-icons a.location:hover {
-  background: #34a853;
-  border-color: #34a853;
+  background: #1967d2;
+  border-color: #1557b0;
+  color: #ffffff;
 }
 
 /* ===========================================

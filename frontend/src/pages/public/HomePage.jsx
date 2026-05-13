@@ -183,10 +183,14 @@ const HomePage = () => {
             )}
           </div>
 
-          {/* Login Button - Top Right Corner - Relative to main content */}
-          <Link to="/login" className="login-button" aria-label="Navigate to login page">
-            <i className="fas fa-user" aria-hidden="true"></i>
-            <span className="login-text">Login</span>
+          {/* Staff sign-in — scoped styles in HomePage.css (.hero-ofisi-link); avoids .login-button clash with StudentLogin */}
+          <Link
+            to="/login"
+            className="hero-ofisi-link"
+            aria-label="Ofisi — uingiaji wa maafisa"
+          >
+            <i className="fas fa-building" aria-hidden="true"></i>
+            <span className="hero-ofisi-link__label">Ofisi</span>
           </Link>
 
           {/* Scrolling Text at Bottom - Rector Statement */}

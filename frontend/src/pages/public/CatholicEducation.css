@@ -1,10 +1,12 @@
+@import '../../styles/public-common.css';
+
 .catholic-education-page {
   width: 100%;
   min-width: 100%;
   max-width: 100vw;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: clamp(0.5rem, 2vw, 2rem);
+  padding: clamp(0.5rem, 2vw, 2rem) 0;
   overflow-x: hidden;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
@@ -346,7 +348,7 @@
 
 @media (max-width: 480px) {
   .catholic-education-page {
-    padding: 1rem;
+    padding: 1rem 0;
   }
   
   .hero-content h1 {

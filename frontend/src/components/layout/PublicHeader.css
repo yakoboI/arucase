@@ -36,6 +36,32 @@
   overflow: visible;
 }
 
+/* Small screens: first row of public header — full-width menyu strip (in document flow above branding) */
+.public-mobile-top-bar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .public-mobile-top-bar {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 55%, #2563eb 100%);
+    border-bottom: 2px solid rgba(251, 191, 36, 0.65);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
+    position: sticky;
+    top: 0;
+    z-index: 10006;
+  }
+
+  /* No desktop nav markup inside — hide empty strip */
+  .navigation:has(.nav-container:empty) {
+    display: none;
+  }
+}
+
 /* ===========================================
    SCHOOL BRANDING SECTION
    =========================================== */
@@ -285,38 +311,46 @@
 }
 
 .mobile-menu-toggle {
-  display: none; /* Hidden on large screens, shown only in @media (max-width: 900px) */
+  display: none;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  background: #f1f5f9;
-  border: 2px solid #cbd5e1;
-  color: #0f172a;
-  font-size: 1.25rem;
+  gap: 0.65rem;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #f8fafc;
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: 0.75rem 1rem;
-  border-radius: 0;
-  position: fixed;
-  top: clamp(12px, 2.5vw, 18px);
-  right: clamp(10px, 2vw, 20px);
-  z-index: 10003; /* Above chatbot (10000) so menu is always usable */
-  transition: all 0.3s ease;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  min-width: 60px;
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  position: relative;
+  z-index: 1;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.12);
+}
+
+.public-mobile-top-bar .mobile-menu-toggle {
+  display: flex;
 }
 
 .mobile-menu-toggle:hover,
 .mobile-menu-toggle:active {
-  background: #e2e8f0;
-  border-color: #94a3b8;
-  -webkit-transform: translateZ(0) scale(1.05);
-  transform: translateZ(0) scale(1.05);
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(251, 191, 36, 0.85);
+  -webkit-transform: translateZ(0) scale(1.01);
+  transform: translateZ(0) scale(1.01);
 }
 
 .menu-toggle-text {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .nav-links {
@@ -461,8 +495,8 @@
   transform: rotate(180deg);
 }
 
-/* Category dropdown menu */
-.nav-category-dropdown {
+/* Category dropdown menu (scoped under .nav-links so strip rules for .nav-links a never win) */
+.nav-links .nav-category-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
@@ -473,7 +507,7 @@
   list-style: none;
   padding: 0.25rem 0;
   min-width: 200px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
   z-index: 1000;
   animation: dropdownFadeIn 0.15s ease;
 }
@@ -489,56 +523,135 @@
   }
 }
 
-.nav-category-dropdown li {
+.nav-links .nav-category-dropdown li {
   width: 100%;
 }
 
-.nav-category-dropdown a {
+.nav-links .nav-category-dropdown a {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   text-align: left;
   padding: 0.65rem 1rem;
-  color: #0f172a;
+  color: #000000;
   text-decoration: none;
   font-weight: 600;
   font-size: clamp(0.6rem, 1.4vw, 0.75rem);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
   border-radius: 0;
   border: none;
   background: none;
+  box-shadow: none;
+  transform: none;
   font-family: 'Franklin Gothic Book', 'Franklin Gothic', 'Arial', sans-serif;
 }
 
-.nav-category-dropdown a:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+.nav-links .nav-category-dropdown a:hover {
+  background: #eff6ff;
+  color: #000000;
+  border: none;
+  box-shadow: none;
+  transform: none;
 }
 
-.nav-category-dropdown a.active {
-  background: #e2e8f0;
-  color: #0f172a;
+.nav-links .nav-category-dropdown a:hover i {
+  color: #000000;
+}
+
+.nav-links .nav-category-dropdown a.active {
+  background: #dbeafe;
+  color: #000000;
   font-weight: 700;
+  border: none;
+  box-shadow: none;
 }
 
-.nav-category-dropdown a i {
+.nav-links .nav-category-dropdown a.active i {
+  color: #000000;
+}
+
+.nav-links .nav-category-dropdown a i {
   font-size: 0.85rem;
   width: 18px;
   text-align: center;
   flex-shrink: 0;
+  color: #000000;
 }
 
-.nav-category-dropdown a span {
+.nav-links .nav-category-dropdown a span {
   text-align: left;
+  color: #000000;
 }
 
 /* Responsive Design */
 @media (min-width: 901px) {
   .mobile-menu-toggle {
     display: none !important;
+  }
+
+  /* Large-screen nav strip — same brand family as mobile Menyu bar */
+  .navigation {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 55%, #2563eb 100%);
+    border-top: none;
+    border-bottom: 2px solid rgba(251, 191, 36, 0.65);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  }
+
+  .nav-links > li > a,
+  .nav-category-btn {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .nav-links > li > a i,
+  .nav-category-btn i {
+    color: rgba(248, 250, 252, 0.92);
+  }
+
+  .nav-category-btn .nav-category-chevron {
+    color: rgba(248, 250, 252, 0.88) !important;
+  }
+
+  .nav-links > li > a:hover,
+  .nav-category-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(251, 191, 36, 0.75);
+    color: #ffffff;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 2px 8px rgba(15, 23, 42, 0.15);
+  }
+
+  .nav-links > li > a:hover i,
+  .nav-category-btn:hover i {
+    color: #ffffff;
+  }
+
+  .nav-links > li > a.active,
+  .nav-category-btn.category-active {
+    background: rgba(15, 23, 42, 0.42);
+    color: #f8fafc;
+    border-color: rgba(251, 191, 36, 0.85);
+    font-weight: 700;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 2px 8px rgba(15, 23, 42, 0.2);
+  }
+
+  .nav-links > li > a.active i,
+  .nav-category-btn.category-active i {
+    color: #f8fafc;
+  }
+
+  .nav-links > li > a:focus-visible,
+  .nav-category-btn:focus-visible {
+    outline: 2px solid #fbbf24;
+    outline-offset: 2px;
   }
 }
 
@@ -584,10 +697,6 @@
     display: none;
   }
 
-  .mobile-menu-toggle {
-    display: flex;
-  }
-
   /* Hide category dropdowns on mobile — full flat list is shown instead */
   .nav-category-wrapper {
     display: none;
@@ -600,72 +709,70 @@
   }
 
   /* Tablet / narrow: when drawer is open, icon + label alignment before 768px full-screen rules */
+  .nav-links.mobile-open {
+    justify-content: flex-start;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .nav-links.mobile-open a.nav-link-with-label {
     justify-content: flex-start;
     gap: 0.75rem;
     width: 100%;
   }
 
-  .nav-links.mobile-open a.nav-link-home.icon-only {
-    justify-content: center;
+  .nav-links.mobile-open a.nav-link-home {
+    justify-content: flex-start;
   }
 }
 
 @media (max-width: 768px) {
   .school-branding {
-    padding-bottom: clamp(50px, 12vw, 60px);
+    padding-bottom: clamp(15px, 4vw, 22px);
   }
 
   .school-info .banner {
     margin-top: clamp(8px, 2vw, 12px);
-    max-width: calc(100% - 80px);
+    max-width: min(95%, 100%);
     font-size: clamp(0.6rem, 1.6vw, 0.8rem);
     padding: clamp(5px, 1.5vw, 8px) clamp(6px, 2vw, 12px);
-  }
-
-  /* Fixed to viewport top – never moves when user scrolls the page */
-  .mobile-menu-toggle {
-    display: flex;
-    position: fixed !important;
-    top: max(10px, env(safe-area-inset-top)) !important;
-    right: max(10px, env(safe-area-inset-right)) !important;
-    bottom: auto !important;
-    left: auto !important;
-    z-index: 10003;
-    background: rgba(241, 245, 249, 0.95);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
-    -webkit-transform: translateZ(0); /* own layer so stays put on scroll (e.g. iOS) */
-    transform: translateZ(0);
   }
 
   .mobile-menu-overlay {
     display: block;
   }
 
-  /* Full-screen menu – fixed to viewport, doesn’t move on scroll */
+  /* Full-screen menu – fixed card inset from viewport; khaki border + outer khaki ring */
   .nav-links {
     display: none;
     flex-direction: column;
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: #f8fafc;
-    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12);
-    height: 100vh !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
+    top: max(18px, calc(env(safe-area-inset-top) + 10px)) !important;
+    left: max(16px, env(safe-area-inset-left)) !important;
+    right: max(16px, env(safe-area-inset-right)) !important;
+    bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    background: #ffffff;
+    background-clip: padding-box;
+    border: 10px solid #c4b08a;
+    border-radius: 16px;
+    outline: 5px solid #9a8a6a;
+    outline-offset: 6px;
+    box-shadow:
+      0 0 0 3px #e8dcc4,
+      0 20px 50px rgba(15, 23, 42, 0.35);
+    height: auto !important;
+    max-height: none !important;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: max(5rem, env(safe-area-inset-top)) 0 max(2rem, env(safe-area-inset-bottom)) 0;
+    padding: max(10px, calc(env(safe-area-inset-top) + 6px)) 0 max(1.75rem, env(safe-area-inset-bottom)) 0;
     z-index: 10002;
+    justify-content: flex-start;
+    align-items: stretch;
+    flex-wrap: nowrap;
     gap: 0;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
-    scrollbar-color: #94a3b8 #e2e8f0;
+    scrollbar-color: #94a3b8 #f0f0f0;
     /* Ensure scrolling works */
     overscroll-behavior: contain;
     /* Make scrollbar always visible when content overflows */
@@ -679,14 +786,14 @@
   }
 
   .nav-links::-webkit-scrollbar-track {
-    background: #e2e8f0;
+    background: #f0f0f0;
     border-radius: 0;
   }
 
   .nav-links::-webkit-scrollbar-thumb {
     background: #94a3b8;
     border-radius: 0;
-    border: 2px solid #e2e8f0;
+    border: 2px solid #f0f0f0;
   }
 
   .nav-links::-webkit-scrollbar-thumb:hover {
@@ -695,9 +802,23 @@
 
   .nav-links.mobile-open {
     display: flex;
-    /* Ensure flex container allows scrolling */
-    flex-wrap: nowrap;
+    justify-content: flex-start;
     align-items: stretch;
+    flex-wrap: nowrap;
+    flex-direction: column;
+    /* Inner corners follow card radius so khaki frame reads as one surround */
+    border-radius: 16px;
+  }
+
+  .nav-links.mobile-open li:first-child a {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+
+  .nav-links.mobile-open li:last-child a {
+    border-bottom: none;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
   }
 
   .nav-links li {
@@ -715,14 +836,15 @@
     padding: 1.25rem 1.5rem;
     border-radius: 0;
     border: none;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e8e8e8;
     font-size: 1rem;
+    font-weight: 700;
     justify-content: flex-start;
     min-height: 56px;
     height: auto;
     align-items: center;
     background: #ffffff;
-    color: #0f172a;
+    color: #000000;
     transition: background 0.2s ease;
     flex-shrink: 0;
     /* Ensure text wraps if needed */
@@ -730,23 +852,43 @@
     word-wrap: break-word;
   }
 
+  .nav-links a .nav-link-text {
+    font-weight: 700;
+    color: #000000;
+  }
+
   .nav-links a i {
     font-size: 1.1rem;
+    font-weight: 900;
     margin-right: 0.75rem;
     width: 24px;
     text-align: center;
+    color: #000000;
   }
 
   .nav-links a:hover,
   .nav-links a:active {
     transform: none;
-    background: #f1f5f9;
+    background: #f5f5f5;
+    color: #000000;
+  }
+
+  .nav-links a:hover i,
+  .nav-links a:active i {
+    color: #000000;
   }
 
   .nav-links a.active {
-    background: #e2e8f0;
-    border-left: 4px solid #334155;
-    font-weight: 700;
+    background: #f0f0f0;
+    color: #000000;
+    border-left: 4px solid #000000;
+    font-weight: 800;
+  }
+
+  .nav-links a.active i,
+  .nav-links a.active .nav-link-text {
+    color: #000000;
+    font-weight: 800;
   }
 
   .school-info {
@@ -787,7 +929,7 @@
 
 @media (max-width: 480px) {
   .school-branding {
-    padding-bottom: clamp(55px, 14vw, 65px);
+    padding-bottom: clamp(15px, 4vw, 22px);
   }
 
   .school-info h1 {
@@ -801,131 +943,37 @@
   .school-info .banner {
     font-size: clamp(0.6rem, 1.6vw, 0.8rem);
     padding: clamp(5px, 1.5vw, 8px) clamp(6px, 2vw, 12px);
-    max-width: calc(100% - 70px);
+    max-width: min(95%, 100%);
     margin-top: clamp(6px, 1.5vw, 10px);
   }
 
-  .mobile-menu-toggle {
-    padding: 0.6rem 0.85rem;
+  .public-mobile-top-bar .mobile-menu-toggle {
+    padding: 0.55rem 0.85rem;
     font-size: 1.1rem;
-    min-width: 55px;
-    top: clamp(6px, 1.5vw, 10px);
-    right: clamp(6px, 1.5vw, 10px);
+    min-height: 46px;
   }
 
   .menu-toggle-text {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
 
   .nav-links {
-    padding: 3.5rem 0 1.5rem 0;
+    padding: max(10px, calc(env(safe-area-inset-top) + 6px)) 0 max(1.5rem, env(safe-area-inset-bottom)) 0;
   }
 
   .nav-links a {
     font-size: 0.95rem;
     padding: 1.1rem 1.25rem;
     min-height: 52px;
+    font-weight: 700;
+    color: #000000;
+    background: #ffffff;
   }
 
   .nav-links a i {
     font-size: 1rem;
     width: 22px;
-  }
-}
-
-/* ===========================================
-   LOGIN BUTTON - Top Right Corner
-   =========================================== */
-a.login-button {
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  float: none !important;
-  margin: 0 !important;
-  left: auto !important;
-  width: auto !important;
-  height: 40px !important;
-  min-width: 80px !important;
-  max-width: 120px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  padding: 8px 12px !important;
-  margin: 0 !important;
-  background: #334155;
-  color: #f8fafc;
-  text-decoration: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.15s ease;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
-  border: 1px solid #475569;
-  z-index: 99999;
-  opacity: 1;
-  box-sizing: border-box !important;
-  line-height: 1 !important;
-  text-align: center !important;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-}
-
-.login-button:hover {
-  background: #1e293b;
-  opacity: 1;
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
-}
-
-.login-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
-}
-
-.login-button i {
-  font-size: 14px;
-  margin-right: 6px;
-}
-
-.login-text {
-  font-size: 12px;
-  font-weight: 600;
-  display: inline; /* Always show text for better visibility */
-}
-
-/* Touch Device Optimizations for Login Button */
-@media (hover: none) and (pointer: coarse) {
-  .login-button {
-    width: 56px !important;
-    height: 56px !important;
-    min-width: 56px !important;
-    max-width: 56px !important;
-    min-height: 56px !important;
-    max-height: 56px !important;
-    top: 10px !important;
-    right: 10px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-}
-
-/* Ultra Small Devices (very old phones, 320px and below) */
-@media (max-width: 320px) {
-  .login-button {
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    max-width: 48px !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
-    font-size: 20px !important;
-    top: 6px !important;
-    right: 6px !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    color: #000000;
+    font-weight: 900;
   }
 }
