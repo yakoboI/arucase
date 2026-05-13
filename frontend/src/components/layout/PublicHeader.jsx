@@ -177,61 +177,66 @@ const PublicHeader = () => {
         {/* School Branding Section */}
         <div className="school-branding">
           <div className="school-info">
-            {/* School Crest/Logo - Left */}
-            <div className="school-crest">
-              {schoolLogo ? (
-                <figure className="header-tropical-frame">
-                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--tl" aria-hidden />
-                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--br" aria-hidden />
-                  <div className="header-tropical-frame__wood">
-                    <div className="header-tropical-frame__mat">
-                      <img
-                        src={getImageUrl(schoolLogo)}
-                        alt="Arusha Catholic Seminary official school logo"
-                        className="header-tropical-frame__img header-tropical-frame__img--logo"
-                        loading="eager"
-                      />
-                    </div>
-                  </div>
-                </figure>
-              ) : (
-                <i className="fas fa-school"></i>
-              )}
-            </div>
-
-            {/* School Name - Center */}
+            {/* School name — above crest, motto, and patron */}
             <h1>{schoolName}</h1>
 
-            {/* Patron Saint - Right */}
-            <div className="patron-saint">
-              {patronSaintImage ? (
-                <figure className="header-tropical-frame header-tropical-frame--patron">
-                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--tr" aria-hidden />
-                  <div className="header-tropical-frame__leaf header-tropical-frame__leaf--bl" aria-hidden />
-                  <div className="header-tropical-frame__wood">
-                    <div className="header-tropical-frame__mat">
-                      <img
-                        src={getImageUrl(patronSaintImage)}
-                        alt="Picha ya somo wa seminari"
-                        className="header-tropical-frame__img header-tropical-frame__img--patron"
-                        loading="eager"
-                      />
+            <div
+              className="school-info__visual-row"
+              role="group"
+              aria-label="Nembo, maelezo ya seminari na somo la seminari"
+            >
+              {/* School Crest/Logo */}
+              <div className="school-crest">
+                {schoolLogo ? (
+                  <figure className="header-tropical-frame">
+                    <div className="header-tropical-frame__leaf header-tropical-frame__leaf--tl" aria-hidden />
+                    <div className="header-tropical-frame__leaf header-tropical-frame__leaf--br" aria-hidden />
+                    <div className="header-tropical-frame__wood">
+                      <div className="header-tropical-frame__mat">
+                        <img
+                          src={getImageUrl(schoolLogo)}
+                          alt="Arusha Catholic Seminary official school logo"
+                          className="header-tropical-frame__img header-tropical-frame__img--logo"
+                          loading="eager"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </figure>
-              ) : (
-                <>
-                  <i className="fas fa-user-circle"></i>
-                  <span className="saint-label">Somo wa Seminari</span>
-                </>
-              )}
+                  </figure>
+                ) : (
+                  <i className="fas fa-school"></i>
+                )}
+              </div>
+
+              <div className="school-info__motto">
+                <p className="tagline">{tagline}</p>
+                <div className="banner">{bannerText}</div>
+              </div>
+
+              {/* Patron Saint */}
+              <div className="patron-saint">
+                {patronSaintImage ? (
+                  <figure className="header-tropical-frame header-tropical-frame--patron">
+                    <div className="header-tropical-frame__leaf header-tropical-frame__leaf--tr" aria-hidden />
+                    <div className="header-tropical-frame__leaf header-tropical-frame__leaf--bl" aria-hidden />
+                    <div className="header-tropical-frame__wood">
+                      <div className="header-tropical-frame__mat">
+                        <img
+                          src={getImageUrl(patronSaintImage)}
+                          alt="Picha ya somo wa seminari"
+                          className="header-tropical-frame__img header-tropical-frame__img--patron"
+                          loading="eager"
+                        />
+                      </div>
+                    </div>
+                  </figure>
+                ) : (
+                  <>
+                    <i className="fas fa-user-circle"></i>
+                    <span className="saint-label">Somo wa Seminari</span>
+                  </>
+                )}
+              </div>
             </div>
-
-            {/* Tagline */}
-            <p className="tagline">{tagline}</p>
-
-            {/* Banner Text */}
-            <div className="banner">{bannerText}</div>
           </div>
         </div>
 

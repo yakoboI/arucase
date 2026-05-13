@@ -32,7 +32,7 @@
   max-width: 100%;
   width: 100%;
   margin: 0;
-  padding: clamp(15px, 3vw, 20px);
+  padding: clamp(12px, 2.8vw, 20px) clamp(6px, 4vw, 32px);
   overflow: visible;
 }
 
@@ -70,7 +70,7 @@
   align-items: center;
   justify-content: center;
   margin-bottom: clamp(15px, 4vw, 25px);
-  padding: clamp(15px, 3.5vw, 25px) clamp(10px, 2.5vw, 20px);
+  padding: clamp(15px, 3.5vw, 25px) clamp(6px, 3.5vw, 22px);
   text-align: center;
   background: transparent;
   border-radius: 0;
@@ -87,11 +87,74 @@
 .school-info {
   text-align: center;
   position: relative;
-  /* Room for framed crest + patron flanking the title */
-  padding: 0 clamp(76px, 22vw, 118px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 clamp(6px, 3.5vw, 28px);
   width: 100%;
   max-width: 100%;
   overflow: hidden;
+}
+
+/* Second row: logo | tagline + banner | patron — full content width */
+.school-info__visual-row {
+  --brand-img: clamp(84px, min(28vw, 14rem), 168px);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(0.5rem, 3.5vw, 2rem);
+  width: 100%;
+  max-width: 100%;
+  margin-top: clamp(6px, 1.5vw, 12px);
+  margin-bottom: clamp(4px, 1vw, 8px);
+  flex-wrap: wrap;
+  row-gap: clamp(0.5rem, 2vw, 1rem);
+}
+
+/* Tagline + banner: fills space between crest and patron */
+.school-info__motto {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.8vw, 12px);
+  text-align: center;
+  padding: 0 clamp(4px, 2vw, 14px);
+}
+
+.school-info__motto .tagline {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: clamp(0.78rem, 2.8vw, 1.2rem);
+  padding: 0 clamp(2px, 1.5vw, 8px);
+  width: 100%;
+  max-width: 100%;
+}
+
+.school-info__motto .banner {
+  margin-top: 0;
+  margin-bottom: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: clamp(0.68rem, 2.2vw, 1rem);
+  padding: clamp(6px, 1.8vw, 12px) clamp(8px, 3vw, 22px);
+}
+
+@media (max-width: 520px) {
+  .school-info__visual-row {
+    flex-direction: column;
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .school-info__motto {
+    max-width: 100%;
+  }
 }
 
 .school-crest {
@@ -103,13 +166,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: absolute;
+  position: static;
   box-shadow: none;
   border: none;
   overflow: visible;
-  left: clamp(4px, 1.2vw, 10px);
-  top: 50%;
-  transform: translateY(-50%);
+  left: auto;
+  right: auto;
+  top: auto;
+  transform: none;
   flex-shrink: 0;
 }
 
@@ -141,14 +205,15 @@
   overflow: visible;
   cursor: default;
   transition: none;
-  position: absolute;
-  right: clamp(4px, 1.2vw, 10px);
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  left: auto;
+  right: auto;
+  top: auto;
+  transform: none;
   flex-shrink: 0;
 }
 
-/* Logo left, patron right of school name (frames are visual-only; no mat/wood bg) */
+/* Logo, motto, patron — frames are visual-only */
 .header-tropical-frame {
   position: relative;
   margin: 0;
@@ -202,6 +267,38 @@
   object-fit: contain;
 }
 
+/* Branding row: logo + patron scale together via --brand-img */
+.school-info__visual-row .school-crest {
+  width: var(--brand-img);
+}
+
+.school-info__visual-row .header-tropical-frame__img--logo {
+  height: var(--brand-img);
+}
+
+.school-info__visual-row .patron-saint {
+  width: calc(var(--brand-img) * 3 / 4);
+}
+
+.school-info__visual-row .header-tropical-frame--patron {
+  width: 100%;
+  max-width: calc(var(--brand-img) * 3 / 4);
+}
+
+.school-info__visual-row .header-tropical-frame__img--patron {
+  height: var(--brand-img);
+}
+
+.school-info__visual-row .school-crest:not(:has(.header-tropical-frame)) {
+  width: var(--brand-img);
+  height: var(--brand-img);
+}
+
+.school-info__visual-row .patron-saint:not(:has(.header-tropical-frame)) {
+  width: calc(var(--brand-img) * 3 / 4);
+  height: var(--brand-img);
+}
+
 /* Unframed fallbacks (no logo / no patron image) */
 .school-crest:not(:has(.header-tropical-frame)) {
   width: clamp(76px, 17vw, 104px);
@@ -233,9 +330,9 @@
 }
 
 .school-info h1 {
-  font-size: clamp(1rem, 4vw, 2rem);
+  font-size: clamp(1rem, 0.55rem + 2.8vw, 2.45rem);
   font-weight: 700;
-  margin-bottom: clamp(5px, 1.5vw, 8px);
+  margin: 0 0 clamp(2px, 0.5vw, 6px);
   letter-spacing: clamp(0.8px, 0.4vw, 2px);
   line-height: 1.2;
   text-align: center;
@@ -247,11 +344,13 @@
   hyphens: auto;
   max-width: 100%;
   padding: 0 clamp(5px, 1vw, 10px);
+  width: 100%;
 }
 
 .school-info .tagline {
   font-size: clamp(0.75rem, 2.2vw, 1.1rem);
   font-weight: 400;
+  margin-top: clamp(6px, 1.5vw, 12px);
   margin-bottom: clamp(10px, 2.5vw, 14px);
   letter-spacing: clamp(0.2px, 0.12vw, 0.8px);
   text-align: center;
@@ -281,7 +380,7 @@
   line-height: 1.3;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  max-width: min(95%, 100%);
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -336,6 +435,7 @@
 
 .public-mobile-top-bar .mobile-menu-toggle {
   display: flex;
+  border-radius: 0;
 }
 
 .mobile-menu-toggle:hover,
@@ -608,13 +708,25 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
-  .nav-links > li > a i,
+  /* Category labels only (Shule Yetu, Wanafunzi, Habari): +2px padding, type, gap, icons */
+  .nav-category-btn {
+    padding: calc(clamp(8px, 1.8vw, 10px) + 2px) calc(clamp(10px, 2vw, 14px) + 2px);
+    font-size: calc(clamp(0.55rem, 1.6vw, 0.7rem) + 2px);
+    gap: calc(clamp(4px, 1vw, 6px) + 2px);
+  }
+
   .nav-category-btn i {
-    color: rgba(248, 250, 252, 0.92);
+    font-size: calc(clamp(0.65rem, 1.8vw, 0.8rem) + 2px);
   }
 
   .nav-category-btn .nav-category-chevron {
+    font-size: calc(clamp(0.5rem, 1.2vw, 0.6rem) + 2px) !important;
     color: rgba(248, 250, 252, 0.88) !important;
+  }
+
+  .nav-links > li > a i,
+  .nav-category-btn i {
+    color: rgba(248, 250, 252, 0.92);
   }
 
   .nav-links > li > a:hover,
@@ -655,17 +767,6 @@
   }
 }
 
-@media (max-width: 1024px) {
-  .nav-links {
-    gap: clamp(3px, 0.8vw, 5px);
-  }
-
-  .nav-links a {
-    font-size: clamp(0.5rem, 1.4vw, 0.65rem);
-    padding: clamp(7px, 1.6vw, 9px) clamp(8px, 1.8vw, 12px);
-  }
-}
-
 /* Mobile Menu Overlay – fixed full screen, doesn’t move on scroll */
 .mobile-menu-overlay {
   display: none;
@@ -685,7 +786,7 @@
     gap: clamp(3px, 0.8vw, 5px);
   }
 
-  .nav-links a {
+  .nav-links > li > a {
     font-size: clamp(0.5rem, 1.4vw, 0.65rem);
     padding: clamp(7px, 1.6vw, 9px) clamp(8px, 1.8vw, 12px);
   }
@@ -731,11 +832,26 @@
     padding-bottom: clamp(15px, 4vw, 22px);
   }
 
+  .school-info__visual-row {
+    --brand-img: clamp(72px, min(24vw, 9.5rem), 124px);
+    justify-content: center;
+    gap: clamp(0.75rem, 4vw, 2rem);
+  }
+
+  /* Small screens: hide patron image — crest + motto use width */
+  .school-info__visual-row .patron-saint {
+    display: none;
+  }
+
   .school-info .banner {
-    margin-top: clamp(8px, 2vw, 12px);
-    max-width: min(95%, 100%);
+    max-width: 100%;
     font-size: clamp(0.6rem, 1.6vw, 0.8rem);
     padding: clamp(5px, 1.5vw, 8px) clamp(6px, 2vw, 12px);
+  }
+
+  .school-info__motto .banner {
+    margin-top: 0;
+    max-width: 100%;
   }
 
   .mobile-menu-overlay {
@@ -754,7 +870,7 @@
     background: #ffffff;
     background-clip: padding-box;
     border: 10px solid #c4b08a;
-    border-radius: 16px;
+    border-radius: 0;
     outline: 5px solid #9a8a6a;
     outline-offset: 6px;
     box-shadow:
@@ -806,19 +922,18 @@
     align-items: stretch;
     flex-wrap: nowrap;
     flex-direction: column;
-    /* Inner corners follow card radius so khaki frame reads as one surround */
-    border-radius: 16px;
+    border-radius: 0;
   }
 
   .nav-links.mobile-open li:first-child a {
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   .nav-links.mobile-open li:last-child a {
     border-bottom: none;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 
   .nav-links li {
@@ -892,33 +1007,7 @@
   }
 
   .school-info {
-    padding: 0 clamp(58px, 18vw, 88px);
-  }
-
-  .school-crest {
-    width: clamp(64px, 16vw, 88px);
-  }
-
-  .header-tropical-frame--patron {
-    width: clamp(64px, 16vw, 88px);
-  }
-
-  .header-tropical-frame__img--logo {
-    aspect-ratio: 1 / 1;
-    height: clamp(64px, 16vw, 88px);
-    object-fit: contain;
-  }
-
-  .header-tropical-frame__img--patron {
-    aspect-ratio: 3 / 4;
-    height: clamp(64px, 16vw, 88px);
-    object-fit: contain;
-  }
-
-  .school-crest:not(:has(.header-tropical-frame)),
-  .patron-saint:not(:has(.header-tropical-frame)) {
-    width: clamp(64px, 16vw, 88px);
-    height: clamp(64px, 16vw, 88px);
+    padding: 0 clamp(8px, 3vw, 16px);
   }
 
   /* Prevent body scroll when menu is open */
@@ -932,6 +1021,10 @@
     padding-bottom: clamp(15px, 4vw, 22px);
   }
 
+  .school-info__visual-row {
+    --brand-img: clamp(68px, min(26vw, 7.5rem), 112px);
+  }
+
   .school-info h1 {
     font-size: clamp(0.9rem, 5vw, 1.2rem);
   }
@@ -943,8 +1036,17 @@
   .school-info .banner {
     font-size: clamp(0.6rem, 1.6vw, 0.8rem);
     padding: clamp(5px, 1.5vw, 8px) clamp(6px, 2vw, 12px);
-    max-width: min(95%, 100%);
-    margin-top: clamp(6px, 1.5vw, 10px);
+    max-width: 100%;
+  }
+
+  .school-info__motto .tagline {
+    font-size: clamp(0.74rem, 3.6vw, 1.05rem);
+  }
+
+  .school-info__motto .banner {
+    margin-top: 0;
+    max-width: 100%;
+    font-size: clamp(0.62rem, 3.1vw, 0.92rem);
   }
 
   .public-mobile-top-bar .mobile-menu-toggle {

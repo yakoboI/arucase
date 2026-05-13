@@ -1,27 +1,18 @@
 /**
- * Network Status Banner - Non-intrusive indicator for offline/poor connection
- * Shows when user is offline or on slow network (3G). Does not block or destruct existing UI.
+ * Network Status Banner - Non-intrusive indicator when offline only.
+ * Slow / save-data connections no longer show a banner (previously a scrolling-images hint).
  */
 import { useState, useEffect } from 'react';
-import { getNetworkInfo, isOnline, monitorNetworkChanges } from '../../utils/networkUtils';
+import { isOnline, monitorNetworkChanges } from '../../utils/networkUtils';
 import './NetworkStatusBanner.css';
 
 const NetworkStatusBanner = () => {
-  const [status, setStatus] = useState(null); // null | 'offline' | 'slow'
+  const [status, setStatus] = useState(null); // null | 'offline'
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const updateStatus = () => {
-      if (!isOnline()) {
-        setStatus('offline');
-        return;
-      }
-      const info = getNetworkInfo();
-      if (info.isSlow || info.saveData) {
-        setStatus('slow');
-        return;
-      }
-      setStatus(null);
+      setStatus(isOnline() ? null : 'offline');
     };
 
     updateStatus();
@@ -59,17 +50,8 @@ const NetworkStatusBanner = () => {
       role="status"
       aria-live="polite"
     >
-      {status === 'offline' ? (
-        <>
-          <i className="fas fa-wifi network-status-banner__icon" aria-hidden />
-          <span>Hakuna muunganisho wa intaneti. Baadhi ya vipengele vinaweza visifanye kazi. Tafadhali angalia mtandao kisha ujaribu tena.</span>
-        </>
-      ) : (
-        <>
-          <i className="fas fa-signal network-status-banner__icon" aria-hidden />
-          <span>Intaneti inasua-sua. Picha zinapakiwa unaposogeza ukurasa.</span>
-        </>
-      )}
+      <i className="fas fa-wifi network-status-banner__icon" aria-hidden />
+      <span>Hakuna muunganisho wa intaneti. Baadhi ya vipengele vinaweza visifanye kazi. Tafadhali angalia mtandao kisha ujaribu tena.</span>
     </div>
   );
 };

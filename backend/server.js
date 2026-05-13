@@ -15,6 +15,18 @@ const path = require('path');
 const fs = require('fs');
 const cloudinary = require('./config/cloudinary');
 
+function formatErr(err) {
+  if (!err) return 'Unknown error';
+  if (typeof err === 'string') return err;
+  const m = err.message || err.error?.message || err.http_code;
+  if (m) return String(m);
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
 // Validate Cloudinary credentials on startup
 async function validateCloudinaryCredentials() {
   const missing = [];
@@ -35,7 +47,7 @@ async function validateCloudinaryCredentials() {
     console.log('✅ Cloudinary connected successfully');
     return true;
   } catch (error) {
-    console.error('❌ CLOUDINARY ERROR: Failed to connect to Cloudinary:', error.message);
+    console.error('❌ CLOUDINARY ERROR: Failed to connect to Cloudinary:', formatErr(error));
     console.error('⚠️  Photo uploads will fail. Check your Cloudinary credentials.');
     return false;
   }
@@ -197,7 +209,7 @@ setImmediate(() => {
   ensureStaffProfilesCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureStaffProfilesCloudinaryPublicIdColumn fatal:', e.message));
   ensureAdministratorsCloudinaryPublicIdColumn().catch((e) => console.warn('[schema] ensureAdministratorsCloudinaryPublicIdColumn fatal:', e.message));
   ensureRefreshTokensTable().catch((e) => console.warn('[schema] ensureRefreshTokensTable fatal:', e.message));
-  validateCloudinaryCredentials().catch((e) => console.warn('[cloudinary] Validation failed:', e.message));
+  validateCloudinaryCredentials().catch((e) => console.warn('[cloudinary] Validation failed:', formatErr(e)));
   
   // Migration: Update all DIV scores to A/DIV
   query("UPDATE individual_scores SET subject_code = 'A/DIV' WHERE subject_code = 'DIV'")
