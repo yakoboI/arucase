@@ -480,6 +480,13 @@ app.use((err, req, res, next) => {
   if (err.name === 'DatabaseOverloadError') {
     return res.status(503).json({ message: err.message || 'Service temporarily at capacity; try again shortly.' });
   }
+  // PostgreSQL: statement timeout, lock timeout, idle-in-transaction timeout
+  const pgCode = err && err.code;
+  if (pgCode === '57014' || pgCode === '55P03' || pgCode === '25P03') {
+    return res.status(503).json({
+      message: 'The database could not complete this request in time. Please try again in a moment.',
+    });
+  }
   const status = err.status || 500;
   const isProd = process.env.NODE_ENV === 'production';
   const message = (isProd && status >= 500) ? 'Internal server error' : (err.message || 'Internal server error');

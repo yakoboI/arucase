@@ -1,12 +1,27 @@
 /**
  * PostgreSQL Database Configuration and Connection Pool
  * Volume safeguards: statement timeout + max concurrent queries so extra load cannot collapse the DB.
+ * Session safeguards: idle-in-transaction and lock timeouts reduce stuck connections and long lock waits.
  */
 const { Pool } = require('pg');
 require('dotenv').config();
 
 // Statement timeout (ms) – no single query can run longer; prevents runaway queries from holding connections.
 const STATEMENT_TIMEOUT_MS = Math.max(0, parseInt(process.env.STATEMENT_TIMEOUT_MS, 10) || 60000);
+
+// End idle transactions (ms, 0 = disabled). Frees pool slots if a client forgets COMMIT.
+const IDLE_IN_TRANSACTION_TIMEOUT_MS = (() => {
+  const v = parseInt(process.env.IDLE_IN_TRANSACTION_TIMEOUT_MS, 10);
+  if (Number.isFinite(v) && v >= 0) return v;
+  return 120000;
+})();
+
+// Abort lock waits after this many ms (0 = disabled). Prevents one slow transaction from blocking others indefinitely.
+const LOCK_TIMEOUT_MS = (() => {
+  const v = parseInt(process.env.PG_LOCK_TIMEOUT_MS, 10);
+  if (Number.isFinite(v) && v >= 0) return v;
+  return 30000;
+})();
 
 // Max concurrent queries – when reached, new requests get 503 instead of queuing (keeps DB from collapsing).
 // Set to 0 to disable (unlimited). Should be < pool max to leave headroom (e.g. 80 when pool is 100).
@@ -31,6 +46,12 @@ const connectionTimeoutMillis =
     : process.env.NODE_ENV === 'production'
       ? 30000
       : 5000;
+const useSsl =
+  process.env.NODE_ENV === 'production' ||
+  process.env.DATABASE_SSL === 'true' ||
+  (process.env.DATABASE_URL && /[?&]sslmode=require/i.test(process.env.DATABASE_URL));
+const sslRejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === 'true';
+
 const pool = new Pool({
   host: process.env.PGHOST || process.env.POSTGRES_HOST || 'localhost',
   port: parseInt(process.env.PGPORT || process.env.POSTGRES_PORT || '5432'),
@@ -38,7 +59,8 @@ const pool = new Pool({
   password: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || '',
   database: process.env.PGDATABASE || process.env.POSTGRES_DB || 'railway',
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false, // SSL for production, disabled for local
+  application_name: process.env.PG_APPLICATION_NAME || 'arucase-backend',
+  ssl: useSsl ? { rejectUnauthorized: sslRejectUnauthorized } : false,
   max: poolMax,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis,
@@ -52,13 +74,19 @@ pool.on('error', (err) => {
   console.error('❌ PostgreSQL connection error:', err);
 });
 
-// Ensure statement_timeout is set on this client (once per client)
-async function ensureStatementTimeout(client) {
-  if (client._statementTimeoutSet) return;
+// Per-connection session limits (set once per pooled client)
+async function ensureSessionGuards(client) {
+  if (client._sessionGuardsSet) return;
   if (STATEMENT_TIMEOUT_MS > 0) {
     await client.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`);
   }
-  client._statementTimeoutSet = true;
+  if (IDLE_IN_TRANSACTION_TIMEOUT_MS > 0) {
+    await client.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`);
+  }
+  if (LOCK_TIMEOUT_MS > 0) {
+    await client.query(`SET lock_timeout = ${LOCK_TIMEOUT_MS}`);
+  }
+  client._sessionGuardsSet = true;
 }
 
 // Helper function to execute queries (with volume safeguards)
@@ -74,7 +102,7 @@ const query = async (text, params) => {
   let client;
   try {
     client = await pool.connect();
-    await ensureStatementTimeout(client);
+    await ensureSessionGuards(client);
     const res = await client.query(text, params);
     const duration = Date.now() - start;
     if (duration > 1000) {
@@ -95,7 +123,7 @@ const query = async (text, params) => {
 // Helper function to get a client from the pool (caller must release it)
 const getClient = async () => {
   const client = await pool.connect();
-  await ensureStatementTimeout(client);
+  await ensureSessionGuards(client);
   return client;
 };
 
@@ -110,7 +138,7 @@ const withTransaction = async (fn) => {
   activeQueries += 1;
   const client = await pool.connect();
   try {
-    await ensureStatementTimeout(client);
+    await ensureSessionGuards(client);
     await client.query('BEGIN');
     const result = await fn(client);
     await client.query('COMMIT');

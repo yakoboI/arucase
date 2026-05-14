@@ -156,6 +156,7 @@ async function initDatabase() {
     await query('CREATE INDEX IF NOT EXISTS idx_students_class ON students(level, stream, year)');
     await query('CREATE INDEX IF NOT EXISTS idx_students_adm ON students(adm_no)');
     await query('CREATE INDEX IF NOT EXISTS idx_students_adm_year ON students(adm_no, year)');
+    await query('CREATE INDEX IF NOT EXISTS idx_students_term ON students(level, stream, year, term)');
     
     // Student photos table
     await query(`
@@ -207,6 +208,9 @@ async function initDatabase() {
     `);
     console.log('✅ Comments table created');
     await query('CREATE INDEX IF NOT EXISTS idx_comments_lookup ON comments(comment_type, level, stream, year, student_index)');
+    await query(
+      'CREATE INDEX IF NOT EXISTS idx_comments_term_lookup ON comments(comment_type, level, stream, year, term, student_index)'
+    );
     
     // Subjects table
     await query(`
@@ -265,6 +269,18 @@ async function initDatabase() {
     await query('CREATE INDEX IF NOT EXISTS idx_scores_student ON individual_scores(adm_no)');
     await query('CREATE INDEX IF NOT EXISTS idx_scores_subject ON individual_scores(subject_code)');
     await query('CREATE INDEX IF NOT EXISTS idx_scores_class ON individual_scores(level, stream, year, month)');
+    await query('CREATE INDEX IF NOT EXISTS idx_scores_adm_class ON individual_scores(adm_no, level, stream, year)');
+    await query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'individual_scores' AND column_name = 'term'
+        ) THEN
+          EXECUTE 'CREATE INDEX IF NOT EXISTS idx_scores_term ON individual_scores(level, stream, year, term, month)';
+        END IF;
+      END $$;
+    `);
     
     // Monthly results table
     await query(`

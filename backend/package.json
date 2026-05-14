@@ -24,7 +24,9 @@
     "db:migrate": "node-pg-migrate up --envPath .env",
     "db:migrate:dry-run": "node-pg-migrate up --dry-run --envPath .env",
     "db:migrate:down": "node-pg-migrate down --envPath .env",
-    "db:migrate:create": "node-pg-migrate create --migration-file-language sql"
+    "db:migrate:create": "node-pg-migrate create --migration-file-language sql",
+    "db:backup": "node scripts/backupDatabase.js",
+    "db:restore": "node scripts/restoreDatabase.js"
   },
   "keywords": [
     "express",
