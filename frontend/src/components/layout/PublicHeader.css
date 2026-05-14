@@ -396,11 +396,8 @@
   padding: 0;
   position: relative;
   z-index: 1002;
-  overflow-x: auto;
-  overflow-y: visible;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.4) rgba(15, 23, 42, 0.12);
+  /* overflow must stay visible: overflow-x:auto makes overflow-y compute to auto and clips dropdowns */
+  overflow: visible;
 }
 
 .nav-container .nav-links > li:first-child {
@@ -590,7 +587,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
-  z-index: 1000;
+  z-index: 10050;
   transform: translateX(-50%);
   animation: dropdownFadeInDesktop 0.15s ease;
 }

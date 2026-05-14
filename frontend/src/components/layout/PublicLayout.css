@@ -9,7 +9,9 @@
   width: 100%;
   min-width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  /* Do not use overflow-x: hidden here — it pairs with overflow-y:auto and clips the header’s
+     absolutely positioned category menus. Horizontal containment stays on .public-main. */
+  overflow-x: visible;
   box-sizing: border-box;
 }
 
