@@ -644,6 +644,18 @@
   }
 }
 
+/* Desktop wide strip: dropdown stays under its category button */
+@keyframes dropdownFadeInDesktop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 .nav-links .nav-category-dropdown li {
   width: 100%;
 }
@@ -725,6 +737,33 @@
     border-top: none;
     border-bottom: 2px solid rgba(251, 191, 36, 0.65);
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  }
+
+  /* Home on the left; Shule Yetu / Wanafunzi / Habari share the rest of the strip evenly */
+  .nav-container .nav-links {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: clamp(10px, 1.4vw, 20px);
+    width: 100%;
+  }
+
+  .nav-container .nav-links > li:first-child {
+    flex: 0 0 auto;
+    margin-right: clamp(6px, 1.2vw, 20px);
+  }
+
+  .nav-container .nav-links > li.nav-category-wrapper {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .nav-container .nav-links > li.nav-category-wrapper .nav-category-dropdown {
+    left: 50%;
+    transform: translateX(-50%);
+    animation: dropdownFadeInDesktop 0.15s ease;
   }
 
   .nav-links > li > a,
