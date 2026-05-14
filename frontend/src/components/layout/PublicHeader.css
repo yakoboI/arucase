@@ -27,12 +27,13 @@
 }
 
 .header-content {
+  --header-pad-x: clamp(6px, 4vw, 32px);
   position: relative;
   z-index: 2;
   max-width: 100%;
   width: 100%;
   margin: 0;
-  padding: clamp(12px, 2.8vw, 20px) clamp(6px, 4vw, 32px);
+  padding: clamp(12px, 2.8vw, 20px) var(--header-pad-x);
   overflow: visible;
 }
 
@@ -712,8 +713,14 @@
     display: none !important;
   }
 
-  /* Large-screen nav strip — same brand family as mobile Menyu bar */
+  /* Full-bleed blue strip: cancel .header-content horizontal padding */
   .navigation {
+    margin-left: calc(-1 * var(--header-pad-x));
+    margin-right: calc(-1 * var(--header-pad-x));
+    width: calc(100% + 2 * var(--header-pad-x));
+    max-width: none;
+    padding-left: var(--header-pad-x);
+    padding-right: var(--header-pad-x);
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 55%, #2563eb 100%);
     border-top: none;
     border-bottom: 2px solid rgba(251, 191, 36, 0.65);
