@@ -3,14 +3,6 @@
 
 /* Contact page specific styles */
 
-/* Home button styles moved to public-common.css */
-
-/* Content card styles moved to public-common.css */
-
-/* Typography styles moved to public-common.css */
-
-/* Contact-specific styles */
-
 .contact-info-box {
   background: #f9fafb;
   border-left: 4px solid #1a5490;
@@ -45,8 +37,6 @@
 .contact-info-box a:hover {
   text-decoration: underline;
 }
-
-/* List and strong styles moved to public-common.css */
 
 .map-button-container {
   margin: 2rem 0;
@@ -113,6 +103,3 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-
-/* Responsive styles moved to public-common.css */
-

@@ -3,8 +3,6 @@
 
 /* Admissions page specific styles */
 
-/* Home button styles moved to public-common.css */
-
 .admissions-actions {
   max-width: 100%;
   width: 100%;
@@ -40,12 +38,6 @@
   transform: scale(0.99);
 }
 
-/* Content card styles moved to public-common.css */
-
-/* Typography styles moved to public-common.css */
-
-/* List and strong styles moved to public-common.css */
-
 .admissions-page .contact-link {
   color: #2d7bc4;
   text-decoration: none;
@@ -54,6 +46,3 @@
 .admissions-page .contact-link:hover {
   text-decoration: underline;
 }
-
-/* Responsive styles moved to public-common.css */
-

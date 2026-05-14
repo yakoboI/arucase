@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { Link } from 'react-router-dom';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import './PublicLayout.css';

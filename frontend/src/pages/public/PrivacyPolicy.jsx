@@ -1,7 +1,7 @@
 /**
  * Privacy Policy Page - Content from server (public_pages) or static fallback
  */
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
@@ -45,7 +45,7 @@ const PrivacyPolicy = () => {
         <div className="privacy-policy-page">
           <header className="policy-hero">
             <div className="policy-hero-inner">
-                            <h1><i className="fas fa-shield-alt"></i> Sera ya Faragha</h1>
+              <h1><i className="fas fa-shield-alt"></i> Sera ya Faragha</h1>
               <p>Jinsi Seminari ya Kikatoliki Arusha inavyokusanya, kutumia, na kulinda taarifa zako.</p>
             </div>
           </header>
@@ -67,7 +67,7 @@ const PrivacyPolicy = () => {
       <div className="privacy-policy-page">
         <header className="policy-hero">
           <div className="policy-hero-inner">
-                        <h1><i className="fas fa-shield-alt"></i> Sera ya Faragha</h1>
+            <h1><i className="fas fa-shield-alt"></i> Sera ya Faragha</h1>
             <p>Imesasishwa mwisho: 13 Oktoba 2025</p>
           </div>
         </header>

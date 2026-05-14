@@ -2,7 +2,7 @@
  * Announcements Page - Data from server (publicAPI.getAnnouncements)
  */
 import { useQuery } from '@tanstack/react-query';
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -45,7 +45,7 @@ const Announcements = () => {
   if (isLoading) {
     return (
       <PublicLayout>
-        <div className="about-page">
+        <div className="announcements-page">
           <Link to="/" className="home-button">
             <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
           </Link>
@@ -65,7 +65,7 @@ const Announcements = () => {
 
   return (
     <PublicLayout>
-      <div className="about-page">
+      <div className="announcements-page">
         <Link to="/" className="home-button">
           <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
         </Link>

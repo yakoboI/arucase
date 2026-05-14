@@ -3,10 +3,6 @@
 
 /* Fees page specific styles */
 
-/* Home button styles moved to public-common.css */
-
-/* Content card styles moved to public-common.css */
-
 .fees-page .content-card h1 {
   color: #1a5490;
   font-size: clamp(1.75rem, 5vw, 2.5rem);
