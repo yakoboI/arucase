@@ -437,7 +437,7 @@ const AdmissionsApply = () => {
                 <div className="feedback-box">
                   <div className="feedback-title">Majibu kutoka ofisi ya udahili</div>
                   <div className="feedback-text">
-                    <div style={{ marginBottom: 8, fontWeight: 900 }}>
+                    <div className="feedback-status-line">
                       Hali: {statusLabel(application?.status)}
                     </div>
                     {application?.admin_feedback

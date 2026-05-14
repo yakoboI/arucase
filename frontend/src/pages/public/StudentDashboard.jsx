@@ -118,7 +118,7 @@ const StudentDashboard = () => {
           <div className="dashboard-container">
             <SkeletonLoader type="card" height="80px" className="mb-3" />
             <SkeletonLoader type="text" lines={2} className="mb-3" />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
               {[1, 2, 3, 4].map((i) => (
                 <SkeletonLoader key={i} type="card" height="100px" />
               ))}
@@ -141,8 +141,8 @@ const StudentDashboard = () => {
                     src={getPhotoUrl(photoData.photo.photo_filename)} 
                     alt={studentData.name}
                     className="student-photo"
-                    width={64}
-                    height={64}
+                    width={56}
+                    height={56}
                     onError={(e) => {
                       // Fallback to icon if image fails to load
                       e.target.style.display = 'none';
@@ -365,7 +365,7 @@ const StudentDashboard = () => {
               </div>
 
               {monthsLoading ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
                   {[1, 2, 3, 4, 5, 6].map((i) => (
                     <SkeletonLoader key={i} type="card" height="100px" />
                   ))}

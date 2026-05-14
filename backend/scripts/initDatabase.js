@@ -442,7 +442,7 @@ async function initDatabase() {
         social_facebook VARCHAR(255),
         social_instagram VARCHAR(255),
         social_twitter VARCHAR(255),
-        social_location VARCHAR(255),
+        social_location TEXT,
         office_weekdays VARCHAR(255),
         office_saturday VARCHAR(255),
         office_sunday VARCHAR(255),

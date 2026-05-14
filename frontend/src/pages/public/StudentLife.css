@@ -1,227 +1,226 @@
 @import '../../styles/public-common.css';
 
-.student-life-page {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100vw;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: clamp(0.5rem, 2vw, 2rem) 0;
-  overflow-x: hidden;
-}
+/* ---- Student Life: gray shell, centred header, sharp white cards ---------- */
 
-.student-life-page .content-card {
-  background: white;
-  border-radius: 0;
-  padding: clamp(1rem, 3vw, 2.5rem);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.student-life-page {
+  --sl-gutter: clamp(0.75rem, 4vw, 3rem);
+  --sl-inner-max: min(1680px, 100%);
+  --sl-page-bg: #e8eaed;
   width: 100%;
   max-width: 100%;
-  margin: 0;
+  min-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   box-sizing: border-box;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  overflow-x: hidden;
+  background: var(--sl-page-bg);
+  padding: 0 var(--sl-gutter) clamp(1.5rem, 4vw, 2.5rem);
 }
 
-/* Full width utilization on all screen sizes */
-@media (max-width: 768px) {
-  .student-life-page .content-card {
-    max-width: 100%;
-    margin: 0;
-  }
-  
-  .student-life-page {
-    padding: 0;
-  }
+/* Centred page title band */
+.student-life-page-header {
+  width: 100%;
+  max-width: var(--sl-inner-max);
+  margin: 0 auto clamp(1.25rem, 3vw, 2rem);
+  box-sizing: border-box;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  padding: clamp(1.25rem, 3.5vw, 2rem) clamp(1rem, 3vw, 2rem);
 }
 
-.student-life-page .content-card h2 {
+.student-life-page-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: #1a5490;
-  font-size: clamp(1.5rem, 4.5vw, 2rem);
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.student-life-page-title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.75rem, 5vw, 2.35rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.15;
+}
+
+.student-life-page-lead {
+  margin: 0 auto;
+  max-width: min(52ch, 100%);
+  font-size: clamp(0.95rem, 2.3vw, 1.08rem);
+  line-height: 1.65;
+  color: #475569;
+}
+
+.student-life-inner {
+  width: 100%;
+  max-width: var(--sl-inner-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(260px, 42vw, 380px)), 1fr));
+  gap: clamp(1rem, 2.2vw, 1.75rem);
+  align-items: start;
+}
+
+.student-life-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  border-radius: 0;
+  padding: clamp(1.15rem, 2.8vw, 1.65rem);
+  box-sizing: border-box;
+}
+
+.student-life-card--wide {
+  grid-column: 1 / -1;
+}
+
+.student-life-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  text-align: center;
+}
+
+.student-life-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: #1a5490;
+  font-size: 1.1rem;
+  border-radius: 0;
+}
+
+.student-life-card__title {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.student-life-card__intro {
+  margin: 0 0 1rem;
+  line-height: 1.7;
+  color: #475569;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+.student-life-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #334155;
+  font-size: clamp(0.95rem, 2.2vw, 1.02rem);
+  line-height: 1.65;
+}
+
+.student-life-list li {
+  margin-bottom: 0.55rem;
+}
+
+.student-life-list li:last-child {
+  margin-bottom: 0;
+}
+
+.student-life-list strong {
+  color: #0f172a;
   font-weight: 700;
 }
 
-.student-life-page .content-card h3 {
-  color: #1a5490;
-  font-size: clamp(1.25rem, 4vw, 1.75rem);
-  margin-top: clamp(1.5rem, 3vw, 2rem);
-  margin-bottom: clamp(0.75rem, 2vw, 1rem);
-  font-weight: 600;
+@media (min-width: 900px) {
+  .student-life-list--columns {
+    column-count: 2;
+    column-gap: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .student-life-list--columns li {
+    break-inside: avoid;
+  }
 }
 
-.student-life-page .content-card p {
-  line-height: 1.8;
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
-  color: #374151;
-  font-size: clamp(0.9375rem, 2.5vw, 1.0625rem);
-  white-space: pre-wrap;
-}
-
-.student-life-page .content-card br {
+/* CMS HTML — single prose card */
+.student-life-page--cms {
   display: block;
-  margin: 0.5rem 0;
-  content: "";
 }
 
-/* Extra small screens (< 375px) */
+.student-life-card--prose {
+  width: 100%;
+  max-width: var(--sl-inner-max);
+  margin-left: auto;
+  margin-right: auto;
+  white-space: normal;
+}
+
+.student-life-card--prose.content-card {
+  border-radius: 0;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: clamp(1.15rem, 2.8vw, 2rem);
+}
+
+.student-life-card--prose.content-card h1:first-child,
+.student-life-card--prose.content-card h2:first-child {
+  margin-top: 0;
+}
+
+.student-life-card--prose.content-card h2 {
+  color: #0f172a;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  font-weight: 800;
+}
+
+.student-life-card--prose.content-card h3 {
+  color: #1a5490;
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  font-weight: 700;
+}
+
+.student-life-card--prose.content-card p,
+.student-life-card--prose.content-card li {
+  color: #374151;
+}
+
+.student-life-card--prose.content-card strong {
+  color: #0f172a;
+}
+
+/* Beat public-common zero padding on narrow viewports */
+@media (max-width: 768px) {
+  .student-life-page {
+    padding-left: var(--sl-gutter);
+    padding-right: var(--sl-gutter);
+    padding-top: 0;
+  }
+}
+
 @media (max-width: 374px) {
   .student-life-page {
-    padding: 0;
+    padding-left: var(--sl-gutter);
+    padding-right: var(--sl-gutter);
+    padding-top: clamp(0.35rem, 2vw, 0.5rem);
   }
 
-  .student-life-page .content-card {
-    padding: 0.75rem 0.5rem;
-    max-width: 100%;
-    margin: 0;
+  .student-life-page-header {
+    padding: 1rem 0.85rem;
   }
 
-  .student-life-page .content-card h2 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .student-life-page .content-card h3 {
-    font-size: 1.125rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .student-life-page .content-card p {
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.6;
-  }
-
-  .student-life-page .content-card ul {
-    margin: 0.5rem 0;
-    padding-left: 1.25rem;
-  }
-
-  .student-life-page .content-card li {
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
+  .student-life-card {
+    padding: 1rem 0.9rem;
   }
 }
-
-/* Small screens (375px - 480px) */
-@media (min-width: 375px) and (max-width: 480px) {
-  .student-life-page .content-card h2 {
-    font-size: 1.375rem;
-  }
-
-  .student-life-page .content-card h3 {
-    font-size: 1.1875rem;
-  }
-
-  .student-life-page .content-card p {
-    font-size: 0.9375rem;
-  }
-}
-
-.student-life-page .content-card ul {
-  margin: 1rem 0;
-  padding-left: 2rem;
-}
-
-.student-life-page .content-card li {
-  line-height: 1.8;
-  margin-bottom: 0.75rem;
-  color: #374151;
-}
-
-.student-life-page .content-card strong {
-  color: #1a5490;
-  font-weight: 600;
-}
-
-/* ===========================================
-   RESPONSIVE DESIGN - MOBILE FIRST APPROACH
-   =========================================== */
-
-/* Extra Small Devices (phones, 320px and up) */
-@media (min-width: 320px) {
-  .student-life-page {
-    padding: 1rem 0;
-  }
-
-  .student-life-page .content-card {
-    padding: 1.25rem;
-    margin: 0;
-    max-width: 100%;
-  }
-
-  .student-life-page .content-card h2 {
-    font-size: clamp(1.5rem, 6vw, 1.75rem);
-    margin-bottom: 1.25rem;
-    line-height: 1.3;
-  }
-
-  .student-life-page .content-card h3 {
-    font-size: clamp(1.25rem, 5vw, 1.5rem);
-    margin-top: 1.5rem;
-    margin-bottom: 0.875rem;
-    line-height: 1.4;
-  }
-
-  .student-life-page .content-card p {
-    font-size: clamp(0.9375rem, 3.5vw, 1rem);
-    line-height: 1.7;
-  }
-
-  .student-life-page .content-card ul {
-    padding-left: 1.5rem;
-  }
-
-  .student-life-page .content-card li {
-    font-size: clamp(0.9375rem, 3.5vw, 1rem);
-    line-height: 1.7;
-  }
-}
-
-/* Small Devices (landscape phones, 480px and up) */
-@media (min-width: 480px) {
-  .student-life-page {
-    padding: 1.5rem 0;
-  }
-
-  .student-life-page .content-card {
-    padding: 1.5rem;
-    margin: 0;
-    max-width: 100%;
-  }
-}
-
-/* Medium Devices (tablets, 640px and up) */
-@media (min-width: 640px) {
-  .student-life-page .content-card {
-    padding: 2rem;
-    margin: 0;
-    max-width: 100%;
-  }
-}
-
-/* Large Devices (tablets landscape, 768px and up) */
-@media (min-width: 768px) {
-  .student-life-page {
-    padding: 2rem 0;
-  }
-
-  .student-life-page .content-card {
-    padding: 2.5rem;
-    max-width: 100%;
-  }
-
-  .student-life-page .content-card h2 {
-    font-size: 2rem;
-  }
-
-  .student-life-page .content-card h3 {
-    font-size: 1.75rem;
-  }
-
-  .student-life-page .content-card p {
-    font-size: 1.0625rem;
-  }
-}
-

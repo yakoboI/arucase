@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { publicAPI } from '../../services/public';
+import { DEFAULT_GOOGLE_MAPS_LOCATION } from '../../constants/defaultGoogleMapsLocation';
 import './PublicFooter.css';
 
 const PublicFooter = () => {
@@ -44,7 +45,7 @@ const PublicFooter = () => {
   const settings = homepageData?.settings || {};
   const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
   const contactWhatsapp = settings?.contact_whatsapp || '255123456789';
-  const socialLocation = settings?.social_location || 'https://maps.google.com/?q=Arusha+Catholic+Seminary+Tanzania';
+  const socialLocation = settings?.social_location || DEFAULT_GOOGLE_MAPS_LOCATION;
   
   const socialYoutube = settings?.social_youtube || 'https://youtube.com/@arushacatholicseminary';
 

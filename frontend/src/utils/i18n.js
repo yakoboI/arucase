@@ -41,6 +41,10 @@ const translations = {
       directionsBody:
         'Seminari ipo Arusha, Tanzania. Kwa maelekezo ya kina, tafadhali tumia ramani hapa chini au wasiliana na ofisi yetu.',
       googleMapsCta: 'Pata Maelekezo kwenye Google Maps',
+      mapTitle: 'Ramani ya eneo',
+      mapIframeTitle: 'Ramani ya Google — eneo la seminari',
+      openFullMap: 'Fungua katika Google Maps',
+      mapUnavailable: 'Ramani haiwezi kuonyeshwa hapa. Tumia kiunga hapa chini.',
       followUs: 'Tufuatilie Mitandaoni',
       followUsBody: 'Pata taarifa za habari na matukio ya seminari kwa kutufuatilia kupitia:',
       loadingPage: 'Inapakia ukurasa wa mawasiliano...',
@@ -88,6 +92,10 @@ const translations = {
       directionsBody:
         'The seminary is located in Arusha, Tanzania. For detailed directions, please use the map below or contact our office.',
       googleMapsCta: 'Get Directions on Google Maps',
+      mapTitle: 'Location map',
+      mapIframeTitle: 'Google Map — seminary location',
+      openFullMap: 'Open in Google Maps',
+      mapUnavailable: 'The map cannot be shown here. Use the link below.',
       followUs: 'Follow Us on Social Media',
       followUsBody: 'Stay updated with seminary news and events by following us on:',
       loadingPage: 'Loading contact page...',

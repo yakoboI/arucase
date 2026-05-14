@@ -1,8 +1,18 @@
 /**
- * Student Dashboard Styles - Modern Clean Design
- * Free-flowing responsive layout without constraints
+ * Student dashboard — purified layout (gray field, sharp white tiles, seminary navy accents).
  */
 .student-dashboard {
+  --sd-gutter: clamp(0.75rem, 4vw, 3rem);
+  --sd-inner-max: min(1680px, 100%);
+  --sd-page-bg: #e8eaed;
+  --sd-vpad: clamp(0.55rem, 1.5vw, 1rem);
+  --sd-section-gap: clamp(0.65rem, 1.5vw, 1rem);
+  /* Match Student Life `.student-life-card` shell */
+  --sd-card-pad: clamp(1.15rem, 2.8vw, 1.65rem);
+  --sd-card-border: 1px solid rgba(15, 23, 42, 0.16);
+  --sd-card-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  --sd-card-head-rule: rgba(15, 23, 42, 0.08);
+  --sd-icon-tile-border: 1px solid rgba(15, 23, 42, 0.14);
   width: 100%;
   min-width: 100%;
   max-width: 100vw;
@@ -10,19 +20,19 @@
   min-height: 100dvh;
   padding: 0;
   margin: 0;
-  background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
+  background: var(--sd-page-bg);
   overflow-x: hidden;
   box-sizing: border-box;
 }
 
 .dashboard-container {
   width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding-top: clamp(1rem, 4vw, 2rem);
-  padding-bottom: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-bottom, 0px));
-  padding-left: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-left, 0px));
-  padding-right: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-right, 0px));
+  max-width: var(--sd-inner-max);
+  margin: 0 auto;
+  padding-top: var(--sd-vpad);
+  padding-bottom: max(var(--sd-vpad), env(safe-area-inset-bottom, 0px));
+  padding-left: max(var(--sd-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--sd-gutter), env(safe-area-inset-right, 0px));
   box-sizing: border-box;
 }
 
@@ -30,11 +40,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.75rem 2rem;
-  background: white;
+  margin-bottom: var(--sd-section-gap);
+  padding: var(--sd-card-pad);
+  background: #ffffff;
+  border: var(--sd-card-border);
+  box-shadow: var(--sd-card-shadow);
   border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -43,23 +54,23 @@
 .student-info {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .student-avatar {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
+  background: #ffffff;
   border-radius: 0;
   color: #94a3b8;
-  font-size: 2rem;
+  font-size: 1.75rem;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  border: 2px solid #e2e8f0;
+  border: 1px solid rgba(15, 23, 42, 0.14);
   box-sizing: border-box;
 }
 
@@ -90,15 +101,16 @@
 }
 
 .student-details h2 {
-  margin: 0 0 0.5rem 0;
-  color: #111827;
-  font-size: 1.5rem;
-  font-weight: 600;
+  margin: 0 0 0.35rem 0;
+  color: #0f172a;
+  font-size: clamp(1.2rem, 3.2vw, 1.4rem);
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .student-meta {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -111,37 +123,40 @@
 }
 
 .student-meta i {
-  color: #667eea;
+  color: #1a5490;
   font-size: 0.875rem;
 }
 
 .logout-button {
-  padding: 0.75rem 1.5rem;
-  background: #ef4444;
-  color: white;
-  border: none;
+  padding: 0.65rem 1.1rem;
+  background: #ffffff;
+  color: #b91c1c;
+  border: 1px solid rgba(185, 28, 28, 0.4);
   border-radius: 0;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  box-shadow: 3px 3px 0 rgba(185, 28, 28, 0.12);
+  min-height: 44px;
 }
 
 .logout-button:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+  background: #fef2f2;
+  border-color: rgba(185, 28, 28, 0.55);
+  box-shadow: 4px 4px 0 rgba(185, 28, 28, 0.15);
 }
 
 .months-selection,
 .results-view {
-  background: white;
+  background: #ffffff;
   border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding: 2.5rem;
+  border: var(--sd-card-border);
+  box-shadow: var(--sd-card-shadow);
+  padding: var(--sd-card-pad);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -150,12 +165,13 @@
 .report-year-bar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
-  margin-bottom: 1.75rem;
-  padding: 1rem 1.25rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  margin-bottom: var(--sd-section-gap);
+  padding: clamp(0.65rem, 1.8vw, 0.85rem) clamp(0.75rem, 2vw, 1rem);
+  background: #ffffff;
+  border: var(--sd-card-border);
+  box-shadow: var(--sd-card-shadow);
   border-radius: 0;
 }
 
@@ -180,43 +196,45 @@
 
 .report-term-toggle {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.45rem;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--sd-section-gap);
 }
 
 .report-term-btn {
   padding: 0.65rem 1.35rem;
   border-radius: 0;
-  border: 2px solid #e2e8f0;
-  background: white;
+  border: var(--sd-card-border);
+  background: #ffffff;
   font-size: 0.9375rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 700;
+  color: #475569;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+  box-shadow: 3px 3px 0 rgba(15, 23, 42, 0.08);
 }
 
 .report-term-btn:hover {
-  border-color: #c7d2fe;
-  color: #667eea;
+  border-color: rgba(26, 84, 144, 0.35);
+  color: #1a5490;
 }
 
 .report-term-btn.active {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  border-color: #0f172a;
+  background: #1a5490;
+  color: #ffffff;
+  box-shadow: 4px 4px 0 #0f172a;
 }
 
 .section-header-spaced {
-  margin-top: 2.75rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: clamp(1rem, 2.5vw, 1.35rem);
+  padding-top: clamp(0.75rem, 2vw, 1rem);
+  border-top: 1px solid var(--sd-card-head-rule);
 }
 
 .report-summary-card {
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--sd-section-gap);
 }
 
 .report-scores-table-wrap {
@@ -243,23 +261,35 @@
   font-weight: 500;
 }
 
-.empty-state-compact {
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
+.empty-state.empty-state-compact {
+  padding: 1rem;
+  margin-bottom: var(--sd-section-gap);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .mb-4 {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--sd-section-gap);
 }
 
 .section-header {
-  margin-bottom: 2rem;
+  margin-bottom: var(--sd-section-gap);
+}
+
+/* In-shell section titles — same rhythm as Student Life `.student-life-card__head` */
+.months-selection .section-header .section-title-group,
+.results-view .section-header .section-title-group,
+.results-view .results-header .results-title-group {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--sd-card-head-rule);
 }
 
 .section-title-group {
   display: flex;
   align-items: flex-start;
-  gap: 1.25rem;
+  gap: 0.85rem;
 }
 
 .section-title-group.centered {
@@ -269,34 +299,37 @@
 }
 
 .section-icon-wrapper {
-  width: 56px;
-  height: 56px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
+  border: var(--sd-icon-tile-border);
   border-radius: 0;
-  color: white;
-  font-size: 1.5rem;
+  color: #1a5490;
+  font-size: 1.1rem;
   flex-shrink: 0;
+  box-shadow: none;
 }
 
 .months-selection h3,
 .results-view h3 {
-  margin: 0 0 0.5rem 0;
-  color: #111827;
-  font-size: 1.75rem;
-  font-weight: 700;
+  margin: 0 0 0.35rem 0;
+  color: #0f172a;
+  font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 .results-header {
-  margin-bottom: 2rem;
+  margin-bottom: var(--sd-section-gap);
 }
 
 .results-title-group {
   display: flex;
   align-items: flex-start;
-  gap: 1.25rem;
+  gap: 0.85rem;
 }
 
 .results-title-group.centered {
@@ -306,32 +339,36 @@
 }
 
 .results-icon-wrapper {
-  width: 56px;
-  height: 56px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  background: #ffffff;
+  border: var(--sd-icon-tile-border);
   border-radius: 0;
-  color: white;
-  font-size: 1.5rem;
+  color: #1a5490;
+  font-size: 1.1rem;
   flex-shrink: 0;
+  box-shadow: none;
 }
 
 .results-subtitle {
   margin: 0;
-  color: #6b7280;
-  font-size: 0.9375rem;
+  color: #475569;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+  line-height: 1.65;
 }
 
 .section-description {
   margin: 0;
-  color: #6b7280;
-  font-size: 0.9375rem;
+  color: #475569;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+  line-height: 1.65;
 }
 
 .section-group {
-  margin-bottom: 2.5rem;
+  margin-bottom: clamp(1rem, 2.5vw, 1.35rem);
 }
 
 .section-group:last-child {
@@ -339,69 +376,73 @@
 }
 
 .section-subtitle {
-  margin: 0 0 1.25rem 0;
-  color: #374151;
-  font-size: 1.125rem;
-  font-weight: 600;
+  margin: 0 0 0.85rem 0;
+  color: #0f172a;
+  font-size: clamp(1.05rem, 2.5vw, 1.2rem);
+  font-weight: 800;
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
 .section-subtitle i {
-  color: #667eea;
+  color: #1a5490;
   font-size: 1.125rem;
 }
 
 .assessment-card {
-  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
+  box-shadow: var(--sd-card-shadow);
 }
 
 .assessment-card:hover {
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+  box-shadow: 6px 6px 0 rgba(15, 23, 42, 0.12);
 }
 
 .months-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: clamp(1rem, 2.2vw, 1.5rem);
 }
 
 .month-card {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  background: #f9fafb;
-  border: none;
+  gap: 1rem;
+  padding: var(--sd-card-pad);
+  background: #ffffff;
+  border: var(--sd-card-border);
   border-radius: 0;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
   box-sizing: border-box;
+  box-shadow: var(--sd-card-shadow);
 }
 
 .month-card:hover {
-  background: #f3f4f6;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  border-color: rgba(26, 84, 144, 0.45);
+  box-shadow: 6px 6px 0 rgba(15, 23, 42, 0.12);
 }
 
 .month-icon {
-  width: 52px;
-  height: 52px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #ffffff;
+  border: var(--sd-icon-tile-border);
+  color: #1a5490;
   border-radius: 0;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
+  box-shadow: none;
 }
 
 .month-icon.assessment-icon {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #ffffff;
+  border: 1px solid rgba(5, 150, 105, 0.35);
+  color: #059669;
 }
 
 .month-info {
@@ -410,14 +451,14 @@
 
 .month-info h4 {
   margin: 0 0 0.375rem 0;
-  color: #111827;
-  font-size: 1.125rem;
-  font-weight: 600;
+  color: #0f172a;
+  font-size: clamp(1.05rem, 2.4vw, 1.15rem);
+  font-weight: 800;
 }
 
 .month-info p {
   margin: 0;
-  color: #6b7280;
+  color: #475569;
   font-size: 0.875rem;
   display: flex;
   align-items: center;
@@ -436,108 +477,116 @@
 }
 
 .month-card:hover .month-action {
-  color: #667eea;
+  color: #1a5490;
   transform: translateX(4px);
 }
 
 .back-button {
-  margin-bottom: 2rem;
-  padding: 0.875rem 1.75rem;
-  background: #667eea;
-  color: #000000 !important;
-  border: none;
+  margin-bottom: var(--sd-section-gap);
+  padding: 0.75rem 1.35rem;
+  background: #1a5490;
+  color: #ffffff !important;
+  border: 2px solid #0f172a;
   border-radius: 0;
   font-size: 0.9375rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: filter 0.15s ease, box-shadow 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 0.625rem;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  box-shadow: 4px 4px 0 #0f172a;
 }
 
 .back-button,
 .back-button * {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 .back-button:hover {
-  background: #5568d3;
-  color: #000000 !important;
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 5px 5px 0 #0f172a;
 }
 
 .back-button:hover,
 .back-button:hover * {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 .back-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
-  color: #000000 !important;
+  transform: scale(0.99);
+  box-shadow: 3px 3px 0 #0f172a;
+  color: #ffffff !important;
 }
 
 .back-button:active,
 .back-button:active * {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 .back-button i {
   font-size: 1rem;
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 .summary-card {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
-  padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  gap: clamp(0.75rem, 2vw, 1rem);
+  margin-bottom: clamp(1rem, 2.5vw, 1.35rem);
+  padding: var(--sd-card-pad);
+  background: #ffffff;
+  border: var(--sd-card-border);
+  box-shadow: var(--sd-card-shadow);
   border-radius: 0;
-  color: white;
+  color: #0f172a;
 }
 
 .summary-item {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
+  padding: 0.65rem 0.5rem;
+  border: 1px solid var(--sd-card-head-rule);
+  background: #ffffff;
 }
 
 .summary-icon {
-  width: 56px;
-  height: 56px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
+  background: #ffffff;
+  border: var(--sd-icon-tile-border);
   border-radius: 0;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
+  color: #1a5490;
 }
 
 .summary-content {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .summary-label {
-  font-size: 0.875rem;
-  opacity: 0.9;
-  font-weight: 500;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .summary-value {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-size: clamp(1.35rem, 3vw, 1.65rem);
+  font-weight: 800;
   line-height: 1.2;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  color: #0f172a;
 }
 
 .summary-value .grade-badge {
@@ -547,9 +596,11 @@
 
 .results-table-container {
   overflow-x: auto;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--sd-section-gap);
   border-radius: 0;
-  background: white;
+  background: #ffffff;
+  border: var(--sd-card-border);
+  box-shadow: var(--sd-card-shadow);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -559,7 +610,7 @@
 }
 
 .results-table-container:focus-visible {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #667eea;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #1a5490;
 }
 
 /* Wider term report: keep columns readable on small screens (horizontal scroll) */
@@ -579,28 +630,34 @@
 .position-card {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  gap: 1rem;
+  padding: var(--sd-card-pad);
+  background: #ffffff;
+  border: var(--sd-card-border);
+  box-shadow: var(--sd-card-shadow);
   border-radius: 0;
-  color: white;
-  margin-bottom: 2.5rem;
+  color: #0f172a;
+  margin-bottom: clamp(1rem, 2.5vw, 1.35rem);
 }
 
 .position-card.no-position {
-  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  background: #ffffff;
+  border: var(--sd-card-border);
+  color: #64748b;
 }
 
 .position-icon {
-  width: 56px;
-  height: 56px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
+  background: #ffffff;
+  border: var(--sd-icon-tile-border);
   border-radius: 0;
-  font-size: 1.75rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
+  color: #1a5490;
 }
 
 .position-content {
@@ -611,14 +668,15 @@
 
 .position-label {
   font-size: 0.875rem;
-  opacity: 0.9;
-  font-weight: 500;
+  color: #64748b;
+  font-weight: 600;
 }
 
 .position-value {
-  font-size: 2.25rem;
-  font-weight: 700;
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: 800;
   line-height: 1;
+  color: #0f172a;
 }
 
 .results-table {
@@ -633,7 +691,7 @@
 }
 
 .results-table th {
-  padding: 1.25rem 1rem;
+  padding: 0.85rem 0.75rem;
   text-align: left;
   font-weight: 600;
   color: #374151;
@@ -645,7 +703,7 @@
 }
 
 .results-table td {
-  padding: 1.25rem 1rem;
+  padding: 0.85rem 0.75rem;
   color: #111827;
   font-size: 0.9375rem;
   border: none;
@@ -700,59 +758,62 @@
 
 .assessment-section,
 .recommendations-section {
-  margin-top: 2.5rem;
-  padding-top: 2.5rem;
+  margin-top: clamp(1.15rem, 3vw, 1.5rem);
+  padding-top: clamp(1rem, 2.5vw, 1.35rem);
 }
 
 .section-title-with-icon {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: var(--sd-section-gap);
 }
 
 .section-icon-badge {
-  width: 48px;
-  height: 48px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
+  border: var(--sd-icon-tile-border);
   border-radius: 0;
-  color: white;
-  font-size: 1.25rem;
+  color: #1a5490;
+  font-size: 1.1rem;
   flex-shrink: 0;
+  box-shadow: none;
 }
 
 .assessment-section h4,
 .recommendations-section h4 {
   margin: 0;
-  color: #111827;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: #0f172a;
+  font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+  font-weight: 800;
 }
 
 /* TABIA NA MWENENDO Grid */
 .tabia-mwenendo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  gap: clamp(1rem, 2.2vw, 1.5rem);
 }
 
 .tabia-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem;
-  background: #f9fafb;
-  border: none;
+  padding: clamp(0.95rem, 2.2vw, 1.15rem);
+  background: #ffffff;
+  border: var(--sd-card-border);
   border-radius: 0;
-  transition: all 0.2s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--sd-card-shadow);
 }
 
 .tabia-item:hover {
-  background: #f3f4f6;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: rgba(26, 84, 144, 0.35);
+  box-shadow: 6px 6px 0 rgba(15, 23, 42, 0.12);
 }
 
 .tabia-criterion {
@@ -764,7 +825,7 @@
 
 .tabia-code {
   font-weight: 700;
-  color: #667eea;
+  color: #1a5490;
   font-size: 0.875rem;
 }
 
@@ -814,21 +875,21 @@
 .recommendations-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: clamp(1rem, 2.2vw, 1.5rem);
 }
 
 .recommendation-item {
-  padding: 1.5rem;
-  background: #f9fafb;
-  border: none;
+  padding: var(--sd-card-pad);
+  background: #ffffff;
+  border: var(--sd-card-border);
   border-radius: 0;
-  transition: all 0.2s;
-  box-shadow: 0 1px 3px rgba(102, 126, 234, 0.1);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--sd-card-shadow);
 }
 
 .recommendation-item:hover {
-  background: #f3f4f6;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: rgba(26, 84, 144, 0.35);
+  box-shadow: 6px 6px 0 rgba(15, 23, 42, 0.12);
 }
 
 .recommendation-header {
@@ -839,14 +900,15 @@
 }
 
 .recommendation-icon {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
+  border: var(--sd-icon-tile-border);
   border-radius: 0;
-  color: white;
+  color: #1a5490;
   font-size: 1rem;
   flex-shrink: 0;
 }
@@ -866,27 +928,31 @@
 .loading-state,
 .empty-state {
   text-align: center;
-  padding: 4rem 2rem;
-  color: #6b7280;
+  padding: var(--sd-card-pad);
+  color: #475569;
+  background: #ffffff;
+  border: var(--sd-card-border);
+  box-shadow: var(--sd-card-shadow);
+  margin-bottom: var(--sd-section-gap);
 }
 
 .empty-state i {
-  font-size: 3.5rem;
+  font-size: 2.75rem;
   color: #d1d5db;
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
   display: block;
 }
 
 .empty-state h4 {
   margin: 0 0 0.5rem 0;
-  color: #111827;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: #0f172a;
+  font-size: clamp(1.1rem, 2.8vw, 1.25rem);
+  font-weight: 800;
 }
 
 .empty-state p {
   margin: 0;
-  color: #6b7280;
+  color: #475569;
 }
 
 /* ===========================================
@@ -900,19 +966,19 @@
   }
 
   .dashboard-container {
-    padding-top: clamp(1rem, 4vw, 1.5rem);
-    padding-bottom: max(clamp(1rem, 4vw, 1.5rem), env(safe-area-inset-bottom, 0px));
-    padding-left: max(clamp(1rem, 4vw, 1.5rem), env(safe-area-inset-left, 0px));
-    padding-right: max(clamp(1rem, 4vw, 1.5rem), env(safe-area-inset-right, 0px));
+    padding-top: var(--sd-vpad);
+    padding-bottom: max(var(--sd-vpad), env(safe-area-inset-bottom, 0px));
+    padding-left: max(var(--sd-gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--sd-gutter), env(safe-area-inset-right, 0px));
     max-width: 100%;
     width: 100%;
   }
 
   .dashboard-header {
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 0.85rem;
     align-items: flex-start;
-    padding: 1.25rem;
+    padding: var(--sd-card-pad);
     border-radius: 0;
   }
 
@@ -956,9 +1022,9 @@
 
   .months-selection,
   .results-view {
-    padding: 1rem max(1rem, env(safe-area-inset-left, 0px)) 1.25rem max(1rem, env(safe-area-inset-right, 0px));
+    padding: var(--sd-card-pad) max(var(--sd-gutter), env(safe-area-inset-left, 0px)) var(--sd-card-pad) max(var(--sd-gutter), env(safe-area-inset-right, 0px));
     border-radius: 0;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--sd-section-gap);
   }
 
   .section-title-group,
@@ -969,15 +1035,15 @@
 
   .section-icon-wrapper,
   .results-icon-wrapper {
-    width: 48px;
-    height: 48px;
-    font-size: 1.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
     border-radius: 0;
   }
 
   .months-selection h3,
   .results-view h3 {
-    font-size: clamp(1.25rem, 5vw, 1.5rem);
+    font-size: clamp(1.1rem, 5vw, 1.35rem);
   }
 
   .section-description,
@@ -989,21 +1055,21 @@
     padding: 0.875rem 1.25rem;
     font-size: clamp(0.875rem, 3vw, 0.9375rem);
     min-height: 44px;
-    margin-bottom: 1.5rem;
-    color: #000000 !important;
+    margin-bottom: var(--sd-section-gap);
+    color: #ffffff !important;
   }
 
   .back-button,
   .back-button * {
-    color: #000000 !important;
+    color: #ffffff !important;
   }
 
   .summary-card {
     grid-template-columns: 1fr;
-    padding: 1.25rem;
+    padding: var(--sd-card-pad);
     border-radius: 0;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 0.75rem;
+    margin-bottom: var(--sd-section-gap);
   }
 
   .summary-item {
@@ -1013,9 +1079,9 @@
   }
 
   .summary-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
   }
 
   .summary-label {
@@ -1028,18 +1094,18 @@
 
   .months-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: clamp(1rem, 2.2vw, 1.35rem);
   }
 
   .month-card {
-    padding: 1.25rem;
+    padding: var(--sd-card-pad);
     border-radius: 0;
   }
 
   .month-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
   }
 
   .month-info h4 {
@@ -1051,15 +1117,15 @@
   }
 
   .position-card {
-    padding: 1.25rem;
+    padding: 1.1rem 1.15rem;
     border-radius: 0;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--sd-section-gap);
   }
 
   .position-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
   }
 
   .position-label {
@@ -1114,13 +1180,13 @@
   }
 
   .recommendation-item {
-    padding: 1.25rem;
+    padding: 1.1rem;
     border-radius: 0;
   }
 
   .recommendation-icon {
-    width: 36px;
-    height: 36px;
+    width: 2.5rem;
+    height: 2.5rem;
     font-size: 0.9375rem;
   }
 }
@@ -1132,24 +1198,24 @@
   }
 
   .dashboard-container {
-    padding-top: clamp(1.5rem, 4vw, 2rem);
-    padding-bottom: max(clamp(1.5rem, 4vw, 2rem), env(safe-area-inset-bottom, 0px));
-    padding-left: max(clamp(1.5rem, 4vw, 2rem), env(safe-area-inset-left, 0px));
-    padding-right: max(clamp(1.5rem, 4vw, 2rem), env(safe-area-inset-right, 0px));
+    padding-top: var(--sd-vpad);
+    padding-bottom: max(var(--sd-vpad), env(safe-area-inset-bottom, 0px));
+    padding-left: max(var(--sd-gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--sd-gutter), env(safe-area-inset-right, 0px));
   }
 
   .dashboard-header {
-    padding: 1.5rem;
+    padding: var(--sd-card-pad);
   }
 
   .months-selection,
   .results-view {
-    padding: 1.5rem;
+    padding: var(--sd-card-pad);
   }
 
   .summary-card {
     grid-template-columns: repeat(2, 1fr);
-    padding: 1.5rem;
+    padding: var(--sd-card-pad);
   }
 }
 
@@ -1160,10 +1226,10 @@
   }
 
   .dashboard-container {
-    padding-top: clamp(2rem, 4vw, 2.5rem);
-    padding-bottom: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-bottom, 0px));
-    padding-left: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-left, 0px));
-    padding-right: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-right, 0px));
+    padding-top: var(--sd-vpad);
+    padding-bottom: max(var(--sd-vpad), env(safe-area-inset-bottom, 0px));
+    padding-left: max(var(--sd-gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--sd-gutter), env(safe-area-inset-right, 0px));
     max-width: 100%;
     width: 100%;
   }
@@ -1192,22 +1258,22 @@
   }
 
   .dashboard-container {
-    padding-top: clamp(2rem, 4vw, 2.5rem);
-    padding-bottom: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-bottom, 0px));
-    padding-left: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-left, 0px));
-    padding-right: max(clamp(2rem, 4vw, 2.5rem), env(safe-area-inset-right, 0px));
+    padding-top: var(--sd-vpad);
+    padding-bottom: max(var(--sd-vpad), env(safe-area-inset-bottom, 0px));
+    padding-left: max(var(--sd-gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--sd-gutter), env(safe-area-inset-right, 0px));
   }
 
   .dashboard-header {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 1.75rem 2rem;
+    padding: var(--sd-card-pad);
   }
 
   .student-meta {
     flex-direction: row;
-    gap: 1.5rem;
+    gap: 1rem;
   }
 
   .logout-button {
@@ -1216,17 +1282,17 @@
 
   .months-selection,
   .results-view {
-    padding: 2.5rem;
+    padding: var(--sd-card-pad);
   }
 
   .section-title-group,
   .results-title-group {
     flex-direction: row;
-    gap: 1.25rem;
+    gap: 0.85rem;
   }
 
   .months-grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 
   .tabia-mwenendo-grid {
@@ -1240,7 +1306,7 @@
 
   .results-table th,
   .results-table td {
-    padding: 1.25rem 1rem;
+    padding: 0.85rem 0.75rem;
     font-size: 0.9375rem;
     border: none;
     border-bottom: 1px solid #f3f4f6;
@@ -1287,9 +1353,10 @@
     line-height: 1.35;
     color: #475569;
     margin: 0 0 0.625rem 0;
-    padding: 0.625rem 0.75rem;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    padding: clamp(0.55rem, 2vw, 0.75rem) clamp(0.65rem, 2.2vw, 0.85rem);
+    background: #ffffff;
+    border: var(--sd-card-border);
+    box-shadow: var(--sd-card-shadow);
     border-radius: 0;
   }
 
@@ -1384,4 +1451,25 @@
   .report-term-btn:active {
     transform: scale(0.98);
   }
+}
+
+/* Prev/next bar lives in PublicLayout above this page — match tighter vertical rhythm */
+@supports selector(:has(*)) {
+  .public-layout .public-main:has(> .student-dashboard) .public-prev-next-nav {
+    --public-prev-next-gutter: clamp(0.75rem, 4vw, 3rem);
+    --pn-btn-min-h: clamp(2rem, 4.8vw, 2.35rem);
+    --pn-btn-pad-y: clamp(0.28rem, 1vw, 0.4rem);
+    --pn-inner-gap: clamp(0.35rem, 1.1vw, 0.5rem);
+    --pn-row-gap: clamp(0.25rem, 1vw, 0.4rem);
+    --pn-label: clamp(0.8rem, 2.2vw, 1rem);
+    --pn-hint: clamp(0.6rem, 1.5vw, 0.75rem);
+  }
+
+  .public-layout .public-main:has(> .student-dashboard) .public-prev-next-nav__inner {
+    padding-block: clamp(0.2rem, 0.75vw, 0.35rem);
+  }
+}
+
+.student-dashboard .results-skeleton {
+  margin-bottom: var(--sd-section-gap);
 }

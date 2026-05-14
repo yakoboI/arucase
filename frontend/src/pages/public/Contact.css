@@ -1,63 +1,252 @@
-/* Import common public page styles */
+/* Import common public page styles (page shell min-height only — layout is local below) */
 @import '../../styles/public-common.css';
 
-/* Contact page specific styles */
+/* --------------------------------------------------------------------------
+   Contact — full device width inner, multiple flat cards (no box-shadow)
+   -------------------------------------------------------------------------- */
 
-.contact-info-box {
-  background: #f9fafb;
-  border-left: 4px solid #1a5490;
-  padding: 1.5rem;
-  margin: 1.5rem 0;
+.contact-page {
+  --cp-gutter: clamp(0.75rem, 4vw, 3rem);
+  --cp-inner-max: min(1680px, 100%);
+  --cp-card-border: 1px solid rgba(15, 23, 42, 0.16);
+  --cp-card-pad: clamp(1.15rem, 2.8vw, 1.65rem);
+  --cp-head-rule: rgba(15, 23, 42, 0.08);
+  --cp-icon-border: 1px solid rgba(15, 23, 42, 0.14);
+
+  background: #e8eaed;
+  box-sizing: border-box;
+  padding: var(--cp-gutter);
+  width: 100%;
+  min-width: 100%;
+}
+
+.contact-page-inner {
+  width: 100%;
+  max-width: var(--cp-inner-max);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.2vw, 1.5rem);
+  box-sizing: border-box;
+}
+
+/* Auto-fit grid: two columns when space allows (office hours | departments, visit | directions) */
+.contact-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(1rem, 2.2vw, 1.5rem);
+  align-items: start;
+}
+
+.contact-card {
+  background: #ffffff;
+  border: var(--cp-card-border);
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--cp-card-pad);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+.contact-card--intro {
+  text-align: center;
+}
+
+.contact-card--center {
+  text-align: center;
+}
+
+.contact-page-title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.75rem, 5vw, 2.35rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.15;
+}
+
+.contact-page-lead {
+  margin: 0 auto;
+  max-width: min(52ch, 100%);
+  font-size: clamp(0.95rem, 2.3vw, 1.08rem);
+  line-height: 1.65;
+  color: #475569;
+}
+
+.contact-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--cp-head-rule);
+}
+
+.contact-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border: var(--cp-icon-border);
+  background: #ffffff;
+  color: #1a5490;
+  font-size: 1.1rem;
   border-radius: 0;
 }
 
+.contact-card__title {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.contact-card__body {
+  margin: 0;
+  line-height: 1.7;
+  color: #475569;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+.contact-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #475569;
+  font-size: clamp(0.95rem, 2.2vw, 1.02rem);
+  line-height: 1.65;
+}
+
+.contact-list li {
+  margin-bottom: 0.55rem;
+}
+
+.contact-list li:last-child {
+  margin-bottom: 0;
+}
+
+.contact-list strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.contact-page a {
+  color: #1a5490;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(26, 84, 144, 0.35);
+  text-underline-offset: 0.12em;
+}
+
+.contact-page a:hover {
+  color: #143d6b;
+  text-decoration-color: rgba(26, 84, 144, 0.55);
+}
+
+/* Detail rows — horizontal divisions inside the contact details card */
+.contact-info-box {
+  margin: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
 .contact-info-box p {
-  margin-bottom: 1rem;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
+  margin: 0;
+  padding: clamp(0.85rem, 2vw, 1.1rem) 0;
+  border-bottom: 1px solid var(--cp-head-rule);
+}
+
+.contact-info-box p:first-child {
+  padding-top: 0;
+}
+
+.contact-info-box p:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.contact-info-block {
+  flex: 1;
+  min-width: 0;
 }
 
 .contact-info-box i {
   color: #1a5490;
   font-size: 1.25rem;
-  margin-top: 0.25rem;
-  min-width: 24px;
+  margin-top: 0.2rem;
+  min-width: 1.5rem;
+  text-align: center;
 }
 
 .contact-info-box .contact-whatsapp-icon {
-  color: #25D366;
-}
-
-.contact-info-box a {
-  color: #2d7bc4;
-  text-decoration: none;
-}
-
-.contact-info-box a:hover {
-  text-decoration: underline;
+  color: #25d366;
 }
 
 .map-button-container {
-  margin: 2rem 0;
+  margin: clamp(1rem, 2.5vw, 1.5rem) 0 0;
   text-align: center;
+}
+
+.contact-card--map .map-button-container {
+  margin-top: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+.contact-map-embed {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 0;
+  aspect-ratio: 16 / 10;
+  min-height: min(360px, 55vh);
+  background: #e2e8f0;
+}
+
+.contact-map-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.contact-map-fallback {
+  margin-bottom: 0;
 }
 
 .map-button {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 2rem;
+  padding: 0.85rem 1.75rem;
   background: #1a5490;
-  color: white;
+  color: #ffffff;
   text-decoration: none;
   border-radius: 0;
-  font-weight: 500;
-  transition: background 0.2s;
+  font-weight: 800;
+  border: 2px solid #0f172a;
+  box-shadow: none;
+  transition: filter 0.15s ease;
 }
 
 .map-button:hover {
-  background: #2d7bc4;
+  filter: brightness(1.06);
+  color: #ffffff;
+}
+
+.map-button:focus-visible {
+  outline: 2px solid #1a5490;
+  outline-offset: 3px;
 }
 
 .map-button i {
@@ -69,6 +258,11 @@
   flex-wrap: wrap;
   gap: 1rem;
   margin-top: 1rem;
+  justify-content: flex-start;
+}
+
+.contact-card--follow .social-links {
+  justify-content: center;
 }
 
 .social-link-facebook,
@@ -80,13 +274,15 @@
   padding: 0.75rem 1.5rem;
   border-radius: 0;
   text-decoration: none;
-  color: white;
-  font-weight: 500;
-  transition: transform 0.2s, box-shadow 0.2s;
+  color: #ffffff;
+  font-weight: 700;
+  border: 2px solid #0f172a;
+  box-shadow: none;
+  transition: filter 0.15s ease;
 }
 
 .social-link-facebook {
-  background: #1877F2;
+  background: #1877f2;
 }
 
 .social-link-instagram {
@@ -94,12 +290,20 @@
 }
 
 .social-link-youtube {
-  background: #FF0000;
+  background: #ff0000;
 }
 
 .social-link-facebook:hover,
 .social-link-instagram:hover,
 .social-link-youtube:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.05);
+  box-shadow: none;
+  transform: none;
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .contact-page {
+    padding: clamp(0.75rem, 4vw, 2rem);
+  }
 }

@@ -1,222 +1,432 @@
 @import '../../styles/public-common.css';
 
-.student-report-page .content-card {
-  background: white;
-  border-radius: 0;
-  padding: clamp(1rem, 3vw, 2.5rem);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* ---- Student Report: gray shell, centred header + CTA, sharp cards ---------- */
+
+.student-report-page {
+  --sr-gutter: clamp(0.75rem, 4vw, 3rem);
+  --sr-inner-max: min(1680px, 100%);
+  --sr-page-bg: #e8eaed;
   width: 100%;
   max-width: 100%;
-  margin: 0;
+  min-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   box-sizing: border-box;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  overflow-x: hidden;
+  background: var(--sr-page-bg);
+  padding: 0 var(--sr-gutter) clamp(1.5rem, 4vw, 2.5rem);
 }
 
-/* Full width utilization on all screen sizes */
-@media (max-width: 768px) {
-  .student-report-page .content-card {
-    max-width: 100%;
-    margin: 0;
-  }
-  
-  .student-report-page {
-    padding: 0;
-  }
+.student-report-page-header {
+  width: 100%;
+  max-width: var(--sr-inner-max);
+  margin: 0 auto clamp(1.25rem, 3vw, 2rem);
+  box-sizing: border-box;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  padding: clamp(1.25rem, 3.5vw, 2rem) clamp(1rem, 3vw, 2rem);
 }
 
-.student-report-page .content-card h2 {
+.student-report-page-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: #1a5490;
-  font-size: clamp(1.5rem, 4.5vw, 2rem);
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.student-report-page-title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.75rem, 5vw, 2.35rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.15;
+}
+
+.student-report-page-lead {
+  margin: 0 auto 1.25rem;
+  max-width: min(52ch, 100%);
+  font-size: clamp(0.95rem, 2.3vw, 1.08rem);
+  line-height: 1.65;
+  color: #475569;
+}
+
+.student-report-page-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.student-report-page-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.35rem;
+  min-height: 48px;
+  font-weight: 800;
+  text-decoration: none;
+  color: #ffffff;
+  background: #1a5490;
+  border: 2px solid #0f172a;
+  box-shadow: 5px 5px 0 #0f172a;
+  border-radius: 0;
+  box-sizing: border-box;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.student-report-page-cta__btn:hover {
+  filter: brightness(1.04);
+  box-shadow: 6px 6px 0 #0f172a;
+}
+
+.student-report-page-cta__btn:active {
+  transform: scale(0.99);
+}
+
+.student-report-page-cta__hint {
+  margin: 0;
+  max-width: min(44ch, 100%);
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.student-report-inner {
+  width: 100%;
+  max-width: var(--sr-inner-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(260px, 42vw, 380px)), 1fr));
+  gap: clamp(1rem, 2.2vw, 1.75rem);
+  align-items: start;
+}
+
+.student-report-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  border-radius: 0;
+  padding: clamp(1.15rem, 2.8vw, 1.65rem);
+  box-sizing: border-box;
+}
+
+.student-report-card--wide {
+  grid-column: 1 / -1;
+}
+
+.student-report-card--contact {
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+.student-report-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  text-align: center;
+}
+
+.student-report-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: #1a5490;
+  font-size: 1.1rem;
+  border-radius: 0;
+}
+
+.student-report-card__title {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.student-report-card__intro {
+  margin: 0;
+  line-height: 1.7;
+  color: #475569;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+.student-report-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #334155;
+  font-size: clamp(0.95rem, 2.2vw, 1.02rem);
+  line-height: 1.65;
+}
+
+.student-report-list li {
+  margin-bottom: 0.55rem;
+}
+
+.student-report-list li:last-child {
+  margin-bottom: 0;
+}
+
+.student-report-list strong {
+  color: #0f172a;
   font-weight: 700;
 }
 
-.student-report-page .content-card h3 {
+.student-report-inline-link {
   color: #1a5490;
-  font-size: clamp(1.25rem, 4vw, 1.75rem);
-  margin-top: clamp(1.5rem, 3vw, 2rem);
-  margin-bottom: clamp(0.75rem, 2vw, 1rem);
-  font-weight: 600;
-}
-
-.student-report-page .content-card p {
-  line-height: 1.8;
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
-  color: #374151;
-  font-size: clamp(0.9375rem, 2.5vw, 1.0625rem);
-  white-space: pre-wrap;
-}
-
-.student-report-page .content-card br {
-  display: block;
-  margin: 0.5rem 0;
-  content: "";
-}
-
-/* Extra small screens (< 375px) */
-@media (max-width: 374px) {
-  .student-report-page {
-    padding: 0.375rem 0.5rem;
-  }
-
-  .student-report-page .content-card {
-    padding: 0.75rem 0.5rem;
-    max-width: 100%;
-  }
-
-  .student-report-page .content-card h2 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .student-report-page .content-card h3 {
-    font-size: 1.125rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .student-report-page .content-card p {
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.6;
-  }
-
-  .student-report-page .content-card ul {
-    margin: 0.5rem 0;
-    padding-left: 1.25rem;
-  }
-
-  .student-report-page .content-card li {
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
-  }
-}
-
-/* Small screens (375px - 480px) */
-@media (min-width: 375px) and (max-width: 480px) {
-  .student-report-page .content-card h2 {
-    font-size: 1.375rem;
-  }
-
-  .student-report-page .content-card h3 {
-    font-size: 1.1875rem;
-  }
-
-  .student-report-page .content-card p {
-    font-size: 0.9375rem;
-  }
-}
-
-.student-report-page .content-card ul {
-  margin: 1rem 0;
-  padding-left: 2rem;
-}
-
-.student-report-page .content-card li {
-  line-height: 1.8;
-  margin-bottom: 0.75rem;
-  color: #374151;
-}
-
-.student-report-page .content-card strong {
-  color: #1a5490;
-  font-weight: 600;
-}
-
-.student-report-page .contact-link {
-  color: #2d7bc4;
-  text-decoration: none;
-}
-
-.student-report-page .contact-link:hover {
+  font-weight: 800;
   text-decoration: underline;
 }
 
-/* ===========================================
-   RESPONSIVE DESIGN - MOBILE FIRST APPROACH
-   =========================================== */
+.student-report-inline-link:hover {
+  color: #0f172a;
+}
 
-/* Extra Small Devices (phones, 320px and up) */
-@media (min-width: 320px) {
-  .student-report-page {
-    padding: 1rem 0;
+.student-report-contact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.student-report-contact-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  box-shadow: 2px 2px 0 rgba(15, 23, 42, 0.06);
+}
+
+.student-report-contact-list__key {
+  min-width: 6.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.student-report-contact-list__link {
+  color: #1a5490;
+  font-weight: 700;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.student-report-contact-list__link:hover {
+  text-decoration: underline;
+}
+
+.student-report-page--cms {
+  display: block;
+}
+
+.student-report-page--cms-grid .student-report-cms-article--grid {
+  margin-top: 0;
+}
+
+.student-report-cms-article {
+  width: 100%;
+  max-width: var(--sr-inner-max);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.student-report-cms-article--grid {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Markdown → multi-card grid */
+.student-report-md-outer {
+  width: 100%;
+  max-width: var(--sr-inner-max);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.student-report-md-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(260px, 38vw, 400px)), 1fr));
+  gap: clamp(1rem, 2.2vw, 1.75rem);
+  align-items: stretch;
+}
+
+.student-report-md-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  border-radius: 0;
+  padding: clamp(1.15rem, 2.8vw, 1.65rem);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.student-report-md-card__title {
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  font-size: clamp(1.1rem, 2.6vw, 1.35rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.student-report-md-card__body {
+  flex: 1;
+  color: #334155;
+  font-size: clamp(0.95rem, 2.1vw, 1.03rem);
+  line-height: 1.65;
+}
+
+.student-report-md-p {
+  margin: 0 0 0.75rem;
+}
+
+.student-report-md-p:last-child {
+  margin-bottom: 0;
+}
+
+.student-report-md-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.student-report-md-list li {
+  margin-bottom: 0.45rem;
+}
+
+.student-report-md-list li:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 1100px) {
+  .student-report-md-card__body .student-report-md-list {
+    columns: 2;
+    column-gap: clamp(1.5rem, 3vw, 2.25rem);
   }
 
-  .student-report-page .content-card {
-    padding: 1.25rem;
-    margin: 0;
-    border-radius: 0;
-  }
-
-  .student-report-page .content-card h2 {
-    font-size: clamp(1.5rem, 6vw, 1.75rem);
-    margin-bottom: 1.25rem;
-    line-height: 1.3;
-  }
-
-  .student-report-page .content-card h3 {
-    font-size: clamp(1.25rem, 5vw, 1.5rem);
-    margin-top: 1.5rem;
-    margin-bottom: 0.875rem;
-    line-height: 1.4;
-  }
-
-  .student-report-page .content-card p {
-    font-size: clamp(0.9375rem, 3.5vw, 1rem);
-    line-height: 1.7;
-  }
-
-  .student-report-page .content-card ul {
-    padding-left: 1.5rem;
-  }
-
-  .student-report-page .content-card li {
-    font-size: clamp(0.9375rem, 3.5vw, 1rem);
-    line-height: 1.7;
+  .student-report-md-card__body .student-report-md-list li {
+    break-inside: avoid;
   }
 }
 
-/* Small Devices (landscape phones, 480px and up) */
-@media (min-width: 480px) {
-  .student-report-page {
-    padding: 1.5rem 0;
-  }
+.student-report-md-fallback {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  padding: 1rem;
+  overflow-x: auto;
+}
 
-  .student-report-page .content-card {
-    padding: 1.5rem;
-    margin: 0;
+.student-report-md-fallback pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.student-report-card--prose {
+  width: 100%;
+  max-width: var(--sr-inner-max);
+  margin-left: auto;
+  margin-right: auto;
+  white-space: normal;
+}
+
+.student-report-card--prose.content-card {
+  border-radius: 0;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: clamp(1.15rem, 2.8vw, 2rem);
+}
+
+.student-report-card--prose.content-card h1:first-child,
+.student-report-card--prose.content-card h2:first-child {
+  margin-top: 0;
+}
+
+.student-report-card--prose.content-card h2 {
+  color: #0f172a;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  font-weight: 800;
+}
+
+.student-report-card--prose.content-card h3 {
+  color: #1a5490;
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  font-weight: 700;
+}
+
+.student-report-card--prose.content-card p,
+.student-report-card--prose.content-card li {
+  color: #374151;
+}
+
+.student-report-card--prose.content-card strong {
+  color: #0f172a;
+}
+
+.student-report-card--prose.content-card a {
+  color: #1a5490;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .student-report-page {
+    padding-left: var(--sr-gutter);
+    padding-right: var(--sr-gutter);
+    padding-top: 0;
   }
 }
 
-/* Medium Devices (tablets, 640px and up) */
-@media (min-width: 640px) {
-  .student-report-page .content-card {
-    padding: 2rem;
-    margin: 0;
-  }
-}
-
-/* Large Devices (tablets landscape, 768px and up) */
-@media (min-width: 768px) {
+@media (max-width: 374px) {
   .student-report-page {
-    padding: 2rem 0;
+    padding-left: var(--sr-gutter);
+    padding-right: var(--sr-gutter);
+    padding-top: clamp(0.35rem, 2vw, 0.5rem);
   }
 
-  .student-report-page .content-card {
-    padding: 2.5rem;
+  .student-report-page-header {
+    padding: 1rem 0.85rem;
+  }
+
+  .student-report-card {
+    padding: 1rem 0.9rem;
+  }
+
+  .student-report-page-cta__btn {
+    width: 100%;
     max-width: 100%;
-  }
-
-  .student-report-page .content-card h2 {
-    font-size: 2rem;
-  }
-
-  .student-report-page .content-card h3 {
-    font-size: 1.75rem;
-  }
-
-  .student-report-page .content-card p {
-    font-size: 1.0625rem;
   }
 }

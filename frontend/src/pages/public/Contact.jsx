@@ -1,11 +1,13 @@
 /**
- * Contact Page - Full Content from Python Template
+ * Contact Page — multi-card layout, device-width inner shell
  */
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
 import { publicAPI } from '../../services/public';
+import { DEFAULT_GOOGLE_MAPS_LOCATION } from '../../constants/defaultGoogleMapsLocation';
 import { createT, getPreferredLanguage } from '../../utils/i18n';
+import { getGoogleMapsEmbedSrc } from '../../utils/googleMapsEmbed';
 import './Contact.css';
 
 const Contact = () => {
@@ -38,7 +40,8 @@ const Contact = () => {
   const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
   const contactWhatsapp = settings?.contact_whatsapp || '+255 123 456 789';
   const whatsappNumber = contactWhatsapp.replace(/[+\s]/g, '');
-  const socialLocation = settings?.social_location || 'https://maps.google.com/?q=Arusha+Catholic+Seminary+Tanzania';
+  const socialLocation = settings?.social_location || DEFAULT_GOOGLE_MAPS_LOCATION;
+  const mapEmbedSrc = getGoogleMapsEmbedSrc(socialLocation);
   const socialYoutube = settings?.social_youtube || 'https://youtube.com/@arushacatholicseminary';
   const admissionsEmail = settings?.admissions_email || 'admissions@arushacatholicseminary.co.tz';
   const academicsEmail = settings?.academics_email || 'academics@arushacatholicseminary.co.tz';
@@ -49,77 +52,199 @@ const Contact = () => {
   return (
     <PublicLayout>
       <div className="contact-page">
-        <div className="content-card">
-          <h2>{tt('contact.pageTitle')}</h2>
-          <p>{tt('contact.intro')}</p>
+        <div className="contact-page-inner">
+          <header className="contact-card contact-card--intro">
+            <h1 className="contact-page-title">{tt('contact.pageTitle')}</h1>
+            <p className="contact-page-lead">{tt('contact.intro')}</p>
+          </header>
 
-          <h3>{tt('contact.contactInformation')}</h3>
-          <div className="contact-info-box">
-            <p>
-              <i className="fas fa-map-marker-alt"></i>
-              <strong>{tt('contact.address')}:</strong><br />
-              {contactAddress.split('\n').map((line, idx) => (
-                <span key={idx}>{line}<br /></span>
-              ))}
-            </p>
-            
-            <p>
-              <i className="fas fa-phone"></i>
-              <strong>{tt('contact.phone')}:</strong>{' '}
-              <a href={`tel:${contactPhone}`}>{contactPhone}</a>
-            </p>
-            
-            <p>
-              <i className="fas fa-envelope"></i>
-              <strong>{tt('contact.email')}:</strong>{' '}
-              <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
-            </p>
-            
-            <p>
-              <i className="fab fa-whatsapp contact-whatsapp-icon"></i>
-              <strong>{tt('contact.whatsapp')}:</strong>{' '}
-              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
-                {contactWhatsapp}
+          <section className="contact-card" aria-labelledby="contact-info-heading">
+            <div className="contact-card__head">
+              <span className="contact-card__icon" aria-hidden>
+                <i className="fas fa-address-card" />
+              </span>
+              <h2 id="contact-info-heading" className="contact-card__title">
+                {tt('contact.contactInformation')}
+              </h2>
+            </div>
+            <div className="contact-info-box">
+              <p>
+                <i className="fas fa-map-marker-alt" />
+                <span className="contact-info-block">
+                  <strong>{tt('contact.address')}:</strong>
+                  <br />
+                  {contactAddress.split('\n').map((line, idx) => (
+                    <span key={idx}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
+                </span>
+              </p>
+
+              <p>
+                <i className="fas fa-phone" />
+                <span className="contact-info-block">
+                  <strong>{tt('contact.phone')}:</strong>{' '}
+                  <a href={`tel:${contactPhone}`}>{contactPhone}</a>
+                </span>
+              </p>
+
+              <p>
+                <i className="fas fa-envelope" />
+                <span className="contact-info-block">
+                  <strong>{tt('contact.email')}:</strong>{' '}
+                  <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+                </span>
+              </p>
+
+              <p>
+                <i className="fab fa-whatsapp contact-whatsapp-icon" />
+                <span className="contact-info-block">
+                  <strong>{tt('contact.whatsapp')}:</strong>{' '}
+                  <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
+                    {contactWhatsapp}
+                  </a>
+                </span>
+              </p>
+            </div>
+          </section>
+
+          <div className="contact-page-grid">
+            <section className="contact-card" aria-labelledby="office-hours-heading">
+              <div className="contact-card__head">
+                <span className="contact-card__icon" aria-hidden>
+                  <i className="fas fa-clock" />
+                </span>
+                <h2 id="office-hours-heading" className="contact-card__title">
+                  {tt('contact.officeHours')}
+                </h2>
+              </div>
+              <ul className="contact-list">
+                <li>
+                  <strong>{tt('contact.officeHoursItems.monFri')}:</strong> {tt('contact.officeHoursItems.monFriTime')}
+                </li>
+                <li>
+                  <strong>{tt('contact.officeHoursItems.saturday')}:</strong>{' '}
+                  {tt('contact.officeHoursItems.saturdayTime')}
+                </li>
+                <li>
+                  <strong>{tt('contact.officeHoursItems.sunday')}:</strong> {tt('contact.officeHoursItems.sundayTime')}
+                </li>
+                <li>
+                  <strong>{tt('contact.officeHoursItems.publicHolidays')}:</strong>{' '}
+                  {tt('contact.officeHoursItems.publicHolidaysTime')}
+                </li>
+              </ul>
+            </section>
+
+            <section className="contact-card" aria-labelledby="dept-heading">
+              <div className="contact-card__head">
+                <span className="contact-card__icon" aria-hidden>
+                  <i className="fas fa-sitemap" />
+                </span>
+                <h2 id="dept-heading" className="contact-card__title">
+                  {tt('contact.departmentContacts')}
+                </h2>
+              </div>
+              <ul className="contact-list">
+                <li>
+                  <strong>{tt('contact.departments.admissions')}:</strong>{' '}
+                  <a href={`mailto:${admissionsEmail}`}>{admissionsEmail}</a>
+                </li>
+                <li>
+                  <strong>{tt('contact.departments.academics')}:</strong>{' '}
+                  <a href={`mailto:${academicsEmail}`}>{academicsEmail}</a>
+                </li>
+                <li>
+                  <strong>{tt('contact.departments.bursar')}:</strong>{' '}
+                  <a href={`mailto:${bursarEmail}`}>{bursarEmail}</a>
+                </li>
+                <li>
+                  <strong>{tt('contact.departments.alumni')}:</strong>{' '}
+                  <a href={`mailto:${alumniEmail}`}>{alumniEmail}</a>
+                </li>
+                <li>
+                  <strong>{tt('contact.departments.parentsOffice')}:</strong>{' '}
+                  <a href={`mailto:${parentsEmail}`}>{parentsEmail}</a>
+                </li>
+              </ul>
+            </section>
+          </div>
+
+          <div className="contact-page-grid">
+            <section className="contact-card" aria-labelledby="visit-heading">
+              <div className="contact-card__head">
+                <span className="contact-card__icon" aria-hidden>
+                  <i className="fas fa-building" />
+                </span>
+                <h2 id="visit-heading" className="contact-card__title">
+                  {tt('contact.visitUs')}
+                </h2>
+              </div>
+              <p className="contact-card__body">{tt('contact.visitUsBody')}</p>
+            </section>
+
+            <section className="contact-card" aria-labelledby="directions-heading">
+              <div className="contact-card__head">
+                <span className="contact-card__icon" aria-hidden>
+                  <i className="fas fa-route" />
+                </span>
+                <h2 id="directions-heading" className="contact-card__title">
+                  {tt('contact.directions')}
+                </h2>
+              </div>
+              <p className="contact-card__body">{tt('contact.directionsBody')}</p>
+            </section>
+          </div>
+
+          <section className="contact-card contact-card--map" aria-labelledby="map-heading">
+            <div className="contact-card__head">
+              <span className="contact-card__icon" aria-hidden>
+                <i className="fas fa-map-marked-alt" />
+              </span>
+              <h2 id="map-heading" className="contact-card__title">
+                {tt('contact.mapTitle')}
+              </h2>
+            </div>
+            {mapEmbedSrc ? (
+              <div className="contact-map-embed">
+                <iframe
+                  title={tt('contact.mapIframeTitle')}
+                  src={mapEmbedSrc}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <p className="contact-card__body contact-map-fallback" role="status">
+                {tt('contact.mapUnavailable')}
+              </p>
+            )}
+            <div className="map-button-container">
+              <a href={socialLocation} target="_blank" rel="noopener noreferrer" className="map-button">
+                <i className="fas fa-external-link-alt" /> {tt('contact.openFullMap')}
               </a>
-            </p>
-          </div>
+            </div>
+          </section>
 
-          <h3>{tt('contact.officeHours')}</h3>
-          <ul>
-            <li><strong>{tt('contact.officeHoursItems.monFri')}:</strong> {tt('contact.officeHoursItems.monFriTime')}</li>
-            <li><strong>{tt('contact.officeHoursItems.saturday')}:</strong> {tt('contact.officeHoursItems.saturdayTime')}</li>
-            <li><strong>{tt('contact.officeHoursItems.sunday')}:</strong> {tt('contact.officeHoursItems.sundayTime')}</li>
-            <li><strong>{tt('contact.officeHoursItems.publicHolidays')}:</strong> {tt('contact.officeHoursItems.publicHolidaysTime')}</li>
-          </ul>
-
-          <h3>{tt('contact.departmentContacts')}</h3>
-          <ul>
-            <li><strong>{tt('contact.departments.admissions')}:</strong> <a href={`mailto:${admissionsEmail}`}>{admissionsEmail}</a></li>
-            <li><strong>{tt('contact.departments.academics')}:</strong> <a href={`mailto:${academicsEmail}`}>{academicsEmail}</a></li>
-            <li><strong>{tt('contact.departments.bursar')}:</strong> <a href={`mailto:${bursarEmail}`}>{bursarEmail}</a></li>
-            <li><strong>{tt('contact.departments.alumni')}:</strong> <a href={`mailto:${alumniEmail}`}>{alumniEmail}</a></li>
-            <li><strong>{tt('contact.departments.parentsOffice')}:</strong> <a href={`mailto:${parentsEmail}`}>{parentsEmail}</a></li>
-          </ul>
-
-          <h3>{tt('contact.visitUs')}</h3>
-          <p>{tt('contact.visitUsBody')}</p>
-
-          <h3>{tt('contact.directions')}</h3>
-          <p>{tt('contact.directionsBody')}</p>
-
-          <div className="map-button-container">
-            <a href={socialLocation} target="_blank" rel="noopener noreferrer" className="map-button">
-              <i className="fas fa-map-marked-alt"></i> {tt('contact.googleMapsCta')}
-            </a>
-          </div>
-
-          <h3>{tt('contact.followUs')}</h3>
-          <p>{tt('contact.followUsBody')}</p>
-          <div className="social-links">
-            <a href={socialYoutube} target="_blank" rel="noopener noreferrer" className="social-link-youtube">
-              <i className="fab fa-youtube"></i> YouTube
-            </a>
-          </div>
+          <section className="contact-card contact-card--follow" aria-labelledby="follow-heading">
+            <div className="contact-card__head">
+              <span className="contact-card__icon" aria-hidden>
+                <i className="fas fa-share-alt" />
+              </span>
+              <h2 id="follow-heading" className="contact-card__title">
+                {tt('contact.followUs')}
+              </h2>
+            </div>
+            <p className="contact-card__body">{tt('contact.followUsBody')}</p>
+            <div className="social-links">
+              <a href={socialYoutube} target="_blank" rel="noopener noreferrer" className="social-link-youtube">
+                <i className="fab fa-youtube" /> YouTube
+              </a>
+            </div>
+          </section>
         </div>
       </div>
     </PublicLayout>
@@ -127,4 +252,3 @@ const Contact = () => {
 };
 
 export default Contact;
-
