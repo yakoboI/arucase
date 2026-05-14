@@ -384,14 +384,9 @@ throw error;
       const response = await api.get(`/pre-form-one/${year}/continuing-results/pdf`, {
         responseType: 'blob'
       });
-      
-      return response;
-      
-      // Validate blob
       if (!response.data || !(response.data instanceof Blob)) {
         throw new Error('Invalid PDF response from server');
       }
-      
       return response;
     } catch (error) {
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {

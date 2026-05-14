@@ -169,38 +169,39 @@ const Dashboard = () => {
   return (
     <AdminLayout>
       <div className="dashboard-layout">
-        {/* Welcome Section */}
-        <div className="welcome-header">
-          <div className="welcome-header-content">
-            <div className="welcome-text">
-              <h2>
-                <i className="fas fa-graduation-cap" aria-hidden="true"></i>{' '}
-                Welcome, Administrator
-              </h2>
+        <div className="dashboard-content-shell">
+          {/* Welcome Section */}
+          <div className="welcome-header dashboard-surface-card">
+            <div className="welcome-header-content">
+              <div className="welcome-text">
+                <h2>
+                  <i className="fas fa-graduation-cap" aria-hidden="true"></i>{' '}
+                  Welcome, Administrator
+                </h2>
+              </div>
+              <button
+                onClick={toggleMute}
+                className="mute-toggle-btn"
+                aria-label={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+                title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+              >
+                <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+              </button>
             </div>
-            <button
-              onClick={toggleMute}
-              className="mute-toggle-btn"
-              aria-label={isMuted ? 'Unmute sounds' : 'Mute sounds'}
-              title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
-            >
-              <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
-            </button>
           </div>
-        </div>
 
-        {/* Main Content Grid */}
-        <div className="dashboard-main-grid">
-          {/* Left Column: Statistics */}
-          <div className="dashboard-left-column">
-            {/* Student Statistics Section */}
-            <div className="dashboard-section">
+          {/* Main Content Grid */}
+          <div className="dashboard-main-grid">
+            {/* Left Column: Statistics */}
+            <div className="dashboard-left-column">
+              {/* Student Statistics Section */}
+              <div className="dashboard-section">
               <h3 className="section-title">
                 <i className="fas fa-users" aria-hidden="true"></i> Student Statistics
               </h3>
               {/* Exercise-box style table for per-year statistics */}
               {Array.isArray(stats.students_by_year) && stats.students_by_year.length > 0 && (
-                <div className="year-table-container">
+                <div className="year-table-container dashboard-surface-card">
                   <div className="year-table-header">Yearly Student Distribution</div>
                   <div className="year-table">
                     <div className="year-table-row year-table-row--head">
@@ -245,7 +246,7 @@ const Dashboard = () => {
                 };
 
                 return (
-                  <div className="year-table-container">
+                  <div className="year-table-container dashboard-surface-card">
                     <div className="year-table-header">Form-wise Student Distribution (per Year)</div>
                     <div
                       className="year-table year-table--forms"
@@ -318,6 +319,7 @@ const Dashboard = () => {
               })()}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </AdminLayout>

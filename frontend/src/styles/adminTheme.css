@@ -143,3 +143,33 @@
   background: #ffffff !important;
   background-image: none !important;
 }
+
+/**
+ * Student registration (/admin/students/registration): gray canvas behind the content
+ * area, white cards with square corners and a clear border (see AdminLayout class).
+ */
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame {
+  background: #e5e7eb;
+}
+
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .action-selection-page-container {
+  background: transparent;
+}
+
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .marks-config-term-selection-page-container {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .registration-card,
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .year-selection-card,
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .stream-selection-card,
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .action-selection-card,
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .registration-form-card,
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .bulk-upload-card,
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .registered-students-card,
+.admin-layout .admin-main-content.admin-main-content--student-registration-frame .excel-card {
+  background: #ffffff;
+  border-radius: 0;
+  box-shadow: none;
+}

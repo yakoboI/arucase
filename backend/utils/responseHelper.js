@@ -4,8 +4,6 @@
  */
 
 const sendSuccess = (res, statusCode, message, data = null) => {
-  console.log(`🔍 DEBUG: Sending success response: ${message}`, data || {});
-  
   const response = {
     success: true,
     message,
@@ -18,8 +16,6 @@ const sendSuccess = (res, statusCode, message, data = null) => {
 };
 
 const sendError = (res, statusCode, message, error = null) => {
-  console.log(`🔍 DEBUG: Sending error response: ${message}`, error || {});
-  
   const response = {
     success: false,
     message,

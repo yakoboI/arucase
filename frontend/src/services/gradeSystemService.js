@@ -40,7 +40,10 @@ const gradeSystemService = {
   calculateGrade: async (score, level = 'O-Level') => {
     try {
       const configResponse = await gradeSystemService.getSystemGradeConfig();
-      const gradeConfig = configResponse.data;
+      const gradeConfig = configResponse?.data ?? defaultGradeConfig().data;
+      if (!gradeConfig?.oLevel || !gradeConfig?.aLevel) {
+        throw new Error('Invalid grade configuration');
+      }
       const isALevel =
         level.toUpperCase().includes('A-LEVEL') ||
         level.toUpperCase().includes('FORM V') ||

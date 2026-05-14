@@ -5,16 +5,16 @@
 
 import api from './api';
 
-const preFormOneStudentsService = {
-  getPreFormOneStudents: async () => {
-    const response = await api.get('/pre-form-one/2025');
-    return response.data;
-  },
+async function fetchPreFormOneStudents(year) {
+  const response = await api.get(`/pre-form-one/${year}`);
+  return response.data;
+}
 
-  getPreFormOneStudentsByYear: async (year) => {
-    const response = await api.get(`/pre-form-one/${year}`);
-    return response.data;
-  },
+const preFormOneStudentsService = {
+  /** @param {number|string} [year] defaults to current calendar year */
+  getPreFormOneStudents: async (year = new Date().getFullYear()) => fetchPreFormOneStudents(year),
+
+  getPreFormOneStudentsByYear: async (year) => fetchPreFormOneStudents(year),
 
   getStudentByAdmissionNumber: async (admissionNumber) => {
     const response = await api.get(`/pre-form-one/student/${admissionNumber}`);

@@ -38,7 +38,7 @@ const PreFormOneInterviewResults = () => {
     queryKey: ['preform-one-students', year],
     queryFn: async () => {
       try {
-        const res = await preFormOneStudentsService.getPreFormOneStudents();
+        const res = await preFormOneStudentsService.getPreFormOneStudents(year);
         return Array.isArray(res.data) ? res.data : [];
       } catch (error) {
         if (error.response?.status !== 401) {
