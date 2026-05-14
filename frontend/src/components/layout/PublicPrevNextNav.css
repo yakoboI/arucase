@@ -1,0 +1,163 @@
+/* Horizontal gutters match public page shell (clamp(1rem, 3vw, 2.5rem)).
+   High-specificity rules below defend against global touch/link styles in styles/index.css. */
+.public-prev-next-nav {
+  --public-prev-next-gutter: clamp(1rem, 3vw, 2.5rem);
+  /* Touch-safe height; scales slightly on large screens */
+  --pn-btn-min-h: clamp(2.75rem, 7vw, 3.25rem);
+  --pn-btn-pad-y: clamp(0.4375rem, 1.4vw, 0.5625rem);
+  --pn-btn-pad-x: clamp(0.625rem, 2.2vw, 1rem);
+  --pn-label: clamp(0.9375rem, 2.75vw, 1.125rem);
+  --pn-hint: clamp(0.6875rem, 1.85vw, 0.8125rem);
+  --pn-icon: clamp(0.8125rem, 2.35vw, 1rem);
+  --pn-row-gap: clamp(0.375rem, 1.25vw, 0.5rem);
+  --pn-inner-gap: clamp(0.5rem, 1.75vw, 0.75rem);
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  border-bottom: 1px solid #cbd5e1;
+  background: #f8fafc;
+  isolation: isolate;
+}
+
+.public-prev-next-nav__inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: var(--pn-inner-gap);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-inline: var(--public-prev-next-gutter);
+  padding-block: clamp(0.375rem, 1.25vw, 0.5rem);
+}
+
+.public-prev-next-nav__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0.1875rem;
+  min-height: var(--pn-btn-min-h);
+  padding: var(--pn-btn-pad-y) var(--pn-btn-pad-x);
+  border-radius: 0;
+  border: 1px solid #0f172a;
+  background: #1e293b;
+  color: #f8fafc;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.public-prev-next-nav__btn--prev {
+  align-items: flex-start;
+}
+
+.public-prev-next-nav__btn--next {
+  align-items: flex-end;
+}
+
+.public-prev-next-nav__row {
+  display: flex;
+  align-items: center;
+  gap: var(--pn-row-gap);
+}
+
+.public-prev-next-nav__btn--prev .public-prev-next-nav__row {
+  justify-content: flex-start;
+}
+
+.public-prev-next-nav__btn--next .public-prev-next-nav__row {
+  justify-content: flex-end;
+}
+
+.public-prev-next-nav__label {
+  font-size: var(--pn-label);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.public-prev-next-nav__btn i {
+  color: #e2e8f0;
+  font-size: var(--pn-icon);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.public-prev-next-nav__hint {
+  font-size: var(--pn-hint);
+  font-weight: 400;
+  color: #94a3b8;
+  line-height: 1.2;
+  max-width: 100%;
+}
+
+.public-prev-next-nav__btn--prev .public-prev-next-nav__hint {
+  text-align: left;
+}
+
+.public-prev-next-nav__btn--next .public-prev-next-nav__hint {
+  text-align: right;
+}
+
+.public-prev-next-nav__btn:hover:not(.public-prev-next-nav__btn--disabled) {
+  background: #0f172a;
+  border-color: #020617;
+  color: #fff;
+}
+
+.public-prev-next-nav__btn:active:not(.public-prev-next-nav__btn--disabled) {
+  background: #020617;
+}
+
+.public-prev-next-nav__btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.public-prev-next-nav__btn--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: #475569;
+  border-color: #64748b;
+}
+
+@media (max-width: 480px) {
+  .public-prev-next-nav {
+    --pn-inner-gap: clamp(0.35rem, 1.5vw, 0.5rem);
+    --pn-btn-min-h: clamp(2.75rem, 12vw, 3rem);
+    --pn-btn-pad-y: clamp(0.375rem, 1.75vw, 0.5rem);
+    --pn-btn-pad-x: clamp(0.45rem, 1.75vw, 0.75rem);
+    --pn-label: clamp(0.8125rem, 3.2vw, 0.9375rem);
+    --pn-hint: clamp(0.6rem, 2.4vw, 0.6875rem);
+    --pn-icon: clamp(0.7rem, 2.5vw, 0.875rem);
+    --pn-row-gap: clamp(0.25rem, 1vw, 0.35rem);
+  }
+
+  .public-prev-next-nav__inner {
+    /* Always two columns on small screens — Nyuma | Mbele in one row */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* Win over late-loaded globals: unvisited/visited link colors, padding, flex layout */
+.public-layout .public-main nav.public-prev-next-nav a.public-prev-next-nav__btn,
+.public-layout .public-main nav.public-prev-next-nav a.public-prev-next-nav__btn:visited {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--pn-btn-min-h);
+  padding: var(--pn-btn-pad-y) var(--pn-btn-pad-x);
+  margin: 0;
+  color: #f8fafc;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.public-layout .public-main nav.public-prev-next-nav a.public-prev-next-nav__btn:hover {
+  color: #fff;
+}

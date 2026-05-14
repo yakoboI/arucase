@@ -1,7 +1,6 @@
 /**
  * Fees Page - Full Content from Python Template
  */
-import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -10,7 +9,6 @@ import './Fees.css';
 import DOMPurify from 'dompurify';
 
 const Fees = () => {
-  const location = useLocation();
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'school-fee'],
     queryFn: () => publicAPI.getPage('school-fee'),
@@ -39,9 +37,6 @@ const Fees = () => {
   return (
     <PublicLayout>
       <div className="fees-page">
-        <Link to="/" className="home-button">
-          <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
-        </Link>
         {hasCustomContent ? (
           <div
             className="content-card"

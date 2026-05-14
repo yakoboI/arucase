@@ -2,7 +2,6 @@
  * Contact Page - Full Content from Python Template
  */
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
 import { publicAPI } from '../../services/public';
@@ -50,10 +49,6 @@ const Contact = () => {
   return (
     <PublicLayout>
       <div className="contact-page">
-        <Link to="/" className="home-button">
-          <i className="fas fa-home"></i> {tt('common.backToHome')}
-        </Link>
-
         <div className="content-card">
           <h2>{tt('contact.pageTitle')}</h2>
           <p>{tt('contact.intro')}</p>

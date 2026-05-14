@@ -2,7 +2,6 @@
  * Student Life Page - Full Content from Python Template
  */
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -11,7 +10,6 @@ import './StudentLife.css';
 import DOMPurify from 'dompurify';
 
 const StudentLife = () => {
-  const location = useLocation();
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'student-life'],
     queryFn: () => publicAPI.getPage('student-life'),
@@ -21,10 +19,6 @@ const StudentLife = () => {
 
   const fallbackContent = (
     <div className="student-life-page">
-      <Link to="/" className="home-button">
-        <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
-      </Link>
-
       <div className="content-card">
         <h2>Maisha ya Wanafunzi</h2>
         
@@ -95,9 +89,6 @@ const StudentLife = () => {
     <PublicLayout>
       {hasCustomContent ? (
         <div className="student-life-page">
-          <Link to="/" className="home-button">
-            <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
-          </Link>
           <div 
             className="content-card"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.html_content || page.content || '') }}

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
+import PublicPrevNextNav from './PublicPrevNextNav';
 import './PublicLayout.css';
 
 const Chatbot = lazy(() => import('../public/Chatbot'));
@@ -10,6 +11,7 @@ const PublicLayout = ({ children }) => {
     <div className="public-layout">
       <PublicHeader />
       <main className="public-main">
+        <PublicPrevNextNav />
         {children}
       </main>
       <PublicFooter />

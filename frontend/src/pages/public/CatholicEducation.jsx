@@ -1,8 +1,7 @@
 /**
- * Catholic Education Landing Page - Optimized for Religious School Searches
+ * Catholic Education landing — calm layout, sharp framing, filtered fallback copy.
  */
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -11,7 +10,6 @@ import './CatholicEducation.css';
 import DOMPurify from 'dompurify';
 
 const CatholicEducation = () => {
-  const location = useLocation();
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'catholic-education'],
     queryFn: () => publicAPI.getPage('catholic-education'),
@@ -21,207 +19,127 @@ const CatholicEducation = () => {
 
   const fallbackContent = (
     <div className="catholic-education-page">
-      <Link to="/" className="home-button" aria-label="Navigate to homepage">
-        <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`} aria-hidden="true"></i>
-        <span className="sr-only">Navigate to homepage</span>
-      </Link>
-
-      <div className="hero-section">
-        <div className="hero-content">
-          <h1>Jimbo Kuu la Arusha Catholic Schools</h1>
-          <p className="hero-subtitle">
-            Oldonyosambu Seminary - Catholic Schools Tanzania, A-Level Schools & O-Level Schools - Seminari ya Jimbo Kuu la Arusha
+      <div className="catholic-education-page__shell">
+        <header className="ce-hero">
+          <h1 className="ce-hero__title">Elimu ya Kikatoliki — Jimbo Kuu la Arusha</h1>
+          <p className="ce-hero__lede">
+            Seminari ya Kikatoliki Arusha (Oldonyosambu): masomo ya sekondari (O-Level na A-Level) yaliyojikita katika
+            malezi ya imani na maadili.
           </p>
-          <div className="hero-stats">
-            <div className="stat-item">
-              <span className="stat-number">55+</span>
-              <span className="stat-label">Miaka ya Utendaji</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">5000+</span>
-              <span className="stat-label">Wanafunzi Waliopata</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">100%</span>
-              <span className="stat-label">Mafanikio wa Kikatoliki</span>
-            </div>
-          </div>
-        </div>
-      </div>
+          <ul className="ce-hero__stats" aria-label="Muhtasari">
+            <li className="ce-hero__stat">
+              <span className="ce-hero__stat-value">55+</span>
+              <span className="ce-hero__stat-label">miaka</span>
+            </li>
+            <li className="ce-hero__stat">
+              <span className="ce-hero__stat-value">5000+</span>
+              <span className="ce-hero__stat-label">waliopita</span>
+            </li>
+            <li className="ce-hero__stat">
+              <span className="ce-hero__stat-value">100%</span>
+              <span className="ce-hero__stat-label">malezi ya Kikatoliki</span>
+            </li>
+          </ul>
+        </header>
 
-      <div className="content-grid">
-        <div className="content-card">
-          <h2>
-            <i className="fas fa-cross"></i>
-            Dhamira ya Kiroho na Malezi - Catholic Schools Tanzania
-          </h2>
-          <p>
-            Seminari ya Kikatoliki Arusha - Jimbo Kuu la Arusha Catholic schools inalenga kutoa elimu bora ya kitaaluma pamoja na 
-            malezi ya kiroho yenye msingi wa kikatoliki. Tunajenga vijana wenye 
-            maadili mema, uwezo wa kiroho, na bidii za kuwa viongozi wa kanisa na jamii.
-            Catholic schools Oldonyosambu zina uwezo wa kufundisha viongozi bora Tanzania.
-          </p>
-          <p>
-            <strong>Catholic Schools Arusha:</strong> Jimbo Kuu la Arusha Catholic schools ni miongoni mwa Catholic schools Tanzania.
-            <strong>Oldonyosambu Seminary:</strong> Seminari ya Oldonyosambu inatoa A-Level schools na O-Level schools bora.
-            <strong>A-Level Schools:</strong> A-Level schools za Jimbo Kuu la Arusha zina matokeo mazuri.
-            <strong>O-Level Schools:</strong> O-Level schools za Oldonyosambu zina mafanikio ya kipekee.
-          </p>
-          <div className="features-grid">
-            <div className="feature-item">
-              <i className="fas fa-graduation-cap"></i>
-              <h3>Elimu ya Juu</h3>
-              <p>Kufundishwa na walimu wazuri na mitihara ya kisasa</p>
-            </div>
-            <div className="feature-item">
-              <i className="fas fa-pray"></i>
-              <h3>Malezi ya Kiroho</h3>
-              <p>Sala ya kila siku, misa, na maadili ya kiroho</p>
-            </div>
-            <div className="feature-item">
-              <i className="fas fa-users"></i>
-              <h3>Ujumbe wa Jamii</h3>
-              <p>Kukuza uhusiano wa dini na maisha ya pamoja</p>
-            </div>
-            <div className="feature-item">
-              <i className="fas fa-book"></i>
-              <h3>Masomo ya Kikatoliki</h3>
-              <p>Teolojia, maadili, na historia ya Kanisa</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="content-card">
-          <h2>
-            <i className="fas fa-school"></i>
-            Programu za Elimu
-          </h2>
-          <div className="programs-list">
-            <div className="program-item">
-              <h3>O-Level Schools - Form I-IV</h3>
-              <p>Hati milingi kwa wanafunzi wanaoanza elimu ya sekondari - O-Level Schools Tanzania</p>
-              <ul>
-                <li><strong>Science Subjects:</strong> Biology, Chemistry, Physics</li>
-                <li><strong>Core Subjects:</strong> Mathematics, English, Kiswahili</li>
-                <li><strong>Social Sciences:</strong> History, Geography, Civics</li>
-                <li><strong>Religious Education:</strong> Religious Studies, Catholic Formation</li>
-                <li><strong>NECTA Preparation:</strong> CSEE (Form IV Exams)</li>
-              </ul>
-              <p><em>Miongoni mwa O-Level schools ya Jimbo Kuu la Arusha, tunatoa mafunzo bora ya kitaaluma na kiroho.</em></p>
-            </div>
-            <div className="program-item">
-              <h3>A-Level Schools - Form V-VI</h3>
-              <p>Elimu ya juu kwa wanafunzi wataotimia vyuo vikuu - A-Level Schools Tanzania</p>
-              <ul>
-                <li><strong>Science Combinations:</strong> PCM (Physics, Chemistry, Mathematics), PCB (Physics, Chemistry, Biology)</li>
-                <li><strong>Business Combinations:</strong> EGM (Economics, Geography, Mathematics)</li>
-                <li><strong>Arts Combinations:</strong> HGL (History, Geography, Language), HKL (History, Kiswahili, Literature)</li>
-                <li><strong>Advanced Studies:</strong> Form Five & Form Six preparation</li>
-                <li><strong>University Entry:</strong> ACSEE (Form VI Exams) preparation</li>
-              </ul>
-              <p><em>A-Level schools za Oldonyosambu Seminary zinazoandaa wanafunzi kwa ajira na vyuo vikuu vikuu Tanzania.</em></p>
-            </div>
-          </div>
-        </div>
-
-        <div className="content-card">
-          <h2>
-            <i className="fas fa-church"></i>
-            Maisha ya Seminari
-          </h2>
-          <div className="life-grid">
-            <div className="life-item">
-              <i className="fas fa-clock"></i>
-              <h3>Ratiba ya Kila Siku</h3>
-              <p>5:30 AM - Sala ya asubuhi<br/>
-                 6:00 AM - Misa<br/>
-                 7:00 AM - Kifungua cha masomo<br/>
-                 8:00 PM - Masomo<br/>
-                 9:30 PM - Chakula cha jioni<br/>
-                10:00 PM - Mapumziko</p>
-            </div>
-            <div className="life-item">
-              <i className="fas fa-utensils"></i>
-              <h3>Chakula</h3>
-              <p>Chakula cha kibubu kwa wanafunzi wote</p>
-            </div>
-            <div className="life-item">
-              <i className="fas fa-football"></i>
-              <h3>Michezo</h3>
-              <p>Michezo ya ndani na riadha</p>
-            </div>
-            <div className="life-item">
-              <i className="fas fa-hands-helping"></i>
-              <h3>Masomo ya Kiroho</h3>
-              <p>Kila jumamoso na maadili ya kiroho</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="content-card">
-          <h2>
-            <i className="fas fa-user-graduate"></i>
-            Vigezo vya Kujiunga
-          </h2>
-          <div className="admission-requirements">
-            <h3>Vigezo vya Msingi</h3>
-            <ul>
-              <li><strong>Cheti cha Ubatizo:</strong> Kutoka Kanisa Katoliki</li>
-              <li><strong>Kiswahili:</strong> Alama nzuri za Kiswahili</li>
-              <li><strong>English:</strong> Uwezo wa kutosha na kuelewa</li>
-              <li><strong>Hisabati:</strong> Alama nzuri katika masomo yote</li>
-              <li><strong>Umri:</strong> Kati ya miaka 13-18</li>
+        <div className="ce-stack">
+          <section className="ce-panel content-card">
+            <h2 className="ce-panel__title">Dhamira</h2>
+            <p className="ce-panel__text">
+              Tunatoa elimu bora ya kitaaluma pamoja na malezi ya kiroho ili vijana wawe na maadili, uongozi, na utumishi
+              katika Kanisa na jamii.
+            </p>
+            <ul className="ce-pill-list">
+              <li className="ce-pill">Elimu ya juu</li>
+              <li className="ce-pill">Sala na misa</li>
+              <li className="ce-pill">Jumuiya</li>
+              <li className="ce-pill">Masomo ya Kikatoliki</li>
             </ul>
-            
-            <h3>Vigezo vya Kiroho</h3>
-            <ul>
-              <li><strong>Dini:</strong> Mkristo wa Kikatoliki</li>
-              <li><strong>Hofuma:</strong> Barua pepe na maadili mema</li>
-              <li><strong>Ripoti ya Kichwa:</strong> Kwa parokia na shule za awali</li>
-              <li><strong>Mapendekezo:</strong> Kwa shule za awali</li>
-            </ul>
-          </div>
-          
-          <div className="cta-section">
-            <Link to="/admissions/apply" className="cta-button primary">
-              <i className="fas fa-edit"></i>
-              Jisajili Sasa
-            </Link>
-            <Link to="/contact" className="cta-button secondary">
-              <i className="fas fa-phone"></i>
-              Wasiliana Nasi
-            </Link>
-          </div>
-        </div>
-      </div>
+          </section>
 
-      <div className="related-section">
-        <h2>Njia Zinazohusiana</h2>
-        <div className="related-links">
-          <Link to="/admissions" className="related-link">
-            <i className="fas fa-graduation-cap"></i>
-            <span>Udahili</span>
-          </Link>
-          <Link to="/about" className="related-link">
-            <i className="fas fa-info-circle"></i>
-            <span>Kuhusu Sisi</span>
-          </Link>
-          <Link to="/staff" className="related-link">
-            <i className="fas fa-users"></i>
-            <span>Wafanyakazi</span>
-          </Link>
-          <Link to="/student-life" className="related-link">
-            <i className="fas fa-heart"></i>
-            <span>Maisha ya Mwanafunzi</span>
-          </Link>
-          <Link to="/contact" className="related-link">
-            <i className="fas fa-envelope"></i>
-            <span>Mawasiliano</span>
-          </Link>
-          <Link to="/gallery" className="related-link">
-            <i className="fas fa-images"></i>
-            <span>Picha</span>
-          </Link>
+          <section className="ce-panel content-card">
+            <h2 className="ce-panel__title">Programu</h2>
+            <div className="ce-programs">
+              <div className="ce-program">
+                <h3 className="ce-program__name">O-Level (Kidato I–IV)</h3>
+                <p className="ce-program__intro">Msingi wa masomo na NECTA CSEE.</p>
+                <ul className="ce-program__list">
+                  <li>Sayansi: Biology, Chemistry, Physics</li>
+                  <li>Msingi: Hisabati, Kiingereza, Kiswahili</li>
+                  <li>Jamii: Historia, Jiografia, Siasa</li>
+                  <li>Dini na malezi ya Kikatoliki</li>
+                </ul>
+              </div>
+              <div className="ce-program">
+                <h3 className="ce-program__name">A-Level (Kidato V–VI)</h3>
+                <p className="ce-program__intro">Maandalizi ya ACSEE na chuo kikuu.</p>
+                <ul className="ce-program__list">
+                  <li>Sayansi: PCM, PCB</li>
+                  <li>Biashara: EGM</li>
+                  <li>Sanaa: HGL, HKL</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="ce-panel content-card">
+            <h2 className="ce-panel__title">Maisha ya seminari</h2>
+            <div className="ce-life">
+              <div className="ce-life__block">
+                <h3 className="ce-life__heading">Ratiba (mfano)</h3>
+                <p className="ce-life__text">
+                  Sala asubuhi · Misa · Masomo · Michezo / mapumziko · Sala jioni — ratiba kamili hutolewa ofisini.
+                </p>
+              </div>
+              <div className="ce-life__block">
+                <h3 className="ce-life__heading">Huduma</h3>
+                <p className="ce-life__text">Chakula, michezo ya ndani na nje, na programu za kiroho kila wiki.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="ce-panel content-card">
+            <h2 className="ce-panel__title">Vigezo vya kujiunga</h2>
+            <div className="ce-admit">
+              <div className="ce-admit__col">
+                <h3 className="ce-admit__subtitle">Msingi</h3>
+                <ul className="ce-admit__ul">
+                  <li>Cheti cha ubatizo (Kanisa Katoliki)</li>
+                  <li>Matokeo na taarifa kutoka shule</li>
+                  <li>Barua kutoka padre wa parokia</li>
+                  <li>Umri unaofaa (kwa maelezo — ofisi ya udahili)</li>
+                </ul>
+              </div>
+              <div className="ce-admit__col">
+                <h3 className="ce-admit__subtitle">Kiroho na tabia</h3>
+                <ul className="ce-admit__ul">
+                  <li>Mkristo wa Kikatoliki</li>
+                  <li>Tabia na maadili mema</li>
+                  <li>Ripoti na mapendekezo ya shule/parokia</li>
+                </ul>
+              </div>
+            </div>
+            <div className="cta-section">
+              <Link to="/admissions/apply" className="cta-button primary">
+                Maombi ya udahili
+              </Link>
+              <Link to="/contact" className="cta-button secondary">
+                Mawasiliano
+              </Link>
+            </div>
+          </section>
+
+          <nav className="ce-related" aria-label="Kurasa zinazohusiana">
+            <h2 className="ce-related__title">Endelea kusoma</h2>
+            <div className="ce-related__links">
+              <Link to="/admissions" className="related-link">Udahili</Link>
+              <Link to="/about" className="related-link">Kuhusu sisi</Link>
+              <Link to="/staff" className="related-link">Watumishi</Link>
+              <Link to="/student-life" className="related-link">Maisha ya wanafunzi</Link>
+              <Link to="/contact" className="related-link">Mawasiliano</Link>
+              <Link to="/gallery" className="related-link">Picha</Link>
+            </div>
+          </nav>
         </div>
       </div>
     </div>
@@ -241,24 +159,24 @@ const CatholicEducation = () => {
   return (
     <PublicLayout>
       {isError ? (
-        <div className="error-message catholic-education-page">
-          <p>Samahani, kuna tatizo. Tafadhali jaribu tena baadaye.</p>
-          <Link to="/" className="back-link">
-            <i className="fas fa-arrow-left" aria-hidden="true" />
-            Nyumbani
-          </Link>
+        <div className="catholic-education-page catholic-education-page--error">
+          <div className="catholic-education-page__shell">
+            <p className="ce-error__text">Samahani, kuna tatizo. Tafadhali jaribu tena baadaye.</p>
+            <Link to="/" className="back-link">
+              Nyumbani
+            </Link>
+          </div>
         </div>
       ) : hasCustomContent ? (
         <div className="catholic-education-page">
-          <Link to="/" className="home-button" aria-label="Navigate to homepage">
-            <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`} aria-hidden="true" />
-          </Link>
-          <div
-            className="content-card"
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(page.html_content || page.content || ''),
-            }}
-          />
+          <div className="catholic-education-page__shell">
+            <article
+              className="content-card ce-prose"
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(page.html_content || page.content || ''),
+              }}
+            />
+          </div>
         </div>
       ) : (
         fallbackContent

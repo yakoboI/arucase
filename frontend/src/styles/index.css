@@ -710,13 +710,22 @@ code {
   }
 
   /* Ensure all interactive elements are touch-friendly */
-  a, button, input, select, textarea {
+  a:not(.public-prev-next-nav__btn),
+  button,
+  input,
+  select,
+  textarea {
     min-height: 44px;
     touch-action: manipulation; /* Disable double-tap zoom */
   }
-  
-  /* Better tap targets for links */
-  a {
+
+  .public-prev-next-nav__btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Better tap targets for links (exclude compact public prev/next controls) */
+  a:not(.public-prev-next-nav__btn) {
     padding: 0.5rem 0.25rem; /* Add padding for easier tapping */
   }
   

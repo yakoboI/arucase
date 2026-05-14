@@ -1,8 +1,7 @@
 /**
  * About Page - Full Content from Python Template
  */
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
@@ -11,7 +10,6 @@ import './About.css';
 import DOMPurify from 'dompurify';
 
 const About = () => {
-  const location = useLocation();
   // Try to fetch page content from database, but have fallback content
   const { data: pageData, isLoading, isError } = useQuery({
     queryKey: ['page', 'about'],
@@ -23,11 +21,6 @@ const About = () => {
   // Fallback content from Python template
   const fallbackContent = (
     <div className="about-page">
-      <Link to="/" className="home-button" aria-label="Navigate to homepage">
-        <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`} aria-hidden="true"></i>
-        <span className="sr-only">Navigate to homepage</span>
-      </Link>
-
       <div className="content-card">
         <h1>Kuhusu Seminari ya Kikatoliki Arusha</h1>
         
@@ -111,9 +104,6 @@ const About = () => {
     <PublicLayout>
       {hasCustomContent ? (
         <div className="about-page">
-          <Link to="/" className="home-button">
-            <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
-          </Link>
           <div 
             className="content-card"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.html_content || page.content || '') }}

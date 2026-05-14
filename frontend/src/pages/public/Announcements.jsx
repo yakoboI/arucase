@@ -2,8 +2,7 @@
  * Announcements Page - Data from server (publicAPI.getAnnouncements)
  */
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
@@ -12,7 +11,6 @@ import './Announcements.css';
 import DOMPurify from 'dompurify';
 
 const Announcements = () => {
-  const location = useLocation();
   const [search, setSearch] = useState('');
   const [yearFilter, setYearFilter] = useState('all');
   const { data, isLoading, isError } = useQuery({
@@ -46,9 +44,6 @@ const Announcements = () => {
     return (
       <PublicLayout>
         <div className="announcements-page">
-          <Link to="/" className="home-button">
-            <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
-          </Link>
           <div className="content-card">
             <SkeletonLoader type="text" lines={1} width="40%" height="2rem" className="mb-3" />
             <SkeletonLoader type="text" lines={2} />
@@ -66,10 +61,6 @@ const Announcements = () => {
   return (
     <PublicLayout>
       <div className="announcements-page">
-        <Link to="/" className="home-button">
-          <i className={`fas ${location.pathname === '/' ? 'fa-home' : 'fa-arrow-left'}`}></i>
-        </Link>
-
         <div className="content-card">
           <div className="announcements-hero">
             <h1>Matangazo</h1>

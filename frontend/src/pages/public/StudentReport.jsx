@@ -2,7 +2,6 @@
  * Student Report Page - Full Content from Python Template
  */
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
 import { publicAPI } from '../../services/public';
@@ -38,9 +37,6 @@ const StudentReport = () => {
   return (
     <PublicLayout>
       <div className="student-report-page">
-        <Link to="/" className="home-button">
-          <i className="fas fa-home"></i> Back to Home
-        </Link>
         {hasCustomContent ? (
           <div
             className="content-card"
