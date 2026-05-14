@@ -1,5 +1,44 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function escapeHtmlAttr(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/** Injected into index.html at build/dev time when env vars are set (Search Console, Webmaster tools). */
+function buildVerificationMetaTags() {
+  const tags = [];
+  const google = process.env.VITE_GOOGLE_SITE_VERIFICATION?.trim();
+  if (google) {
+    tags.push(`<meta name="google-site-verification" content="${escapeHtmlAttr(google)}" />`);
+  }
+  const bing = process.env.VITE_BING_MS_VALIDATE?.trim();
+  if (bing) {
+    tags.push(`<meta name="msvalidate.01" content="${escapeHtmlAttr(bing)}" />`);
+  }
+  const yandex = process.env.VITE_YANDEX_VERIFICATION?.trim();
+  if (yandex) {
+    tags.push(`<meta name="yandex-verification" content="${escapeHtmlAttr(yandex)}" />`);
+  }
+  const pinterest = process.env.VITE_PINTEREST_DOMAIN_VERIFY?.trim();
+  if (pinterest) {
+    tags.push(`<meta name="p:domain_verify" content="${escapeHtmlAttr(pinterest)}" />`);
+  }
+  const facebook = process.env.VITE_FACEBOOK_DOMAIN_VERIFICATION?.trim();
+  if (facebook) {
+    tags.push(`<meta name="facebook-domain-verification" content="${escapeHtmlAttr(facebook)}" />`);
+  }
+  return tags.length ? `    ${tags.join('\n    ')}` : '';
+}
 
 /** Dev proxy target: backend origin only (no /api). Railway/Vercel use production build + VITE_API_URL instead. */
 function devProxyTarget() {
@@ -13,7 +52,34 @@ function devProxyTarget() {
 const apiProxyTarget = devProxyTarget();
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'seo-site-verification-and-bing-xml',
+      transformIndexHtml(html) {
+        const block = buildVerificationMetaTags();
+        return html.replace('<!-- SEO_SITE_VERIFICATION_TAGS -->', block);
+      },
+      closeBundle() {
+        const bingUser = process.env.VITE_BING_WEBMASTER_USER_ID?.trim();
+        if (!bingUser) return;
+        const distDir = path.resolve(__dirname, 'dist');
+        const outFile = path.join(distDir, 'BingSiteAuth.xml');
+        if (!fs.existsSync(distDir)) return;
+        const escaped = bingUser
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+        const xml = `<?xml version="1.0"?>
+<users>
+  <user>${escaped}</user>
+</users>
+`;
+        fs.writeFileSync(outFile, xml, 'utf8');
+      },
+    },
+  ],
   server: {
     port: 3001,
     hmr: {

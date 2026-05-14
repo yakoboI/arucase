@@ -26,10 +26,8 @@
     <meta name="ICBM" content="-3.3869, 36.6830" />
     <link rel="canonical" href="https://www.arushacatholicseminary.co.tz/" />
     
-    <!-- 2026 SEO Compliance - All Search Engines -->
-    <meta name="yandex-verification" content="" />
-    <meta name="msvalidate.01" content="" />
-    <meta name="p:domain_verify" content="" />
+    <!-- Search / social ownership: set VITE_* vars (see .env.example); injected at build/dev by Vite -->
+    <!-- SEO_SITE_VERIFICATION_TAGS -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="referrer" content="no-referrer-when-downgrade" />
     <meta name="format-detection" content="telephone=no" />
@@ -42,8 +40,7 @@
     <meta name="education-level" content="secondary, high-school, seminary" />
     <meta name="institution-type" content="catholic-seminary, religious-education" />
     <meta name="coverage" content="tanzania, east-africa" />
-    <link rel="alternate" hreflang="en" href="https://www.arushacatholicseminary.co.tz/" />
-    <link rel="alternate" hreflang="x-default" href="https://www.arushacatholicseminary.co.tz/" />
+    <!-- hreflang (en + x-default) is updated per route by PageSEO.jsx -->
 
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
     <meta property="og:type" content="website" />
@@ -51,6 +48,9 @@
     <meta property="og:title" content="Arusha Catholic Seminary (ARUCASE) | St. Thomas Aquinas Seminary Arusha - Best Seminary & O-Level School in Oldonyosambu" />
     <meta property="og:description" content="Arusha Catholic Seminary (ARUCASE, S0171) - St. Thomas Aquinas Seminary Arusha, Seminari ya Jimbo, Jimbo Kuu la Arusha. Located in Oldonyosambu, Arusha, Tanzania. One of the best seminary schools and best O-Level schools. Catholic secondary school offering O-Level and A-Level education, admissions, academics, NECTA results, and contact." />
     <meta property="og:image" content="https://www.arushacatholicseminary.co.tz/icons/icon-192x192.png" />
+    <meta property="og:image:width" content="192" />
+    <meta property="og:image:height" content="192" />
+    <meta property="og:image:alt" content="Arusha Catholic Seminary (ARUCASE) emblem" />
     <meta property="og:site_name" content="Arusha Catholic Seminary" />
     <meta property="og:locale" content="en_GB" />
 
@@ -60,6 +60,7 @@
     <meta name="twitter:title" content="Arusha Catholic Seminary (ARUCASE) | St. Thomas Aquinas Seminary Arusha - Best Seminary & O-Level School in Oldonyosambu" />
     <meta name="twitter:description" content="Arusha Catholic Seminary (ARUCASE, S0171) - St. Thomas Aquinas Seminary Arusha, Seminari ya Jimbo, Jimbo Kuu la Arusha. Located in Oldonyosambu, Arusha, Tanzania. One of the best seminary schools and best O-Level schools. Admissions, academics, NECTA results, fees, contact." />
     <meta name="twitter:image" content="https://www.arushacatholicseminary.co.tz/icons/icon-192x192.png" />
+    <meta name="twitter:image:alt" content="Arusha Catholic Seminary (ARUCASE) emblem" />
     <meta name="twitter:site" content="@arushacatholicseminary" />
 
     <!-- PWA Manifest -->
@@ -223,32 +224,7 @@
       ]
     }
     </script>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Home",
-          "item": "https://www.arushacatholicseminary.co.tz/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "About",
-          "item": "https://www.arushacatholicseminary.co.tz/about"
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "Admissions",
-          "item": "https://www.arushacatholicseminary.co.tz/admissions"
-        }
-      ]
-    }
-    </script>
+    <!-- BreadcrumbList JSON-LD is injected per route by PageSEO.jsx -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -267,20 +243,6 @@
         "category": "Educational Program",
         "name": "Form I-IV O-Level Program"
       }
-    }
-    </script>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "AggregateRating",
-      "itemReviewed": {
-        "@type": "Organization",
-        "name": "Arusha Catholic Seminary"
-      },
-      "ratingValue": "4.8",
-      "reviewCount": "150",
-      "bestRating": "5",
-      "worstRating": "1"
     }
     </script>
     <script type="application/ld+json">

@@ -188,6 +188,7 @@ const BulkReportGenerate = lazy(() => import('./pages/reports/BulkReportGenerate
 // Shared (not lazy)
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PageSEO from './components/common/PageSEO';
+import SchoolFavicon from './components/common/SchoolFavicon';
 import SoundInitializer from './components/common/SoundInitializer';
 
 // Defer route location so lazy components don't suspend during synchronous input (fixes "suspended while responding to synchronous input")
@@ -210,6 +211,7 @@ function App() {
           }}
         >
           <PageSEO />
+          <SchoolFavicon />
           <VisitorTracker />
           <NetworkStatusBanner />
           <Suspense fallback={<Loading minimal message="" />}>

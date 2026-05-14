@@ -65,6 +65,7 @@ const SchoolBranding = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['school-logo'] });
+      queryClient.invalidateQueries({ queryKey: ['homepage'] });
       toast.success('Logo uploaded successfully!');
       if (logoFileInputRef.current) {
         logoFileInputRef.current.value = '';

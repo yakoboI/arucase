@@ -16,22 +16,11 @@
 /* Gallery Page Header */
 .gallery-page-header {
   text-align: center;
-  margin-bottom: clamp(1.25rem, 3vw, 2rem);
-  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 3vw, 2rem);
-  background: white;
-  border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin: 0 clamp(0.75rem, 2vw, 1.5rem) clamp(1.25rem, 3vw, 1.75rem);
-}
-
-.gallery-page-header {
-  text-align: center;
-  margin-bottom: clamp(1.25rem, 3vw, 2rem);
   padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 3vw, 2rem);
   background: white;
-  border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: clamp(1.25rem, 3vw, 1.75rem);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 .gallery-page-header h1 {
@@ -67,8 +56,8 @@
   margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
   padding: clamp(0.875rem, 2vw, 1.25rem);
   background: white;
-  border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;

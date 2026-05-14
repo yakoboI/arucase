@@ -51,6 +51,5 @@ Allow: /static/uploads/photos/
 Allow: /static/uploads/documents/
 Allow: /static/uploads/gallery/
 
-# Optimize crawl budget - prioritize important content
+# Crawl-delay honored by some crawlers (Google ignores it)
 Crawl-delay: 1
-Request-rate: 1/1s

@@ -60,7 +60,7 @@
 .fact-card {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 0;
+  border-radius: 6px;
   padding: 1rem;
   box-shadow: 0 6px 20px rgba(15, 63, 114, 0.06);
 }

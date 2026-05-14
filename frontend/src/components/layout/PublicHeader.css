@@ -130,7 +130,7 @@
 .school-info__motto .tagline {
   margin-top: 0;
   margin-bottom: 0;
-  font-size: clamp(0.78rem, 2.8vw, 1.2rem);
+  font-size: clamp(0.88rem, 2.9vw, 1.28rem);
   padding: 0 clamp(2px, 1.5vw, 8px);
   width: 100%;
   max-width: 100%;
@@ -141,7 +141,7 @@
   margin-bottom: 0;
   max-width: 100%;
   box-sizing: border-box;
-  font-size: clamp(0.68rem, 2.2vw, 1rem);
+  font-size: clamp(0.78rem, 2.35vw, 1.05rem);
   padding: clamp(6px, 1.8vw, 12px) clamp(8px, 3vw, 22px);
 }
 
@@ -320,7 +320,7 @@
 }
 
 .saint-label {
-  font-size: clamp(0.5rem, 1.2vw, 0.6rem);
+  font-size: clamp(0.65rem, 1.45vw, 0.82rem);
   color: #1e40af;
   font-weight: 600;
   text-align: center;
@@ -330,7 +330,7 @@
 }
 
 .school-info h1 {
-  font-size: clamp(1rem, 0.55rem + 2.8vw, 2.45rem);
+  font-size: clamp(1.1rem, 0.65rem + 2.9vw, 2.55rem);
   font-weight: 700;
   margin: 0 0 clamp(2px, 0.5vw, 6px);
   letter-spacing: clamp(0.8px, 0.4vw, 2px);
@@ -348,7 +348,7 @@
 }
 
 .school-info .tagline {
-  font-size: clamp(0.75rem, 2.2vw, 1.1rem);
+  font-size: clamp(0.82rem, 2.35vw, 1.15rem);
   font-weight: 400;
   margin-top: clamp(6px, 1.5vw, 12px);
   margin-bottom: clamp(10px, 2.5vw, 14px);
@@ -367,7 +367,7 @@
   background: transparent;
   padding: clamp(6px, 2vw, 10px) clamp(8px, 2.5vw, 18px);
   border-radius: 0;
-  font-size: clamp(0.65rem, 1.8vw, 0.9rem);
+  font-size: clamp(0.74rem, 1.95vw, 0.95rem);
   font-weight: 600;
   display: inline-block;
   border: clamp(1px, 0.2vw, 2px) solid #cbd5e1;
@@ -421,7 +421,7 @@
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.45);
   color: #f8fafc;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   cursor: pointer;
   padding: 0.65rem 1rem;
   border-radius: 6px;
@@ -446,8 +446,17 @@
   transform: translateZ(0) scale(1.01);
 }
 
+.mobile-menu-toggle i {
+  color: #86efac;
+}
+
+.mobile-menu-toggle:hover i,
+.mobile-menu-toggle:active i {
+  color: #bbf7d0;
+}
+
 .menu-toggle-text {
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -476,9 +485,9 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: clamp(0.2px, 0.08vw, 1px);
-  font-size: clamp(0.55rem, 1.6vw, 0.7rem);
+  font-size: clamp(0.8rem, 1.85vw, 1rem);
   transition: all 0.2s ease;
-  padding: clamp(8px, 1.8vw, 10px) clamp(10px, 2vw, 14px);
+  padding: clamp(9px, 1.9vw, 12px) clamp(11px, 2.1vw, 16px);
   border-radius: 0;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
@@ -493,8 +502,9 @@
 }
 
 .nav-links a i {
-  font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+  font-size: clamp(0.88rem, 2vw, 1.05rem);
   flex-shrink: 0;
+  color: #15803d;
 }
 
 .nav-link-text {
@@ -540,6 +550,10 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
 }
 
+.nav-links a.active i {
+  color: #86efac;
+}
+
 /* Category dropdown button */
 .nav-category-wrapper {
   position: relative;
@@ -552,9 +566,9 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: clamp(0.2px, 0.08vw, 1px);
-  font-size: clamp(0.55rem, 1.6vw, 0.7rem);
+  font-size: clamp(0.8rem, 1.85vw, 1rem);
   transition: all 0.2s ease;
-  padding: clamp(8px, 1.8vw, 10px) clamp(10px, 2vw, 14px);
+  padding: clamp(9px, 1.9vw, 12px) clamp(11px, 2.1vw, 16px);
   border-radius: 0;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
@@ -580,13 +594,19 @@
   font-weight: 700;
 }
 
+.nav-category-btn.category-active i {
+  color: #86efac;
+}
+
 .nav-category-btn i {
-  font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+  font-size: clamp(0.88rem, 2vw, 1.05rem);
   flex-shrink: 0;
+  color: #15803d;
 }
 
 .nav-category-chevron {
-  font-size: clamp(0.5rem, 1.2vw, 0.6rem) !important;
+  font-size: clamp(0.68rem, 1.35vw, 0.82rem) !important;
+  color: #15803d !important;
   transition: transform 0.25s ease;
   margin-left: 2px;
 }
@@ -606,7 +626,7 @@
   border-radius: 0;
   list-style: none;
   padding: 0.25rem 0;
-  min-width: 200px;
+  min-width: 220px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
   z-index: 1000;
   animation: dropdownFadeIn 0.15s ease;
@@ -636,7 +656,7 @@
   color: #000000;
   text-decoration: none;
   font-weight: 600;
-  font-size: clamp(0.6rem, 1.4vw, 0.75rem);
+  font-size: clamp(0.82rem, 1.65vw, 0.98rem);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   transition: background 0.15s ease, color 0.15s ease;
@@ -658,7 +678,7 @@
 }
 
 .nav-links .nav-category-dropdown a:hover i {
-  color: #000000;
+  color: #166534;
 }
 
 .nav-links .nav-category-dropdown a.active {
@@ -670,15 +690,15 @@
 }
 
 .nav-links .nav-category-dropdown a.active i {
-  color: #000000;
+  color: #14532d;
 }
 
 .nav-links .nav-category-dropdown a i {
-  font-size: 0.85rem;
-  width: 18px;
+  font-size: 1rem;
+  width: 20px;
   text-align: center;
   flex-shrink: 0;
-  color: #000000;
+  color: #15803d;
 }
 
 .nav-links .nav-category-dropdown a span {
@@ -708,25 +728,34 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
-  /* Category labels only (Shule Yetu, Wanafunzi, Habari): +2px padding, type, gap, icons */
+  /* Category labels — slightly larger tap targets on the blue strip */
   .nav-category-btn {
-    padding: calc(clamp(8px, 1.8vw, 10px) + 2px) calc(clamp(10px, 2vw, 14px) + 2px);
-    font-size: calc(clamp(0.55rem, 1.6vw, 0.7rem) + 2px);
-    gap: calc(clamp(4px, 1vw, 6px) + 2px);
+    padding: clamp(10px, 2vw, 14px) clamp(12px, 2.2vw, 18px);
+    font-size: clamp(0.84rem, 1.9vw, 1.05rem);
+    gap: clamp(6px, 1.1vw, 8px);
+  }
+
+  .nav-links > li > a {
+    padding: clamp(10px, 2vw, 14px) clamp(12px, 2.2vw, 18px);
+    font-size: clamp(0.84rem, 1.9vw, 1.05rem);
+  }
+
+  .nav-links > li > a i {
+    font-size: clamp(0.92rem, 2.05vw, 1.1rem);
   }
 
   .nav-category-btn i {
-    font-size: calc(clamp(0.65rem, 1.8vw, 0.8rem) + 2px);
+    font-size: clamp(0.92rem, 2.05vw, 1.1rem);
   }
 
   .nav-category-btn .nav-category-chevron {
-    font-size: calc(clamp(0.5rem, 1.2vw, 0.6rem) + 2px) !important;
-    color: rgba(248, 250, 252, 0.88) !important;
+    font-size: clamp(0.72rem, 1.4vw, 0.88rem) !important;
+    color: #bbf7d0 !important;
   }
 
   .nav-links > li > a i,
   .nav-category-btn i {
-    color: rgba(248, 250, 252, 0.92);
+    color: #86efac;
   }
 
   .nav-links > li > a:hover,
@@ -741,7 +770,11 @@
 
   .nav-links > li > a:hover i,
   .nav-category-btn:hover i {
-    color: #ffffff;
+    color: #d1fae5;
+  }
+
+  .nav-category-btn:hover .nav-category-chevron {
+    color: #d1fae5 !important;
   }
 
   .nav-links > li > a.active,
@@ -757,7 +790,11 @@
 
   .nav-links > li > a.active i,
   .nav-category-btn.category-active i {
-    color: #f8fafc;
+    color: #bbf7d0;
+  }
+
+  .nav-category-btn.category-active .nav-category-chevron {
+    color: #bbf7d0 !important;
   }
 
   .nav-links > li > a:focus-visible,
@@ -783,12 +820,18 @@
 
 @media (max-width: 1024px) {
   .nav-links {
-    gap: clamp(3px, 0.8vw, 5px);
+    gap: clamp(4px, 1vw, 7px);
   }
 
-  .nav-links > li > a {
-    font-size: clamp(0.5rem, 1.4vw, 0.65rem);
-    padding: clamp(7px, 1.6vw, 9px) clamp(8px, 1.8vw, 12px);
+  .nav-links > li > a,
+  .nav-category-btn {
+    font-size: clamp(0.76rem, 1.65vw, 0.95rem);
+    padding: clamp(8px, 1.75vw, 11px) clamp(10px, 2vw, 14px);
+  }
+
+  .nav-links > li > a i,
+  .nav-category-btn i {
+    font-size: clamp(0.84rem, 1.85vw, 1.02rem);
   }
 }
 
@@ -825,6 +868,37 @@
   .nav-links.mobile-open a.nav-link-home {
     justify-content: flex-start;
   }
+
+  /* Opened drawer / list: blue labels, green icons */
+  .nav-links.mobile-open a,
+  .nav-links.mobile-open a .nav-link-text {
+    color: #1a5490;
+  }
+
+  .nav-links.mobile-open a i {
+    color: #15803d;
+  }
+
+  .nav-links.mobile-open a:hover,
+  .nav-links.mobile-open a:active,
+  .nav-links.mobile-open a:hover .nav-link-text,
+  .nav-links.mobile-open a:active .nav-link-text {
+    color: #0f3f72;
+  }
+
+  .nav-links.mobile-open a:hover i,
+  .nav-links.mobile-open a:active i {
+    color: #166534;
+  }
+
+  .nav-links.mobile-open a.active,
+  .nav-links.mobile-open a.active .nav-link-text {
+    color: #0f3f72;
+  }
+
+  .nav-links.mobile-open a.active i {
+    color: #14532d;
+  }
 }
 
 @media (max-width: 768px) {
@@ -845,8 +919,8 @@
 
   .school-info .banner {
     max-width: 100%;
-    font-size: clamp(0.6rem, 1.6vw, 0.8rem);
-    padding: clamp(5px, 1.5vw, 8px) clamp(6px, 2vw, 12px);
+    font-size: clamp(0.72rem, 1.85vw, 0.92rem);
+    padding: clamp(6px, 1.6vw, 9px) clamp(8px, 2.2vw, 14px);
   }
 
   .school-info__motto .banner {
@@ -941,26 +1015,26 @@
     margin: 0;
     flex-shrink: 0;
     /* Prevent items from shrinking */
-    min-height: 56px;
+    min-height: 60px;
   }
 
   .nav-links a {
     display: flex;
     width: 100%;
     text-align: left;
-    padding: 1.25rem 1.5rem;
+    padding: 1.35rem 1.5rem;
     border-radius: 0;
     border: none;
     border-bottom: 1px solid #e8e8e8;
-    font-size: 1rem;
+    font-size: clamp(1.08rem, 3.4vw, 1.28rem);
     font-weight: 700;
     justify-content: flex-start;
-    min-height: 56px;
+    min-height: 60px;
     height: auto;
     align-items: center;
     background: #ffffff;
-    color: #000000;
-    transition: background 0.2s ease;
+    color: #1a5490;
+    transition: background 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
     /* Ensure text wraps if needed */
     white-space: normal;
@@ -969,40 +1043,49 @@
 
   .nav-links a .nav-link-text {
     font-weight: 700;
-    color: #000000;
+    color: #1a5490;
   }
 
   .nav-links a i {
-    font-size: 1.1rem;
+    font-size: clamp(1.15rem, 3.6vw, 1.35rem);
     font-weight: 900;
     margin-right: 0.75rem;
-    width: 24px;
+    width: 26px;
     text-align: center;
-    color: #000000;
+    color: #15803d;
   }
 
   .nav-links a:hover,
   .nav-links a:active {
     transform: none;
-    background: #f5f5f5;
-    color: #000000;
+    background: #eff6ff;
+    color: #0f3f72;
   }
 
   .nav-links a:hover i,
   .nav-links a:active i {
-    color: #000000;
+    color: #166534;
+  }
+
+  .nav-links a:hover .nav-link-text,
+  .nav-links a:active .nav-link-text {
+    color: #0f3f72;
   }
 
   .nav-links a.active {
-    background: #f0f0f0;
-    color: #000000;
-    border-left: 4px solid #000000;
+    background: #e8f0fe;
+    color: #0f3f72;
+    border-left: 4px solid #1a5490;
     font-weight: 800;
   }
 
-  .nav-links a.active i,
   .nav-links a.active .nav-link-text {
-    color: #000000;
+    color: #0f3f72;
+    font-weight: 800;
+  }
+
+  .nav-links a.active i {
+    color: #14532d;
     font-weight: 800;
   }
 
@@ -1026,37 +1109,37 @@
   }
 
   .school-info h1 {
-    font-size: clamp(0.9rem, 5vw, 1.2rem);
+    font-size: clamp(1rem, 5.2vw, 1.35rem);
   }
 
   .school-info .tagline {
-    font-size: clamp(0.7rem, 2vw, 0.9rem);
+    font-size: clamp(0.82rem, 2.4vw, 1rem);
   }
 
   .school-info .banner {
-    font-size: clamp(0.6rem, 1.6vw, 0.8rem);
-    padding: clamp(5px, 1.5vw, 8px) clamp(6px, 2vw, 12px);
+    font-size: clamp(0.72rem, 1.85vw, 0.95rem);
+    padding: clamp(6px, 1.6vw, 9px) clamp(8px, 2.2vw, 14px);
     max-width: 100%;
   }
 
   .school-info__motto .tagline {
-    font-size: clamp(0.74rem, 3.6vw, 1.05rem);
+    font-size: clamp(0.82rem, 3.8vw, 1.12rem);
   }
 
   .school-info__motto .banner {
     margin-top: 0;
     max-width: 100%;
-    font-size: clamp(0.62rem, 3.1vw, 0.92rem);
+    font-size: clamp(0.72rem, 3.3vw, 1rem);
   }
 
   .public-mobile-top-bar .mobile-menu-toggle {
-    padding: 0.55rem 0.85rem;
-    font-size: 1.1rem;
-    min-height: 46px;
+    padding: 0.6rem 0.95rem;
+    font-size: 1.25rem;
+    min-height: 48px;
   }
 
   .menu-toggle-text {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
   }
 
   .nav-links {
@@ -1064,18 +1147,22 @@
   }
 
   .nav-links a {
-    font-size: 0.95rem;
-    padding: 1.1rem 1.25rem;
-    min-height: 52px;
+    font-size: clamp(1.05rem, 3.6vw, 1.22rem);
+    padding: 1.2rem 1.35rem;
+    min-height: 56px;
     font-weight: 700;
-    color: #000000;
+    color: #1a5490;
     background: #ffffff;
   }
 
+  .nav-links a .nav-link-text {
+    color: inherit;
+  }
+
   .nav-links a i {
-    font-size: 1rem;
-    width: 22px;
-    color: #000000;
+    font-size: clamp(1.1rem, 3.8vw, 1.28rem);
+    width: 26px;
+    color: #15803d;
     font-weight: 900;
   }
 }

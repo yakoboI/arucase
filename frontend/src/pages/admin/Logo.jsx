@@ -37,7 +37,8 @@ const Logo = () => {
       return adminAPI.uploadSchoolLogo(formData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['school-logo']);
+      queryClient.invalidateQueries({ queryKey: ['school-logo'] });
+      queryClient.invalidateQueries({ queryKey: ['homepage'] });
       toast.success('Logo uploaded successfully!');
     },
     onError: (error) => {
