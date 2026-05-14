@@ -20,7 +20,11 @@
     "count-students-by-form": "node scripts/countStudentsByForm.js",
     "setup-photos": "node scripts/setup-admin-photos-volume.js",
     "upload-admin-photos": "node upload_admin_photos_to_cloudinary_production.js",
-    "sync-report-pdf-css": "node scripts/syncReportPdfCss.js"
+    "sync-report-pdf-css": "node scripts/syncReportPdfCss.js",
+    "db:migrate": "node-pg-migrate up --envPath .env",
+    "db:migrate:dry-run": "node-pg-migrate up --dry-run --envPath .env",
+    "db:migrate:down": "node-pg-migrate down --envPath .env",
+    "db:migrate:create": "node-pg-migrate create --migration-file-language sql"
   },
   "keywords": [
     "express",
@@ -51,6 +55,7 @@
     "multer-storage-cloudinary": "^2.2.1",
     "mysql2": "^3.16.0",
     "node-cache": "^5.1.2",
+    "node-pg-migrate": "^8.0.4",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.14.0",

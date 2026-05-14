@@ -3,6 +3,13 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { query, withTransaction } = require('../config/database');
 const { sendError } = require('../utils/safeError');
+
+function clientError(message, statusCode = 400) {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+}
+
 const { saveUserActivity } = require('../utils/activityLogger');
 
 /**
@@ -17,7 +24,7 @@ router.get('/:year', requireAuth, async (req, res) => {
     
     // Validate year parameter
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     const result = await query(
@@ -32,7 +39,7 @@ router.get('/:year', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching Pre-Form One students:', error);
-    sendError(res, 500, 'Failed to fetch students', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -133,7 +140,7 @@ router.post('/', requireAuth, async (req, res) => {
     console.error('🔍 DEBUG: Error creating Pre-Form One student:');
     console.error('🔍 DEBUG: Error details:', error);
     console.error('🔍 DEBUG: Error stack:', error.stack);
-    sendError(res, 500, 'Failed to create student', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -209,7 +216,7 @@ router.post('/bulk', requireAuth, async (req, res) => {
     console.error('🔍 DEBUG: Error creating bulk Pre-Form One students:');
     console.error('🔍 DEBUG: Error details:', error);
     console.error('🔍 DEBUG: Error stack:', error.stack);
-    sendError(res, 500, 'Failed to create students', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -313,7 +320,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     console.error('🔍 DEBUG: Error updating student:');
     console.error('🔍 DEBUG: Error details:', error);
     console.error('🔍 DEBUG: Error stack:', error.stack);
-    sendError(res, 500, 'Failed to update student', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -386,7 +393,7 @@ router.put('/:id/parish', requireAuth, async (req, res) => {
     console.error('🔍 DEBUG: Error updating student parish:');
     console.error('🔍 DEBUG: Error details:', error);
     console.error('🔍 DEBUG: Error stack:', error.stack);
-    sendError(res, 500, 'Failed to update parish', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -464,7 +471,7 @@ router.put('/bulk-parish', requireAuth, async (req, res) => {
     console.error('🔍 DEBUG: Error bulk updating parishes:');
     console.error('🔍 DEBUG: Error details:', error);
     console.error('🔍 DEBUG: Error stack:', error.stack);
-    sendError(res, 500, 'Failed to update parishes', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -529,7 +536,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     console.error('🔍 DEBUG: Error deleting student:');
     console.error('🔍 DEBUG: Error details:', error);
     console.error('🔍 DEBUG: Error stack:', error.stack);
-    sendError(res, 500, 'Failed to delete student', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -539,7 +546,7 @@ router.get('/:year/export', requireAuth, async (req, res) => {
     const { year } = req.params;
     
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     const result = await query(
@@ -568,7 +575,7 @@ router.get('/:year/export', requireAuth, async (req, res) => {
     res.send(csvContent);
   } catch (error) {
     console.error('Error exporting Pre-Form One students:', error);
-    sendError(res, 500, 'Failed to export students', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -579,7 +586,7 @@ router.get('/:year/interview-results', requireAuth, async (req, res) => {
     
     // Validate year parameter
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     const result = await query(
@@ -594,7 +601,7 @@ router.get('/:year/interview-results', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching Pre-Form One interview results:', error);
-    sendError(res, 500, 'Failed to fetch interview results', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -605,7 +612,7 @@ router.get('/:year/continuing-results', requireAuth, async (req, res) => {
     
     // Validate year parameter
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     const result = await query(
@@ -620,7 +627,7 @@ router.get('/:year/continuing-results', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching Pre-Form One continuing results:', error);
-    sendError(res, 500, 'Failed to fetch continuing results', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -630,7 +637,7 @@ router.post('/:year/interview-results/calculate', requireAuth, async (req, res) 
     const { year } = req.params;
     
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     const client = await withTransaction(async (client) => {
@@ -739,7 +746,7 @@ router.post('/:year/interview-results/calculate', requireAuth, async (req, res) 
     });
   } catch (error) {
     console.error('Error calculating interview results:', error);
-    sendError(res, 500, 'Failed to calculate interview results', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -749,7 +756,7 @@ router.post('/:year/continuing-results/calculate', requireAuth, async (req, res)
     const { year } = req.params;
     
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     const client = await withTransaction(async (client) => {
@@ -858,7 +865,7 @@ router.post('/:year/continuing-results/calculate', requireAuth, async (req, res)
     });
   } catch (error) {
     console.error('Error calculating continuing results:', error);
-    sendError(res, 500, 'Failed to calculate continuing results', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -878,7 +885,7 @@ router.get('/interview-score/:studentId/:subjectId', requireAuth, async (req, re
     });
   } catch (error) {
     console.error('Error fetching interview score:', error);
-    sendError(res, 500, 'Failed to fetch interview score', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -898,7 +905,7 @@ router.get('/continuing-score/:studentId/:subjectId', requireAuth, async (req, r
     });
   } catch (error) {
     console.error('Error fetching continuing score:', error);
-    sendError(res, 500, 'Failed to fetch continuing score', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -923,7 +930,7 @@ router.post('/interview-score/:studentId/:subjectId', requireAuth, async (req, r
     });
   } catch (error) {
     console.error('Error saving interview score:', error);
-    sendError(res, 500, 'Failed to save interview score', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -948,7 +955,7 @@ router.post('/continuing-score/:studentId/:subjectId', requireAuth, async (req, 
     });
   } catch (error) {
     console.error('Error saving continuing score:', error);
-    sendError(res, 500, 'Failed to save continuing score', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -958,7 +965,7 @@ router.get('/:year/interview-results/pdf', requireAuth, async (req, res) => {
     const { year } = req.params;
     
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     // Get results for PDF generation
@@ -966,7 +973,7 @@ router.get('/:year/interview-results/pdf', requireAuth, async (req, res) => {
     
     // Check if there are any results
     if (results.rows.length === 0) {
-      return sendError(res, 404, 'No interview results found for this year. Please enter scores and calculate results first.');
+      return sendError(res, clientError('No interview results found for this year. Please enter scores and calculate results first.'), 404);
     }
     
     // Get subjects for PDF generation
@@ -1052,12 +1059,12 @@ router.get('/:year/interview-results/pdf', requireAuth, async (req, res) => {
     } catch (error) {
       console.error('🔍 PDF ERROR: PDF generation failed:', error);
       console.error('🔍 PDF ERROR: Error stack:', error.stack);
-      sendError(res, 500, 'Failed to generate PDF', error);
+      sendError(res, error, 500);
     }
     
   } catch (error) {
     console.error('Error generating interview results PDF:', error);
-    sendError(res, 500, 'Failed to generate PDF', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -1067,18 +1074,18 @@ router.get('/:year/interview-results/:studentId/pdf', requireAuth, async (req, r
     const { year, studentId } = req.params;
     
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     if (!studentId || isNaN(parseInt(studentId))) {
-      return sendError(res, 400, 'Invalid student ID parameter');
+      return sendError(res, clientError('Invalid student ID parameter'), 400);
     }
     
     // Get student information
     const student = await query('SELECT * FROM preform_one_students WHERE id = $1 AND year = $2', [studentId, year]);
     
     if (student.rows.length === 0) {
-      return sendError(res, 404, 'Student not found');
+      return sendError(res, clientError('Student not found'), 404);
     }
     
     const studentData = student.rows[0];
@@ -1087,7 +1094,7 @@ router.get('/:year/interview-results/:studentId/pdf', requireAuth, async (req, r
     const results = await query('SELECT r.*, s.first_name, s.middle_name, s.surname, s.admission_number, s.parish FROM preform_one_interview_results r JOIN preform_one_students s ON r.student_id = s.id WHERE r.student_id = $1 AND r.year = $2', [studentId, year]);
     
     if (results.rows.length === 0) {
-      return sendError(res, 404, 'No interview results found for this student. Please enter scores and calculate results first.');
+      return sendError(res, clientError('No interview results found for this student. Please enter scores and calculate results first.'), 404);
     }
     
     const resultData = results.rows[0];
@@ -1158,12 +1165,12 @@ router.get('/:year/interview-results/:studentId/pdf', requireAuth, async (req, r
     } catch (error) {
       console.error('🔍 PDF ERROR: Individual PDF generation failed:', error);
       console.error('🔍 PDF ERROR: Error stack:', error.stack);
-      sendError(res, 500, 'Failed to generate PDF', error);
+      sendError(res, error, 500);
     }
     
   } catch (error) {
     console.error('Error generating individual interview results PDF:', error);
-    sendError(res, 500, 'Failed to generate PDF', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -1173,7 +1180,7 @@ router.get('/:year/continuing-results/pdf', requireAuth, async (req, res) => {
     const { year } = req.params;
     
     if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
     
     // Get results for PDF generation
@@ -1181,7 +1188,7 @@ router.get('/:year/continuing-results/pdf', requireAuth, async (req, res) => {
     
     // Check if there are any results
     if (results.rows.length === 0) {
-      return sendError(res, 404, 'No continuing results found for this year. Please enter scores and calculate results first.');
+      return sendError(res, clientError('No continuing results found for this year. Please enter scores and calculate results first.'), 404);
     }
     
     // Get subjects for PDF generation
@@ -1293,12 +1300,12 @@ router.get('/:year/continuing-results/pdf', requireAuth, async (req, res) => {
     } catch (error) {
       console.error('🔍 PDF ERROR: PDF generation failed:', error);
       console.error('🔍 PDF ERROR: Error stack:', error.stack);
-      sendError(res, 500, 'Failed to generate PDF', error);
+      sendError(res, error, 500);
     }
     
   } catch (error) {
     console.error('Error generating continuing results PDF:', error);
-    sendError(res, 500, 'Failed to generate PDF', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -1454,7 +1461,7 @@ router.post('/interview-result', requireAuth, async (req, res) => {
     const { year, student_index, total_marks, average, grade, position, remarks } = req.body;
     
     if (!year || !student_index) {
-      return sendError(res, 400, 'Year and student index are required');
+      return sendError(res, clientError('Year and student index are required'), 400);
     }
     
     const client = await withTransaction(async (client) => {
@@ -1492,7 +1499,7 @@ router.post('/interview-result', requireAuth, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error saving interview result:', error);
-    sendError(res, 500, 'Failed to save interview result', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -1502,7 +1509,7 @@ router.post('/continuing-result', requireAuth, async (req, res) => {
     const { year, student_index, total_marks, average, grade, position, remarks } = req.body;
     
     if (!year || !student_index) {
-      return sendError(res, 400, 'Year and student index are required');
+      return sendError(res, clientError('Year and student index are required'), 400);
     }
     
     const client = await withTransaction(async (client) => {
@@ -1540,7 +1547,7 @@ router.post('/continuing-result', requireAuth, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error saving continuing result:', error);
-    sendError(res, 500, 'Failed to save continuing result', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -1551,7 +1558,7 @@ router.delete('/interview-result/:studentId', requireAuth, async (req, res) => {
     const { year } = req.query;
     
     if (!studentId || !year) {
-      return sendError(res, 400, 'Student ID and year are required');
+      return sendError(res, clientError('Student ID and year are required'), 400);
     }
     
     const result = await query(
@@ -1566,7 +1573,7 @@ router.delete('/interview-result/:studentId', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting interview result:', error);
-    sendError(res, 500, 'Failed to delete interview result', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -1577,7 +1584,7 @@ router.delete('/continuing-result/:studentId', requireAuth, async (req, res) => 
     const { year } = req.query;
     
     if (!studentId || !year) {
-      return sendError(res, 400, 'Student ID and year are required');
+      return sendError(res, clientError('Student ID and year are required'), 400);
     }
     
     const result = await query(
@@ -1592,7 +1599,7 @@ router.delete('/continuing-result/:studentId', requireAuth, async (req, res) => 
     });
   } catch (error) {
     console.error('Error deleting continuing result:', error);
-    sendError(res, 500, 'Failed to delete continuing result', error);
+    sendError(res, error, 500);
   }
 });
 

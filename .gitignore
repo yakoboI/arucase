@@ -84,8 +84,10 @@ backend/backups/
 *.temp
 .cache/
 
-# Policy: no Markdown in git (use wiki / issues). Generated dev helper.
+# Policy: avoid random Markdown in git; allow repo root README and DB docs.
 *.md
+!README.md
+!docs/database-evaluation.md
 **/temp_*.js
 temp_*.js
 backend/auto_login.html

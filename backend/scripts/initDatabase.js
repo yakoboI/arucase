@@ -987,22 +987,47 @@ async function initDatabase() {
     `);
     console.log('✅ Pre-Form One Continuing Subjects table created');
 
-    // Pre-Form One Students table
+    // Pre-Form One Students table (aligned with database/create_preformone_table_fixed.sql + optional term)
     await query(`
       CREATE TABLE IF NOT EXISTS preform_one_students (
         id SERIAL PRIMARY KEY,
-        adm_no VARCHAR(50) NOT NULL,
-        first_name VARCHAR(255) NOT NULL,
-        middle_name VARCHAR(255),
-        surname VARCHAR(255) NOT NULL,
-        sex VARCHAR(10),
-        year INTEGER,
+        admission_number VARCHAR(50) NOT NULL,
+        serial_number VARCHAR(50) NOT NULL,
+        first_name VARCHAR(100) NOT NULL,
+        middle_name VARCHAR(100),
+        surname VARCHAR(100) NOT NULL,
+        sex VARCHAR(10) NOT NULL CHECK (sex IN ('Male', 'Female')),
+        parish VARCHAR(200),
+        year INTEGER NOT NULL,
         term VARCHAR(20),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT preform_one_students_admission_number_key UNIQUE (admission_number)
       )
     `);
     console.log('✅ Pre-Form One Students table created');
+    await query('CREATE INDEX IF NOT EXISTS idx_preform_one_serial_number ON preform_one_students(serial_number)');
+    await query('CREATE INDEX IF NOT EXISTS idx_preform_one_parish ON preform_one_students(parish)');
+    await query('CREATE INDEX IF NOT EXISTS idx_preform_one_year ON preform_one_students(year)');
+    await query(`
+      CREATE OR REPLACE FUNCTION update_updated_at_column()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+    `);
+    await query(`
+      DROP TRIGGER IF EXISTS update_preform_one_students_updated_at ON preform_one_students
+    `);
+    await query(`
+      CREATE TRIGGER update_preform_one_students_updated_at
+        BEFORE UPDATE ON preform_one_students
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column()
+    `);
+    console.log('✅ Pre-Form One Students indexes and updated_at trigger ensured');
 
     // Seed the default admin user (creates or updates password hash)
     await seedAdminUser();

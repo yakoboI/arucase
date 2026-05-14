@@ -9,6 +9,12 @@ const { query, withTransaction } = require('../config/database');
 const { sendError } = require('../utils/safeError');
 const { saveUserActivity } = require('../utils/activityLogger');
 
+function clientError(message, statusCode = 400) {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+}
+
 /**
  * Get students eligible for promotion from a specific year
  */
@@ -16,8 +22,8 @@ router.get('/eligible/:year', requireAuth, async (req, res) => {
   try {
     const { year } = req.params;
     
-    if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+    if (!year || isNaN(parseInt(year, 10))) {
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
 
     const result = await query(
@@ -34,8 +40,7 @@ router.get('/eligible/:year', requireAuth, async (req, res) => {
        FROM preform_one_students 
        WHERE year = $1 
        ORDER BY admission_number`,
-      [year],
-      { timeout: 10000 } // 10 second timeout for database query
+      [parseInt(year, 10)]
     );
 
     res.json({
@@ -46,7 +51,7 @@ router.get('/eligible/:year', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching eligible students:', error);
-    sendError(res, 500, 'Failed to fetch eligible students', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -56,26 +61,27 @@ router.get('/eligible/:year', requireAuth, async (req, res) => {
 router.get('/status/:year', requireAuth, async (req, res) => {
   try {
     const { year } = req.params;
-    const targetYear = parseInt(year) + 1; // Form One will be in next year
-    
-    if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+
+    if (!year || isNaN(parseInt(year, 10))) {
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
+
+    const sourceYear = parseInt(year, 10);
+    const targetYear = sourceYear + 1;
 
     // Check if students from this year have already been promoted
     const preFormOneCount = await query(
       'SELECT COUNT(*) as count FROM preform_one_students WHERE year = $1',
-      [year],
-      { timeout: 5000 } // 5 second timeout
+      [sourceYear]
     );
 
     const promotedCount = await query(
-      `SELECT COUNT(*) as count 
-       FROM students 
-       WHERE adm_no LIKE '789ABC%' 
-       AND EXTRACT(YEAR FROM created_at) = $1`,
-      [targetYear],
-      { timeout: 5000 } // 5 second timeout
+      `SELECT COUNT(DISTINCT s.id) AS count
+       FROM students s
+       INNER JOIN preform_one_students p
+         ON p.admission_number = s.adm_no AND p.year = $1
+       WHERE s.level = 'FORM I' AND s.year = $2`,
+      [sourceYear, targetYear]
     );
 
     const status = {
@@ -93,7 +99,7 @@ router.get('/status/:year', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching promotion status:', error);
-    sendError(res, 500, 'Failed to fetch promotion status', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -104,11 +110,13 @@ router.post('/promote/:year', requireAuth, async (req, res) => {
   try {
     const { year } = req.params;
     const { selectedStudents, targetStreams, promoteAll } = req.body;
-    const targetYear = parseInt(year) + 1;
-    
-    if (!year || isNaN(parseInt(year))) {
-      return sendError(res, 400, 'Invalid year parameter');
+
+    if (!year || isNaN(parseInt(year, 10))) {
+      return sendError(res, clientError('Invalid year parameter'), 400);
     }
+
+    const sourceYear = parseInt(year, 10);
+    const targetYear = sourceYear + 1;
 
     const client = await withTransaction(async (client) => {
       try {
@@ -117,7 +125,7 @@ router.post('/promote/:year', requireAuth, async (req, res) => {
         if (promoteAll) {
           const result = await client.query(
             'SELECT * FROM preform_one_students WHERE year = $1 ORDER BY admission_number',
-            [year]
+            [sourceYear]
           );
           studentsToPromote = result.rows;
         } else if (selectedStudents && selectedStudents.length > 0) {
@@ -144,8 +152,9 @@ router.post('/promote/:year', requireAuth, async (req, res) => {
           try {
             // Check if student already exists in main students table
             const existingStudent = await client.query(
-              'SELECT id FROM students WHERE admission_number = $1',
-              [student.admission_number]
+              `SELECT id FROM students
+               WHERE adm_no = $1 AND level = 'FORM I' AND year = $2`,
+              [student.admission_number, targetYear]
             );
 
             if (existingStudent.rows.length > 0) {
@@ -169,29 +178,28 @@ router.post('/promote/:year', requireAuth, async (req, res) => {
             // Insert student into main students table
             const insertResult = await client.query(
               `INSERT INTO students (
-                admission_number, first_name, middle_name, surname, 
-                sex, form, stream, year, term, 
-                admission_date, status
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Active') 
+                adm_no, first_name, middle_name, surname,
+                sex, level, stream, year, term, status
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
               RETURNING *`,
               [
                 student.admission_number,
                 student.first_name,
-                student.middle_name,
+                student.middle_name || null,
                 student.surname,
                 student.sex,
                 'FORM I',
                 assignedStream,
                 targetYear,
                 'First Term',
-                new Date().toISOString().split('T')[0] // Current date as admission_date
+                'Active'
               ]
             );
 
             promotedStudents.push({
               ...student,
               promotedTo: {
-                form: 'FORM I',
+                level: 'FORM I',
                 stream: assignedStream,
                 year: targetYear,
                 studentId: insertResult.rows[0].id
@@ -227,12 +235,16 @@ router.post('/promote/:year', requireAuth, async (req, res) => {
     });
 
     if (client.success) {
-      // Log the promotion activity
-      await saveUserActivity(req.user.id, 'PROMOTE_PREFORM_ONE', {
-        sourceYear: year,
-        targetYear: targetYear,
-        promotedCount: client.promoted?.length || 0,
-        failedCount: client.errors?.length || 0
+      await saveUserActivity({
+        username: req.user?.username || req.user?.email || String(req.user?.id || 'unknown'),
+        activity_type: 'PROMOTE_PREFORM_ONE',
+        description: `Pre-Form One promotion: cohort ${year} → Form I ${targetYear}`,
+        details: {
+          sourceYear: year,
+          targetYear,
+          promotedCount: client.promoted?.length || 0,
+          failedCount: client.errors?.length || 0
+        }
       });
 
       res.json({
@@ -252,7 +264,7 @@ router.post('/promote/:year', requireAuth, async (req, res) => {
     }
   } catch (error) {
     console.error('Error promoting students:', error);
-    sendError(res, 500, 'Failed to promote students', error);
+    sendError(res, error, 500);
   }
 });
 
@@ -277,7 +289,7 @@ router.get('/history', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching promotion history:', error);
-    sendError(res, 500, 'Failed to fetch promotion history', error);
+    sendError(res, error, 500);
   }
 });
 
