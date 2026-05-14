@@ -1,32 +1,13 @@
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
 import './PublicHeader.css';
 
-const MOBILE_BREAKPOINT = 900;
-
-function getIsMobile() {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
-}
-
 const PublicHeader = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
-  /* Mobile: menyu strip in header; overlay + drawer portaled to fixed-ui-root */
-  const [isMobile, setIsMobile] = useState(getIsMobile);
   const location = useLocation();
-
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
-    setIsMobile(mq.matches);
-    const handler = () => setIsMobile(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
 
   // Fetch settings for dynamic content
   const { data: homepageData } = useQuery({
@@ -89,15 +70,6 @@ const PublicHeader = () => {
     },
   ];
 
-  // Flat list for mobile
-  const mobileNavItems = [
-    homeItem,
-    ...navCategories.flatMap((cat) => cat.items),
-  ];
-
-  /** Only listed when mobile menu is open — staff portal sign-in */
-  const staffPortalOffisiItem = { path: '/login', label: 'Ofisi tu', icon: 'fa-building' };
-
   const isActive = (path) => {
     if (path === '/') {
       return location.pathname === '/';
@@ -124,27 +96,8 @@ const PublicHeader = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openDropdown]);
 
-  // Close menus when clicking outside
-  const handleOverlayClick = () => {
-    setMobileMenuOpen(false);
-    setOpenDropdown(null);
-  };
-
-  // Prevent body scroll when menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mobileMenuOpen]);
-
   // Close menus on route change
   useEffect(() => {
-    setMobileMenuOpen(false);
     setOpenDropdown(null);
   }, [location.pathname]);
 
@@ -158,21 +111,6 @@ const PublicHeader = () => {
 
   return (
     <header className="header">
-      {/* Small screens: coloured menyu strip — first row of the public header (above branding) */}
-      {isMobile && (
-        <div className="public-mobile-top-bar">
-          <button
-            type="button"
-            className="mobile-menu-toggle"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? 'Funga menyu' : 'Fungua menyu'}
-            aria-expanded={mobileMenuOpen}
-          >
-            <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-            <span className="menu-toggle-text">{mobileMenuOpen ? 'Funga' : 'Menyu'}</span>
-          </button>
-        </div>
-      )}
       <div className="header-content">
         {/* School Branding Section */}
         <div className="school-branding">
@@ -243,86 +181,50 @@ const PublicHeader = () => {
         {/* Navigation Section */}
         <nav className="navigation">
           <div className="nav-container">
-            {/* Desktop: inline nav. Mobile: overlay + full-screen panel portaled; toggle lives in .public-mobile-top-bar */}
-            {isMobile ? (
-              createPortal(
-                <>
-                  {mobileMenuOpen && (
-                    <div
-                      className="mobile-menu-overlay"
-                      onClick={handleOverlayClick}
-                      aria-hidden="true"
-                    />
+            <ul className="nav-links">
+              <li>
+                <Link
+                  to={homeItem.path}
+                  className={`${isActive(homeItem.path) ? 'active' : ''} icon-only nav-link-home`}
+                  aria-label={homeItem.label}
+                >
+                  <i className={`fas ${homeItem.icon}`} aria-hidden="true"></i>
+                </Link>
+              </li>
+              {navCategories.map((category) => (
+                <li key={category.id} className="nav-category-wrapper">
+                  <button
+                    type="button"
+                    className={`nav-category-btn ${isCategoryActive(category) ? 'category-active' : ''} ${openDropdown === category.id ? 'open' : ''}`}
+                    onClick={() => toggleDropdown(category.id)}
+                    aria-expanded={openDropdown === category.id}
+                    aria-haspopup="true"
+                  >
+                    <i className={`fas ${category.icon}`}></i>
+                    <span className="nav-link-text">{category.label}</span>
+                    <i className={`fas fa-chevron-down nav-category-chevron ${openDropdown === category.id ? 'rotated' : ''}`}></i>
+                  </button>
+                  {openDropdown === category.id && (
+                    <ul className="nav-category-dropdown" role="menu">
+                      {category.items.map((item) => (
+                        <li key={item.path} role="none">
+                          <Link
+                            to={item.path}
+                            className={isActive(item.path) ? 'active' : ''}
+                            onClick={() => setOpenDropdown(null)}
+                            onMouseEnter={getPrefetchHandler(item.path)}
+                            role="menuitem"
+                          >
+                            <i className={`fas ${item.icon}`}></i>
+                            <span>{item.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                  <ul className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-                    {(mobileMenuOpen
-                      ? [...mobileNavItems, staffPortalOffisiItem]
-                      : mobileNavItems
-                    ).map((item) => (
-                      <li key={item.path === '/login' ? 'staff-portal-ofisi' : item.path}>
-                        <Link
-                          to={item.path}
-                          className={`${isActive(item.path) ? 'active' : ''} nav-link-with-label${item.path === '/' ? ' nav-link-home' : ''}`}
-                          onClick={() => setMobileMenuOpen(false)}
-                          onMouseEnter={getPrefetchHandler(item.path)}
-                        >
-                          <i className={`fas ${item.icon}`} aria-hidden="true"></i>
-                          <span className="nav-link-text">{item.label}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </>,
-                document.getElementById('fixed-ui-root') || document.body
-              )
-            ) : (
-              <>
-                <ul className="nav-links">
-                  <li>
-                    <Link
-                      to={homeItem.path}
-                      className={`${isActive(homeItem.path) ? 'active' : ''} icon-only nav-link-home`}
-                      aria-label={homeItem.label}
-                    >
-                      <i className={`fas ${homeItem.icon}`} aria-hidden="true"></i>
-                    </Link>
-                  </li>
-                  {navCategories.map((category) => (
-                    <li key={category.id} className="nav-category-wrapper">
-                      <button
-                        type="button"
-                        className={`nav-category-btn ${isCategoryActive(category) ? 'category-active' : ''} ${openDropdown === category.id ? 'open' : ''}`}
-                        onClick={() => toggleDropdown(category.id)}
-                        aria-expanded={openDropdown === category.id}
-                        aria-haspopup="true"
-                      >
-                        <i className={`fas ${category.icon}`}></i>
-                        <span className="nav-link-text">{category.label}</span>
-                        <i className={`fas fa-chevron-down nav-category-chevron ${openDropdown === category.id ? 'rotated' : ''}`}></i>
-                      </button>
-                      {openDropdown === category.id && (
-                        <ul className="nav-category-dropdown" role="menu">
-                          {category.items.map((item) => (
-                            <li key={item.path} role="none">
-                              <Link
-                                to={item.path}
-                                className={isActive(item.path) ? 'active' : ''}
-                                onClick={() => setOpenDropdown(null)}
-                                onMouseEnter={getPrefetchHandler(item.path)}
-                                role="menuitem"
-                              >
-                                <i className={`fas ${item.icon}`}></i>
-                                <span>{item.label}</span>
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+                </li>
+              ))}
+            </ul>
           </div>
         </nav>
       </div>
