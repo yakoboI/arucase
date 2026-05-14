@@ -103,66 +103,42 @@ const PreFormOneParishes = () => {
 
   // Save parish assignment
   const handleSaveParish = async () => {
-    console.log('🔍 FRONTEND DEBUG: Parish save initiated');
-    console.log('🔍 FRONTEND DEBUG: Editing ID:', editingId);
-    console.log('🔍 FRONTEND DEBUG: Editing parish:', editingParish);
-    
     if (!editingId || !editingParish.trim()) {
-      console.log('🔍 FRONTEND DEBUG: Parish save validation failed');
-      console.log('🔍 FRONTEND DEBUG: Missing fields:', {
-        editingId: !editingId,
-        editingParish: !editingParish.trim()
-      });
       toast.error('Please select a student and enter a parish name');
       return;
     }
 
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Calling API to update parish');
-      
+
       const updatedStudent = await preFormOneService.updateStudentParish(editingId, editingParish.trim());
-      console.log('🔍 FRONTEND DEBUG: API response - updated student:', updatedStudent);
-      
+
       // Update local state with the updated student
       setStudents(prev => {
-        console.log('🔍 FRONTEND DEBUG: Updating local state with parish update');
-        console.log('🔍 FRONTEND DEBUG: Student to update ID:', editingId);
-        
         const updatedStudents = prev.map(student => {
           if (student.id === editingId) {
-            console.log('🔍 FRONTEND DEBUG: Found student to update:', student);
-            console.log('🔍 FRONTEND DEBUG: Updated to:', updatedStudent);
             return updatedStudent;
           }
           return student;
         });
-        
-        console.log('🔍 FRONTEND DEBUG: State update completed');
         return updatedStudents;
       });
 
       // Refresh data from database to ensure UI is in sync
       try {
-        console.log('🔍 FRONTEND DEBUG: Refreshing data from database after parish update');
         const freshData = await preFormOneService.getStudents(year);
         const studentsArray = Array.isArray(freshData) ? freshData : (freshData?.data || []);
-        console.log('🔍 FRONTEND DEBUG: Fresh data loaded:', studentsArray);
         setStudents(studentsArray);
-        console.log('🔍 FRONTEND DEBUG: UI state refreshed with latest database data');
-      } catch (refreshError) {
-        console.error('🔍 FRONTEND DEBUG: Error refreshing data:', refreshError);
+      } catch {
+        // keep local state if refresh fails
       }
 
       toast.success('Parish updated successfully!');
-      
+
       // Reset editing state
-      console.log('🔍 FRONTEND DEBUG: Resetting editing state');
       setEditingParish('');
       setEditingId(null);
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error updating parish:', error);
-      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
       toast.error('Error updating parish. Please try again.');
     } finally {
       setLoading(false);
@@ -213,12 +189,7 @@ const PreFormOneParishes = () => {
 
   // Process CSV data for parish updates
   const processCsvData = async (csvText) => {
-    console.log('🔍 FRONTEND DEBUG: Parish CSV processing initiated');
-    console.log('🔍 FRONTEND DEBUG: CSV text length:', csvText.length);
-    console.log('🔍 FRONTEND DEBUG: CSV text preview:', csvText.substring(0, 200));
-    
     if (!csvText.trim()) {
-      console.log('🔍 FRONTEND DEBUG: Parish CSV validation failed - empty text');
       toast.error('Please enter CSV data');
       return;
     }
@@ -228,10 +199,6 @@ const PreFormOneParishes = () => {
       const lines = csvText.split('\n').filter(line => line.trim());
       const headers = parseCSVLine(lines[0]);
       const dataLines = lines.slice(1);
-      
-      console.log('🔍 FRONTEND DEBUG: Parish CSV parsed - lines:', lines.length);
-      console.log('🔍 FRONTEND DEBUG: Parish CSV headers:', headers);
-      console.log('🔍 FRONTEND DEBUG: Parish CSV data lines count:', dataLines.length);
 
       const updates = [];
       const seenSerialNumbers = new Set();
@@ -246,22 +213,14 @@ const PreFormOneParishes = () => {
           if (field === 'serialnumber' || field === 's/n') serialNumber = values[i] || '';
           else if (field === 'parish') parish = values[i] || '';
         });
-        
-        console.log(`🔍 FRONTEND DEBUG: Processing parish CSV line ${index + 1}:`, {
-          serialNumber,
-          parish,
-          rawValues: values
-        });
 
         // Validate serial number format (basic validation)
         if (serialNumber && !/^[A-Za-z0-9\\-_]+$/.test(serialNumber)) {
-          console.warn(`🔍 FRONTEND DEBUG: Invalid serial number format at line ${index + 2}: ${serialNumber}`);
           return;
         }
 
         // Check for duplicates
         if (serialNumber && seenSerialNumbers.has(serialNumber)) {
-          console.warn(`🔍 FRONTEND DEBUG: Duplicate serial number found: ${serialNumber}`);
           return;
         }
 
@@ -272,55 +231,30 @@ const PreFormOneParishes = () => {
             serial_number: serialNumber,
             parish: parish.trim()
           });
-          console.log(`🔍 FRONTEND DEBUG: Added valid update ${updates.length}:`, {
-            serial_number: serialNumber,
-            parish: parish.trim()
-          });
         }
       });
-      
-      console.log('🔍 FRONTEND DEBUG: Total valid parish updates:', updates.length);
-      console.log('🔍 FRONTEND DEBUG: Updates data:', updates);
 
       if (updates.length === 0) {
-        console.log('🔍 FRONTEND DEBUG: No valid parish updates found in CSV');
         toast.error('No valid parish updates found in CSV');
         return;
       }
 
       const result = await preFormOneService.bulkUpdateParishes(updates);
-      console.log('🔍 FRONTEND DEBUG: Bulk parish update API response:', result);
-      
+
       // Update local state with the updated students
       setStudents(prev => {
-        console.log('🔍 FRONTEND DEBUG: Updating local state with bulk parish updates');
-        console.log('🔍 FRONTEND DEBUG: Previous students count:', prev.length);
-        
         const updatedStudents = [...prev];
-        const updatedCount = result.students?.length || 0;
-        
         result.students?.forEach(updatedStudent => {
           const index = updatedStudents.findIndex(s => s.id === updatedStudent.id);
           if (index !== -1) {
-            console.log(`🔍 FRONTEND DEBUG: Updating student at index ${index}:`, {
-              before: updatedStudents[index],
-              after: updatedStudent
-            });
             updatedStudents[index] = updatedStudent;
-          } else {
-            console.log('🔍 FRONTEND DEBUG: Student not found in local state:', updatedStudent);
           }
         });
-        
-        console.log('🔍 FRONTEND DEBUG: Bulk parish state update completed');
-        console.log('🔍 FRONTEND DEBUG: Updated students count:', updatedCount);
         return updatedStudents;
       });
-      
+
       toast.success(`Successfully updated parish for ${result.students?.length || 0} students from CSV!`);
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error processing parish CSV data:', error);
-      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data || error.message);
       toast.error('Error processing CSV data. Please check the file format and try again.');
     } finally {
       setLoading(false);
@@ -339,25 +273,19 @@ const PreFormOneParishes = () => {
       try {
         setLoading(true);
         const updatedStudent = await preFormOneService.updateStudentParish(studentId, '');
-        console.log('🔍 FRONTEND DEBUG: Parish removal API response:', updatedStudent);
-        
+
         // Refresh data from database to ensure UI is in sync
         try {
-          console.log('🔍 FRONTEND DEBUG: Refreshing data from database after parish removal');
           const freshData = await preFormOneService.getStudents(year);
           const studentsArray = Array.isArray(freshData) ? freshData : (freshData?.data || []);
-          console.log('🔍 FRONTEND DEBUG: Fresh data loaded after parish removal:', studentsArray);
-          console.log('🔍 FRONTEND DEBUG: Student with removed parish:', studentsArray.find(s => s.id === studentId));
           setStudents(studentsArray);
-          console.log('🔍 FRONTEND DEBUG: UI state refreshed after parish removal');
-        } catch (refreshError) {
-          console.error('🔍 FRONTEND DEBUG: Error refreshing data after parish removal:', refreshError);
+        } catch {
           // Fallback to local state update if refresh fails
-          setStudents(prev => prev.map(student => 
+          setStudents(prev => prev.map(student =>
             student.id === studentId ? updatedStudent : student
           ));
         }
-        
+
         toast.success('Parish assignment removed successfully!');
       } catch (error) {
         console.error('Error removing parish assignment:', error);

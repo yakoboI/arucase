@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Pre-Form One Continuing Results Page
  * Displays and manages Pre-Form One continuing subjects test results with automatic calculation
  */
@@ -99,49 +99,36 @@ const PreFormOneContinuingResults = () => {
     }
 
     try {
-      console.log('🔍 PDF DEBUG: Starting download process');
       const response = await downloadFn(year);
-      console.log('🔍 PDF DEBUG: Response received:', response);
-      
+
       // Create blob from response
       const blob = new Blob([response.data], { type: 'application/pdf' });
-      console.log('🔍 PDF DEBUG: Blob created, size:', blob.size);
-      
+
       if (blob.size === 0) {
         throw new Error('PDF file is empty');
       }
 
       // Create download URL
       const url = window.URL.createObjectURL(blob);
-      console.log('🔍 PDF DEBUG: URL created:', url);
-      
+
       // Create download link
       const link = document.createElement('a');
       link.href = url;
       link.download = `PreFormOne_Continuing_Results_${year}.pdf`;
       link.style.display = 'none';
-      
+
       // Trigger download
       document.body.appendChild(link);
-      console.log('🔍 PDF DEBUG: About to trigger download');
       link.click();
-      
+
       // Cleanup
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        console.log('🔍 PDF DEBUG: Cleanup completed');
       }, 1000);
 
       toast.success('PDF downloaded successfully!');
     } catch (error) {
-      console.error('🔍 PDF ERROR: Error generating PDF:', error);
-      console.error('🔍 PDF ERROR: Error details:', {
-        message: error.message,
-        response: error.response,
-        data: error.response?.data
-      });
-      
       if (error.response?.data instanceof Blob) {
         try {
           const text = await error.response.data.text();
@@ -227,18 +214,14 @@ const PreFormOneContinuingResults = () => {
 
       const fetchScores = async () => {
         try {
-          console.log('🔍 DEBUG: Fetching scores for subjects:', subjects.length);
           const scores = {};
           for (const subject of subjects) {
-            console.log('🔍 DEBUG: Fetching scores for subject:', subject.subject_name);
             const subjectScores = await fetchScoresForSubject(subject, students);
-            console.log('🔍 DEBUG: Subject scores fetched:', Object.keys(subjectScores).length, 'students');
             Object.keys(subjectScores).forEach(adm => {
               if (!scores[adm]) scores[adm] = {};
               scores[adm] = { ...scores[adm], ...subjectScores[adm] };
             });
           }
-          console.log('🔍 DEBUG: Total scores fetched for', Object.keys(scores).length, 'students');
           setSubjectScores(scores);
         } catch (error) {
           if (error.response?.status === 401) {
@@ -270,11 +253,8 @@ const PreFormOneContinuingResults = () => {
     queryKey: ['preform-one-continuing-results', filter.year, filter.month],
     queryFn: async () => {
       try {
-        console.log('🔍 DEBUG: Fetching continuing results, year:', filter.year, 'month:', filter.month);
         const res = await preFormOneService.getContinuingResults(filter.year, filter.month);
-        console.log('🔍 DEBUG: Continuing results response:', res);
         const results = res.data?.results || {};
-        console.log('🔍 DEBUG: Continuing results data:', results);
         return results;
       } catch (error) {
         console.error('Error fetching continuing results:', error);

@@ -46,8 +46,6 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
 
   const normalizedTerm = normalizeTerm(term);
 
-  console.log(`[COMMENT MGMT] URL params: stream=${stream}, normalizedStream=${normalizedStream}, level=${normalizedLevel}, year=${year}, term=${term}, normalizedTerm=${normalizedTerm}, isFormVOrVI=${isFormVOrVI}, commentType=${commentType}`);
-
   // Grade to comment mapping for Mkuu comments
   const getGradeComment = (grade) => {
     if (commentType === 'mwalimu_taaluma') {
@@ -123,16 +121,7 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
         stream: normalizedStream,
         year: year,
       });
-      console.log(`[COMMENT MGMT] API call params:`, {
-        level: normalizedLevel,
-        stream: normalizedStream,
-        year: year,
-        term: isFormVOrVI ? normalizedTerm : 'not sent (Form I-IV)',
-        isFormVOrVI: isFormVOrVI
-      });
       const students = res.data.students || [];
-      console.log(`[COMMENT MGMT] Fetched ${students.length} students for ${normalizedLevel} stream=${normalizedStream} year=${year}`);
-      console.log(`[COMMENT MGMT] Students:`, students.map(s => ({ adm_no: s.adm_no, name: `${s.first_name} ${s.middle_name || ''} ${s.surname}`, stream: s.stream })));
       // Backend already sorts students by name (ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC)
       return students;
     },
@@ -297,7 +286,6 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
     const studentIndex = students.findIndex(
       (s) => String(s.adm_no) === String(student.adm_no)
     ).toString();
-    console.log(`[COMMENT MGMT] Student ${student.adm_no}: student_index=${studentIndex}, total_students=${students.length}, stream=${normalizedStream}, level=${normalizedLevel}`);
     return studentIndex;
   };
 
@@ -443,7 +431,6 @@ const CommentsManagement = ({ formLevel, moduleName, commentType, moduleLabel, i
         }
         queryClient.invalidateQueries(['comments', commentType, normalizedLevel, normalizedStream, year, normalizedTerm]);
         if (saved > 0) {
-          console.log('[Comments CSV upload] Done. saved:', saved, 'skipped:', skipped, 'failed:', failed);
           toast.success(`Upload complete: ${saved} comment(s) saved.${skipped > 0 ? ` ${skipped} row(s) skipped (adm_no not in this class).` : ''}${failed > 0 ? ` ${failed} failed.` : ''}`);
         } else if (failed > 0) {
           console.error('[Comments CSV upload] All row saves failed. Total failed:', failed, 'skipped:', skipped);

@@ -25,12 +25,9 @@ const PreFormOneInterviewSubjects = () => {
     const loadSubjects = async () => {
       try {
         setLoading(true);
-        console.log('🔍 FRONTEND DEBUG: Loading interview subjects');
         const subjectsData = await preFormOneInterviewSubjectsService.getSubjects();
-        console.log('🔍 FRONTEND DEBUG: Interview subjects loaded:', subjectsData);
         setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
       } catch (error) {
-        console.error('🔍 FRONTEND DEBUG: Error loading interview subjects:', error);
         toast.error('Error loading interview subjects. Please try again.');
         setSubjects([]);
       } finally {
@@ -67,25 +64,18 @@ const PreFormOneInterviewSubjects = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🔍 FRONTEND DEBUG: Form submission started');
-    console.log('🔍 FRONTEND DEBUG: Form data:', formData);
     
     if (!formData.subject_name.trim() || !formData.subject_code.trim()) {
-      console.log('🔍 FRONTEND DEBUG: Validation failed - missing fields');
       toast.error('Subject name and code are required');
       return;
     }
     
-    console.log('🔍 FRONTEND DEBUG: Validation passed, proceeding with submission');
     
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Submitting interview subject form:', formData);
       
       if (editingSubject) {
-        console.log('🔍 FRONTEND DEBUG: Updating interview subject ID:', editingSubject.id);
         const updatedSubject = await preFormOneInterviewSubjectsService.updateSubject(editingSubject.id, formData);
-        console.log('🔍 FRONTEND DEBUG: Interview subject updated successfully:', updatedSubject);
         
         if (updatedSubject && updatedSubject.data) {
           setSubjects(prev => prev.map(subject => 
@@ -93,27 +83,21 @@ const PreFormOneInterviewSubjects = () => {
           ));
           toast.success('Interview subject updated successfully!');
         } else {
-          console.error('🔍 FRONTEND DEBUG: Failed to update subject - no data returned');
           toast.error('Failed to update interview subject. Please try again.');
         }
       } else {
-        console.log('🔍 FRONTEND DEBUG: Creating new interview subject');
         const newSubject = await preFormOneInterviewSubjectsService.createSubject(formData);
-        console.log('🔍 FRONTEND DEBUG: Interview subject created successfully:', newSubject);
         
         if (newSubject && newSubject.data) {
           setSubjects(prev => [...prev, newSubject.data]);
           toast.success('Interview subject created successfully!');
         } else {
-          console.error('🔍 FRONTEND DEBUG: Failed to create subject - no data returned');
           toast.error('Failed to create interview subject. Please try again.');
         }
       }
       
       resetForm();
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error saving interview subject:', error);
-      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data);
       toast.error(error.response?.data?.message || 'Error saving interview subject. Please try again.');
     } finally {
       setLoading(false);
@@ -122,7 +106,6 @@ const PreFormOneInterviewSubjects = () => {
 
   // Handle edit
   const handleEdit = (subject) => {
-    console.log('🔍 FRONTEND DEBUG: Editing interview subject:', subject);
     setFormData({
       subject_name: subject.subject_name,
       subject_code: subject.subject_code,
@@ -140,15 +123,12 @@ const PreFormOneInterviewSubjects = () => {
     if (window.confirm(`Are you sure you want to delete "${subject.subject_name}"? This action cannot be undone.`)) {
       try {
         setLoading(true);
-        console.log('🔍 FRONTEND DEBUG: Deleting interview subject:', subject);
         
         await preFormOneInterviewSubjectsService.deleteSubject(subject.id);
-        console.log('🔍 FRONTEND DEBUG: Interview subject deleted successfully');
         
         setSubjects(prev => prev.filter(s => s.id !== subject.id));
         toast.success('Interview subject deleted successfully!');
       } catch (error) {
-        console.error('🔍 FRONTEND DEBUG: Error deleting interview subject:', error);
         toast.error(error.response?.data?.message || 'Error deleting interview subject. Please try again.');
       } finally {
         setLoading(false);
@@ -160,7 +140,6 @@ const PreFormOneInterviewSubjects = () => {
   const handleToggleActive = async (subject) => {
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Toggling active status for subject:', subject);
       
       const updatedSubject = await preFormOneInterviewSubjectsService.updateSubject(subject.id, {
         ...subject,
@@ -173,7 +152,6 @@ const PreFormOneInterviewSubjects = () => {
       
       toast.success(`Interview subject ${subject.is_active ? 'deactivated' : 'activated'} successfully!`);
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error toggling active status:', error);
       toast.error('Error updating interview subject status. Please try again.');
     } finally {
       setLoading(false);
@@ -184,11 +162,9 @@ const PreFormOneInterviewSubjects = () => {
   const exportToExcel = async () => {
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Exporting interview subjects to Excel');
       await preFormOneInterviewSubjectsService.exportSubjects();
       toast.success('Interview subjects exported successfully!');
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error exporting interview subjects:', error);
       toast.error('Error exporting interview subjects. Please try again.');
     } finally {
       setLoading(false);

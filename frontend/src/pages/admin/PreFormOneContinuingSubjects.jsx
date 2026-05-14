@@ -27,19 +27,14 @@ const PreFormOneContinuingSubjects = () => {
     const loadSubjects = async () => {
       try {
         setLoading(true);
-        console.log('🔍 FRONTEND DEBUG: Loading continuing subjects');
         const subjectsData = await preFormOneContinuingSubjectsService.getSubjects();
-        console.log('🔍 FRONTEND DEBUG: Continuing subjects loaded:', subjectsData);
         
         if (subjectsData && subjectsData.data) {
           setSubjects(subjectsData.data);
-          console.log('🔍 FRONTEND DEBUG: Continuing subjects count:', subjectsData.data.length);
         } else {
           setSubjects([]);
-          console.log('🔍 FRONTEND DEBUG: No continuing subjects data found');
         }
       } catch (error) {
-        console.error('🔍 FRONTEND DEBUG: Error loading continuing subjects:', error);
         toast.error('Error loading continuing subjects. Please try again.');
       } finally {
         setLoading(false);
@@ -61,25 +56,18 @@ const PreFormOneContinuingSubjects = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🔍 FRONTEND DEBUG: Form submission started');
-    console.log('🔍 FRONTEND DEBUG: Form data:', formData);
     
     if (!formData.subject_name.trim() || !formData.subject_code.trim()) {
-      console.log('🔍 FRONTEND DEBUG: Validation failed - missing fields');
       toast.error('Subject name and code are required');
       return;
     }
     
-    console.log('🔍 FRONTEND DEBUG: Validation passed, proceeding with submission');
     
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Submitting continuing subject form:', formData);
       
       if (editingSubject) {
-        console.log('🔍 FRONTEND DEBUG: Updating continuing subject ID:', editingSubject.id);
         const updatedSubject = await preFormOneContinuingSubjectsService.updateSubject(editingSubject.id, formData);
-        console.log('🔍 FRONTEND DEBUG: Continuing subject updated successfully:', updatedSubject);
         
         if (updatedSubject && updatedSubject.data) {
           setSubjects(prev => prev.map(subject => 
@@ -87,27 +75,21 @@ const PreFormOneContinuingSubjects = () => {
           ));
           toast.success('Continuing subject updated successfully!');
         } else {
-          console.error('🔍 FRONTEND DEBUG: Failed to update subject - no data returned');
           toast.error('Failed to update continuing subject. Please try again.');
         }
       } else {
-        console.log('🔍 FRONTEND DEBUG: Creating new continuing subject');
         const newSubject = await preFormOneContinuingSubjectsService.createSubject(formData);
-        console.log('🔍 FRONTEND DEBUG: Continuing subject created successfully:', newSubject);
         
         if (newSubject && newSubject.data) {
           setSubjects(prev => [...prev, newSubject.data]);
           toast.success('Continuing subject created successfully!');
         } else {
-          console.error('🔍 FRONTEND DEBUG: Failed to create subject - no data returned');
           toast.error('Failed to create continuing subject. Please try again.');
         }
       }
       
       resetForm();
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error saving continuing subject:', error);
-      console.error('🔍 FRONTEND DEBUG: Error details:', error.response?.data);
       toast.error(error.response?.data?.message || 'Error saving continuing subject. Please try again.');
     } finally {
       setLoading(false);
@@ -116,7 +98,6 @@ const PreFormOneContinuingSubjects = () => {
 
   // Handle edit
   const handleEdit = (subject) => {
-    console.log('🔍 FRONTEND DEBUG: Editing continuing subject:', subject);
     setFormData({
       subject_name: subject.subject_name,
       subject_code: subject.subject_code,
@@ -134,14 +115,12 @@ const PreFormOneContinuingSubjects = () => {
 
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Deleting continuing subject:', subject);
       
       await preFormOneContinuingSubjectsService.deleteSubject(subject.id);
       
       setSubjects(prev => prev.filter(s => s.id !== subject.id));
       toast.success('Continuing subject deleted successfully!');
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error deleting continuing subject:', error);
       toast.error('Error deleting continuing subject. Please try again.');
     } finally {
       setLoading(false);
@@ -152,7 +131,6 @@ const PreFormOneContinuingSubjects = () => {
   const handleToggleActive = async (subject) => {
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Toggling active status for subject:', subject);
       
       const updatedData = {
         ...subject,
@@ -167,11 +145,9 @@ const PreFormOneContinuingSubjects = () => {
         ));
         toast.success(`Continuing subject ${subject.is_active ? 'deactivated' : 'activated'} successfully!`);
       } else {
-        console.error('🔍 FRONTEND DEBUG: Failed to toggle active status - no data returned');
         toast.error('Failed to update continuing subject status. Please try again.');
       }
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error toggling active status:', error);
       toast.error('Error updating continuing subject status. Please try again.');
     } finally {
       setLoading(false);
@@ -193,11 +169,9 @@ const PreFormOneContinuingSubjects = () => {
   const exportToExcel = async () => {
     try {
       setLoading(true);
-      console.log('🔍 FRONTEND DEBUG: Exporting continuing subjects to Excel');
       await preFormOneContinuingSubjectsService.exportSubjects();
       toast.success('Continuing subjects exported successfully!');
     } catch (error) {
-      console.error('🔍 FRONTEND DEBUG: Error exporting continuing subjects:', error);
       toast.error('Error exporting continuing subjects. Please try again.');
     } finally {
       setLoading(false);

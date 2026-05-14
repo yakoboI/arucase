@@ -43,7 +43,6 @@ const PreFormOneInterviewReports = () => {
     queryFn: async () => {
       try {
         const res = await preFormOneService.getInterviewResults(year);
-        console.log('🔍 Frontend: Interview results response:', res.data);
         // Backend returns data directly as array, not wrapped in 'results' property
         const resultsArray = Array.isArray(res.data) ? res.data : res.data?.results || [];
         // Convert array to object keyed by admission_number for lookup
@@ -51,7 +50,6 @@ const PreFormOneInterviewReports = () => {
         resultsArray.forEach(result => {
           resultsObject[result.admission_number] = result;
         });
-        console.log('🔍 Frontend: Converted results object:', resultsObject);
         return resultsObject;
       } catch (error) {
         if (error.response?.status !== 401) {

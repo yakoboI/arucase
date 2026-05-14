@@ -129,12 +129,9 @@ const PreFormOneRegistration = () => {
 
   // Handle student update
   const handleUpdateStudent = async () => {
-    console.log('🔍 FRONTEND DEBUG: Student update initiated');
-    console.log('🔍 FRONTEND DEBUG: Current student data:', currentStudent);
     
     // Validate form data
     const validationErrors = validateStudentData(currentStudent);
-    console.log('🔍 FRONTEND DEBUG: Validation errors:', validationErrors);
     
     if (validationErrors.length > 0) {
       validationErrors.forEach(error => toast.error(error));

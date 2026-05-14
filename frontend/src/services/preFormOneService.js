@@ -8,12 +8,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error fetching students:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       // Handle specific error types
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
@@ -37,12 +31,6 @@ export const preFormOneService = {
       const response = await api.post('/pre-form-one', studentData);
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error creating student:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       // Handle specific error types
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
@@ -66,12 +54,7 @@ export const preFormOneService = {
       const response = await api.post('/pre-form-one/bulk', { students });
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error creating bulk students:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      throw error;
+throw error;
     }
   },
 
@@ -81,12 +64,7 @@ export const preFormOneService = {
       const response = await api.put(`/pre-form-one/${studentId}/parish`, { parish });
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error updating student parish:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      throw error;
+throw error;
     }
   },
 
@@ -96,12 +74,7 @@ export const preFormOneService = {
       const response = await api.put('/pre-form-one/bulk-parish', { updates });
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error bulk updating parishes:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      throw error;
+throw error;
     }
   },
 
@@ -111,12 +84,7 @@ export const preFormOneService = {
       const response = await api.put(`/pre-form-one/${id}`, studentData);
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error updating student:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      throw error;
+throw error;
     }
   },
 
@@ -126,12 +94,7 @@ export const preFormOneService = {
       const response = await api.delete(`/pre-form-one/${studentId}`);
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error deleting student:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      throw error;
+throw error;
     }
   },
 
@@ -154,7 +117,6 @@ export const preFormOneService = {
       
       return response;
     } catch (error) {
-      console.error('Error exporting students:', error);
       throw error;
     }
   },
@@ -170,12 +132,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error fetching interview results:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -203,12 +159,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error fetching continuing results:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -236,12 +186,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error calculating interview results:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -269,12 +213,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error calculating continuing results:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -307,12 +245,6 @@ export const preFormOneService = {
       
       return response.data?.score || 0;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error getting student score:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -336,12 +268,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error saving interview result:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -365,12 +291,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error saving continuing result:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -394,12 +314,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error deleting interview result:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -423,12 +337,6 @@ export const preFormOneService = {
       
       return response.data;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error deleting continuing result:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -454,12 +362,6 @@ export const preFormOneService = {
       
       return response;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error downloading interview results PDF:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }
@@ -492,12 +394,6 @@ export const preFormOneService = {
       
       return response;
     } catch (error) {
-      console.error('🔍 SERVICE DEBUG: Error downloading continuing results PDF:');
-      console.error('🔍 SERVICE DEBUG: Error object:', error);
-      console.error('🔍 SERVICE DEBUG: Error response:', error.response);
-      console.error('🔍 SERVICE DEBUG: Error status:', error.response?.status);
-      console.error('🔍 SERVICE DEBUG: Error data:', error.response?.data);
-      
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         throw new Error('Request timed out. Please check your connection and try again.');
       }

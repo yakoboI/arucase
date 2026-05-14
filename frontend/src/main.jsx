@@ -94,18 +94,7 @@ window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason;
   const url = reason?.config?.url || reason?.message || '';
   const reqInfo = reason?.reqInfo;
-  
-  // Log for debugging
-  if (import.meta.env.DEV && reason?.code === 403) {
-    console.log('🔍 403 error details:', {
-      code: reason?.code,
-      httpStatus: reason?.httpStatus,
-      httpError: reason?.httpError,
-      name: reason?.name,
-      fullReason: reason
-    });
-  }
-  
+
   // Suppress known benign cases
   if (url.includes('ERR_BLOCKED_BY_CLIENT') || reason?.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
     event.preventDefault();
