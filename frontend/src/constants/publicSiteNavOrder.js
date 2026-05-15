@@ -1,6 +1,9 @@
 /**
  * Linear order for public-site Previous / Next navigation.
- * Matches PublicHeader: Shule Yetu → Wanafunzi → Habari, then footer-style pages.
+ * Matches PublicHeader: Shule Yetu → Wanafunzi (dropdown order) → Habari → Elimu ya Kikatoliki → Sera.
+ * Wanafunzi menu: Udahili → Maisha → Ripoti za Mwanafunzi → Ada; Habari: Picha → Matangazo.
+ * `/student-report` and `/student/dashboard` are appended after the main tour so Mbele from Ada ya Shule
+ * goes to Picha, and Nyuma from Picha returns to Ada (they are not between Ada and Picha in the header).
  */
 export const PUBLIC_SITE_NAV_ORDER = [
   { path: '/about', label: 'Kuhusu Sisi' },
@@ -10,14 +13,14 @@ export const PUBLIC_SITE_NAV_ORDER = [
   { path: '/admissions', label: 'Udahili' },
   { path: '/admissions/apply', label: 'Maombi ya Udahili' },
   { path: '/student-life', label: 'Maisha ya Wanafunzi' },
-  { path: '/student-report', label: 'Ripoti ya Mwanafunzi' },
   { path: '/student-login', label: 'Ripoti za Mwanafunzi' },
-  { path: '/student/dashboard', label: 'Dashibodi ya Mwanafunzi' },
   { path: '/school-fee', label: 'Ada ya Shule' },
   { path: '/gallery', label: 'Picha' },
   { path: '/announcements', label: 'Matangazo' },
   { path: '/catholic-education', label: 'Elimu ya Kikatoliki' },
   { path: '/privacy-policy', label: 'Sera ya Faragha' },
+  { path: '/student-report', label: 'Ripoti ya Mwanafunzi' },
+  { path: '/student/dashboard', label: 'Dashibodi ya Mwanafunzi' },
 ];
 
 export const PUBLIC_HOME_PATH = '/';

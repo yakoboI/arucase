@@ -123,90 +123,132 @@ const NECTAResults = () => {
   return (
     <PublicLayout>
       <div className="necta-results">
-        <header className="necta-header">
-          <h1 className="necta-title">NECTA Examination Results</h1>
-        </header>
+        <div className="necta-results__bg" aria-hidden />
+        <div className="necta-results__inner">
+          <header className="necta-card necta-card--hero">
+            <span className="necta-hero__eyebrow">Arusha Catholic Seminary</span>
+            <div className="necta-hero__row">
+              <h1 className="necta-title">NECTA examination results</h1>
+              <span className="necta-hero__code" title="School centre number">
+                {SCHOOL_CODE}
+              </span>
+            </div>
+            <p className="necta-hero__lead">
+              Choose an exam, then a year. Each opens the official NECTA (or archive) page in a new tab.
+              Summary counts appear below when available.
+            </p>
+          </header>
 
-        <div className="necta-tabs">
-          {tabConfig.map(({ id, label, sub }) => (
-            <button
-              key={id}
-              type="button"
-              className={`necta-tab ${activeTab === id ? 'active' : ''}`}
-              onClick={() => setActiveTab(id)}
-            >
-              <span className="necta-tab-label">{label}</span>
-              <span className="necta-tab-sub">{sub}</span>
-            </button>
-          ))}
-        </div>
+          <div className="necta-card necta-card--panel">
+            <div className="necta-tabs" role="tablist" aria-label="Exam type">
+              {tabConfig.map(({ id, label, sub }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === id}
+                  className={`necta-tab ${activeTab === id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(id)}
+                >
+                  <span className="necta-tab-label">{label}</span>
+                  <span className="necta-tab-sub">{sub}</span>
+                </button>
+              ))}
+            </div>
 
-        <section className="necta-year-section">
-          <p className="necta-year-label">Year — {activeConfig.label}</p>
-          <div className="necta-years">
-            {generateYearButtons().map((y) => (
-              <button
-                key={y}
-                type="button"
-                className="necta-year-btn"
-                onClick={() => handleYearClick(activeConfig.examType, y)}
-                disabled={loading}
-                title={`${y} results on NECTA`}
-              >
-                {y}
-                <i className="fas fa-external-link-alt necta-year-icon" aria-hidden />
-              </button>
-            ))}
-          </div>
-        </section>
+            <div className="necta-panel-divider" aria-hidden />
 
-        {loading && (
-          <div className="necta-loading">
-            <div className="necta-stats-skeleton">
-              <SkeletonLoader type="text" lines={1} width="60%" height="1.5rem" className="mb-2" />
-              <div className="necta-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem' }}>
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <SkeletonLoader key={i} type="card" height="60px" />
+            <section className="necta-year-block" aria-labelledby="necta-year-heading">
+              <p id="necta-year-heading" className="necta-year-label">
+                Select year — <strong>{activeConfig.label}</strong>
+              </p>
+              <div className="necta-years">
+                {generateYearButtons().map((y) => (
+                  <button
+                    key={y}
+                    type="button"
+                    className="necta-year-btn"
+                    onClick={() => handleYearClick(activeConfig.examType, y)}
+                    disabled={loading}
+                    title={`${y} results on NECTA`}
+                  >
+                    <span className="necta-year-btn__year">{y}</span>
+                    <i className="fas fa-external-link-alt necta-year-icon" aria-hidden />
+                  </button>
                 ))}
               </div>
-            </div>
+            </section>
           </div>
-        )}
 
-        {error && !stats && (
-          <div className="necta-note" role="status">
-            <i className="fas fa-info-circle" aria-hidden />
-            <span>Summary unavailable. Click any year above to view full results on NECTA.</span>
-          </div>
-        )}
-
-        {stats && (
-          <div className="necta-stats">
-            <h2 className="necta-stats-title">{examType.toUpperCase()} {year} — Arusha Catholic Seminary</h2>
-            <div className="necta-stats-grid">
-              <div className="necta-stat necta-stat-total">
-                <span className="necta-stat-label">Total</span>
-                <span className="necta-stat-num">{stats.total_registered || 0}</span>
+          {loading && (
+            <div className="necta-card necta-card--loading">
+              <div className="necta-stats-skeleton">
+                <SkeletonLoader type="text" lines={1} width="60%" height="1.5rem" className="mb-2" />
+                <div
+                  className="necta-stats-grid necta-stats-grid--skeleton"
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem' }}
+                >
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <SkeletonLoader key={i} type="card" height="60px" />
+                  ))}
+                </div>
               </div>
-              <div className="necta-stat necta-stat-div1"><span className="necta-stat-label">Div I</span><span className="necta-stat-num">{stats.division_i || 0}</span></div>
-              <div className="necta-stat necta-stat-div2"><span className="necta-stat-label">Div II</span><span className="necta-stat-num">{stats.division_ii || 0}</span></div>
-              <div className="necta-stat necta-stat-div3"><span className="necta-stat-label">Div III</span><span className="necta-stat-num">{stats.division_iii || 0}</span></div>
-              <div className="necta-stat necta-stat-div4"><span className="necta-stat-label">Div IV</span><span className="necta-stat-num">{stats.division_iv || 0}</span></div>
-              <div className="necta-stat necta-stat-div0"><span className="necta-stat-label">Div 0</span><span className="necta-stat-num">{stats.division_0 || 0}</span></div>
             </div>
-            <a
-              href="#"
-              className="necta-open-btn"
-              onClick={async (e) => {
-                e.preventDefault();
-                const url = await getNECTAUrl(examType, year);
-                window.open(url, '_blank', 'noopener,noreferrer');
-              }}
-            >
-              <i className="fas fa-external-link-alt" aria-hidden /> Open on NECTA
-            </a>
-          </div>
-        )}
+          )}
+
+          {error && !stats && (
+            <div className="necta-card necta-card--note" role="status">
+              <i className="fas fa-info-circle" aria-hidden />
+              <span>Summary unavailable. Click any year above to view full results on NECTA.</span>
+            </div>
+          )}
+
+          {stats && (
+            <div className="necta-card necta-card--stats">
+              <h2 className="necta-stats-title">
+                {examType.toUpperCase()} {year}
+                <span className="necta-stats-title__sub">Arusha Catholic Seminary</span>
+              </h2>
+              <div className="necta-stats-grid">
+                <div className="necta-stat-card necta-stat-card--total">
+                  <span className="necta-stat-label">Total registered</span>
+                  <span className="necta-stat-num">{stats.total_registered || 0}</span>
+                </div>
+                <div className="necta-stat-card necta-stat-card--div1">
+                  <span className="necta-stat-label">Div I</span>
+                  <span className="necta-stat-num">{stats.division_i || 0}</span>
+                </div>
+                <div className="necta-stat-card necta-stat-card--div2">
+                  <span className="necta-stat-label">Div II</span>
+                  <span className="necta-stat-num">{stats.division_ii || 0}</span>
+                </div>
+                <div className="necta-stat-card necta-stat-card--div3">
+                  <span className="necta-stat-label">Div III</span>
+                  <span className="necta-stat-num">{stats.division_iii || 0}</span>
+                </div>
+                <div className="necta-stat-card necta-stat-card--div4">
+                  <span className="necta-stat-label">Div IV</span>
+                  <span className="necta-stat-num">{stats.division_iv || 0}</span>
+                </div>
+                <div className="necta-stat-card necta-stat-card--div0">
+                  <span className="necta-stat-label">Div 0</span>
+                  <span className="necta-stat-num">{stats.division_0 || 0}</span>
+                </div>
+              </div>
+              <a
+                href="#"
+                className="necta-open-btn"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  const url = await getNECTAUrl(examType, year);
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                }}
+              >
+                <i className="fas fa-external-link-alt" aria-hidden /> Open on NECTA
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     </PublicLayout>
   );

@@ -1,81 +1,178 @@
-/* NECTA Results — compact, clear layout */
+/* NECTA Results — sharp cards on a deep layered background */
+
 .necta-results {
+  position: relative;
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: clamp(1.25rem, 4vw, 2.5rem) 0;
-  min-height: 60vh;
+  padding: clamp(1rem, 3vw, 2rem) var(--public-content-pad-x, clamp(0.85rem, 2.5vw, 2rem));
+  min-height: 65vh;
   box-sizing: border-box;
   overflow-x: hidden;
+  isolation: isolate;
 }
 
-.necta-header {
-  text-align: center;
-  margin-bottom: 1.75rem;
+/* Mesh + vignette (no border-radius — sharp page frame) */
+.necta-results__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #070b14;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(37, 99, 235, 0.35), transparent 55%),
+    radial-gradient(ellipse 90% 60% at 100% 50%, rgba(30, 64, 175, 0.12), transparent 45%),
+    radial-gradient(ellipse 70% 50% at 0% 80%, rgba(180, 140, 60, 0.08), transparent 50%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0) 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0) 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    28px 28px,
+    28px 28px;
+  background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
+}
+
+.necta-results__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(var(--public-content-max-width, 90rem), 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1.4vw, 0.8rem);
+}
+
+/* Shared card shell — crisp corners, tight border */
+.necta-card {
+  background: #fafbfc;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 0;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 6px 24px rgba(0, 0, 0, 0.14);
+}
+
+.necta-card--hero {
+  padding: clamp(0.75rem, 2.2vw, 1.15rem) clamp(0.85rem, 2.5vw, 1.35rem);
+  border-left: 4px solid #1e3a8a;
+  text-align: left;
+}
+
+.necta-hero__eyebrow {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.3rem;
+}
+
+.necta-hero__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.45rem;
 }
 
 .necta-title {
-  font-size: clamp(1.5rem, 4.5vw, 1.875rem);
-  font-weight: 700;
+  flex: 1 1 12rem;
+  font-size: clamp(1.25rem, 3.6vw, 1.65rem);
+  font-weight: 800;
   color: #0f172a;
-  margin: 0 0 0.25rem 0;
-  letter-spacing: -0.02em;
-}
-
-.necta-school {
-  font-size: clamp(0.875rem, 2.5vw, 1rem);
-  color: #475569;
-  margin: 0 0 0.5rem 0;
-}
-
-.necta-hint {
-  font-size: 0.8125rem;
-  color: #64748b;
   margin: 0;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
-.necta-intro {
-  font-size: 0.875rem;
+.necta-hero__code {
+  flex-shrink: 0;
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #1e3a8a;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid rgba(30, 58, 138, 0.35);
+  border-radius: 0;
+  background: linear-gradient(180deg, #eff6ff 0%, #e0e7ff 100%);
+}
+
+.necta-hero__lead {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
   color: #475569;
-  line-height: 1.5;
-  margin: 0.75rem auto 0;
-  max-width: 520px;
+  max-width: 62rem;
+}
+
+.necta-card--panel {
+  padding: clamp(0.65rem, 1.85vw, 1.05rem) clamp(0.72rem, 2vw, 1.15rem);
+}
+
+.necta-panel-divider {
+  height: 1px;
+  margin: 0.65rem 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(15, 23, 42, 0.12) 12%,
+    rgba(15, 23, 42, 0.12) 88%,
+    transparent
+  );
+}
+
+.necta-year-block {
+  margin: 0;
 }
 
 /* Tabs */
 .necta-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin: 0;
 }
 
 .necta-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid #e2e8f0;
+  min-width: 5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 0;
   background: #fff;
   color: #475569;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 
 .necta-tab:hover {
   border-color: #1e40af;
-  color: #1e40af;
+  color: #1e3a8a;
   background: #f8fafc;
 }
 
+.necta-tab:focus-visible {
+  outline: 2px solid #1e40af;
+  outline-offset: 2px;
+}
+
 .necta-tab.active {
-  border-color: #1e40af;
-  background: #1e40af;
+  border-color: #1e3a8a;
+  background: #1e3a8a;
   color: #fff;
+  box-shadow: none;
 }
 
 .necta-tab-label {
@@ -84,157 +181,200 @@
 
 .necta-tab-sub {
   font-size: 0.6875rem;
-  font-weight: 500;
-  opacity: 0.85;
+  font-weight: 600;
+  opacity: 0.88;
   margin-top: 0.125rem;
 }
 
-/* Year section */
-.necta-year-section {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0;
-  padding: 1.25rem 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  margin-bottom: 1.5rem;
+.necta-tab.active .necta-tab-sub {
+  opacity: 0.9;
 }
 
+/* Years */
 .necta-year-label {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: #64748b;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.65rem 0;
   text-align: center;
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.necta-year-label strong {
+  color: #0f172a;
+  font-weight: 800;
 }
 
 .necta-years {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(4.85rem, 1fr));
+  gap: 0.4rem;
+}
+
+@media (min-width: 900px) {
+  .necta-years {
+    grid-template-columns: repeat(auto-fill, minmax(5.35rem, 1fr));
+    gap: 0.48rem;
+  }
 }
 
 .necta-year-btn {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 0.625rem 0.5rem;
-  border: 1px solid #e2e8f0;
+  gap: 0.22rem;
+  padding: 0.5rem 0.35rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 0;
-  background: #f8fafc;
-  color: #334155;
-  font-size: 0.875rem;
-  font-weight: 600;
+  background: #fff;
+  color: #1e293b;
+  font-size: 0.8125rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+.necta-year-btn__year {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .necta-year-btn:hover:not(:disabled) {
   border-color: #1e40af;
   background: #eff6ff;
-  color: #1e40af;
+  color: #1e3a8a;
+  box-shadow: 0 0 0 1px rgba(30, 64, 175, 0.15);
+}
+
+.necta-year-btn:focus-visible {
+  outline: 2px solid #1e40af;
+  outline-offset: 2px;
 }
 
 .necta-year-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.65;
   cursor: wait;
 }
 
 .necta-year-icon {
-  font-size: 0.65rem;
-  opacity: 0.7;
+  font-size: 0.6rem;
+  opacity: 0.55;
 }
 
 .necta-year-btn:hover:not(:disabled) .necta-year-icon {
   opacity: 1;
 }
 
-/* Loading */
-.necta-loading {
+/* Loading / note cards */
+.necta-card--loading {
+  padding: 0.85rem 0.75rem;
   text-align: center;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
+  background: rgba(250, 251, 252, 0.97);
 }
 
-/* Note (when stats fail) */
-.necta-note {
+.necta-card--note {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: 0.72rem 0.85rem;
   background: #f1f5f9;
-  border-radius: 0;
-  font-size: 0.8125rem;
-  color: #475569;
-  margin-bottom: 1rem;
+  border-color: rgba(100, 116, 139, 0.35);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #334155;
 }
 
-.necta-note i {
+.necta-card--note i {
   color: #64748b;
   flex-shrink: 0;
+  margin-top: 0.1rem;
 }
 
-/* Stats block */
-.necta-stats {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0;
-  padding: 1.5rem 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+/* Stats */
+.necta-card--stats {
+  padding: clamp(0.7rem, 2vw, 1.1rem) clamp(0.72rem, 2vw, 1.15rem);
+  background: #fafbfc;
 }
 
 .necta-stats-title {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.98rem;
+  font-weight: 800;
   color: #0f172a;
-  margin: 0 0 1.25rem 0;
+  margin: 0 0 0.65rem 0;
   text-align: center;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.necta-stats-title__sub {
+  display: block;
+  margin-top: 0.22rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
 .necta-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: 0.45rem;
+  margin-bottom: 0.72rem;
 }
 
-.necta-stat {
+.necta-stat-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.75rem 0.5rem;
+  justify-content: center;
+  min-height: 3.65rem;
+  padding: 0.48rem 0.32rem;
   border-radius: 0;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #fff;
+  border-left-width: 3px;
+  border-left-style: solid;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 
-.necta-stat-total {
+.necta-stat-card--total {
   grid-column: 1 / -1;
-  background: #eff6ff;
-  border-color: #93c5fd;
+  border-left-color: #1e40af;
+  background: linear-gradient(180deg, #eff6ff 0%, #fff 55%);
 }
+
+.necta-stat-card--div1 { border-left-color: #059669; }
+.necta-stat-card--div2 { border-left-color: #2563eb; }
+.necta-stat-card--div3 { border-left-color: #d97706; }
+.necta-stat-card--div4 { border-left-color: #dc2626; }
+.necta-stat-card--div0 { border-left-color: #94a3b8; }
 
 .necta-stat-label {
-  font-size: 0.6875rem;
-  font-weight: 600;
+  font-size: 0.625rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   color: #64748b;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
+  text-align: center;
 }
 
 .necta-stat-num {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
   color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
-.necta-stat-total .necta-stat-num { color: #1e40af; }
-.necta-stat-div1 .necta-stat-num { color: #059669; }
-.necta-stat-div2 .necta-stat-num { color: #2563eb; }
-.necta-stat-div3 .necta-stat-num { color: #d97706; }
-.necta-stat-div4 .necta-stat-num { color: #dc2626; }
-.necta-stat-div0 .necta-stat-num { color: #64748b; }
+.necta-stat-card--total .necta-stat-num { color: #1e3a8a; }
+.necta-stat-card--div1 .necta-stat-num { color: #047857; }
+.necta-stat-card--div2 .necta-stat-num { color: #1d4ed8; }
+.necta-stat-card--div3 .necta-stat-num { color: #b45309; }
+.necta-stat-card--div4 .necta-stat-num { color: #b91c1c; }
+.necta-stat-card--div0 .necta-stat-num { color: #475569; }
 
 .necta-open-btn {
   display: inline-flex;
@@ -242,41 +382,37 @@
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.75rem 1rem;
-  background: #1e40af;
+  padding: 0.68rem 0.85rem;
+  background: #1e3a8a;
   color: #fff;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  border: none;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border: 1px solid #172554;
   border-radius: 0;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.2s, transform 0.15s;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
 }
 
 .necta-open-btn:hover {
-  background: #1d4ed8;
+  background: #1e40af;
   color: #fff;
   transform: translateY(-1px);
 }
 
-/* Responsive */
-@media (min-width: 480px) {
-  .necta-years {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.necta-open-btn:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 @media (min-width: 640px) {
-  .necta-years {
-    grid-template-columns: repeat(6, 1fr);
-  }
-
   .necta-stats-grid {
     grid-template-columns: repeat(6, 1fr);
+    gap: 0.48rem;
   }
 
-  .necta-stat-total {
+  .necta-stat-card--total {
     grid-column: auto;
   }
 }
@@ -289,15 +425,8 @@
   }
 }
 
-/* Full width utilization on mobile */
 @media (max-width: 768px) {
   .necta-results {
-    padding: 1rem;
-    max-width: 100%;
-  }
-
-  .necta-year-section,
-  .necta-stats {
-    border-radius: 0;
+    padding: 0.85rem var(--public-content-pad-x, 0.65rem) 1.25rem;
   }
 }

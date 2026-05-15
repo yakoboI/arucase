@@ -1,226 +1,249 @@
 @import '../../styles/public-common.css';
 
-/* ---- Student Life: gray shell, centred header, sharp white cards ---------- */
+/* ========== Student life — same card language as /school-fee & /staff (grey shell, sharp surfaces) ========== */
 
-.student-life-page {
-  --sl-gutter: clamp(0.75rem, 4vw, 3rem);
-  --sl-inner-max: min(1680px, 100%);
-  --sl-page-bg: #e8eaed;
+.student-life-page.student-life-page--immersive {
+  position: relative;
+  width: 100%;
+  min-width: 100%;
+  max-width: 100vw;
+  min-height: 65vh;
+  padding: clamp(1rem, 3vw, 2rem) var(--public-content-pad-x, clamp(0.85rem, 2.5vw, 2rem));
+  overflow-x: hidden;
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+.student-life-page__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #c5cdd8;
+  background-image:
+    radial-gradient(ellipse 100% 70% at 50% 0%, rgba(255, 255, 255, 0.55), transparent 52%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(148, 163, 184, 0.35), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0) 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0) 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    24px 24px,
+    24px 24px;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+}
+
+.student-life-page__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(var(--public-content-max-width, 90rem), 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1.4vw, 0.8rem);
+}
+
+.student-life-page--immersive .sl-surface {
+  background: #fafbfc;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 0;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 6px 24px rgba(15, 23, 42, 0.1);
   width: 100%;
   max-width: 100%;
-  min-width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  margin: 0;
   box-sizing: border-box;
-  overflow-x: hidden;
-  background: var(--sl-page-bg);
-  padding: 0 var(--sl-gutter) clamp(1.5rem, 4vw, 2.5rem);
+  word-wrap: break-word;
 }
 
-/* Centred page title band */
-.student-life-page-header {
-  width: 100%;
-  max-width: var(--sl-inner-max);
-  margin: 0 auto clamp(1.25rem, 3vw, 2rem);
-  box-sizing: border-box;
-  text-align: center;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
-  padding: clamp(1.25rem, 3.5vw, 2rem) clamp(1rem, 3vw, 2rem);
+.student-life-page--immersive .sl-surface--hero {
+  border-left: 4px solid #1e40af;
+  padding: clamp(0.72rem, 2vw, 1.1rem) clamp(0.8rem, 2.2vw, 1.3rem);
+  text-align: left;
+  white-space: normal;
 }
 
-.student-life-page-eyebrow {
-  margin: 0 0 0.35rem;
-  font-size: 0.75rem;
+.sl-hero__eyebrow {
+  margin: 0 0 0.28rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #1a5490;
+  color: #64748b;
 }
 
-.student-life-page-title {
-  margin: 0 0 0.5rem;
-  font-size: clamp(1.75rem, 5vw, 2.35rem);
+.sl-hero__title {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.35rem, 3.6vw, 1.85rem);
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.15;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
 }
 
-.student-life-page-lead {
-  margin: 0 auto;
-  max-width: min(52ch, 100%);
-  font-size: clamp(0.95rem, 2.3vw, 1.08rem);
-  line-height: 1.65;
+.sl-hero__lead {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: #475569;
+  max-width: 62rem;
 }
 
-.student-life-inner {
-  width: 100%;
-  max-width: var(--sl-inner-max);
-  margin: 0 auto;
+.student-life-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(260px, 42vw, 380px)), 1fr));
-  gap: clamp(1rem, 2.2vw, 1.75rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(15.5rem, 38vw, 22rem)), 1fr));
+  gap: clamp(0.5rem, 1.4vw, 0.85rem);
   align-items: start;
 }
 
-.student-life-card {
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
-  border-radius: 0;
-  padding: clamp(1.15rem, 2.8vw, 1.65rem);
-  box-sizing: border-box;
+.student-life-page--immersive .sl-surface--chunk {
+  padding: clamp(0.55rem, 1.5vw, 0.95rem) clamp(0.65rem, 1.75vw, 1.05rem);
+  white-space: normal;
 }
 
-.student-life-card--wide {
+.student-life-page--immersive .sl-surface--span-full {
   grid-column: 1 / -1;
 }
 
-.student-life-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 0.85rem;
-  padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  text-align: center;
+.student-life-page--immersive .sl-surface--stripe-navy {
+  border-left: 4px solid #1e3a8a;
 }
 
-.student-life-card__icon {
+.student-life-page--immersive .sl-surface--stripe-teal {
+  border-left: 4px solid #0f766e;
+}
+
+.student-life-page--immersive .sl-surface--stripe-slate {
+  border-left: 4px solid #475569;
+}
+
+.student-life-page--immersive .sl-surface--stripe-gold {
+  border-left: 4px solid #b45309;
+}
+
+.sl-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  text-align: left;
+}
+
+.sl-card__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.35rem;
+  height: 2.35rem;
   flex-shrink: 0;
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  background: #ffffff;
-  color: #1a5490;
-  font-size: 1.1rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #1e3a8a;
+  font-size: 1rem;
   border-radius: 0;
 }
 
-.student-life-card__title {
+.sl-card__title {
   margin: 0;
-  font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.25;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-.student-life-card__intro {
-  margin: 0 0 1rem;
-  line-height: 1.7;
+.sl-card__intro {
+  margin: 0 0 0.55rem;
+  line-height: 1.55;
   color: #475569;
-  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+  font-size: 0.875rem;
 }
 
-.student-life-list {
+.sl-list {
   margin: 0;
-  padding-left: 1.25rem;
+  padding-left: 1.15rem;
   color: #334155;
-  font-size: clamp(0.95rem, 2.2vw, 1.02rem);
-  line-height: 1.65;
+  font-size: 0.875rem;
+  line-height: 1.55;
 }
 
-.student-life-list li {
-  margin-bottom: 0.55rem;
+.sl-list li {
+  margin-bottom: 0.35rem;
 }
 
-.student-life-list li:last-child {
+.sl-list li:last-child {
   margin-bottom: 0;
 }
 
-.student-life-list strong {
+.sl-list strong {
   color: #0f172a;
   font-weight: 700;
 }
 
 @media (min-width: 900px) {
-  .student-life-list--columns {
+  .sl-list--columns {
     column-count: 2;
-    column-gap: clamp(1.5rem, 4vw, 2.5rem);
+    column-gap: clamp(1.25rem, 3vw, 2rem);
   }
 
-  .student-life-list--columns li {
+  .sl-list--columns li {
     break-inside: avoid;
   }
 }
 
-/* CMS HTML — single prose card */
-.student-life-page--cms {
-  display: block;
+/* CMS */
+.student-life-page--immersive .sl-surface--cms {
+  border-left: 4px solid #1e3a8a;
+  white-space: pre-wrap;
+  padding: clamp(0.68rem, 1.95vw, 1.2rem) clamp(0.75rem, 2vw, 1.28rem);
 }
 
-.student-life-card--prose {
-  width: 100%;
-  max-width: var(--sl-inner-max);
-  margin-left: auto;
-  margin-right: auto;
-  white-space: normal;
-}
-
-.student-life-card--prose.content-card {
-  border-radius: 0;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: clamp(1.15rem, 2.8vw, 2rem);
-}
-
-.student-life-card--prose.content-card h1:first-child,
-.student-life-card--prose.content-card h2:first-child {
-  margin-top: 0;
-}
-
-.student-life-card--prose.content-card h2 {
+.student-life-page--immersive .sl-surface--cms h1 {
   color: #0f172a;
-  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  font-size: clamp(1.25rem, 3.2vw, 1.65rem);
   font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 0.65rem;
+  letter-spacing: -0.02em;
 }
 
-.student-life-card--prose.content-card h3 {
-  color: #1a5490;
-  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+.student-life-page--immersive .sl-surface--cms h2 {
+  color: #1e3a8a;
+  font-size: clamp(1.05rem, 2.8vw, 1.3rem);
   font-weight: 700;
+  margin-top: 1.1rem;
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.22rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-.student-life-card--prose.content-card p,
-.student-life-card--prose.content-card li {
-  color: #374151;
+.student-life-page--immersive .sl-surface--cms h3 {
+  color: #0f766e;
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
 }
 
-.student-life-card--prose.content-card strong {
-  color: #0f172a;
+.student-life-page--immersive .sl-surface--cms p,
+.student-life-page--immersive .sl-surface--cms li {
+  color: #334155;
+  line-height: 1.6;
+  font-size: 0.9375rem;
 }
 
-/* Beat public-common zero padding on narrow viewports */
+.student-life-page--immersive .sl-surface--cms a {
+  color: #1e40af;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
-  .student-life-page {
-    padding-left: var(--sl-gutter);
-    padding-right: var(--sl-gutter);
-    padding-top: 0;
-  }
-}
-
-@media (max-width: 374px) {
-  .student-life-page {
-    padding-left: var(--sl-gutter);
-    padding-right: var(--sl-gutter);
-    padding-top: clamp(0.35rem, 2vw, 0.5rem);
-  }
-
-  .student-life-page-header {
-    padding: 1rem 0.85rem;
-  }
-
-  .student-life-card {
-    padding: 1rem 0.9rem;
+  .student-life-page.student-life-page--immersive {
+    padding: 0.85rem var(--public-content-pad-x, 0.65rem) 1.25rem;
   }
 }

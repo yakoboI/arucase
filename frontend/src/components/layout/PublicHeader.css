@@ -19,7 +19,7 @@
 }
 
 .header-content {
-  --header-pad-x: clamp(6px, 4vw, 32px);
+  --header-pad-x: var(--public-content-pad-x, clamp(6px, 4vw, 32px));
   position: relative;
   z-index: 2;
   max-width: 100%;

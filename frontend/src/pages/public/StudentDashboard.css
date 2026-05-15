@@ -1456,7 +1456,7 @@
 /* Prev/next bar lives in PublicLayout above this page — match tighter vertical rhythm */
 @supports selector(:has(*)) {
   .public-layout .public-main:has(> .student-dashboard) .public-prev-next-nav {
-    --public-prev-next-gutter: clamp(0.75rem, 4vw, 3rem);
+    padding-inline: clamp(0.75rem, 4vw, 3rem);
     --pn-btn-min-h: clamp(2rem, 4.8vw, 2.35rem);
     --pn-btn-pad-y: clamp(0.28rem, 1vw, 0.4rem);
     --pn-inner-gap: clamp(0.35rem, 1.1vw, 0.5rem);

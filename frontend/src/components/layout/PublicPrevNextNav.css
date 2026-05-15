@@ -1,7 +1,7 @@
-/* Horizontal gutters match public page shell (clamp(1rem, 3vw, 2.5rem)).
-   High-specificity rules below defend against global touch/link styles in styles/index.css. */
+/* Horizontal gutters + column width match .public-layout (--public-content-*) and immersive pages */
 .public-prev-next-nav {
-  --public-prev-next-gutter: clamp(1rem, 3vw, 2.5rem);
+  --public-prev-next-gutter: 0;
+  padding-inline: var(--public-content-pad-x, clamp(0.85rem, 2.5vw, 2rem));
   /* Touch-safe height; scales slightly on large screens */
   --pn-btn-min-h: clamp(2.75rem, 7vw, 3.25rem);
   --pn-btn-pad-y: clamp(0.4375rem, 1.4vw, 0.5625rem);
@@ -25,9 +25,9 @@
   align-items: stretch;
   gap: var(--pn-inner-gap);
   width: 100%;
-  max-width: 100%;
+  max-width: min(var(--public-content-max-width, 90rem), 100%);
   box-sizing: border-box;
-  margin-inline: var(--public-prev-next-gutter);
+  margin-inline: auto;
   padding-block: clamp(0.375rem, 1.25vw, 0.5rem);
 }
 

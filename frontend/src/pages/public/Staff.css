@@ -1,168 +1,288 @@
 @import '../../styles/public-common.css';
 
-.staff-page {
+/* ========== Immersive staff page (matches /necta-results look: wide, sharp cards, dark mesh bg) ========== */
+
+.staff-page.staff-page--immersive {
+  position: relative;
   width: 100%;
   min-width: 100%;
   max-width: 100vw;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: clamp(0.5rem, 2vw, 2rem) 0;
+  min-height: 65vh;
+  padding: clamp(1rem, 3vw, 2rem) var(--public-content-pad-x, clamp(0.85rem, 2.5vw, 2rem));
   overflow-x: hidden;
-  --profile-photo-size: clamp(66px, 13vw, 92px);
+  box-sizing: border-box;
+  isolation: isolate;
+  --profile-photo-size: clamp(56px, 9vw, 82px);
   --profile-photo-outer-padding: 3px;
 }
 
-.staff-page .content-card {
-  background: white;
+.staff-page__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #070b14;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(37, 99, 235, 0.35), transparent 55%),
+    radial-gradient(ellipse 90% 60% at 100% 50%, rgba(30, 64, 175, 0.12), transparent 45%),
+    radial-gradient(ellipse 70% 50% at 0% 80%, rgba(180, 140, 60, 0.08), transparent 50%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0) 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0) 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    28px 28px,
+    28px 28px;
+  background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
+}
+
+.staff-page__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(var(--public-content-max-width, 90rem), 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1.4vw, 0.8rem);
+}
+
+/* Sharp elevated surfaces (CMS, fallback, directory) */
+.staff-page--immersive .staff-surface {
+  background: #fafbfc;
+  border: 1px solid rgba(15, 23, 42, 0.14);
   border-radius: 0;
-  padding: clamp(1rem, 3vw, 2.5rem);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 6px 24px rgba(0, 0, 0, 0.14);
   width: 100%;
   max-width: 100%;
   margin: 0;
   box-sizing: border-box;
   white-space: pre-wrap;
   word-wrap: break-word;
+  padding: clamp(0.7rem, 1.9vw, 1.2rem) clamp(0.75rem, 2vw, 1.25rem);
 }
 
-/* Full width utilization on all screen sizes */
-@media (max-width: 768px) {
-  .staff-page .content-card {
-    max-width: 100%;
-    margin: 0;
-    border-radius: 0;
-  }
-
-  .staff-page {
-    padding: 0;
-  }
-
-  .staff-profile-card {
-    border-radius: 0;
-  }
+.staff-page--immersive .staff-surface--cms {
+  border-left: 4px solid #1e3a8a;
+  padding: clamp(0.68rem, 1.95vw, 1.2rem) clamp(0.75rem, 2vw, 1.28rem);
 }
 
-.staff-page .content-card h2 {
-  color: #1a5490;
-  font-size: clamp(1.5rem, 4.5vw, 2rem);
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+.staff-page--immersive .staff-surface--hero {
+  border-left: 4px solid #1e40af;
+  text-align: left;
+  white-space: normal;
+  padding: clamp(0.72rem, 2vw, 1.1rem) clamp(0.8rem, 2.2vw, 1.3rem);
+}
+
+.staff-hero__eyebrow {
+  margin: 0 0 0.28rem;
+  font-size: 0.625rem;
   font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
-.staff-page .content-card h3 {
-  color: #1a5490;
-  font-size: clamp(1.25rem, 4vw, 1.75rem);
-  margin-top: clamp(1.5rem, 3vw, 2rem);
-  margin-bottom: clamp(0.75rem, 2vw, 1rem);
-  font-weight: 600;
+.staff-hero__title {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.35rem, 3.6vw, 1.75rem);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
 }
 
-.staff-page .content-card p {
-  line-height: 1.8;
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
-  color: #374151;
-  font-size: clamp(0.9375rem, 2.5vw, 1.0625rem);
-  white-space: pre-wrap;
+.staff-hero__lead {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #475569;
+  max-width: 62rem;
 }
 
-.staff-page .content-card br {
-  display: block;
-  margin: 0.5rem 0;
-  content: "";
+/* Topic cards (fallback path) */
+.staff-page--immersive .staff-surface--chunk {
+  white-space: normal;
+  padding: clamp(0.55rem, 1.5vw, 0.9rem) clamp(0.65rem, 1.75vw, 1.05rem);
 }
 
-/* Extra small screens (< 375px) */
-@media (max-width: 374px) {
-  .staff-page {
-    padding: 0;
-  }
-
-  .staff-page .content-card {
-    padding: 0.75rem 0.5rem;
-    max-width: 100%;
-    margin: 0;
-  }
-
-  .staff-page .content-card h2 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .staff-page .content-card h3 {
-    font-size: 1.125rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .staff-page .content-card p {
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.6;
-  }
-
-  .staff-page .content-card ul {
-    margin: 0.5rem 0;
-    padding-left: 1.25rem;
-  }
-
-  .staff-page .content-card li {
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
-  }
+.staff-page--immersive .staff-surface--stripe-navy {
+  border-left: 4px solid #1e3a8a;
 }
 
-/* Small screens (375px - 480px) */
-@media (min-width: 375px) and (max-width: 480px) {
-  .staff-page .content-card h2 {
-    font-size: 1.375rem;
-  }
-
-  .staff-page .content-card h3 {
-    font-size: 1.1875rem;
-  }
-
-  .staff-page .content-card p {
-    font-size: 0.9375rem;
-  }
+.staff-page--immersive .staff-surface--stripe-teal {
+  border-left: 4px solid #0f766e;
 }
 
-.staff-page .content-card ul {
-  margin: 1rem 0;
-  padding-left: 2rem;
+.staff-page--immersive .staff-surface--stripe-slate {
+  border-left: 4px solid #475569;
 }
 
-.staff-page .content-card li {
-  line-height: 1.8;
-  margin-bottom: 0.75rem;
-  color: #374151;
+.staff-page--immersive .staff-surface--stripe-gold {
+  border-left: 4px solid #b45309;
 }
 
-.staff-directory-card {
-  margin-top: 1rem !important;
+.staff-chunk__title {
+  margin: 0 0 0.35rem;
+  padding: 0 0 0.28rem;
+  font-size: clamp(0.98rem, 2.5vw, 1.2rem);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.staff-chunk__text {
+  margin: 0;
+  color: #334155;
+  line-height: 1.55;
+  font-size: 0.875rem;
+}
+
+.staff-chunk__contacts {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.32rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.staff-chunk__contacts li {
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  background: #f1f5f9;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0;
+}
+
+/* Directory stack */
+.staff-page--immersive .staff-surface--directory-intro,
+.staff-page--immersive .staff-surface--directory-teachers,
+.staff-page--immersive .staff-surface--directory-non {
+  padding: clamp(0.62rem, 1.8vw, 1.05rem) clamp(0.7rem, 1.95vw, 1.15rem);
+}
+
+.staff-page--immersive .staff-surface--directory-intro {
+  border-left: 4px solid #c5a059;
+  white-space: normal;
+}
+
+.staff-page--immersive .staff-surface--directory-teachers {
+  border-left: 4px solid #1e3a8a;
+  white-space: normal;
+}
+
+.staff-page--immersive .staff-surface--directory-non {
+  border-left: 4px solid #0f766e;
+  white-space: normal;
+}
+
+.staff-directory__title {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.staff-section-card__title {
+  margin: 0 0 0.55rem;
+  padding: 0 0 0.32rem;
+  font-size: clamp(0.98rem, 2.5vw, 1.2rem);
+  font-weight: 800;
+  color: #1e3a8a;
+  letter-spacing: -0.02em;
+  border-bottom: 2px solid rgba(30, 58, 138, 0.2);
+}
+
+.staff-surface--directory-non .staff-section-card__title {
+  color: #0f766e;
+  border-bottom-color: rgba(15, 118, 110, 0.28);
+}
+
+.staff-surface--directory-non .staff-profile-card {
+  border-left-color: #0f766e;
 }
 
 .staff-directory-intro {
-  color: #4b5563;
+  margin-bottom: 0.35rem;
+  color: #475569;
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 
+.staff-empty--compact {
+  padding: 0.65rem 0.6rem;
+  margin-bottom: 0;
+}
+
+.staff-directory-card {
+  margin-top: 0 !important;
+}
+
+/* CMS HTML inside card */
+.staff-page--immersive .staff-surface--cms h2 {
+  color: #0f172a;
+  font-size: clamp(1.2rem, 3.2vw, 1.55rem);
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: clamp(0.4rem, 1.2vw, 0.65rem);
+  letter-spacing: -0.02em;
+}
+
+.staff-page--immersive .staff-surface--cms h3 {
+  color: #1e3a8a;
+  font-size: clamp(0.95rem, 2.6vw, 1.15rem);
+  font-weight: 700;
+  margin-top: clamp(0.75rem, 2vw, 1.1rem);
+  margin-bottom: clamp(0.3rem, 1vw, 0.45rem);
+  padding-bottom: 0.22rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.staff-page--immersive .staff-surface--cms p,
+.staff-page--immersive .staff-surface--cms li {
+  color: #334155;
+  line-height: 1.6;
+}
+
+.staff-page--immersive .staff-surface--cms a {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+/* Profile grid — fills wide container */
 .staff-grid-public {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 0.9rem;
-  margin: 0.5rem 0 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
+  gap: clamp(0.45rem, 1.4vw, 0.72rem);
+  margin: 0.45rem 0 0;
+}
+
+@media (min-width: 900px) {
+  .staff-grid-public {
+    grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+  }
 }
 
 .staff-profile-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 0;
-  padding: 0.85rem;
+  border-left: 3px solid #1e3a8a;
+  padding: 0.65rem 0.65rem;
   background: #fff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 
 .profile-head {
   display: grid;
   grid-template-columns: var(--profile-photo-size) 1fr;
-  gap: 0.7rem;
+  gap: 0.55rem;
   align-items: center;
 }
 
@@ -172,22 +292,21 @@
   padding: 0;
   position: relative;
   border-radius: 0;
-  background: #e5e7eb; /* outer frame */
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  background: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
   overflow: hidden;
   display: block;
-
-  --mat-inset: clamp(4px, 1.25vw, 7px);
-  --photo-inset: clamp(7px, 1.8vw, 11px);
+  --mat-inset: clamp(3px, 1vw, 6px);
+  --photo-inset: clamp(5px, 1.5vw, 9px);
 }
 
 .profile-photo-frame::before {
   content: '';
   position: absolute;
   inset: var(--mat-inset);
-  background: #ffffff; /* inner mat */
+  background: #ffffff;
   border-radius: 0;
-  box-shadow: inset 0 0 0 2px #f3f4f6; /* subtle inner border */
+  box-shadow: inset 0 0 0 2px #f1f5f9;
 }
 
 .profile-photo-inner {
@@ -198,53 +317,57 @@
   object-fit: cover;
   display: block;
   background: #ffffff;
-  box-shadow: inset 0 0 0 1px #d1d5db; /* thin border around the photo */
+  box-shadow: inset 0 0 0 1px #cbd5e1;
 }
 
 .profile-photo-placeholder {
   display: grid;
   place-items: center;
-  color: #6b7280;
+  color: #64748b;
   font-size: 1.35rem;
   background: #ffffff;
 }
 
 .profile-head h4 {
   margin: 0;
-  font-size: 1rem;
-  color: #111827;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
 .profile-head .role {
-  margin: 0.15rem 0 0;
-  color: #4b5563;
-  font-size: 0.92rem;
+  margin: 0.12rem 0 0;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .profile-body {
-  margin-top: 0.55rem;
+  margin-top: 0.45rem;
   display: grid;
-  gap: 0.2rem;
-  color: #1f2937;
-  font-size: 0.92rem;
+  gap: 0.28rem;
+  color: #1e293b;
+  font-size: 0.8125rem;
 }
 
 .profile-body .summary {
-  margin-top: 0.35rem;
-  color: #374151;
+  margin-top: 0.28rem;
+  color: #334155;
+  line-height: 1.45;
 }
 
 .profile-body div {
-  border: 1px solid #f0f2f5;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 0;
-  padding: 0.35rem 0.5rem;
-  background: #fafafa;
+  padding: 0.3rem 0.45rem;
+  background: #f8fafc;
 }
 
 .profile-body a {
-  color: #1a5490;
+  color: #1e40af;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .profile-body a:hover {
@@ -252,110 +375,33 @@
 }
 
 .staff-empty {
-  border: 1px dashed #d1d5db;
+  border: 1px dashed rgba(100, 116, 139, 0.45);
   border-radius: 0;
-  padding: 1.5rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
+  padding: 0.85rem 0.75rem;
+  color: #475569;
+  margin-bottom: 0.5rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.45rem;
+  background: rgba(241, 245, 249, 0.6);
 }
 
 .staff-empty i {
-  font-size: 2rem;
-  opacity: 0.5;
+  font-size: 1.35rem;
+  opacity: 0.55;
+  color: #64748b;
 }
 
-/* ===========================================
-   RESPONSIVE DESIGN - MOBILE FIRST APPROACH
-   =========================================== */
-
-/* Extra Small Devices (phones, 320px and up) */
-@media (min-width: 320px) {
-  .staff-page {
-    padding: 1rem 0;
-  }
-
-  .staff-page .content-card {
-    padding: 1.25rem;
-    margin: 0;
-    max-width: 100%;
-  }
-
-  .staff-page .content-card h2 {
-    font-size: clamp(1.5rem, 6vw, 1.75rem);
-    margin-bottom: 1.25rem;
-    line-height: 1.3;
-  }
-
-  .staff-page .content-card h3 {
-    font-size: clamp(1.25rem, 5vw, 1.5rem);
-    margin-top: 1.5rem;
-    margin-bottom: 0.875rem;
-    line-height: 1.4;
-  }
-
-  .staff-page .content-card p {
-    font-size: clamp(0.9375rem, 3.5vw, 1rem);
-    line-height: 1.7;
-  }
-
-  .staff-page .content-card ul {
-    padding-left: 1.5rem;
-  }
-
-  .staff-page .content-card li {
-    font-size: clamp(0.9375rem, 3.5vw, 1rem);
-    line-height: 1.7;
+@media (max-width: 768px) {
+  .staff-page.staff-page--immersive {
+    padding: 0.85rem var(--public-content-pad-x, 0.65rem) 1.25rem;
   }
 }
 
-/* Small Devices (landscape phones, 480px and up) */
-@media (min-width: 480px) {
-  .staff-page {
-    padding: 1.5rem 0;
-  }
-
-  .staff-page .content-card {
-    padding: 1.5rem;
-    margin: 0;
-    max-width: 100%;
+@media (hover: none) and (pointer: coarse) {
+  .staff-profile-card {
+    min-height: 44px;
   }
 }
-
-/* Medium Devices (tablets, 640px and up) */
-@media (min-width: 640px) {
-  .staff-page .content-card {
-    padding: 2rem;
-    margin: 0;
-    max-width: 100%;
-  }
-}
-
-/* Large Devices (tablets landscape, 768px and up) */
-@media (min-width: 768px) {
-  .staff-page {
-    padding: 2rem 0;
-  }
-
-  .staff-page .content-card {
-    padding: 2.5rem;
-    max-width: 100%;
-  }
-
-  .staff-page .content-card h2 {
-    font-size: 2rem;
-  }
-
-  .staff-page .content-card h3 {
-    font-size: 1.75rem;
-  }
-
-  .staff-page .content-card p {
-    font-size: 1.0625rem;
-  }
-}
-

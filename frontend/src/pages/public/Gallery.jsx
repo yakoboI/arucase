@@ -10,7 +10,6 @@ import Loading from '../../components/common/Loading';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import { getImageLoadingStrategy, getNetworkInfo } from '../../utils/networkUtils';
 import { resolveStaticUrl } from '../../utils/backendUrl';
-import '../../components/public/Gallery.css';
 import './GalleryPage.css';
 
 const Gallery = () => {
@@ -110,77 +109,92 @@ const Gallery = () => {
   // Show skeleton loader instead of blocking page - better UX
   // Content will appear progressively as it loads
 
+  const pageShell = (children) => (
+    <div className="gallery-page gallery-page--immersive">
+      <div className="gallery-page__bg" aria-hidden />
+      <div className="gallery-page__inner">{children}</div>
+    </div>
+  );
+
+  const hero = (
+    <header className="content-card gallery-surface gallery-surface--hero">
+      <p className="gallery-hero__eyebrow">Seminari ya Kikatoliki Arusha</p>
+      <h1 className="gallery-hero__title">
+        <i className="fas fa-images" aria-hidden />
+        Galeria ya Picha
+      </h1>
+      <p className="gallery-hero__lead">
+        Tazama mkusanyiko wa picha zinazoonesha maisha ya Seminari ya Kikatoliki Arusha.
+      </p>
+    </header>
+  );
+
   if (error) {
     return (
       <PublicLayout>
-        <div className="gallery-page-container">
-          <div className="error-message">
-            <i className="fas fa-exclamation-circle"></i>
-            <p>Imeshindikana kupakia picha za galeria. Angalia mtandao wako kisha ujaribu tena.</p>
-            <button
-              type="button"
-              className="gallery-retry-btn"
-              onClick={() => refetch()}
-            >
-              <i className="fas fa-sync-alt"></i> Jaribu Tena
-            </button>
-          </div>
-        </div>
+        {pageShell(
+          <>
+            {hero}
+            <div className="content-card gallery-surface gallery-surface--notice">
+              <div className="gallery-error-inner">
+                <i className="fas fa-exclamation-circle" aria-hidden />
+                <p>Imeshindikana kupakia picha za galeria. Angalia mtandao wako kisha ujaribu tena.</p>
+                <button type="button" className="gallery-retry-btn" onClick={() => refetch()}>
+                  <i className="fas fa-sync-alt" aria-hidden /> Jaribu Tena
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </PublicLayout>
     );
   }
 
   return (
     <PublicLayout>
-      <div className="gallery-page-container">
-        <div className="gallery-page-header">
-          <h1>
-            <i className="fas fa-images"></i>
-            Galeria ya Picha
-          </h1>
-          <p>Tazama mkusanyiko wa picha zinazoonesha maisha ya Seminari ya Kikatoliki Arusha.</p>
-        </div>
+      {pageShell(
+        <>
+          {hero}
 
-        {/* Category Filter */}
-        {categories.length > 1 && (
-          <div className="gallery-filters">
-            {categories.map((category) => (
-              <button
-                type="button"
-                key={category}
-                className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setSelectedPhoto(null);
-                }}
-              >
-                {formatCategory(category)}
-                {category !== 'all' && (
-                  <span className="filter-count">
-                    ({photos.filter(p => (p.category || 'general') === category).length})
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
+          {categories.length > 1 && (
+            <div className="content-card gallery-surface gallery-surface--filters">
+              <div className="gallery-filters" role="toolbar" aria-label="Chuja kategoria">
+                {categories.map((category) => (
+                  <button
+                    type="button"
+                    key={category}
+                    className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCategory(category);
+                      setSelectedPhoto(null);
+                    }}
+                  >
+                    {formatCategory(category)}
+                    {category !== 'all' && (
+                      <span className="filter-count">
+                        ({photos.filter((p) => (p.category || 'general') === category).length})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
         {/* Gallery Grid */}
-        {isLoading && filteredPhotos.length === 0 ? (
-          <SkeletonLoader type="gallery" />
-        ) : filteredPhotos.length === 0 ? (
-          <div className="empty-gallery">
-            <i className="fas fa-images"></i>
-            <p>Galeria bado haina picha. Tafadhali tembelea tena baadaye.</p>
-            <button
-              type="button"
-              className="gallery-retry-btn"
-              onClick={() => setSelectedCategory('all')}
-            >
-              <i className="fas fa-layer-group"></i> Onesha Picha Zote
-            </button>
-          </div>
-        ) : (
+          {isLoading && filteredPhotos.length === 0 ? (
+            <SkeletonLoader type="gallery" />
+          ) : filteredPhotos.length === 0 ? (
+            <div className="content-card gallery-surface gallery-surface--notice">
+              <div className="gallery-empty-inner">
+                <i className="fas fa-images" aria-hidden />
+                <p>Galeria bado haina picha. Tafadhali tembelea tena baadaye.</p>
+                <button type="button" className="gallery-retry-btn" onClick={() => setSelectedCategory('all')}>
+                  <i className="fas fa-layer-group" aria-hidden /> Onesha Picha Zote
+                </button>
+              </div>
+            </div>
+          ) : (
           <div className="gallery-grid">
             {filteredPhotos.map((photo, index) => (
               <div
@@ -237,18 +251,9 @@ const Gallery = () => {
               </div>
             ))}
           </div>
-        )}
+          )}
 
-        {/* Photo Count */}
-        <div className="gallery-stats">
-          <p>
-            Inaonesha picha {filteredPhotos.length}
-            {selectedCategory !== 'all' && ` katika ${formatCategory(selectedCategory)}`}
-          </p>
-        </div>
-
-        {/* Lightbox Modal */}
-        {selectedPhoto && (
+          {selectedPhoto && (
           <div className="lightbox" onClick={() => setSelectedPhoto(null)}>
             <button
               type="button"
@@ -317,8 +322,9 @@ const Gallery = () => {
               )}
             </div>
           </div>
-        )}
-      </div>
+          )}
+        </>
+      )}
     </PublicLayout>
   );
 };
