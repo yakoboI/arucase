@@ -4,7 +4,7 @@
 /* Homepage — width tokens (all card grids derive from these) */
 .homepage {
   --home-gutter: clamp(0.75rem, 4vw, 2.5rem);
-  --home-content-max: min(1200px, calc(100vw - 2 * var(--home-gutter)));
+  --home-content-max: min(100%, calc(100vw - 2 * var(--home-gutter)));
   --home-grid-gap: clamp(0.65rem, 2vw, 1.25rem);
   --home-frame-border: 1px solid rgba(15, 23, 42, 0.14);
   --home-frame-shadow: 4px 4px 0 rgba(15, 23, 42, 0.08);
@@ -409,7 +409,7 @@
   width: 100%;
   max-width: var(--home-content-max);
   margin: 0 auto;
-  padding: 0 var(--home-gutter);
+  padding: 0;
   box-sizing: border-box;
   min-width: 0;
 }
@@ -491,8 +491,8 @@
   margin: 0 auto;
   width: 100%;
   min-width: 0;
-  padding-left: var(--home-gutter);
-  padding-right: var(--home-gutter);
+  padding-left: 0;
+  padding-right: 0;
   box-sizing: border-box;
 }
 
@@ -834,8 +834,8 @@
   width: 100%;
   max-width: var(--home-content-max);
   margin: 0 auto;
-  padding-left: var(--home-gutter);
-  padding-right: var(--home-gutter);
+  padding-left: 0;
+  padding-right: 0;
   box-sizing: border-box;
 }
 
@@ -1058,7 +1058,7 @@
 }
 
 .home-faq__inner {
-  max-width: min(800px, var(--home-content-max));
+  max-width: var(--home-content-max);
 }
 
 .home-faq-list {
@@ -1446,8 +1446,8 @@
   max-width: var(--home-content-max);
   margin: 0 auto;
   width: 100%;
-  padding-left: var(--home-gutter);
-  padding-right: var(--home-gutter);
+  padding-left: 0;
+  padding-right: 0;
   box-sizing: border-box;
 }
 
