@@ -438,9 +438,21 @@ app.use('/api/preformone-promotion', preFormOnePromotionRoutes);
 app.use('/api/system', systemGradesRoutes);
 app.use('/api/cloudinary', require('./routes/cloudinary-signature'));
 
+const staffPresence = require('./utils/staffPresence');
+staffPresence.setIO(io);
+
+function getSocketAuthToken(socket) {
+  const fromAuth = socket.handshake.auth?.token;
+  if (fromAuth) return String(fromAuth).replace(/^Bearer\s+/i, '').trim();
+  const rawCookie = socket.handshake.headers?.cookie;
+  if (!rawCookie) return null;
+  const match = rawCookie.match(/(?:^|;\s*)token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 // Socket.IO authentication middleware
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
+  const token = getSocketAuthToken(socket);
   const jwt = require('jsonwebtoken');
   const { JWT_SECRET } = require('./middleware/auth');
 
@@ -448,8 +460,7 @@ io.use((socket, next) => {
     return next(new Error('Authentication error: No token provided'));
   }
 
-  // Remove 'Bearer ' prefix if present
-  const actualToken = token.replace('Bearer ', '');
+  const actualToken = token;
 
   try {
     const decoded = jwt.verify(actualToken, JWT_SECRET);
@@ -468,9 +479,13 @@ io.use((socket, next) => {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id, 'User:', socket.user?.username);
-  
+  const userId = socket.user?.user_id || socket.user?.username;
+  console.log('Client connected:', socket.id, 'User:', userId);
+  staffPresence.registerSocket(socket);
+  socket.emit('presence:online-count', { count: staffPresence.getOnlineCount() });
+
   socket.on('disconnect', () => {
+    staffPresence.unregisterSocket(socket.id);
     console.log('Client disconnected:', socket.id);
   });
 });

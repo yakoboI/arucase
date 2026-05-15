@@ -24,12 +24,14 @@ export const SocketProvider = ({ children }) => {
       if (!wsUrl) {
         return undefined;
       }
+      const token = localStorage.getItem('token');
       const newSocket = io(wsUrl, {
         transports: ['websocket'],
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 3,
-        withCredentials: true, // Include cookies for authentication
+        withCredentials: true,
+        auth: token ? { token } : {},
       });
 
       newSocket.on('connect', () => {

@@ -233,6 +233,29 @@ router.get('/me',
   }
 });
 
+const staffPresence = require('../utils/staffPresence');
+
+// Live count of logged-in staff (sidebar); heartbeat every ~60s from clients
+router.get('/presence/online-count', requireAuth, (req, res) => {
+  try {
+    const userId = req.user?.user_id || req.user?.username;
+    if (userId) staffPresence.recordHeartbeat(userId);
+    res.json({ count: staffPresence.getOnlineCount() });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
+router.post('/presence/heartbeat', requireAuth, (req, res) => {
+  try {
+    const userId = req.user?.user_id || req.user?.username;
+    const count = staffPresence.recordHeartbeat(userId);
+    res.json({ count });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+});
+
 // Logout
 router.post('/logout', async (req, res) => {
   try {

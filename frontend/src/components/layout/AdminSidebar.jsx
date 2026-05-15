@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import SidebarOnlinePresence from './SidebarOnlinePresence';
 import './AdminSidebar.css';
 
 /** Matches routes that use `requiredAdmin` (subjects, etc.) — not all leadership roles. */
@@ -362,6 +363,8 @@ const AdminSidebar = () => {
             })}
           </div>
         </nav>
+
+        <SidebarOnlinePresence collapsed={sidebarCollapsed} />
 
         {/* User Info & Logout */}
         <div className="sidebar-footer">
