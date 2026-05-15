@@ -1,3 +1,330 @@
-/* Import common public page styles */
 @import '../../styles/public-common.css';
 
+/* ---- About page: grey shell + sharp cards (aligned with admissions / student-life) ---- */
+
+.about-page {
+  --about-gutter: clamp(0.75rem, 4vw, 3rem);
+  --about-inner-max: min(1680px, 100%);
+  --about-page-bg: #e8eaed;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  background: var(--about-page-bg);
+  padding: clamp(1rem, 3vw, 2rem) var(--about-gutter) clamp(1.5rem, 4vw, 2.5rem);
+  overflow-x: hidden;
+}
+
+/* Hero */
+.about-hero {
+  width: 100%;
+  max-width: var(--about-inner-max);
+  margin: 0 auto clamp(1rem, 2.5vw, 1.75rem);
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  padding: clamp(1.25rem, 3.5vw, 2rem);
+  box-sizing: border-box;
+  border-left: 4px solid #1e40af;
+}
+
+.about-hero__inner {
+  max-width: 62rem;
+}
+
+.about-hero__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1a5490;
+}
+
+.about-hero__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.12;
+}
+
+.about-hero__lead {
+  margin: 0;
+  font-size: clamp(1rem, 2.4vw, 1.125rem);
+  line-height: 1.65;
+  color: #475569;
+  max-width: 56ch;
+}
+
+/* Card stack — one card per row */
+.about-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--about-inner-max);
+  margin: 0 auto clamp(1rem, 2.5vw, 1.75rem);
+  gap: clamp(1rem, 2.2vw, 1.75rem);
+  min-width: 0;
+}
+
+/* Tunu za Msingi — each value is its own card in a responsive sub-grid */
+.about-values-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: clamp(0.75rem, 2vw, 1rem);
+  width: 100%;
+}
+
+.about-card {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  padding: clamp(1.15rem, 2.8vw, 1.65rem);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.about-card--compact {
+  padding: clamp(0.9rem, 2.5vw, 1.15rem);
+}
+
+.about-card--compact .about-card__head {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.about-card--compact .about-card__title {
+  font-size: 1rem;
+}
+
+.about-card--stripe-blue {
+  border-left: 4px solid #1e40af;
+}
+
+.about-card--stripe-slate {
+  border-left: 4px solid #475569;
+}
+
+.about-card--stripe-green {
+  border-left: 4px solid #059669;
+}
+
+.about-card--stripe-violet {
+  border-left: 4px solid #7c3aed;
+}
+
+.about-card--stripe-navy {
+  border-left: 4px solid #1e3a5f;
+}
+
+.about-card--stripe-gold {
+  border-left: 4px solid #b45309;
+}
+
+.about-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.about-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #f8fafc;
+  color: #1a5490;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.about-card__title {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.about-card__intro {
+  margin: 0 0 0.85rem;
+  line-height: 1.65;
+  color: #475569;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+.about-card__text {
+  margin: 0;
+  line-height: 1.7;
+  color: #334155;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+.about-card__text--highlight {
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border-left: 3px solid #1e40af;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.about-card__text strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* CMS HTML from admin */
+.about-card--cms {
+  border-left: 4px solid #1e40af;
+}
+
+.about-card__cms-body h1,
+.about-card--cms h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  margin: 0 0 1rem;
+  color: #0f172a;
+}
+
+.about-card__cms-body h2,
+.about-card--cms h2 {
+  font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+  margin: 1.5rem 0 0.75rem;
+  color: #1e293b;
+}
+
+.about-card__cms-body h3,
+.about-card--cms h3 {
+  font-size: clamp(1.05rem, 3vw, 1.25rem);
+  margin: 1.25rem 0 0.5rem;
+  color: #334155;
+}
+
+.about-card__cms-body p,
+.about-card__cms-body li,
+.about-card--cms p,
+.about-card--cms li {
+  line-height: 1.7;
+  color: #334155;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+.about-card__cms-body ul,
+.about-card__cms-body ol,
+.about-card--cms ul,
+.about-card--cms ol {
+  margin: 0.75rem 0 1rem;
+  padding-left: 1.35rem;
+}
+
+.about-card__cms-body a,
+.about-card--cms a {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+/* Related links */
+.about-related {
+  width: 100%;
+  max-width: var(--about-inner-max);
+  margin: 0 auto;
+}
+
+.about-related__inner {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  padding: clamp(1.15rem, 2.8vw, 1.65rem);
+  box-sizing: border-box;
+}
+
+.about-related__title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+}
+
+.about-related__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+  gap: 0.65rem;
+}
+
+.about-related-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.85rem 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 2px 2px 0 rgba(15, 23, 42, 0.06);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  min-height: 5.5rem;
+  min-width: 0;
+}
+
+.about-related-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 rgba(15, 23, 42, 0.1);
+  border-color: #94a3b8;
+}
+
+.about-related-card__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  background: #1e40af;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+}
+
+.about-related-card__label {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #0f172a;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.about-related-card__sub {
+  font-size: 0.65rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 768px) {
+  .about-page {
+    --about-gutter: max(0.65rem, 3.5vw);
+  }
+
+  .about-values-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .about-related__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .about-card,
+  .about-hero,
+  .about-related__inner {
+    box-shadow: 3px 3px 0 rgba(15, 23, 42, 0.08);
+  }
+}
+
+@media (max-width: 400px) {
+  .about-related__grid {
+    grid-template-columns: 1fr;
+  }
+}
