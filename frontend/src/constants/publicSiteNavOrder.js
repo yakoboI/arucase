@@ -1,6 +1,6 @@
 /**
  * Linear order for public-site Previous / Next navigation.
- * Matches PublicHeader: Shule Yetu → Wanafunzi (dropdown order) → Habari → Elimu ya Kikatoliki → Sera.
+ * Matches PublicHeader: Shule Yetu → Wanafunzi (dropdown order) → Habari → Sera.
  * Wanafunzi menu: Udahili → Maisha → Ripoti za Mwanafunzi → Ada; Habari: Picha → Matangazo.
  * `/student-report` and `/student/dashboard` are appended after the main tour so Mbele from Ada ya Shule
  * goes to Picha, and Nyuma from Picha returns to Ada (they are not between Ada and Picha in the header).
@@ -17,7 +17,6 @@ export const PUBLIC_SITE_NAV_ORDER = [
   { path: '/school-fee', label: 'Ada ya Shule' },
   { path: '/gallery', label: 'Picha' },
   { path: '/announcements', label: 'Matangazo' },
-  { path: '/catholic-education', label: 'Elimu ya Kikatoliki' },
   { path: '/privacy-policy', label: 'Sera ya Faragha' },
   { path: '/student-report', label: 'Ripoti ya Mwanafunzi' },
   { path: '/student/dashboard', label: 'Dashibodi ya Mwanafunzi' },

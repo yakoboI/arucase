@@ -95,12 +95,6 @@ const PUBLIC_ROUTE_SEO = {
     description: 'Staff portal login for Arusha Catholic Seminary school management system.',
     ogImageAlt: 'Staff login — Arusha Catholic Seminary',
   },
-  '/catholic-education': {
-    title: `Catholic Education | ${SITE_NAME}`,
-    description:
-      'Catholic education, faith formation, and academic life at Arusha Catholic Seminary — O-Level and A-Level in Oldonyosambu, Arusha, Tanzania.',
-    ogImageAlt: 'Catholic education at Arusha Catholic Seminary',
-  },
 };
 
 const DEFAULT_DESCRIPTION =
@@ -136,7 +130,6 @@ function breadcrumbListForPath(pathname) {
     '/contact': [h, { name: 'Contact', item: `${BASE_URL}/contact` }],
     '/privacy-policy': [h, { name: 'Privacy policy', item: `${BASE_URL}/privacy-policy` }],
     '/student-login': [h, { name: 'Student login', item: `${BASE_URL}/student-login` }],
-    '/catholic-education': [h, { name: 'Catholic education', item: `${BASE_URL}/catholic-education` }],
   };
   return trails[pathname] || null;
 }

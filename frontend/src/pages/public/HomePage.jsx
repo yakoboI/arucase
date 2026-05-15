@@ -1,265 +1,650 @@
 /**
- * Homepage - Full Functionality with API Integration
- * Note: Announcements and Gallery sections have been removed from homepage
+ * Homepage — hero, discovery hub, news, gallery, leadership, FAQ, contact.
+ * Markup uses only standard HTML elements (div, section, etc.) — no <motion> tags.
  */
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
+import { DEFAULT_GOOGLE_MAPS_LOCATION } from '../../constants/defaultGoogleMapsLocation';
 import './HomePage.css';
+
+const QUICK_LINKS = [
+  { path: '/about', label: 'Kuhusu Sisi', sub: 'About us', icon: 'fa-info-circle' },
+  { path: '/admissions', label: 'Udahili', sub: 'Admissions', icon: 'fa-user-plus' },
+  { path: '/necta-results', label: 'Matokeo NECTA', sub: 'Exam results', icon: 'fa-certificate' },
+  { path: '/school-fee', label: 'Ada ya Shule', sub: 'School fees', icon: 'fa-money-bill-wave' },
+  { path: '/student-life', label: 'Maisha ya Wanafunzi', sub: 'Student life', icon: 'fa-heart' },
+  { path: '/contact', label: 'Mawasiliano', sub: 'Contact', icon: 'fa-envelope' },
+];
+
+const PROGRAMS = [
+  {
+    icon: 'fa-book-open',
+    title: 'O-Level (Form I–IV)',
+    titleSw: 'Kidato cha I–IV',
+    text: 'Rigorous Catholic secondary education with NECTA preparation and spiritual formation.',
+    textSw: 'Elimu bora ya sekondari ya Kikatoliki na maandalizi ya mitihani ya NECTA.',
+  },
+  {
+    icon: 'fa-graduation-cap',
+    title: 'A-Level (Form V–VI)',
+    titleSw: 'Kidato cha V–VI',
+    text: 'Advanced studies for students pursuing higher academic and vocational paths.',
+    textSw: 'Masomo ya juu kwa wanafunzi wanaoelekea elimu ya chuo na taaluma.',
+  },
+  {
+    icon: 'fa-church',
+    title: 'Spiritual Formation',
+    titleSw: 'Malezi ya Kiroho',
+    text: 'Prayer, sacraments, and discipleship at St. Thomas Aquinas Seminary, Oldonyosambu.',
+    textSw: 'Sala, sakramenti, na uanafunzi katika Seminari ya Mt. Thomas Aquinas, Oldonyosambu.',
+  },
+];
+
+function stripHtml(html) {
+  if (!html) return '';
+  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] }).trim();
+}
+
+function excerpt(text, max = 140) {
+  const plain = stripHtml(text);
+  if (plain.length <= max) return plain;
+  return `${plain.slice(0, max).trim()}…`;
+}
+
+function formatAnnouncementDate(createdAt) {
+  if (!createdAt) return '';
+  try {
+    return new Date(createdAt).toLocaleDateString('sw-TZ', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
 
 const HomePage = () => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [failedImages, setFailedImages] = useState(new Set());
   const [selectedAdmin, setSelectedAdmin] = useState(null);
-  
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState(null);
+
   const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
-  
-  // Fetch homepage data
-  const { data, isLoading, error } = useQuery({
+
+  const { data, isLoading } = useQuery({
     queryKey: ['homepage'],
     queryFn: async () => {
       try {
         const res = await publicAPI.getHomepage();
-        // Axios returns { data: {...}, status: 200, ... }; use res.data
         return res.data;
-      } catch (err) {
-        // Handle errors gracefully
-        // Return empty data structure to prevent crashes
+      } catch {
         return {
           settings: {},
           gallery_photos: [],
           faqs: [],
           administrators: [],
-          announcements: []
+          announcements: [],
+          school_stats: { graduates_since_1967: 0, current_students: 0, academic_year: null },
         };
       }
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes - increased for better caching
+    staleTime: 10 * 60 * 1000,
     retry: 1,
     retryOnMount: false,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 
-  // queryFn returns res.data (homepage payload), not the full Axios response
   const actualData = data && typeof data === 'object' ? data : {};
-  
-  const { settings, gallery_photos, administrators } = actualData;
+  const {
+    settings = {},
+    gallery_photos = [],
+    faqs = [],
+    administrators = [],
+    announcements = [],
+    school_stats = {},
+  } = actualData;
 
-  // Filter out failed images from carousel
+  const schoolName = settings?.school_name || 'ARUSHA CATHOLIC SEMINARY';
+  const rectorStatement =
+    settings?.rector_statement ||
+    '"Let us make Our Seminary Great and Green Again" - Father Moses Peter Assey - The Rector';
+
+  const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
+  const contactPhone = settings?.contact_phone || '+255 123 456 789';
+  const contactWhatsapp = settings?.contact_whatsapp || '255123456789';
+  const contactAddress =
+    settings?.contact_address || 'Oldonyosambu, Arusha, Tanzania';
+  const socialLocation = settings?.social_location || DEFAULT_GOOGLE_MAPS_LOCATION;
+  const whatsappUrl = `https://wa.me/${contactWhatsapp.replace(/[+\s]/g, '')}`;
+
+  const formatStat = useCallback((value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0) return '—';
+    return n.toLocaleString('en-US');
+  }, []);
+
   const validGalleryPhotos = useMemo(() => {
-    return gallery_photos?.filter(photo => {
-      const imageUrl = getImageUrl(photo.path);
-      return !failedImages.has(imageUrl);
-    }) || [];
+    return (
+      gallery_photos?.filter((photo) => {
+        const imageUrl = getImageUrl(photo.path);
+        return !failedImages.has(imageUrl);
+      }) || []
+    );
   }, [gallery_photos, failedImages, getImageUrl]);
 
-  // Handle image load errors in carousel
+  const carouselPhotos = useMemo(
+    () => validGalleryPhotos.slice(0, Math.min(10, validGalleryPhotos.length)),
+    [validGalleryPhotos]
+  );
+
+  const galleryPreviewPhotos = useMemo(
+    () => validGalleryPhotos.slice(0, 6),
+    [validGalleryPhotos]
+  );
+
+  const previewAnnouncements = useMemo(
+    () => (announcements || []).slice(0, 3),
+    [announcements]
+  );
+
+  const displayFaqs = useMemo(() => (faqs || []).slice(0, 5), [faqs]);
+
   const handleImageError = useCallback((imageUrl) => {
     if (imageUrl) {
-      setFailedImages(prev => new Set([...prev, imageUrl]));
+      setFailedImages((prev) => new Set([...prev, imageUrl]));
     }
   }, []);
 
-  // Get rector statement from settings or use default
-  const rectorStatement = useMemo(() => {
-    return settings?.rector_statement || 
-      '"Let us make Our Seminary Great and Green Again" - Father Moses Peter Assey - The Rector';
-  }, [settings?.rector_statement]);
-
-  // Auto-rotate carousel (with error handling)
   useEffect(() => {
-    if (!validGalleryPhotos || validGalleryPhotos.length === 0) return;
-    
-    try {
-      const interval = setInterval(() => {
-        try {
-          setCarouselIndex((prev) => {
-            const maxIndex = Math.min(validGalleryPhotos.length, 10) - 1;
-            return prev >= maxIndex ? 0 : prev + 1;
-          });
-        } catch (err) {
-          // Silently handle carousel index errors
-        }
-      }, 4000); // Change image every 4 seconds
+    if (!carouselPhotos.length) return;
+    const interval = setInterval(() => {
+      setCarouselIndex((prev) => {
+        const maxIndex = carouselPhotos.length - 1;
+        return prev >= maxIndex ? 0 : prev + 1;
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [carouselPhotos.length]);
 
-      return () => {
-        try {
-          clearInterval(interval);
-        } catch (err) {
-          // Silently handle cleanup errors
-        }
-      };
-    } catch (err) {
-        // Silently handle carousel setup errors
-    }
-  }, [validGalleryPhotos]);
-
-  // Close modal on Escape (VP-style "click to view")
   useEffect(() => {
-    if (!selectedAdmin) return;
-
+    if (!selectedAdmin && !selectedGalleryPhoto) return;
     const onKeyDown = (e) => {
-      if (e.key === 'Escape') setSelectedAdmin(null);
+      if (e.key === 'Escape') {
+        setSelectedAdmin(null);
+        setSelectedGalleryPhoto(null);
+      }
     };
-
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selectedAdmin]);
+  }, [selectedAdmin, selectedGalleryPhoto]);
+
+  const academicYear = school_stats?.academic_year || new Date().getFullYear();
 
   return (
     <PublicLayout>
       <div className="homepage">
-        {/* Hero Section with Carousel */}
-        <section className="main-content">
-          {/* Carousel Background */}
+        {/* —— Hero —— */}
+        <section className="main-content" aria-label="Ukurasa wa mwanzo">
           <div className="hero-carousel">
-            {isLoading && validGalleryPhotos.length === 0 ? (
+            {isLoading && carouselPhotos.length === 0 ? (
               <SkeletonLoader type="image" height="400px" />
-            ) : validGalleryPhotos && validGalleryPhotos.length > 0 ? (
+            ) : carouselPhotos.length > 0 ? (
               <>
                 <div className="carousel-wrapper">
-                  {validGalleryPhotos.slice(0, Math.min(10, validGalleryPhotos.length)).map((photo, index) => {
+                  {carouselPhotos.map((photo, index) => {
                     const imageUrl = getImageUrl(photo.path);
                     const isActive = index === carouselIndex;
-                    const shouldLoad = isActive || Math.abs(index - carouselIndex) <= 1; // Load current and adjacent images
+                    const shouldLoad = isActive || Math.abs(index - carouselIndex) <= 1;
+                    const slideAlt =
+                      photo.caption ||
+                      `${schoolName} — picha ya seminari ${index + 1}`;
                     return (
                       <div
                         key={photo.id || index}
                         className={`carousel-slide ${isActive ? 'active' : ''}`}
                         style={{
-                          backgroundImage: shouldLoad && imageUrl ? `url("${imageUrl}")` : 'none',
-                          backgroundColor: imageUrl ? 'transparent' : 'transparent',
+                          backgroundImage:
+                            shouldLoad && imageUrl ? `url("${imageUrl}")` : 'none',
                         }}
                       >
                         {shouldLoad && imageUrl && (
                           <>
-                            {/* Preload image to check if it exists - dimensions hint to reduce layout shift */}
                             <img
                               src={imageUrl}
-                              alt=""
+                              alt={slideAlt}
                               width={1200}
                               height={600}
                               style={{ display: 'none' }}
                               loading={isActive ? 'eager' : 'lazy'}
                               onError={() => handleImageError(imageUrl)}
                               onLoad={() => {
-                                // Image loaded successfully, remove from failed set if it was there
-                                setFailedImages(prev => {
-                                  const newSet = new Set(prev);
-                                  newSet.delete(imageUrl);
-                                  return newSet;
+                                setFailedImages((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(imageUrl);
+                                  return next;
                                 });
                               }}
                             />
-                            <div className="carousel-overlay"></div>
+                            <div className="carousel-overlay" aria-hidden />
                           </>
                         )}
                       </div>
                     );
                   })}
                 </div>
-                {/* Always show indicators if there are photos */}
-                {validGalleryPhotos.length > 0 && (
+                {carouselPhotos.length > 1 && (
                   <div className="carousel-indicators">
-                    {validGalleryPhotos.slice(0, Math.min(10, validGalleryPhotos.length)).map((_, index) => (
+                    {carouselPhotos.map((_, index) => (
                       <button
                         key={index}
+                        type="button"
                         className={`carousel-indicator ${index === carouselIndex ? 'active' : ''}`}
                         onClick={() => setCarouselIndex(index)}
-                        aria-label={`Go to slide ${index + 1}`}
+                        aria-label={`Nenda kwenye picha ${index + 1}`}
                       />
                     ))}
                   </div>
                 )}
               </>
             ) : (
-              <div className="hero-fallback-background">
-                {/* Banner is still visible with gradient background when no photos */}
-              </div>
+              <div className="hero-fallback-background" aria-hidden />
             )}
           </div>
 
-          {/* Staff sign-in — scoped styles in HomePage.css (.hero-ofisi-link); avoids .login-button clash with StudentLogin */}
+          <div className="hero-content-overlay hero-content-overlay--cta-only">
+            <div className="hero-cta-group">
+              <Link to="/admissions/apply" className="hero-cta hero-cta--primary">
+                <i className="fas fa-pen-to-square" aria-hidden />
+                Omba Udahili
+                <span className="hero-cta-en">Apply now</span>
+              </Link>
+              <Link to="/about" className="hero-cta">
+                <i className="fas fa-info-circle" aria-hidden />
+                Kuhusu
+              </Link>
+              <Link to="/contact" className="hero-cta">
+                <i className="fas fa-envelope" aria-hidden />
+                Wasiliana
+              </Link>
+              <Link to="/student-login" className="hero-cta hero-cta--ghost">
+                <i className="fas fa-file-alt" aria-hidden />
+                Wanafunzi
+              </Link>
+            </div>
+          </div>
+
           <Link
             to="/login"
             className="hero-ofisi-link"
             aria-label="Ofisi — uingiaji wa maafisa"
           >
-            <i className="fas fa-building" aria-hidden="true"></i>
+            <i className="fas fa-building" aria-hidden />
             <span className="hero-ofisi-link__label">Ofisi</span>
           </Link>
 
-          {/* Scrolling Text at Bottom - Rector Statement */}
-          <div className="scrolling-text-bottom">
+          <div className="scrolling-text-bottom" aria-live="polite">
             <div className="scrolling-text-wrapper">
-              <div className="scrolling-text-content">
-                {rectorStatement}
-              </div>
-              <div className="scrolling-text-content">
-                {rectorStatement}
-              </div>
+              <div className="scrolling-text-content">{rectorStatement}</div>
+              <div className="scrolling-text-content">{rectorStatement}</div>
             </div>
           </div>
         </section>
 
-        {/* Administrators Section */}
-        <section className="administration-section">
+        {/* —— Stats —— */}
+        <section className="home-stats-section" aria-label="Takwimu za seminari">
+          <div className="home-stats-grid">
+            <article className="home-stat-card home-stat-card--graduates">
+              <i className="fas fa-user-graduate home-stat-icon" aria-hidden />
+              <p className="home-stat-number">
+                {isLoading ? '…' : formatStat(school_stats?.graduates_since_1967)}
+              </p>
+              <p className="home-stat-label">Wahitimu tangu 1967</p>
+              <p className="home-stat-label-en">Graduates since 1967</p>
+            </article>
+            <article className="home-stat-card home-stat-card--enrolled">
+              <i className="fas fa-users home-stat-icon" aria-hidden />
+              <p className="home-stat-number">
+                {isLoading ? '…' : formatStat(school_stats?.current_students)}
+              </p>
+              <p className="home-stat-label">Wanafunzi wa sasa</p>
+              <p className="home-stat-label-en">Current students</p>
+              {academicYear ? (
+                <p className="home-stat-meta">
+                  Mwaka wa masomo {academicYear} · Academic year
+                </p>
+              ) : null}
+            </article>
+            <article className="home-stat-card home-stat-card--year">
+              <i className="fas fa-calendar-alt home-stat-icon" aria-hidden />
+              <p className="home-stat-number">{academicYear}</p>
+              <p className="home-stat-label">Mwaka wa masomo</p>
+              <p className="home-stat-label-en">School year in progress</p>
+            </article>
+          </div>
+        </section>
+
+        {/* —— Intro —— */}
+        <section className="home-intro" aria-labelledby="home-intro-heading">
+          <div className="home-section-inner">
+            <div className="home-framed-panel">
+            <header className="home-section-header home-section-header--left">
+              <p className="home-section-eyebrow" lang="sw">
+                Karibu
+              </p>
+              <h2 id="home-intro-heading" className="home-section-title">
+                Seminari ya Kikatoliki Arusha
+              </h2>
+              <p className="home-section-subtitle" lang="en">
+                St. Thomas Aquinas Seminary · Oldonyosambu, Tanzania
+              </p>
+            </header>
+            <p className="home-intro-text" lang="sw">
+              Tangu <strong>1967</strong>, tunatoa elimu bora ya Kikatoliki na malezi ya kiroho kwa
+              vijana wa kiume wanaotamani kulitumikia Kanisa na jamii. Tunafundisha{' '}
+              <strong>Form I hadi Form VI</strong> (O-Level na A-Level) kwa ubora wa kitaaluma na
+              nidhamu.
+            </p>
+            <p className="home-intro-text home-intro-text--en" lang="en">
+              For over five decades we have formed young men in faith, academics, and service —
+              offering <strong>O-Level and A-Level</strong> programmes with NECTA excellence and
+              Catholic discipleship in the heart of Arusha.
+            </p>
+            <Link to="/about" className="home-text-link">
+              Soma zaidi kuhusu sisi
+              <i className="fas fa-arrow-right" aria-hidden />
+            </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* —— Quick links —— */}
+        <section className="home-quicklinks" aria-labelledby="home-quicklinks-heading">
+          <div className="home-section-inner">
+            <header className="home-section-header">
+              <h2 id="home-quicklinks-heading" className="home-section-title">
+                <i className="fas fa-compass" aria-hidden />
+                Gundua Seminari
+              </h2>
+              <p className="home-section-subtitle">
+                Explore key pages · Tembelea kurasa muhimu
+              </p>
+            </header>
+            <div className="home-quicklinks-grid">
+              {QUICK_LINKS.map((item) => (
+                <Link key={item.path} to={item.path} className="home-quicklink-card">
+                  <span className="home-quicklink-icon" aria-hidden>
+                    <i className={`fas ${item.icon}`} />
+                  </span>
+                  <span className="home-quicklink-label">{item.label}</span>
+                  <span className="home-quicklink-sub">{item.sub}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* —— Programs —— */}
+        <section className="home-programs" aria-labelledby="home-programs-heading">
+          <div className="home-section-inner">
+            <header className="home-section-header">
+              <h2 id="home-programs-heading" className="home-section-title">
+                <i className="fas fa-book" aria-hidden />
+                Programu za Elimu
+              </h2>
+              <p className="home-section-subtitle">
+                Educational programmes · O-Level, A-Level & formation
+              </p>
+            </header>
+            <div className="home-programs-grid">
+              {PROGRAMS.map((prog) => (
+                <article key={prog.title} className="home-program-card">
+                  <span className="home-program-icon" aria-hidden>
+                    <i className={`fas ${prog.icon}`} />
+                  </span>
+                  <h3 className="home-program-title">{prog.titleSw}</h3>
+                  <p className="home-program-title-en">{prog.title}</p>
+                  <p className="home-program-text" lang="sw">
+                    {prog.textSw}
+                  </p>
+                  <p className="home-program-text-en" lang="en">
+                    {prog.text}
+                  </p>
+                </article>
+              ))}
+            </div>
+            <div className="home-programs-foot">
+              <Link to="/necta-results" className="home-inline-cta">
+                <i className="fas fa-certificate" aria-hidden />
+                Matokeo ya NECTA (S0171)
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* —— Announcements —— */}
+        {(isLoading || previewAnnouncements.length > 0) && (
+          <section className="home-announcements" aria-labelledby="home-news-heading">
+            <div className="home-section-inner">
+              <header className="home-section-header home-section-header--row">
+                <div>
+                  <h2 id="home-news-heading" className="home-section-title">
+                    <i className="fas fa-bullhorn" aria-hidden />
+                    Matangazo
+                  </h2>
+                  <p className="home-section-subtitle">Latest news · Habari za hivi karibuni</p>
+                </div>
+                <Link to="/announcements" className="home-view-all">
+                  Angalia yote
+                  <i className="fas fa-arrow-right" aria-hidden />
+                </Link>
+              </header>
+              {isLoading ? (
+                <div className="home-announce-skeleton">
+                  <SkeletonLoader type="card" height="100px" />
+                  <SkeletonLoader type="card" height="100px" />
+                </div>
+              ) : (
+                <ul className="home-announce-list">
+                  {previewAnnouncements.map((ann) => (
+                    <li key={ann.id} className="home-announce-item">
+                      <div className="home-announce-meta">
+                        {ann.created_at && (
+                          <time dateTime={ann.created_at}>
+                            {formatAnnouncementDate(ann.created_at)}
+                          </time>
+                        )}
+                        {ann.priority && (
+                          <span
+                            className={`home-announce-priority home-announce-priority--${(ann.priority || 'normal').toLowerCase()}`}
+                          >
+                            {ann.priority}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="home-announce-title">{ann.title || 'Tangazo'}</h3>
+                      <p className="home-announce-excerpt">
+                        {excerpt(ann.content || ann.body)}
+                      </p>
+                      <Link
+                        to={`/announcements#${ann.id}`}
+                        className="home-announce-readmore"
+                      >
+                        Soma zaidi
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* —— Admissions CTA —— */}
+        <section className="home-admissions-cta" aria-labelledby="home-admissions-heading">
+          <div className="home-admissions-cta__inner">
+            <div className="home-framed-panel home-framed-panel--cta home-admissions-cta__frame">
+            <div className="home-admissions-cta__copy">
+              <p className="home-section-eyebrow">Udahili</p>
+              <h2 id="home-admissions-heading" className="home-admissions-cta__title">
+                Jiunge na Seminari Yetu
+              </h2>
+              <p className="home-admissions-cta__lead" lang="sw">
+                Tunapokea maombi kutoka kwa vijana wa kiume wenye nia ya malezi ya wito na ubora wa
+                kitaaluma. Anza safari yako leo — mtandaoni au ofisini.
+              </p>
+              <p className="home-admissions-cta__lead-en" lang="en">
+                We welcome applications from young men seeking Catholic formation and academic
+                excellence. Apply online or visit our office.
+              </p>
+              <ol className="home-admissions-steps">
+                <li>
+                  <span>1</span> Soma vigezo na nyaraka zinazohitajika
+                </li>
+                <li>
+                  <span>2</span> Jaza fomu ya maombi mtandaoni
+                </li>
+                <li>
+                  <span>3</span> Wasilisha nyaraka na subiri majibu
+                </li>
+              </ol>
+            </div>
+            <div className="home-admissions-cta__actions">
+              <Link to="/admissions/apply" className="home-admissions-btn home-admissions-btn--primary">
+                <i className="fas fa-pen-to-square" aria-hidden />
+                Omba Udahili / Apply Online
+              </Link>
+              <Link to="/admissions" className="home-admissions-btn">
+                Maelezo ya Udahili
+              </Link>
+              {contactPhone && (
+                <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="home-admissions-phone">
+                  <i className="fas fa-phone" aria-hidden />
+                  {contactPhone}
+                </a>
+              )}
+            </div>
+            </div>
+          </div>
+        </section>
+
+        {/* —— Gallery preview —— */}
+        {(isLoading || galleryPreviewPhotos.length > 0) && (
+          <section className="home-gallery" aria-labelledby="home-gallery-heading">
+            <div className="home-section-inner">
+              <header className="home-section-header home-section-header--row">
+                <div>
+                  <h2 id="home-gallery-heading" className="home-section-title">
+                    <i className="fas fa-images" aria-hidden />
+                    Picha za Seminari
+                  </h2>
+                  <p className="home-section-subtitle">Campus & life · Maisha na mazingira</p>
+                </div>
+                <Link to="/gallery" className="home-view-all">
+                  Angalia picha zote
+                  <i className="fas fa-arrow-right" aria-hidden />
+                </Link>
+              </header>
+              {isLoading ? (
+                <div className="home-gallery-grid home-gallery-grid--loading">
+                  {[1, 2, 3].map((i) => (
+                    <SkeletonLoader key={i} type="image" height="200px" />
+                  ))}
+                </div>
+              ) : (
+                <div className="home-gallery-grid">
+                  {galleryPreviewPhotos.map((photo) => {
+                    const imageUrl = getImageUrl(photo.path);
+                    return (
+                      <button
+                        key={photo.id}
+                        type="button"
+                        className="home-gallery-item"
+                        onClick={() => setSelectedGalleryPhoto(photo)}
+                        aria-label={photo.caption || 'Fungua picha'}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={photo.caption || 'Picha ya seminari'}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        {photo.caption && (
+                          <span className="home-gallery-caption">{photo.caption}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* —— Leadership —— */}
+        <section className="administration-section" aria-labelledby="home-leadership-heading">
           <div className="administration-container">
-            {/* Section Header */}
-            <div className="administration-header">
-              <h2 className="administration-title">
-                <i className="fas fa-user-tie administration-title-icon"></i>
+            <header className="administration-header">
+              <h2 id="home-leadership-heading" className="administration-title">
+                <i className="fas fa-user-tie administration-title-icon" aria-hidden />
                 Uongozi wa Shule
               </h2>
               <p className="administration-subtitle">
-                Wafahamu viongozi wa Seminari ya Kikatoliki Arusha.
+                School leadership · Wafahamu viongozi wa seminari
               </p>
-            </div>
-
-            {/* Administrators Grid */}
-            {administrators && administrators.length > 0 ? (
+            </header>
+            {administrators?.length > 0 ? (
               <div className="administrators-grid">
                 {administrators.map((admin) => (
-                  <div key={admin.id} className="admin-card">
-                    {/* Photo */}
-                    <div className="admin-photo-container">
-                      <button
-                        type="button"
-                        className="admin-photo-button"
-                        onClick={() => setSelectedAdmin(admin)}
-                        aria-label={admin.name ? `View ${admin.name}` : 'View profile'}
-                      >
-                        <div className="admin-photo-frame">
-                          {admin.photo ? (
-                            <img
-                              src={getImageUrl(admin.photo)}
-                              alt={admin.name || 'Administrator photo'}
-                              className="admin-photo-inner"
-                              loading="lazy"
-                              onError={(e) => {
-                                // Silently handle missing images - don't log to console
-                                e.target.style.display = 'none';
-                                const placeholder = e.target.nextElementSibling;
-                                if (placeholder) {
-                                  placeholder.style.display = 'grid';
-                                }
-                              }}
-                            />
-                          ) : null}
-                          <div
-                            className="admin-photo-inner admin-photo-placeholder"
-                            style={{ display: admin.photo ? 'none' : 'grid' }}
-                          >
-                            <i className="fas fa-user admin-photo-placeholder-icon"></i>
-                          </div>
+                  <article key={admin.id} className="admin-card admin-card--named">
+                    <button
+                      type="button"
+                      className="admin-photo-button"
+                      onClick={() => setSelectedAdmin(admin)}
+                      aria-label={admin.name ? `Angalia ${admin.name}` : 'Angalia wasifu'}
+                    >
+                      <div className="admin-photo-frame">
+                        {admin.photo ? (
+                          <img
+                            src={getImageUrl(admin.photo)}
+                            alt={admin.name || 'Picha ya kiongozi'}
+                            className="admin-photo-inner"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const ph = e.target.nextElementSibling;
+                              if (ph) ph.style.display = 'grid';
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="admin-photo-inner admin-photo-placeholder"
+                          style={{ display: admin.photo ? 'none' : 'grid' }}
+                        >
+                          <i className="fas fa-user admin-photo-placeholder-icon" aria-hidden />
                         </div>
-                      </button>
+                      </div>
+                    </button>
+                    <div className="admin-card-body">
+                      <h3 className="admin-name">{admin.name || '—'}</h3>
+                      <p className="admin-title">{admin.title || '—'}</p>
+                      {admin.year_started && (
+                        <p className="admin-year-inline">
+                          <i className="fas fa-calendar-alt" aria-hidden /> Tangu{' '}
+                          {admin.year_started}
+                        </p>
+                      )}
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
             ) : (
@@ -270,12 +655,120 @@ const HomePage = () => {
           </div>
         </section>
 
+        {/* —— FAQ —— */}
+        <section className="home-faq" aria-labelledby="home-faq-heading">
+          <div className="home-section-inner home-faq__inner">
+            <header className="home-section-header">
+              <h2 id="home-faq-heading" className="home-section-title">
+                <i className="fas fa-question-circle" aria-hidden />
+                Maswali Yanayoulizwa Mara kwa Mara
+              </h2>
+              <p className="home-section-subtitle">
+                Frequently asked questions · Majibu ya haraka
+              </p>
+            </header>
+            {displayFaqs.length > 0 ? (
+              <div className="home-faq-list">
+                {displayFaqs.map((faq, index) => (
+                  <div
+                    key={faq.id || index}
+                    className={`home-faq-item ${openFaqIndex === index ? 'is-open' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="home-faq-question"
+                      onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                      aria-expanded={openFaqIndex === index}
+                    >
+                      <span>{faq.question}</span>
+                      <i
+                        className={`fas fa-chevron-down home-faq-chevron ${openFaqIndex === index ? 'is-open' : ''}`}
+                        aria-hidden
+                      />
+                    </button>
+                    {openFaqIndex === index && (
+                      <div className="home-faq-answer">
+                        <p>{faq.answer}</p>
+                        {faq.category && faq.category !== 'General' && (
+                          <span className="home-faq-category">{faq.category}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="home-faq-empty">
+                Maswali yataongezwa hapa hivi karibuni. Wasiliana nasi kwa msaada.
+              </p>
+            )}
+            <p className="home-faq-help">
+              <i className="fas fa-info-circle" aria-hidden />
+              Haujapata jibu?{' '}
+              <Link to="/contact">Wasiliana nasi</Link>
+              {' · '}
+              <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+            </p>
+          </div>
+        </section>
+
+        {/* —— Contact strip —— */}
+        <section className="home-contact-strip" aria-label="Mawasiliano">
+          <div className="home-section-inner">
+            <header className="home-section-header">
+              <h2 className="home-section-title">
+                <i className="fas fa-headset" aria-hidden />
+                Wasiliana Nasi
+              </h2>
+              <p className="home-section-subtitle">Get in touch · Tupo Oldonyosambu, Arusha</p>
+            </header>
+            <div className="home-contact-grid">
+              <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="home-contact-card">
+                <i className="fas fa-phone" aria-hidden />
+                <span className="home-contact-label">Simu / Phone</span>
+                <span className="home-contact-value">{contactPhone}</span>
+              </a>
+              <a href={`mailto:${contactEmail}`} className="home-contact-card">
+                <i className="fas fa-envelope" aria-hidden />
+                <span className="home-contact-label">Barua pepe / Email</span>
+                <span className="home-contact-value">{contactEmail}</span>
+              </a>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="home-contact-card"
+              >
+                <i className="fab fa-whatsapp" aria-hidden />
+                <span className="home-contact-label">WhatsApp</span>
+                <span className="home-contact-value">Ujumbe wa haraka</span>
+              </a>
+              <a
+                href={socialLocation}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="home-contact-card"
+              >
+                <i className="fas fa-map-marker-alt" aria-hidden />
+                <span className="home-contact-label">Eneo / Location</span>
+                <span className="home-contact-value">{contactAddress}</span>
+              </a>
+            </div>
+            <Link to="/contact" className="home-contact-page-link">
+              Ukurasa kamili wa mawasiliano
+              <i className="fas fa-arrow-right" aria-hidden />
+            </Link>
+          </div>
+        </section>
+
+        {/* —— Modals —— */}
         {selectedAdmin && (
           <div
             className="admin-profile-modal"
             onClick={() => setSelectedAdmin(null)}
             role="dialog"
             aria-modal="true"
+            aria-label="Wasifu wa kiongozi"
           >
             <div
               className="admin-profile-modal-content"
@@ -285,11 +778,10 @@ const HomePage = () => {
                 type="button"
                 className="admin-profile-modal-close"
                 onClick={() => setSelectedAdmin(null)}
-                aria-label="Close"
+                aria-label="Funga"
               >
-                <i className="fas fa-times" />
+                <i className="fas fa-times" aria-hidden />
               </button>
-
               <div className="admin-photo-container admin-photo-container--modal">
                 <div className="admin-photo-frame">
                   {selectedAdmin.photo ? (
@@ -300,32 +792,28 @@ const HomePage = () => {
                       loading="eager"
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        const placeholder = e.target.nextElementSibling;
-                        if (placeholder) placeholder.style.display = 'grid';
+                        const ph = e.target.nextElementSibling;
+                        if (ph) ph.style.display = 'grid';
                       }}
                     />
                   ) : null}
-
                   <div
                     className="admin-photo-inner admin-photo-placeholder"
                     style={{ display: selectedAdmin.photo ? 'none' : 'grid' }}
                   >
-                    <i className="fas fa-user admin-photo-placeholder-icon"></i>
+                    <i className="fas fa-user admin-photo-placeholder-icon" aria-hidden />
                   </div>
                 </div>
               </div>
-
               <h3 className="admin-name admin-name--modal">
                 {selectedAdmin.name || 'Name Not Available'}
               </h3>
-
               <p className="admin-title admin-title--modal">
                 {selectedAdmin.title || 'Title Not Available'}
               </p>
-
               {selectedAdmin.year_started && (
                 <div className="admin-year-badge admin-year-badge--modal">
-                  <i className="fas fa-calendar-alt admin-year-badge-icon"></i>
+                  <i className="fas fa-calendar-alt admin-year-badge-icon" aria-hidden />
                   <span className="admin-year-text">Since {selectedAdmin.year_started}</span>
                 </div>
               )}
@@ -333,6 +821,35 @@ const HomePage = () => {
           </div>
         )}
 
+        {selectedGalleryPhoto && (
+          <div
+            className="home-gallery-lightbox"
+            onClick={() => setSelectedGalleryPhoto(null)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="home-gallery-lightbox-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="home-gallery-lightbox-close"
+                onClick={() => setSelectedGalleryPhoto(null)}
+                aria-label="Funga"
+              >
+                <i className="fas fa-times" aria-hidden />
+              </button>
+              <img
+                src={getImageUrl(selectedGalleryPhoto.path)}
+                alt={selectedGalleryPhoto.caption || 'Picha ya seminari'}
+              />
+              {selectedGalleryPhoto.caption && (
+                <p className="home-gallery-lightbox-caption">{selectedGalleryPhoto.caption}</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </PublicLayout>
   );

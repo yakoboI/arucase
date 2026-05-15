@@ -151,6 +151,69 @@ router.get('/homepage', async (req, res) => {
       'SELECT * FROM public_announcements WHERE active = TRUE ORDER BY created_at DESC LIMIT 5'
     );
     const announcements = announcementsResult.rows;
+
+    // School stats for homepage (current enrollment + graduates since founding)
+    // Use calendar year (not MAX(year) from DB — Form VI Second Term rows can be stored as year+1)
+    const currentYear = new Date().getFullYear();
+    let current_students = 0;
+    const enrolledResult = await query(
+      `SELECT COALESCE(SUM(term_total), 0) AS count
+       FROM (
+         SELECT
+           term,
+           SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM I' THEN 1 ELSE 0 END) +
+           SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM II' THEN 1 ELSE 0 END) +
+           SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM III' THEN 1 ELSE 0 END) +
+           SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM IV' THEN 1 ELSE 0 END) +
+           SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM V' THEN 1 ELSE 0 END) +
+           SUM(CASE WHEN UPPER(TRIM(level)) = 'FORM VI' THEN 1 ELSE 0 END) AS term_total
+         FROM students
+         WHERE year = $1
+         GROUP BY term
+       ) per_term`,
+      [currentYear]
+    );
+    current_students = parseInt(enrolledResult.rows[0]?.count, 10) || 0;
+
+    // Wahitimu tangu 1967: base (pre-2025) + Form I intake + Form VI (graduating class) per year from 2025
+    const GRADUATES_BASE_BEFORE_2025 = 2475;
+    const GRADUATE_COUNT_START_YEAR = 2025;
+    let form_one_since_2025 = 0;
+    let form_six_since_2025 = 0;
+    const formSixThroughYear = currentYear + 1; // Form VI Second Term often stored as year + 1
+    if (currentYear >= GRADUATE_COUNT_START_YEAR) {
+      const graduateCohortResult = await query(
+        `SELECT
+           COALESCE(SUM(CASE WHEN lvl = 'FORM I' THEN year_count ELSE 0 END), 0) AS form_one_total,
+           COALESCE(SUM(CASE WHEN lvl = 'FORM VI' THEN year_count ELSE 0 END), 0) AS form_six_total
+         FROM (
+           SELECT year, UPPER(TRIM(level)) AS lvl, COUNT(DISTINCT adm_no) AS year_count
+           FROM students
+           WHERE UPPER(TRIM(level)) IN ('FORM I', 'FORM VI')
+             AND year >= $1
+             AND (
+               (UPPER(TRIM(level)) = 'FORM I' AND year <= $2)
+               OR (UPPER(TRIM(level)) = 'FORM VI' AND year <= $3)
+             )
+           GROUP BY year, UPPER(TRIM(level))
+         ) cohort_by_year`,
+        [GRADUATE_COUNT_START_YEAR, currentYear, formSixThroughYear]
+      );
+      const cohort = graduateCohortResult.rows[0] || {};
+      form_one_since_2025 = parseInt(cohort.form_one_total, 10) || 0;
+      form_six_since_2025 = parseInt(cohort.form_six_total, 10) || 0;
+    }
+    const graduates_since_1967 =
+      GRADUATES_BASE_BEFORE_2025 + form_one_since_2025 + form_six_since_2025;
+
+    const school_stats = {
+      graduates_since_1967,
+      graduates_base: GRADUATES_BASE_BEFORE_2025,
+      form_one_since_2025,
+      form_six_since_2025,
+      current_students,
+      academic_year: currentYear,
+    };
     
     res.setHeader('Cache-Control', 'public, max-age=60'); // 1 min cache for fast repeat loads on slow/mobile
     res.json({
@@ -158,7 +221,8 @@ router.get('/homepage', async (req, res) => {
       gallery_photos,
       faqs,
       administrators,
-      announcements
+      announcements,
+      school_stats,
     });
   } catch (error) {
     console.error('Homepage error:', error);
@@ -531,7 +595,7 @@ router.get('/staff-profiles', async (req, res) => {
 });
 
 // Get public page (returns default empty page for known slugs when not in DB)
-const KNOWN_PAGE_SLUGS = ['school-fee', 'fees', 'about', 'contact', 'admissions', 'staff', 'student-life', 'student_life', 'student_report', 'privacy', 'catholic-education'];
+const KNOWN_PAGE_SLUGS = ['school-fee', 'fees', 'about', 'contact', 'admissions', 'staff', 'student-life', 'student_life', 'student_report', 'privacy'];
 router.get('/page/:pageName', async (req, res) => {
   try {
     const { pageName } = req.params;

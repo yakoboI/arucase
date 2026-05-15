@@ -31,7 +31,6 @@ const Announcements = lazy(() => import('./pages/public/Announcements'));
 const NECTAResults = lazy(() => import('./pages/public/NECTAResults'));
 const Contact = lazy(() => import('./pages/public/Contact'));
 const PrivacyPolicy = lazy(() => import('./pages/public/PrivacyPolicy'));
-const CatholicEducation = lazy(() => import('./pages/public/CatholicEducation'));
 
 // Auth (lazy)
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -232,7 +231,6 @@ function App() {
             <Route path="/necta-results" element={<NECTAResults />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/catholic-education" element={<CatholicEducation />} />
 
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
