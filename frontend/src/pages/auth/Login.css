@@ -11,21 +11,24 @@
 }
 
 .login-page {
-  /* Avoid 100vw — scrollbar / mobile URL bar can cause horizontal overflow */
+  /* Fixed full viewport — true center regardless of #root / Suspense parent height */
+  position: fixed !important;
+  inset: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
-  box-sizing: border-box !important;
+  height: 100dvh !important;
   min-height: 100vh !important;
   min-height: 100svh !important;
   min-height: 100dvh !important;
   min-height: -webkit-fill-available !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  place-items: center !important;
   background: #e2e8f0 !important;
-  position: relative !important;
   overflow-x: hidden !important;
+  overflow-y: auto !important;
+  z-index: 1 !important;
   padding-top: max(clamp(0.75rem, 3vw, 2rem), env(safe-area-inset-top, 0px)) !important;
   padding-right: max(clamp(0.75rem, 3vw, 2rem), env(safe-area-inset-right, 0px)) !important;
   padding-bottom: max(clamp(0.75rem, 3vw, 2rem), env(safe-area-inset-bottom, 0px)) !important;
@@ -69,7 +72,9 @@ body:has(.login-page) {
 #root:has(.login-page) {
   min-height: 100vh;
   min-height: 100dvh;
+  height: 100dvh;
   background-color: #e2e8f0;
+  overflow: hidden;
 }
 
 /* Card + back link share width (back button sits below card, full width of column) */
@@ -77,10 +82,12 @@ body:has(.login-page) {
   width: 100% !important;
   max-width: min(28rem, 100%) !important;
   min-width: 0 !important;
+  margin: auto !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
   gap: 0.75rem !important;
+  justify-self: center !important;
 }
 
 .login-page .sr-only {
