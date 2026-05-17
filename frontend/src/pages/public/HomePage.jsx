@@ -10,41 +10,9 @@ import SkeletonLoader from '../../components/common/SkeletonLoader';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
-import { DEFAULT_GOOGLE_MAPS_LOCATION } from '../../constants/defaultGoogleMapsLocation';
 import './HomePage.css';
-
-const QUICK_LINKS = [
-  { path: '/about', label: 'Kuhusu Sisi', sub: 'About us', icon: 'fa-info-circle' },
-  { path: '/admissions', label: 'Udahili', sub: 'Admissions', icon: 'fa-user-plus' },
-  { path: '/necta-results', label: 'Matokeo NECTA', sub: 'Exam results', icon: 'fa-certificate' },
-  { path: '/school-fee', label: 'Ada ya Shule', sub: 'School fees', icon: 'fa-money-bill-wave' },
-  { path: '/student-life', label: 'Maisha ya Wanafunzi', sub: 'Student life', icon: 'fa-heart' },
-  { path: '/contact', label: 'Mawasiliano', sub: 'Contact', icon: 'fa-envelope' },
-];
-
-const PROGRAMS = [
-  {
-    icon: 'fa-book-open',
-    title: 'O-Level (Form I–IV)',
-    titleSw: 'Kidato cha I–IV',
-    text: 'Rigorous Catholic secondary education with NECTA preparation and spiritual formation.',
-    textSw: 'Elimu bora ya sekondari ya Kikatoliki na maandalizi ya mitihani ya NECTA.',
-  },
-  {
-    icon: 'fa-graduation-cap',
-    title: 'A-Level (Form V–VI)',
-    titleSw: 'Kidato cha V–VI',
-    text: 'Advanced studies for students pursuing higher academic and vocational paths.',
-    textSw: 'Masomo ya juu kwa wanafunzi wanaoelekea elimu ya chuo na taaluma.',
-  },
-  {
-    icon: 'fa-church',
-    title: 'Spiritual Formation',
-    titleSw: 'Malezi ya Kiroho',
-    text: 'Prayer, sacraments, and discipleship at St. Thomas Aquinas Seminary, Oldonyosambu.',
-    textSw: 'Sala, sakramenti, na uanafunzi katika Seminari ya Mt. Thomas Aquinas, Oldonyosambu.',
-  },
-];
+import { PublicCmsHtml, usePublicPage } from '../../components/public/PublicCmsPage';
+import { hasPublishedPage, settingValue } from '../../utils/publicPageContent';
 
 function stripHtml(html) {
   if (!html) return '';
@@ -112,18 +80,20 @@ const HomePage = () => {
     school_stats = {},
   } = actualData;
 
-  const schoolName = settings?.school_name || 'ARUSHA CATHOLIC SEMINARY';
-  const rectorStatement =
-    settings?.rector_statement ||
-    '"Let us make Our Seminary Great and Green Again" - Father Moses Peter Assey - The Rector';
+  const schoolName = settingValue(settings, 'school_name');
+  const rectorStatement = settingValue(settings, 'rector_statement');
 
-  const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
-  const contactPhone = settings?.contact_phone || '+255 123 456 789';
-  const contactWhatsapp = settings?.contact_whatsapp || '255123456789';
-  const contactAddress =
-    settings?.contact_address || 'Oldonyosambu, Arusha, Tanzania';
-  const socialLocation = settings?.social_location || DEFAULT_GOOGLE_MAPS_LOCATION;
-  const whatsappUrl = `https://wa.me/${contactWhatsapp.replace(/[+\s]/g, '')}`;
+  const contactEmail = settingValue(settings, 'contact_email');
+  const contactPhone = settingValue(settings, 'contact_phone');
+  const contactWhatsapp = settingValue(settings, 'contact_whatsapp');
+  const contactAddress = settingValue(settings, 'contact_address');
+  const socialLocation = settingValue(settings, 'social_location');
+  const { data: homepageCmsData } = usePublicPage('homepage');
+  const homepageCms = homepageCmsData?.data?.page;
+  const hasHomepageCms = hasPublishedPage(homepageCms);
+  const whatsappUrl = contactWhatsapp
+    ? `https://wa.me/${contactWhatsapp.replace(/[+\s]/g, '')}`
+    : '';
 
   const formatStat = useCallback((value) => {
     const n = Number(value);
@@ -365,69 +335,13 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* —— Quick links —— */}
-        <section className="home-quicklinks" aria-labelledby="home-quicklinks-heading">
-          <div className="home-section-inner">
-            <header className="home-section-header">
-              <h2 id="home-quicklinks-heading" className="home-section-title">
-                <i className="fas fa-compass" aria-hidden />
-                Gundua Seminari
-              </h2>
-              <p className="home-section-subtitle">
-                Explore key pages · Tembelea kurasa muhimu
-              </p>
-            </header>
-            <div className="home-quicklinks-grid">
-              {QUICK_LINKS.map((item) => (
-                <Link key={item.path} to={item.path} className="home-quicklink-card">
-                  <span className="home-quicklink-icon" aria-hidden>
-                    <i className={`fas ${item.icon}`} />
-                  </span>
-                  <span className="home-quicklink-label">{item.label}</span>
-                  <span className="home-quicklink-sub">{item.sub}</span>
-                </Link>
-              ))}
+        {hasHomepageCms ? (
+          <section className="home-cms-section" aria-label="Homepage content">
+            <div className="home-section-inner">
+              <PublicCmsHtml page={homepageCms} className="content-card home-cms-body" />
             </div>
-          </div>
-        </section>
-
-        {/* —— Programs —— */}
-        <section className="home-programs" aria-labelledby="home-programs-heading">
-          <div className="home-section-inner">
-            <header className="home-section-header">
-              <h2 id="home-programs-heading" className="home-section-title">
-                <i className="fas fa-book" aria-hidden />
-                Programu za Elimu
-              </h2>
-              <p className="home-section-subtitle">
-                Educational programmes · O-Level, A-Level & formation
-              </p>
-            </header>
-            <div className="home-programs-grid">
-              {PROGRAMS.map((prog) => (
-                <article key={prog.title} className="home-program-card">
-                  <span className="home-program-icon" aria-hidden>
-                    <i className={`fas ${prog.icon}`} />
-                  </span>
-                  <h3 className="home-program-title">{prog.titleSw}</h3>
-                  <p className="home-program-title-en">{prog.title}</p>
-                  <p className="home-program-text" lang="sw">
-                    {prog.textSw}
-                  </p>
-                  <p className="home-program-text-en" lang="en">
-                    {prog.text}
-                  </p>
-                </article>
-              ))}
-            </div>
-            <div className="home-programs-foot">
-              <Link to="/necta-results" className="home-inline-cta">
-                <i className="fas fa-certificate" aria-hidden />
-                Matokeo ya NECTA (S0171)
-              </Link>
-            </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         {/* —— Announcements —— */}
         {(isLoading || previewAnnouncements.length > 0) && (

@@ -152,6 +152,15 @@
   background: #e5e7eb;
 }
 
+/* Public Pages CMS — light blue canvas behind white cards */
+.admin-layout .admin-main-content.admin-main-content--public-pages-frame {
+  background: #dbeafe;
+}
+
+.admin-layout .admin-main-content.admin-main-content--public-pages-frame .public-pages-admin-page.public-website-page-container {
+  background: transparent;
+}
+
 .admin-layout .admin-main-content.admin-main-content--student-registration-frame .action-selection-page-container {
   background: transparent;
 }

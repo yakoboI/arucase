@@ -156,7 +156,13 @@ export default defineConfig({
   },
   // Optimize dependencies pre-bundling
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@uiw/react-md-editor',
+      '@uiw/react-markdown-preview',
+    ],
     exclude: ['@fortawesome/fontawesome-free'], // Exclude large icon library from pre-bundling
   },
 });

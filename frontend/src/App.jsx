@@ -39,7 +39,6 @@ const Login = lazy(() => import('./pages/auth/Login'));
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
 const AdminUsers = lazy(() => import('./pages/admin/Users'));
 const AdminSchoolBranding = lazy(() => import('./pages/admin/SchoolBranding'));
-const AdminSchoolFee = lazy(() => import('./pages/admin/SchoolFee'));
 const AdminAnnouncements = lazy(() => import('./pages/admin/Announcements'));
 const AdminGallery = lazy(() => import('./pages/admin/Gallery'));
 const AdminFAQs = lazy(() => import('./pages/admin/FAQs'));
@@ -268,14 +267,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/admin/school-fee"
-              element={
-                <ProtectedRoute>
-                  <AdminSchoolFee />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin/school-fee" element={<Navigate to="/admin/public-pages" replace />} />
             <Route
               path="/admin/announcements"
               element={
@@ -2183,12 +2175,6 @@ function App() {
             <Route path="/admin/pre-form-one/:year/interview-reports" element={<ProtectedRoute requiredModule="student_registration_pre_form"><PreFormOneInterviewReports /></ProtectedRoute>} />
             <Route path="/admin/pre-form-one/:year/continuing-reports" element={<ProtectedRoute requiredModule="student_registration_pre_form"><PreFormOneContinuingReports /></ProtectedRoute>} />
             <Route path="/admin/pre-form-one/:year/promotion" element={<ProtectedRoute requiredModule="student_registration_pre_form"><PreFormOnePromotion /></ProtectedRoute>} />
-
-            {/* Public Website Routes */}
-            <Route path="/admin/gallery" element={<ProtectedRoute><AdminGallery /></ProtectedRoute>} />
-            <Route path="/admin/faqs" element={<ProtectedRoute><AdminFAQs /></ProtectedRoute>} />
-            <Route path="/admin/ai-matters" element={<ProtectedRoute><AIMatters /></ProtectedRoute>} />
-            <Route path="/admin/department-contacts" element={<ProtectedRoute><AdminDepartmentContacts /></ProtectedRoute>} />
 
             {/* Catch all - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />

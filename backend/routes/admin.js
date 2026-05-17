@@ -22,6 +22,7 @@ const {
   clearUserPhotoForUsername,
   pullUserPhotoIntoStaffProfile,
 } = require('../utils/staffUserPhotoSync');
+const { PUBLIC_PAGE_SLUG_ALIASES } = require('../utils/publicPageSlugs');
 // createCloudinaryStorage uses cloudinary.uploader.upload_stream() directly,
 // bypassing multer-storage-cloudinary whose upload() callback was never invoked
 // with the cloudinary v2 SDK (causing 60 s upload timeouts).
@@ -2562,22 +2563,40 @@ async function ensureDepartmentContactColumns() {
   `);
 }
 
+const SITE_CONTACT_FIELDS = [
+  'contact_address',
+  'contact_phone',
+  'contact_email',
+  'contact_whatsapp',
+  'social_youtube',
+  'social_facebook',
+  'social_instagram',
+  'social_twitter',
+  'social_location',
+  'office_weekdays',
+  'office_saturday',
+  'office_sunday',
+  'office_holidays',
+  'admissions_email',
+  'academics_email',
+  'bursar_email',
+  'alumni_email',
+  'parents_email',
+];
+
 // Get department contacts (from website settings)
 router.get('/department-contacts', async (req, res) => {
   try {
     await ensureDepartmentContactColumns();
-    const result = await query('SELECT admissions_email, academics_email, bursar_email, alumni_email, parents_email FROM website_settings WHERE id = 1');
+    const cols = SITE_CONTACT_FIELDS.join(', ');
+    const result = await query(`SELECT ${cols} FROM website_settings WHERE id = 1`);
     
     if (result.rows.length === 0) {
-      return res.json({
-        contacts: {
-          admissions_email: '',
-          academics_email: '',
-          bursar_email: '',
-          alumni_email: '',
-          parents_email: '',
-        },
+      const empty = {};
+      SITE_CONTACT_FIELDS.forEach((key) => {
+        empty[key] = '';
       });
+      return res.json({ contacts: empty });
     }
     
     res.json({ contacts: result.rows[0] });
@@ -2586,38 +2605,34 @@ router.get('/department-contacts', async (req, res) => {
   }
 });
 
-// Update department contacts
+// Update department + site contact fields (website_settings row id=1)
 router.post('/department-contacts', async (req, res) => {
   try {
     await ensureDepartmentContactColumns();
-    const { admissions_email, academics_email, bursar_email, alumni_email, parents_email } = req.body;
+    const values = SITE_CONTACT_FIELDS.map((key) => req.body[key] ?? '');
     
-    // Check if settings exist
     const existing = await query('SELECT id FROM website_settings WHERE id = 1');
     
     if (existing.rows.length > 0) {
-      // Update existing
+      const setClause = SITE_CONTACT_FIELDS.map((key, i) => `${key} = $${i + 1}`).join(',\n         ');
       await query(
         `UPDATE website_settings SET 
-         admissions_email = $1,
-         academics_email = $2,
-         bursar_email = $3,
-         alumni_email = $4,
-         parents_email = $5,
+         ${setClause},
          updated_at = NOW()
          WHERE id = 1`,
-        [admissions_email || '', academics_email || '', bursar_email || '', alumni_email || '', parents_email || '']
+        values
       );
     } else {
-      // Insert new
+      const cols = SITE_CONTACT_FIELDS.join(', ');
+      const placeholders = SITE_CONTACT_FIELDS.map((_, i) => `$${i + 1}`).join(', ');
       await query(
-        `INSERT INTO website_settings (id, admissions_email, academics_email, bursar_email, alumni_email, parents_email)
-         VALUES (1, $1, $2, $3, $4, $5)`,
-        [admissions_email || '', academics_email || '', bursar_email || '', alumni_email || '', parents_email || '']
+        `INSERT INTO website_settings (id, ${cols})
+         VALUES (1, ${placeholders})`,
+        values
       );
     }
     
-    res.json({ message: 'Department contacts updated successfully' });
+    res.json({ message: 'Site and department contacts updated successfully' });
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -2654,7 +2669,9 @@ router.get('/public-pages/:pageName', async (req, res) => {
 // Save public page
 router.post('/public-pages', async (req, res) => {
   try {
-    const { page_name, title, html_content } = req.body;
+    const rawName = String(req.body.page_name || '').trim();
+    const page_name = PUBLIC_PAGE_SLUG_ALIASES[rawName] || rawName;
+    const { title, html_content } = req.body;
     
     if (!page_name || !title || !html_content) {
       return res.status(400).json({ message: 'page_name, title, and html_content are required' });

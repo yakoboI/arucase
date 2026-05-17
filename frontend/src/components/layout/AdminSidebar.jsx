@@ -205,7 +205,7 @@ const AdminSidebar = () => {
         { path: '/admin/staff-profiles', label: 'Staff Profiles', icon: 'fa-id-badge' },
         { path: '/admin/pass-ids', label: 'Pass ID', icon: 'fa-key' },
         { path: '/admin/faqs', label: 'FAQs', icon: 'fa-question-circle' },
-        { path: '/admin/department-contacts', label: 'Department Contacts', icon: 'fa-address-book' }
+        { path: '/admin/department-contacts', label: 'Site & Contacts', icon: 'fa-address-book' }
       ]
     }
   ];

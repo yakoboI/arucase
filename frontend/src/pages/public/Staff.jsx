@@ -8,15 +8,11 @@ import Loading from '../../components/common/Loading';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
 import './Staff.css';
-import DOMPurify from 'dompurify';
+import { PublicCmsHtml, PublicCmsEmpty, usePublicPage } from '../../components/public/PublicCmsPage';
+import { hasPublishedPage } from '../../utils/publicPageContent';
 
 const Staff = () => {
-  const { data: pageData, isLoading, isError } = useQuery({
-    queryKey: ['page', 'staff'],
-    queryFn: () => publicAPI.getPage('staff'),
-    retry: false,
-    staleTime: 15 * 60 * 1000, // 15 minutes - content rarely changes
-  });
+  const { data: pageData, isLoading, isError } = usePublicPage('staff');
 
   const { data: staffProfiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['public-staff-profiles'],
@@ -25,20 +21,6 @@ const Staff = () => {
       return res.data?.staff_profiles || [];
     },
     staleTime: 15 * 60 * 1000, // 15 minutes - staff profiles rarely change
-  });
-
-  const { data: settings } = useQuery({
-    queryKey: ['homepage-settings'],
-    queryFn: async () => {
-      try {
-        const res = await publicAPI.getHomepage();
-        return res.data?.settings;
-      } catch (err) {
-        console.error('Error fetching staff settings:', err);
-        return {};
-      }
-    },
-    staleTime: 15 * 60 * 1000, // 15 minutes - settings rarely change
   });
 
   const getPhotoUrl = useCallback(
@@ -50,8 +32,6 @@ const Staff = () => {
   const teachers = useMemo(() => (staffProfiles || []).filter((p) => p.is_teaching), [staffProfiles]);
   const nonTeaching = useMemo(() => (staffProfiles || []).filter((p) => !p.is_teaching), [staffProfiles]);
 
-  const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
-  const contactPhone = settings?.contact_phone || '+255 123 456 789';
 
   if (isLoading) {
     return (
@@ -62,7 +42,7 @@ const Staff = () => {
   }
 
   const page = pageData?.data?.page;
-  const hasCustomContent = !isError && page && (page.html_content || page.content);
+  const hasCustomContent = !isError && hasPublishedPage(page);
 
   return (
     <PublicLayout>
@@ -72,66 +52,16 @@ const Staff = () => {
           <header className="content-card staff-surface staff-surface--hero">
             <p className="staff-hero__eyebrow">Seminari ya Kikatoliki Arusha</p>
             <h2 className="staff-hero__title">Watumishi</h2>
-            <p className="staff-hero__lead">
-              Timu ya uongozi, walimu, na watumishi wengine wanaohudumia seminari — taarifa rasmi na wasifu
-              wanaoshirikishwa na ofisi ya utawala.
-            </p>
-          </header>
+            </header>
 
           {hasCustomContent ? (
-            <div
-              className="content-card staff-surface staff-surface--cms"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.html_content || page.content || '') }}
-            />
+            <PublicCmsHtml page={page} className="content-card staff-surface staff-surface--cms" />
           ) : (
-            <>
-              <div className="content-card staff-surface staff-surface--chunk staff-surface--stripe-navy">
-                <h3 className="staff-chunk__title">Uongozi</h3>
-                <p className="staff-chunk__text">
-                  Seminari inaongozwa na timu ya mapadre na watumishi walei waliobobea katika malezi ya jumla ya wanafunzi.
-                </p>
-              </div>
-              <div className="content-card staff-surface staff-surface--chunk staff-surface--stripe-teal">
-                <h3 className="staff-chunk__title">Walimu</h3>
-                <p className="staff-chunk__text">
-                  Walimu wetu ni wataalamu wa masomo mbalimbali ambao wanatoa mafunzo ya kitaaluma na malezi ya kiroho kwa
-                  wanafunzi.
-                </p>
-              </div>
-              <div className="content-card staff-surface staff-surface--chunk staff-surface--stripe-slate">
-                <h3 className="staff-chunk__title">Watumishi wasio walimu</h3>
-                <p className="staff-chunk__text">
-                  Watumishi wasio walimu wanahudumia shule kwa kutoa huduma za usimamizi, usafi, chakula, na mengineyo.
-                </p>
-              </div>
-              <div className="content-card staff-surface staff-surface--chunk staff-surface--stripe-gold">
-                <h3 className="staff-chunk__title">Wasiliana nasi</h3>
-                <p className="staff-chunk__text">
-                  Kwa maelezo zaidi kuhusu watumishi, wasiliana nasi:
-                </p>
-                <ul className="staff-chunk__contacts">
-                  <li>
-                    <strong>Barua pepe:</strong>{' '}
-                    <a href={`mailto:${contactEmail}`} className="contact-link">
-                      {contactEmail}
-                    </a>
-                  </li>
-                  <li>
-                    <strong>Simu:</strong>{' '}
-                    <a href={`tel:${contactPhone}`} className="contact-link">
-                      {contactPhone}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </>
+            <PublicCmsEmpty pageLabel="Watumishi" />
           )}
 
           <div className="content-card staff-directory-card staff-surface staff-surface--directory-intro">
             <h2 className="staff-directory__title">Wasifu wa watumishi</h2>
-            <p className="staff-directory-intro">
-              Taarifa hizi husasishwa na ofisi ya utawala. Orodha inagawanywa kwa walimu na watumishi wasio walimu.
-            </p>
             {profilesLoading ? (
               <div className="staff-empty">
                 <i className="fas fa-spinner fa-spin" aria-hidden />

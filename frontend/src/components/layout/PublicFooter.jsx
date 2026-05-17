@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { publicAPI } from '../../services/public';
-import { DEFAULT_GOOGLE_MAPS_LOCATION } from '../../constants/defaultGoogleMapsLocation';
+import { settingValue } from '../../utils/publicPageContent';
 import './PublicFooter.css';
 
 const PublicFooter = () => {
@@ -43,15 +43,13 @@ const PublicFooter = () => {
   }, [refetchVisitorStats]);
 
   const settings = homepageData?.settings || {};
-  const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
-  const contactWhatsapp = settings?.contact_whatsapp || '255123456789';
-  const socialLocation = settings?.social_location || DEFAULT_GOOGLE_MAPS_LOCATION;
-  
-  const socialYoutube = settings?.social_youtube || 'https://youtube.com/@arushacatholicseminary';
+  const contactEmail = settingValue(settings, 'contact_email');
+  const contactWhatsapp = settingValue(settings, 'contact_whatsapp');
+  const socialLocation = settingValue(settings, 'social_location');
+  const socialYoutube = settingValue(settings, 'social_youtube');
 
-  // Format WhatsApp number (remove + and spaces)
   const whatsappNumber = contactWhatsapp.replace(/[+\s]/g, '');
-  const whatsappUrl = `https://wa.me/${whatsappNumber}`;
+  const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : '';
 
   const stats = visitorStats?.stats || {
     daily: 0,
@@ -73,40 +71,44 @@ const PublicFooter = () => {
         <div className="social-footer-content">
           <span className="social-label">Ungana Nasi</span>
           <div className="social-icons">
-            <a 
-              href={socialYoutube} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="youtube" 
-              title="YouTube"
-            >
-              <i className="fab fa-youtube"></i>
-            </a>
-            <a 
-              href={`mailto:${contactEmail}`} 
-              className="email" 
-              title="Email"
-            >
-              <i className="fas fa-envelope"></i>
-            </a>
-            <a 
-              href={whatsappUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="whatsapp" 
-              title="WhatsApp"
-            >
-              <i className="fab fa-whatsapp"></i>
-            </a>
-            <a 
-              href={socialLocation} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="location" 
-              title="Our Location"
-            >
-              <i className="fas fa-map-marker-alt"></i>
-            </a>
+            {socialYoutube ? (
+              <a
+                href={socialYoutube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="youtube"
+                title="YouTube"
+              >
+                <i className="fab fa-youtube" />
+              </a>
+            ) : null}
+            {contactEmail ? (
+              <a href={`mailto:${contactEmail}`} className="email" title="Email">
+                <i className="fas fa-envelope" />
+              </a>
+            ) : null}
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="whatsapp"
+                title="WhatsApp"
+              >
+                <i className="fab fa-whatsapp" />
+              </a>
+            ) : null}
+            {socialLocation ? (
+              <a
+                href={socialLocation}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="location"
+                title="Our Location"
+              >
+                <i className="fas fa-map-marker-alt" />
+              </a>
+            ) : null}
           </div>
         </div>
       </footer>

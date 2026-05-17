@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import DOMPurify from 'dompurify';
 import MDEditor from '@uiw/react-md-editor';
@@ -308,16 +307,15 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
 
   // Available public pages for content management
   const availablePages = [
+    { name: 'homepage', label: 'Ukurasa wa Mwanzo', icon: 'fa-home', description: 'Maudhui ya ziada chini ya hero (kurasa za haraka, programu, nk.)', color: 'blue' },
     { name: 'about', label: 'Kuhusu Sisi', icon: 'fa-info-circle', description: 'Taarifa kuhusu Seminari ya Kikatoliki Arusha', color: 'blue' },
     { name: 'admissions', label: 'Udahili', icon: 'fa-user-plus', description: 'Vigezo na utaratibu wa udahili', color: 'green' },
-    { name: 'staff', label: 'Watumishi', icon: 'fa-users', description: 'Taarifa za watumishi wa shule', color: 'orange' },
+    { name: 'staff', label: 'Watumishi', icon: 'fa-users', description: 'Utangulizi wa ukurasa wa watumishi (wasifu kutoka Staff Profiles)', color: 'orange' },
     { name: 'student-life', label: 'Maisha ya Wanafunzi', icon: 'fa-heart', description: 'Maisha na shughuli za wanafunzi', color: 'red' },
-    { name: 'student_life', label: 'Maisha ya Wanafunzi (Alias)', icon: 'fa-heart', description: 'Maisha na shughuli za wanafunzi (slug ya alias)', color: 'red' },
     { name: 'student_report', label: 'Ripoti za Wanafunzi', icon: 'fa-file-alt', description: 'Taarifa za mfumo wa ripoti za wanafunzi', color: 'blue' },
     { name: 'school-fee', label: 'Ada ya Shule', icon: 'fa-money-bill-wave', description: 'Muundo wa ada na malipo', color: 'green' },
-    { name: 'fees', label: 'Ada (Alias)', icon: 'fa-money-bill-wave', description: 'Muundo wa ada na malipo (slug ya alias)', color: 'green' },
-    { name: 'contact', label: 'Mawasiliano', icon: 'fa-envelope', description: 'Taarifa za mawasiliano na fomu', color: 'green' },
-    { name: 'privacy', label: 'Sera ya Faragha', icon: 'fa-shield-alt', description: 'Usimamizi wa maudhui ya sera ya faragha', color: 'blue' },
+    { name: 'contact', label: 'Mawasiliano', icon: 'fa-envelope', description: 'Maandishi ya ziada ya ukurasa wa mawasiliano', color: 'green' },
+    { name: 'privacy', label: 'Sera ya Faragha', icon: 'fa-shield-alt', description: 'Sera ya faragha kamili', color: 'blue' },
   ];
 
   // Fetch all public pages
@@ -350,7 +348,7 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
     mutationFn: async (pageName) => adminAPI.deletePublicPage(pageName),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-public-pages']);
-      toast.success('Maudhui ya ukurasa yamefutwa. Ukurasa wa umma sasa unatumia maudhui chaguomsingi.');
+      toast.success('Maudhui ya ukurasa yamefutwa. Ukurasa wa umma utaonyesha hali tupu hadi uchapishe tena.');
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Imeshindikana kufuta maudhui ya ukurasa');
@@ -386,7 +384,7 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
 
   const handleDelete = (pageName) => {
     const ok = window.confirm(
-      `Unataka kufuta maudhui yaliyohifadhiwa ya "${pageName}"?\n\nUkurasa wa umma utarudi mara moja kwenye maudhui chaguomsingi.`
+      `Unataka kufuta maudhui yaliyohifadhiwa ya "${pageName}"?\n\nUkurasa wa umma utaonyesha hali tupu hadi uchapishe maudhui mapya.`
     );
     if (!ok) return;
     deleteMutation.mutate(pageName);

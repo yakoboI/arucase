@@ -39,6 +39,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:force": "vite --force",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx"

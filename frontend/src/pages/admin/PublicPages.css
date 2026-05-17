@@ -5,6 +5,7 @@
  */
 
 .public-pages-admin-page.public-website-page-container {
+  --pp-shell: #dbeafe;
   --pp-line: #e5e7eb;
   --pp-line-focus: #d1d5db;
   --pp-bg: #ffffff;
@@ -13,7 +14,7 @@
   width: 100%;
   margin: 0;
   padding: clamp(0.75rem, 2vw, 1.5rem);
-  background: var(--pp-bg);
+  background: var(--pp-shell);
   color: var(--pp-text);
   font-weight: 400;
   box-sizing: border-box;
@@ -98,6 +99,52 @@
 .public-pages-admin-page.public-website-page-container .form-group label {
   font-weight: 400;
   color: var(--pp-text);
+}
+
+/* Neutral gray actions — no per-page colour variants on this route */
+.public-pages-admin-page.public-website-page-container .admin-btn,
+.public-pages-admin-page.public-website-page-container a.admin-btn,
+.public-pages-admin-page.public-website-page-container .admin-btn-primary,
+.public-pages-admin-page.public-website-page-container .admin-btn-success,
+.public-pages-admin-page.public-website-page-container .admin-btn-danger,
+.public-pages-admin-page.public-website-page-container .admin-btn-purple,
+.public-pages-admin-page.public-website-page-container .admin-btn-orange,
+.public-pages-admin-page.public-website-page-container .admin-btn-blue,
+.public-pages-admin-page.public-website-page-container .admin-btn-green,
+.public-pages-admin-page.public-website-page-container .admin-btn-red,
+.public-pages-admin-page.public-website-page-container .admin-btn-brown,
+.public-pages-admin-page.public-website-page-container .admin-btn-indigo,
+.public-pages-admin-page.public-website-page-container .admin-btn-cyan,
+.public-pages-admin-page.public-website-page-container .excel-btn.primary {
+  background: #6b7280 !important;
+  color: #ffffff !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.public-pages-admin-page.public-website-page-container .admin-btn:hover,
+.public-pages-admin-page.public-website-page-container a.admin-btn:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-primary:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-success:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-danger:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-purple:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-orange:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-blue:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-green:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-red:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-brown:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-indigo:hover,
+.public-pages-admin-page.public-website-page-container .admin-btn-cyan:hover,
+.public-pages-admin-page.public-website-page-container .excel-btn.primary:hover:not(:disabled) {
+  background: #4b5563 !important;
+  color: #ffffff !important;
+  border-color: #374151 !important;
+}
+
+.public-pages-admin-page.public-website-page-container .admin-btn:disabled,
+.public-pages-admin-page.public-website-page-container .excel-btn.primary:disabled {
+  background: #9ca3af !important;
+  border-color: #9ca3af !important;
+  color: #f9fafb !important;
 }
 
 @media (max-width: 768px) {

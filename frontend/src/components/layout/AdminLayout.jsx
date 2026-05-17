@@ -7,6 +7,7 @@ const AdminLayout = ({ children }) => {
   const studentRegistrationFrame =
     pathname === '/admin/students/registration' ||
     pathname.startsWith('/admin/students/registration/');
+  const publicPagesFrame = pathname === '/admin/public-pages';
 
   return (
     <div className="admin-layout">
@@ -16,7 +17,7 @@ const AdminLayout = ({ children }) => {
       <AdminSidebar />
       <main
         id="admin-main-content"
-        className={`admin-main-content${studentRegistrationFrame ? ' admin-main-content--student-registration-frame' : ''}`}
+        className={`admin-main-content${studentRegistrationFrame ? ' admin-main-content--student-registration-frame' : ''}${publicPagesFrame ? ' admin-main-content--public-pages-frame' : ''}`}
         tabIndex={-1}
       >
         {children}

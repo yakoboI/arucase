@@ -5,12 +5,17 @@ import { useQuery } from '@tanstack/react-query';
 import PublicLayout from '../../components/layout/PublicLayout';
 import Loading from '../../components/common/Loading';
 import { publicAPI } from '../../services/public';
-import { DEFAULT_GOOGLE_MAPS_LOCATION } from '../../constants/defaultGoogleMapsLocation';
 import { createT, getPreferredLanguage } from '../../utils/i18n';
 import { getGoogleMapsEmbedSrc } from '../../utils/googleMapsEmbed';
+import { PublicCmsHtml, usePublicPage } from '../../components/public/PublicCmsPage';
+import { hasPublishedPage, settingValue } from '../../utils/publicPageContent';
 import './Contact.css';
 
 const Contact = () => {
+  const { data: contactPageData } = usePublicPage('contact');
+  const contactPage = contactPageData?.data?.page;
+  const hasContactCms = hasPublishedPage(contactPage);
+
   const lang = getPreferredLanguage();
   const tt = createT(lang);
   const { data: settings, isLoading } = useQuery({
@@ -35,27 +40,32 @@ const Contact = () => {
     );
   }
 
-  const contactAddress = settings?.contact_address || 'Arusha Catholic Seminary, P.O. Box 1234, Arusha, Tanzania';
-  const contactPhone = settings?.contact_phone || '+255 123 456 789';
-  const contactEmail = settings?.contact_email || 'info@arushacatholicseminary.co.tz';
-  const contactWhatsapp = settings?.contact_whatsapp || '+255 123 456 789';
+  const contactAddress = settingValue(settings, 'contact_address');
+  const contactPhone = settingValue(settings, 'contact_phone');
+  const contactEmail = settingValue(settings, 'contact_email');
+  const contactWhatsapp = settingValue(settings, 'contact_whatsapp');
   const whatsappNumber = contactWhatsapp.replace(/[+\s]/g, '');
-  const socialLocation = settings?.social_location || DEFAULT_GOOGLE_MAPS_LOCATION;
+  const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : '';
+  const socialLocation = settingValue(settings, 'social_location');
   const mapEmbedSrc = getGoogleMapsEmbedSrc(socialLocation);
-  const socialYoutube = settings?.social_youtube || 'https://youtube.com/@arushacatholicseminary';
-  const admissionsEmail = settings?.admissions_email || 'admissions@arushacatholicseminary.co.tz';
-  const academicsEmail = settings?.academics_email || 'academics@arushacatholicseminary.co.tz';
-  const bursarEmail = settings?.bursar_email || 'bursar@arushacatholicseminary.co.tz';
-  const alumniEmail = settings?.alumni_email || 'alumni@arushacatholicseminary.co.tz';
-  const parentsEmail = settings?.parents_email || 'parents@arushacatholicseminary.co.tz';
+  const socialYoutube = settingValue(settings, 'social_youtube');
+  const admissionsEmail = settingValue(settings, 'admissions_email');
+  const academicsEmail = settingValue(settings, 'academics_email');
+  const bursarEmail = settingValue(settings, 'bursar_email');
+  const alumniEmail = settingValue(settings, 'alumni_email');
+  const parentsEmail = settingValue(settings, 'parents_email');
 
   return (
     <PublicLayout>
       <div className="contact-page">
         <div className="contact-page-inner">
+          {hasContactCms ? (
+            <PublicCmsHtml page={contactPage} className="contact-card contact-card--cms" />
+          ) : null}
+
           <header className="contact-card contact-card--intro">
             <h1 className="contact-page-title">{tt('contact.pageTitle')}</h1>
-            <p className="contact-page-lead">{tt('contact.intro')}</p>
+            {!hasContactCms ? <p className="contact-page-lead">{tt('contact.intro')}</p> : null}
           </header>
 
           <section className="contact-card" aria-labelledby="contact-info-heading">
@@ -82,31 +92,37 @@ const Contact = () => {
                 </span>
               </p>
 
-              <p>
-                <i className="fas fa-phone" />
-                <span className="contact-info-block">
-                  <strong>{tt('contact.phone')}:</strong>{' '}
-                  <a href={`tel:${contactPhone}`}>{contactPhone}</a>
-                </span>
-              </p>
+              {contactPhone ? (
+                <p>
+                  <i className="fas fa-phone" />
+                  <span className="contact-info-block">
+                    <strong>{tt('contact.phone')}:</strong>{' '}
+                    <a href={`tel:${contactPhone}`}>{contactPhone}</a>
+                  </span>
+                </p>
+              ) : null}
 
-              <p>
-                <i className="fas fa-envelope" />
-                <span className="contact-info-block">
-                  <strong>{tt('contact.email')}:</strong>{' '}
-                  <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
-                </span>
-              </p>
+              {contactEmail ? (
+                <p>
+                  <i className="fas fa-envelope" />
+                  <span className="contact-info-block">
+                    <strong>{tt('contact.email')}:</strong>{' '}
+                    <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+                  </span>
+                </p>
+              ) : null}
 
-              <p>
-                <i className="fab fa-whatsapp contact-whatsapp-icon" />
-                <span className="contact-info-block">
-                  <strong>{tt('contact.whatsapp')}:</strong>{' '}
-                  <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
-                    {contactWhatsapp}
-                  </a>
-                </span>
-              </p>
+              {whatsappUrl ? (
+                <p>
+                  <i className="fab fa-whatsapp contact-whatsapp-icon" />
+                  <span className="contact-info-block">
+                    <strong>{tt('contact.whatsapp')}:</strong>{' '}
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                      {contactWhatsapp}
+                    </a>
+                  </span>
+                </p>
+              ) : null}
             </div>
           </section>
 
@@ -122,18 +138,20 @@ const Contact = () => {
               </div>
               <ul className="contact-list">
                 <li>
-                  <strong>{tt('contact.officeHoursItems.monFri')}:</strong> {tt('contact.officeHoursItems.monFriTime')}
+                  <strong>{tt('contact.officeHoursItems.monFri')}:</strong>{' '}
+                  {settingValue(settings, 'office_weekdays') || '—'}
                 </li>
                 <li>
                   <strong>{tt('contact.officeHoursItems.saturday')}:</strong>{' '}
-                  {tt('contact.officeHoursItems.saturdayTime')}
+                  {settingValue(settings, 'office_saturday') || '—'}
                 </li>
                 <li>
-                  <strong>{tt('contact.officeHoursItems.sunday')}:</strong> {tt('contact.officeHoursItems.sundayTime')}
+                  <strong>{tt('contact.officeHoursItems.sunday')}:</strong>{' '}
+                  {settingValue(settings, 'office_sunday') || '—'}
                 </li>
                 <li>
                   <strong>{tt('contact.officeHoursItems.publicHolidays')}:</strong>{' '}
-                  {tt('contact.officeHoursItems.publicHolidaysTime')}
+                  {settingValue(settings, 'office_holidays') || '—'}
                 </li>
               </ul>
             </section>
@@ -148,26 +166,36 @@ const Contact = () => {
                 </h2>
               </div>
               <ul className="contact-list">
-                <li>
-                  <strong>{tt('contact.departments.admissions')}:</strong>{' '}
-                  <a href={`mailto:${admissionsEmail}`}>{admissionsEmail}</a>
-                </li>
-                <li>
-                  <strong>{tt('contact.departments.academics')}:</strong>{' '}
-                  <a href={`mailto:${academicsEmail}`}>{academicsEmail}</a>
-                </li>
-                <li>
-                  <strong>{tt('contact.departments.bursar')}:</strong>{' '}
-                  <a href={`mailto:${bursarEmail}`}>{bursarEmail}</a>
-                </li>
-                <li>
-                  <strong>{tt('contact.departments.alumni')}:</strong>{' '}
-                  <a href={`mailto:${alumniEmail}`}>{alumniEmail}</a>
-                </li>
-                <li>
-                  <strong>{tt('contact.departments.parentsOffice')}:</strong>{' '}
-                  <a href={`mailto:${parentsEmail}`}>{parentsEmail}</a>
-                </li>
+                {admissionsEmail ? (
+                  <li>
+                    <strong>{tt('contact.departments.admissions')}:</strong>{' '}
+                    <a href={`mailto:${admissionsEmail}`}>{admissionsEmail}</a>
+                  </li>
+                ) : null}
+                {academicsEmail ? (
+                  <li>
+                    <strong>{tt('contact.departments.academics')}:</strong>{' '}
+                    <a href={`mailto:${academicsEmail}`}>{academicsEmail}</a>
+                  </li>
+                ) : null}
+                {bursarEmail ? (
+                  <li>
+                    <strong>{tt('contact.departments.bursar')}:</strong>{' '}
+                    <a href={`mailto:${bursarEmail}`}>{bursarEmail}</a>
+                  </li>
+                ) : null}
+                {alumniEmail ? (
+                  <li>
+                    <strong>{tt('contact.departments.alumni')}:</strong>{' '}
+                    <a href={`mailto:${alumniEmail}`}>{alumniEmail}</a>
+                  </li>
+                ) : null}
+                {parentsEmail ? (
+                  <li>
+                    <strong>{tt('contact.departments.parentsOffice')}:</strong>{' '}
+                    <a href={`mailto:${parentsEmail}`}>{parentsEmail}</a>
+                  </li>
+                ) : null}
               </ul>
             </section>
           </div>
@@ -222,11 +250,13 @@ const Contact = () => {
                 {tt('contact.mapUnavailable')}
               </p>
             )}
-            <div className="map-button-container">
-              <a href={socialLocation} target="_blank" rel="noopener noreferrer" className="map-button">
-                <i className="fas fa-external-link-alt" /> {tt('contact.openFullMap')}
-              </a>
-            </div>
+            {socialLocation ? (
+              <div className="map-button-container">
+                <a href={socialLocation} target="_blank" rel="noopener noreferrer" className="map-button">
+                  <i className="fas fa-external-link-alt" /> {tt('contact.openFullMap')}
+                </a>
+              </div>
+            ) : null}
           </section>
 
           <section className="contact-card contact-card--follow" aria-labelledby="follow-heading">
@@ -239,11 +269,13 @@ const Contact = () => {
               </h2>
             </div>
             <p className="contact-card__body">{tt('contact.followUsBody')}</p>
-            <div className="social-links">
-              <a href={socialYoutube} target="_blank" rel="noopener noreferrer" className="social-link-youtube">
-                <i className="fab fa-youtube" /> YouTube
-              </a>
-            </div>
+            {socialYoutube ? (
+              <div className="social-links">
+                <a href={socialYoutube} target="_blank" rel="noopener noreferrer" className="social-link-youtube">
+                  <i className="fab fa-youtube" /> YouTube
+                </a>
+              </div>
+            ) : null}
           </section>
         </div>
       </div>

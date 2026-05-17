@@ -14,6 +14,7 @@ const {
 } = require('../utils/calculations');
 const { normalizeStream } = require('../utils/streamNormalizer');
 const { sendError } = require('../utils/safeError');
+const { resolvePublicPageSlug } = require('../utils/publicPageSlugs');
 const { cacheRoutes } = require('../middleware/cache');
 const { JWT_SECRET } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
@@ -595,32 +596,46 @@ router.get('/staff-profiles', async (req, res) => {
 });
 
 // Get public page (returns default empty page for known slugs when not in DB)
-const KNOWN_PAGE_SLUGS = ['school-fee', 'fees', 'about', 'contact', 'admissions', 'staff', 'student-life', 'student_life', 'student_report', 'privacy'];
+const KNOWN_PAGE_SLUGS = [
+  'homepage',
+  'school-fee',
+  'fees',
+  'about',
+  'contact',
+  'admissions',
+  'staff',
+  'student-life',
+  'student_life',
+  'student_report',
+  'privacy',
+];
+
 router.get('/page/:pageName', async (req, res) => {
   try {
     const { pageName } = req.params;
+    const canonical = resolvePublicPageSlug(pageName);
     let result;
     try {
       result = await query(
-        'SELECT * FROM public_pages WHERE page_name = $1',
-        [pageName]
+        'SELECT * FROM public_pages WHERE page_name = $1 OR page_name = $2 ORDER BY CASE WHEN page_name = $1 THEN 0 ELSE 1 END LIMIT 1',
+        [canonical, pageName]
       );
     } catch (dbError) {
       // Table might not exist yet; return default for known slugs
-      if (KNOWN_PAGE_SLUGS.includes(pageName)) {
-        return res.json({ page: { page_name: pageName, html_content: null, content: null } });
+      if (KNOWN_PAGE_SLUGS.includes(pageName) || KNOWN_PAGE_SLUGS.includes(canonical)) {
+        return res.json({ page: { page_name: canonical, html_content: null, content: null } });
       }
       throw dbError;
     }
     
     if (result.rows.length === 0) {
-      if (KNOWN_PAGE_SLUGS.includes(pageName)) {
-        return res.json({ page: { page_name: pageName, html_content: null, content: null } });
+      if (KNOWN_PAGE_SLUGS.includes(pageName) || KNOWN_PAGE_SLUGS.includes(canonical)) {
+        return res.json({ page: { page_name: canonical, html_content: null, content: null } });
       }
       return res.status(404).json({ message: 'Page not found' });
     }
     
-    res.json({ page: result.rows[0] });
+    res.json({ page: { ...result.rows[0], page_name: canonical } });
   } catch (error) {
     return sendError(res, error, 500);
   }

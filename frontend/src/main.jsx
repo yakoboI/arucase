@@ -13,6 +13,35 @@ import './utils/debugAuth.js'; // Import debug utility to make it available glob
 import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
 import './utils/tokenDecoder'; // Initialize token decoder (makes window.logTokenInfo available)
 
+const CHUNK_RELOAD_KEY = 'arucase-chunk-reload';
+
+/** After a new deploy, cached index.html may reference removed hashed chunks (404 → MIME errors). */
+function isStaleChunkLoadFailure(reason) {
+  const msg = String(reason?.message ?? reason ?? '');
+  if (
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Failed to load module script') ||
+    msg.includes('Loading chunk') ||
+    msg.includes('Loading CSS chunk') ||
+    msg.includes('dynamically imported module')
+  ) {
+    return true;
+  }
+  if (reason?.name === 'ChunkLoadError') return true;
+  return false;
+}
+
+function reloadOnceForStaleChunks() {
+  if (sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+    return false;
+  }
+  sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+  window.location.reload();
+  return true;
+}
+
 /** Vercel Toolbar / Live feedback failures when CSP blocks vercel.live */
 function isBenignUnhandledRejection(reason) {
   if (!reason || typeof reason !== 'object') return false;
@@ -54,14 +83,6 @@ function isBenignUnhandledRejection(reason) {
   }
 
   if (reason?.response?.status === 401) {
-    return true;
-  }
-
-  if (reason?.message?.includes('Loading chunk') || reason?.message?.includes('chunk')) {
-    return true;
-  }
-
-  if (!reason.stack && !reason.message && typeof reason === 'object') {
     return true;
   }
 
@@ -135,6 +156,12 @@ const queryClient = new QueryClient({
 
 // Global unhandled promise rejection handler
 window.addEventListener('unhandledrejection', (event) => {
+  if (isStaleChunkLoadFailure(event.reason)) {
+    event.preventDefault();
+    reloadOnceForStaleChunks();
+    return;
+  }
+
   if (isBenignUnhandledRejection(event.reason)) {
     event.preventDefault();
     return;
@@ -145,6 +172,21 @@ window.addEventListener('unhandledrejection', (event) => {
   }
   event.preventDefault();
 });
+
+// Failed lazy route scripts (e.g. old AdminLayout-*.js after deploy)
+window.addEventListener(
+  'error',
+  (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLScriptElement) && !(target instanceof HTMLLinkElement)) return;
+    const url = target.src || target.href || '';
+    if (!url.includes('/js/') && !url.includes('/assets/')) return;
+    if (reloadOnceForStaleChunks()) {
+      event.preventDefault();
+    }
+  },
+  true
+);
 
 // Global image error handler to suppress 404 errors for missing images
 window.addEventListener('error', (event) => {
@@ -204,6 +246,9 @@ if (typeof window !== 'undefined') {
 //       });
 //   });
 // }
+
+// App booted — allow one auto-reload again after the next deployment
+sessionStorage.removeItem(CHUNK_RELOAD_KEY);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
