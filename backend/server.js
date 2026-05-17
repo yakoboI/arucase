@@ -441,13 +441,25 @@ app.use('/api/cloudinary', require('./routes/cloudinary-signature'));
 const staffPresence = require('./utils/staffPresence');
 staffPresence.setIO(io);
 
+function parseCookieHeader(rawCookie) {
+  if (!rawCookie) return {};
+  const out = {};
+  for (const part of rawCookie.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    const key = part.slice(0, eq).trim();
+    const val = part.slice(eq + 1).trim();
+    if (key) out[key] = decodeURIComponent(val);
+  }
+  return out;
+}
+
 function getSocketAuthToken(socket) {
   const fromAuth = socket.handshake.auth?.token;
   if (fromAuth) return String(fromAuth).replace(/^Bearer\s+/i, '').trim();
-  const rawCookie = socket.handshake.headers?.cookie;
-  if (!rawCookie) return null;
-  const match = rawCookie.match(/(?:^|;\s*)token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  const cookies = parseCookieHeader(socket.handshake.headers?.cookie);
+  // Match requireAuth: accessToken (login-enhanced), token (legacy login)
+  return cookies.accessToken || cookies.token || null;
 }
 
 // Socket.IO authentication middleware

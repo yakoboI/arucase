@@ -165,12 +165,6 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: pickAuthErrorMessage(data) };
       }
       
-      // Note: With enhanced login, tokens are stored in httpOnly cookies automatically
-      // We don't need to manually store tokens in localStorage anymore
-      if (import.meta.env.DEV) {
-        console.log('Staff login (cookies):', user.username, user.role);
-      }
-      
       setUser(user);
       return { success: true };
     } catch (error) {
@@ -201,9 +195,6 @@ export const AuthProvider = ({ children }) => {
           // Store token in localStorage for fallback
           if (token) {
             localStorage.setItem('token', token);
-            if (import.meta.env.DEV) {
-              console.log('Staff login (localStorage token):', user.username);
-            }
           }
           
           setUser(user);

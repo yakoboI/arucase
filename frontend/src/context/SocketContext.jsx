@@ -18,12 +18,16 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const auth = useAuth();
 
+  const user = auth?.user;
+
   useEffect(() => {
-    if (auth && auth.isAuthenticated && auth.isAuthenticated()) {
+    if (auth?.isAuthenticated?.()) {
       const wsUrl = getWebSocketUrl();
       if (!wsUrl) {
         return undefined;
       }
+      // Enhanced login: httpOnly accessToken cookie (sent via withCredentials).
+      // Legacy login: optional Bearer token in handshake.auth.
       const token = localStorage.getItem('token');
       const newSocket = io(wsUrl, {
         transports: ['websocket'],
@@ -31,7 +35,7 @@ export const SocketProvider = ({ children }) => {
         reconnectionDelay: 1000,
         reconnectionAttempts: 3,
         withCredentials: true,
-        auth: token ? { token } : {},
+        ...(token ? { auth: { token } } : {}),
       });
 
       newSocket.on('connect', () => {
@@ -64,7 +68,7 @@ export const SocketProvider = ({ children }) => {
         setConnected(false);
       }
     }
-  }, [auth]);
+  }, [user]);
 
   const value = {
     socket,
