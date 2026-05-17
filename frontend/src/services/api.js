@@ -18,7 +18,11 @@ function isPublicApiRequest(config) {
 
 function isAuthEndpoint(config) {
   const url = (config?.url || '').split('?')[0];
-  return url.startsWith('/auth/login') || url.startsWith('/auth/me');
+  return (
+    url.startsWith('/auth/login') ||
+    url.startsWith('/auth/me') ||
+    url.startsWith('/auth/presence/')
+  );
 }
 
 function isProtectedApiRequest(config) {

@@ -1,0 +1,152 @@
+.sidebar-user-photo {
+  flex-shrink: 0;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.sidebar-user-photo--collapsed {
+  padding: 0.5rem;
+}
+
+.sidebar-user-photo__area {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  border: 2px dashed #d1d5db;
+  background: #f9fafb;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  max-height: 10.5rem;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.sidebar-user-photo--collapsed .sidebar-user-photo__area {
+  max-height: 3.25rem;
+  aspect-ratio: 1;
+  border-width: 1px;
+}
+
+.sidebar-user-photo__area:hover:not(:disabled) {
+  border-color: #1a5490;
+  background: #f0f7ff;
+}
+
+.sidebar-user-photo__area:focus-visible {
+  outline: 2px solid #1a5490;
+  outline-offset: 2px;
+}
+
+.sidebar-user-photo__area:disabled {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.sidebar-user-photo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sidebar-user-photo__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  height: 100%;
+  min-height: 6rem;
+  color: #6b7280;
+}
+
+.sidebar-user-photo--collapsed .sidebar-user-photo__placeholder {
+  min-height: 0;
+}
+
+.sidebar-user-photo__placeholder i {
+  font-size: 1.75rem;
+  color: #9ca3af;
+}
+
+.sidebar-user-photo--collapsed .sidebar-user-photo__placeholder i {
+  font-size: 1.1rem;
+}
+
+.sidebar-user-photo__hint {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-user-photo--collapsed .sidebar-user-photo__hint {
+  display: none;
+}
+
+.sidebar-user-photo__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.75);
+  color: #1a5490;
+  font-size: 1.25rem;
+}
+
+.sidebar-user-photo__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-user-photo__menu {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sidebar-user-photo__menu-note {
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: #6b7280;
+  margin: 0 0 0.25rem;
+  padding: 0 0.15rem;
+}
+
+.sidebar-user-photo__menu-btn {
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  color: #1f2937;
+}
+
+.sidebar-user-photo__menu-btn:hover {
+  background: #f9fafb;
+}
+
+.sidebar-user-photo__menu-btn--danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.sidebar-user-photo__menu-btn--danger:hover {
+  background: #fef2f2;
+}

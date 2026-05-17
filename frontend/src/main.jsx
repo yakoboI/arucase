@@ -24,6 +24,14 @@ function isBenignUnhandledRejection(reason) {
     return true;
   }
 
+  if (String(url).includes('vercel.live') || String(reason?.message || '').includes('vercel.live')) {
+    return true;
+  }
+
+  if (String(url).includes('/auth/presence/')) {
+    return true;
+  }
+
   // Vercel Live feedback API (blocked script or connect-src)
   if (
     reason?.httpError === false &&

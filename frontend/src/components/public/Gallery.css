@@ -1,12 +1,19 @@
 .gallery-section {
-  padding: 3rem 2rem;
+  padding: clamp(1.5rem, 4vw, 3rem) var(--public-content-pad-x, clamp(0.5rem, 2.5vw, 1.75rem));
   background: #f9fafb;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+  gap: clamp(0.65rem, 2vw, 1.5rem);
+  width: 100%;
+  max-width: min(var(--public-content-max-width, 1680px), 100%);
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .gallery-item {

@@ -1,10 +1,19 @@
 import { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 /** HTTP heartbeat interval — light load, keeps cookie-auth users in presence set */
 const HEARTBEAT_MS = 60_000;
+
+function isStaffAppRoute(pathname) {
+  return (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/students/') ||
+    pathname.startsWith('/reports/')
+  );
+}
 
 /**
  * Live count of staff users currently logged in (sidebar indicator).
@@ -13,6 +22,7 @@ const HEARTBEAT_MS = 60_000;
 export function useOnlineStaffCount() {
   const { isAuthenticated } = useAuth();
   const { socket } = useSocket();
+  const location = useLocation();
   const [count, setCount] = useState(0);
   const mountedRef = useRef(true);
 
@@ -24,7 +34,10 @@ export function useOnlineStaffCount() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated?.()) return undefined;
+    if (!isAuthenticated?.() || !isStaffAppRoute(location.pathname)) {
+      setCount(0);
+      return undefined;
+    }
 
     const applyCount = (value) => {
       if (!mountedRef.current) return;
@@ -59,7 +72,7 @@ export function useOnlineStaffCount() {
       socket?.off('presence:online-count', onPresence);
       clearInterval(intervalId);
     };
-  }, [socket, isAuthenticated]);
+  }, [socket, isAuthenticated, location.pathname]);
 
   return count;
 }

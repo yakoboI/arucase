@@ -209,7 +209,7 @@
 /* Gallery Grid - Masonry-Style Layout (Pinterest/Instagram Inspired) */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(240px, 26vw, 300px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(9rem, 26vw, 18.75rem)), 1fr));
   gap: clamp(0.75rem, 2vw, 1.25rem); /* Tighter gaps for better space optimization */
   padding: 0.15rem 0 0;
   max-width: 100%;

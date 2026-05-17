@@ -12,6 +12,16 @@ const { protectByUsername, trackByUsername, clearFailedAttempts } = require('../
 const { saveUserActivity } = require('../utils/activityLogger');
 const { sendError } = require('../utils/safeError');
 const { cookieShape } = require('../utils/hostingEnv');
+const {
+  ensureUserProfilePhotoColumns,
+  userProfilePhotoUpload,
+  removeStoredUserProfilePhoto,
+  userHasProfilePhoto,
+} = require('../utils/userProfilePhoto');
+const {
+  syncPhotoFromUserToStaffProfile,
+  clearStaffProfilePhotoForUser,
+} = require('../utils/staffUserPhotoSync');
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -175,6 +185,95 @@ router.post('/login',
     });
   } catch (error) {
     console.error('Login error:', error);
+    return sendError(res, error, 500);
+  }
+});
+
+// Profile photo (sidebar) — upload only when none exists; delete before replacing
+router.post(
+  '/profile-picture',
+  require('../middleware/auth').requireAuth,
+  userProfilePhotoUpload,
+  async (req, res) => {
+    try {
+      await ensureUserProfilePhotoColumns();
+      const username = req.user.user_id;
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'No image file uploaded' });
+      }
+
+      const existing = await query(
+        'SELECT profile_picture, profile_picture_cloudinary_id FROM users WHERE username = $1',
+        [username]
+      );
+      if (existing.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      if (userHasProfilePhoto(existing.rows[0])) {
+        return res.status(400).json({
+          message: 'Delete your current photo before uploading a new one.',
+        });
+      }
+
+      const photoUrl = req.file.path;
+      const cloudinaryPublicId = req.file.filename;
+
+      await query(
+        `UPDATE users
+         SET profile_picture = $1,
+             profile_picture_cloudinary_id = $2,
+             updated_at = NOW()
+         WHERE username = $3`,
+        [photoUrl, cloudinaryPublicId, username]
+      );
+
+      const syncedToStaff = await syncPhotoFromUserToStaffProfile(
+        username,
+        photoUrl,
+        cloudinaryPublicId
+      );
+
+      res.json({
+        message: 'Profile photo uploaded',
+        profile_picture: photoUrl,
+        synced_to_public_staff: syncedToStaff,
+      });
+    } catch (error) {
+      return sendError(res, error, 500);
+    }
+  }
+);
+
+router.delete('/profile-picture', require('../middleware/auth').requireAuth, async (req, res) => {
+  try {
+    await ensureUserProfilePhotoColumns();
+    const username = req.user.user_id;
+
+    const existing = await query(
+      'SELECT profile_picture, profile_picture_cloudinary_id FROM users WHERE username = $1',
+      [username]
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (!userHasProfilePhoto(existing.rows[0])) {
+      return res.status(400).json({ message: 'No profile photo to delete' });
+    }
+
+    await removeStoredUserProfilePhoto(existing.rows[0]);
+    await query(
+      `UPDATE users
+       SET profile_picture = NULL,
+           profile_picture_cloudinary_id = NULL,
+           updated_at = NOW()
+       WHERE username = $1`,
+      [username]
+    );
+    await clearStaffProfilePhotoForUser(username, { destroyAsset: false });
+
+    res.json({ message: 'Profile photo deleted permanently' });
+  } catch (error) {
     return sendError(res, error, 500);
   }
 });

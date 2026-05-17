@@ -6,7 +6,7 @@
    -------------------------------------------------------------------------- */
 
 .contact-page {
-  --cp-gutter: clamp(0.75rem, 4vw, 3rem);
+  --cp-gutter: clamp(0.5rem, 2.5vw, 2rem);
   --cp-inner-max: min(1680px, 100%);
   --cp-card-border: 1px solid rgba(15, 23, 42, 0.16);
   --cp-card-pad: clamp(1.15rem, 2.8vw, 1.65rem);

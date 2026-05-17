@@ -15,6 +15,7 @@ const emptyForm = {
   contact_email: '',
   display_order: 0,
   active: true,
+  linked_username: '',
 };
 
 export default function StaffProfiles() {
@@ -41,6 +42,24 @@ export default function StaffProfiles() {
     refetchOnReconnect: false,
   });
 
+  const { data: systemUsers = [] } = useQuery({
+    queryKey: ['admin-users-staff-link'],
+    queryFn: async () => {
+      const res = await adminAPI.getUsers();
+      return res.data?.users || [];
+    },
+    enabled: !authLoading,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const linkableUsers = useMemo(
+    () =>
+      (systemUsers || []).filter(
+        (u) => u.role !== 'admin' && u.role !== 'superadmin' && u.status === 'active'
+      ),
+    [systemUsers]
+  );
+
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
       const fd = new FormData();
@@ -53,6 +72,7 @@ export default function StaffProfiles() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-profiles-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['public-staff-profiles'] });
       toast.success(`Wasifu ${editing ? 'umesasishwa' : 'umehifadhiwa'} kwa mafanikio.`);
       closeModal();
     },
@@ -119,6 +139,7 @@ export default function StaffProfiles() {
       contact_email: p.contact_email || '',
       display_order: p.display_order || 0,
       active: p.active !== false,
+      linked_username: p.linked_username || '',
     });
     setSelectedPhoto(null);
     setPhotoPreview(p.photo_path ? toImageUrl(p.photo_path) : '');
@@ -419,11 +440,32 @@ export default function StaffProfiles() {
                 </div>
 
                 <div className="form-row">
+                  <div className="form-group form-group--full">
+                    <label>Akaunti ya kuingia (hiari)</label>
+                    <select
+                      className="excel-input"
+                      value={form.linked_username}
+                      onChange={(e) => setForm({ ...form, linked_username: e.target.value })}
+                    >
+                      <option value="">— Hakuna —</option>
+                      {linkableUsers.map((u) => (
+                        <option key={u.username} value={u.username}>
+                          {u.full_name || u.username} ({u.role})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="staff-form-hint">
+                      Unganisha na mtumiaji ili picha ionekane kwenye sidebar na ukurasa wa umma /staff.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="form-row">
                   <div className="form-group">
                     <label>Aina ya Mtumishi</label>
                     <select className="excel-input" value={form.is_teaching ? 'teacher' : 'non'} onChange={(e) => setForm({ ...form, is_teaching: e.target.value === 'teacher' })}>
-                      <option value="teacher">Mwalimu</option>
-                      <option value="non">Sio Mwalimu</option>
+                      <option value="teacher">Mwalimu (Walimu)</option>
+                      <option value="non">Sio Mwalimu (Watumishi wasio walimu)</option>
                     </select>
                   </div>
                   <div className="form-group">

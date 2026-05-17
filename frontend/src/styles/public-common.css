@@ -288,3 +288,52 @@
     font-size: 1.0625rem;
   }
 }
+
+/* ===========================================
+   PUBLIC LAYOUT — full viewport width utilization
+   =========================================== */
+.public-layout .public-main {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.public-layout .public-main .container,
+.public-layout .public-main .page-container,
+.public-layout .public-main .full-width-container,
+.public-layout .public-main .responsive-container,
+.public-layout .public-main .responsive-full-width {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Card grids: use available width at every breakpoint */
+.public-layout .public-main [class*="-grid"],
+.public-layout .public-main [class*="-cards"],
+.public-layout .public-main .gallery-grid,
+.public-layout .public-main .announcements-skeleton-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .public-layout {
+    --public-content-pad-x: clamp(0.5rem, 2.5vw, 0.85rem);
+  }
+
+  .public-layout .public-main .content-card {
+    border-radius: 0;
+    padding: clamp(0.85rem, 3vw, 1.15rem) var(--public-content-pad-x, 0.75rem);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .public-layout {
+    --public-content-pad-x: clamp(0.75rem, 2vw, 1.25rem);
+  }
+}

@@ -1,12 +1,16 @@
 .faq-section {
-  padding: 4rem 2rem;
+  padding: clamp(2rem, 5vw, 4rem) var(--public-content-pad-x, clamp(0.5rem, 2.5vw, 1.75rem));
   background: #f9fafb;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .faq-container {
-  max-width: 900px;
+  width: 100%;
+  max-width: min(var(--public-content-max-width, 1680px), 100%);
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .faq-header {
@@ -326,7 +330,7 @@
   }
 
   .faq-container {
-    max-width: 900px;
+    max-width: min(var(--public-content-max-width, 1680px), 100%);
   }
 
   .faq-question {

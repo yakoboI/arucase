@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import SidebarOnlinePresence from './SidebarOnlinePresence';
+import SidebarUserPhoto from './SidebarUserPhoto';
 import './AdminSidebar.css';
 
 /** Matches routes that use `requiredAdmin` (subjects, etc.) — not all leadership roles. */
@@ -37,6 +38,9 @@ const AdminSidebar = () => {
   };
   const { logout, user } = useAuth();
 
+  const isAdminLike = user?.role && ADMIN_LIKE_ROLES.includes(user.role);
+  const sidebarTitle = isAdminLike ? 'Admin Panel' : 'Staff Portal';
+
   // Helper: get modules array from user.permissions
   const getUserModules = () => {
     if (!user?.permissions) return [];
@@ -51,7 +55,6 @@ const AdminSidebar = () => {
   };
 
   const userModules = getUserModules();
-  const isAdminLike = user?.role && ADMIN_LIKE_ROLES.includes(user.role);
 
   // Default form for deep analytics links (must match `Analytics.jsx` form slugs)
   const defaultAnalyticsForm = 'FORM I';
@@ -255,7 +258,7 @@ const AdminSidebar = () => {
       <button 
         className="admin-mobile-menu-toggle"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        aria-label="Toggle admin menu"
+        aria-label={`Toggle ${sidebarTitle.toLowerCase()} menu`}
         aria-expanded={mobileMenuOpen}
       >
         <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
@@ -276,7 +279,7 @@ const AdminSidebar = () => {
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <i className="fas fa-shield-alt"></i>
-            {!sidebarCollapsed && <span>Admin Panel</span>}
+            {!sidebarCollapsed && <span>{sidebarTitle}</span>}
           </div>
           <button 
             className="sidebar-toggle"
@@ -286,6 +289,8 @@ const AdminSidebar = () => {
             <i className={`fas ${sidebarCollapsed ? 'fa-angle-right' : 'fa-angle-left'}`}></i>
           </button>
         </div>
+
+        <SidebarUserPhoto collapsed={sidebarCollapsed} />
 
         <nav className="sidebar-nav">
           {/* Desktop Navigation - Grouped by Category */}

@@ -108,16 +108,30 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      window.__verifyingToken = true;
+      const response = await api.get('/auth/me');
+      if (response.status === 401 || response.status === 403) {
+        return null;
+      }
+      const u = response.data?.user ?? null;
+      setUser(u);
+      return u;
+    } catch {
+      return null;
+    } finally {
+      window.__verifyingToken = false;
+    }
+  }, []);
+
   const verifyToken = async () => {
     try {
-      // Add a flag to prevent interceptor from logging out during verification
       window.__verifyingToken = true;
       const response = await api.get('/auth/me');
       window.__verifyingToken = false;
-      
-      // Handle 401 responses that are now resolved by the interceptor
+
       if (response.status === 401 || response.status === 403) {
-        // Clear invalid token
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
@@ -127,11 +141,8 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data?.user ?? null);
       return true;
     } catch (error) {
-      // Network errors or other unexpected errors
       window.__verifyingToken = false;
       console.error('Token verification failed:', error);
-      
-      // Clear invalid token on any verification error
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
@@ -366,6 +377,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     verifyToken,
+    refreshUser,
     isAuthenticated,
     hasRole,
     hasPermission,

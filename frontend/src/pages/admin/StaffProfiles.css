@@ -1,3 +1,14 @@
+.staff-form-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+.staff-form .form-group--full {
+  flex: 1 1 100%;
+}
+
 .staff-profiles-page .excel-card-header {
   display: flex;
   align-items: center;

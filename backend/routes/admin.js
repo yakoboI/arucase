@@ -17,6 +17,11 @@ const { getClient, callClaude } = require('../utils/anthropic');
 const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
 const { sendError } = require('../utils/safeError');
 const cloudinary = require('../config/cloudinary');
+const {
+  syncPhotoFromStaffProfileToUser,
+  clearUserPhotoForUsername,
+  pullUserPhotoIntoStaffProfile,
+} = require('../utils/staffUserPhotoSync');
 // createCloudinaryStorage uses cloudinary.uploader.upload_stream() directly,
 // bypassing multer-storage-cloudinary whose upload() callback was never invoked
 // with the cloudinary v2 SDK (causing 60 s upload timeouts).
@@ -243,8 +248,15 @@ async function ensureStaffProfilesTable() {
     await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS profile_summary TEXT`);
     await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0`);
     await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE`);
+    await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS linked_username VARCHAR(100)`);
     await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
     await query(`ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+
+    await query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_staff_profiles_linked_username
+      ON staff_profiles (linked_username)
+      WHERE linked_username IS NOT NULL AND linked_username <> ''
+    `);
 
     await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_active_order ON staff_profiles(active, display_order, created_at DESC)');
     await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_teaching ON staff_profiles(is_teaching, active)');
@@ -1851,6 +1863,7 @@ router.post('/staff-profiles', requireRole('admin', 'superadmin'), staffProfileU
       profile_summary = '',
       display_order = 0,
       active = 'true',
+      linked_username = '',
     } = req.body || {};
 
     if (!full_name || !role_title) {
@@ -1863,11 +1876,30 @@ router.post('/staff-profiles', requireRole('admin', 'superadmin'), staffProfileU
     const teachingBool = asBool(is_teaching);
     const parsedYear = teaching_since_year ? parseInt(teaching_since_year, 10) : null;
     const parsedOrder = parseInt(display_order, 10) || 0;
+    const linkedUser =
+      typeof linked_username === 'string' && linked_username.trim()
+        ? linked_username.trim()
+        : null;
+
+    if (linkedUser) {
+      const taken = await query(
+        `SELECT id FROM staff_profiles WHERE linked_username = $1 AND id <> $2 LIMIT 1`,
+        [linkedUser, profileId]
+      );
+      if (taken.rows.length > 0) {
+        return res.status(400).json({
+          message: 'That login account is already linked to another staff profile.',
+        });
+      }
+    }
 
     // Preserve existing photo and cloudinary_public_id when updating without a new upload
     let photoPath = null;
     let cloudinaryPublicId = null;
-    const existing = await query('SELECT photo_path, cloudinary_public_id FROM staff_profiles WHERE id = $1', [profileId]);
+    const existing = await query(
+      'SELECT photo_path, cloudinary_public_id, linked_username FROM staff_profiles WHERE id = $1',
+      [profileId]
+    );
     if (existing.rows.length > 0) {
       photoPath = existing.rows[0].photo_path || null;
       cloudinaryPublicId = existing.rows[0].cloudinary_public_id || null;
@@ -1910,28 +1942,45 @@ router.post('/staff-profiles', requireRole('admin', 'superadmin'), staffProfileU
          profile_summary = $13,
          display_order = $14,
          active = $15,
+         linked_username = $16,
          updated_at = NOW()
-         WHERE id = $16`,
+         WHERE id = $17`,
         [
           full_name, role_title, teachingBool, professional_subjects || null, parsedYear,
           subjects_teaching || null, class_teacher_for || null, other_duties || null,
           contact_phone || null, contact_email || null, photoPath, cloudinaryPublicId, profile_summary || null,
-          parsedOrder, activeBool, profileId
+          parsedOrder, activeBool, linkedUser, profileId
         ]
       );
     } else {
       await query(
         `INSERT INTO staff_profiles
          (id, full_name, role_title, is_teaching, professional_subjects, teaching_since_year, subjects_teaching,
-          class_teacher_for, other_duties, contact_phone, contact_email, photo_path, cloudinary_public_id, profile_summary, display_order, active)
+          class_teacher_for, other_duties, contact_phone, contact_email, photo_path, cloudinary_public_id, profile_summary, display_order, active, linked_username)
          VALUES
-         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
         [
           profileId, full_name, role_title, teachingBool, professional_subjects || null, parsedYear,
           subjects_teaching || null, class_teacher_for || null, other_duties || null, contact_phone || null,
-          contact_email || null, photoPath, cloudinaryPublicId, profile_summary || null, parsedOrder, activeBool
+          contact_email || null, photoPath, cloudinaryPublicId, profile_summary || null, parsedOrder, activeBool,
+          linkedUser
         ]
       );
+    }
+
+    if (linkedUser) {
+      if (!photoPath) {
+        await pullUserPhotoIntoStaffProfile(linkedUser, profileId);
+        const refreshed = await query(
+          'SELECT photo_path, cloudinary_public_id FROM staff_profiles WHERE id = $1',
+          [profileId]
+        );
+        photoPath = refreshed.rows[0]?.photo_path || photoPath;
+        cloudinaryPublicId = refreshed.rows[0]?.cloudinary_public_id || cloudinaryPublicId;
+      }
+      if (photoPath) {
+        await syncPhotoFromStaffProfileToUser(linkedUser, photoPath, cloudinaryPublicId);
+      }
     }
 
     res.json({ message: `Staff profile ${existing.rows.length > 0 ? 'updated' : 'created'} successfully`, id: profileId });
@@ -1983,6 +2032,15 @@ router.post('/staff-profiles/:id/photo', requireRole('admin', 'superadmin'), sta
       [photoUrl, cloudinaryPublicId, id]
     );
 
+    const linkRow = await query(
+      'SELECT linked_username FROM staff_profiles WHERE id = $1',
+      [id]
+    );
+    const linkedUser = linkRow.rows[0]?.linked_username;
+    if (linkedUser) {
+      await syncPhotoFromStaffProfileToUser(linkedUser, photoUrl, cloudinaryPublicId);
+    }
+
     res.json({ message: 'Staff profile photo uploaded successfully', url: photoUrl, public_id: cloudinaryPublicId });
   } catch (error) {
     return sendError(res, error, 500);
@@ -1993,13 +2051,17 @@ router.delete('/staff-profiles/:id', async (req, res) => {
   try {
     await ensureStaffProfilesTable();
     const { id } = req.params;
-    const existing = await query('SELECT photo_path, cloudinary_public_id FROM staff_profiles WHERE id = $1', [id]);
+    const existing = await query(
+      'SELECT photo_path, cloudinary_public_id, linked_username FROM staff_profiles WHERE id = $1',
+      [id]
+    );
     if (existing.rows.length === 0) {
       return res.status(404).json({ message: 'Staff profile not found' });
     }
 
     const photoPath = existing.rows[0]?.photo_path;
     const cloudinaryPublicId = existing.rows[0]?.cloudinary_public_id;
+    const linkedUser = existing.rows[0]?.linked_username;
 
     // Delete from Cloudinary if cloudinary_public_id exists
     if (cloudinaryPublicId) {
@@ -2012,6 +2074,10 @@ router.delete('/staff-profiles/:id', async (req, res) => {
         const filePath = path.join(__dirname, '../static', photoPath);
         await fs.unlink(filePath);
       } catch (_) {}
+    }
+
+    if (linkedUser) {
+      await clearUserPhotoForUsername(linkedUser, { destroyAsset: false });
     }
 
     await query('DELETE FROM staff_profiles WHERE id = $1', [id]);

@@ -49,6 +49,7 @@ async function initDatabase() {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(100);`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR(100);`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(255);`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_cloudinary_id VARCHAR(255);`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
     console.log('✅ Users table profile columns ensured');
@@ -716,6 +717,7 @@ async function initDatabase() {
     `);
     // Ensure cloudinary_public_id column exists on existing deployments
     await query('ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS cloudinary_public_id VARCHAR(255);');
+    await query('ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS linked_username VARCHAR(100);');
     await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_active_order ON staff_profiles(active, display_order, created_at DESC)');
     await query('CREATE INDEX IF NOT EXISTS idx_staff_profiles_teaching ON staff_profiles(is_teaching, active)');
     console.log('✅ Staff profiles table created');

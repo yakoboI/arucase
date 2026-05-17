@@ -8,10 +8,10 @@
   flex-direction: column;
   width: 100%;
   min-width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   /* Shared with header nav, Nyuma/Mbele bar, and wide public pages (NECTA, Staff, …) */
-  --public-content-pad-x: clamp(0.85rem, 2.5vw, 2rem);
-  --public-content-max-width: 90rem;
+  --public-content-pad-x: clamp(0.5rem, 2.5vw, 1.75rem);
+  --public-content-max-width: min(1680px, 100%);
   /* Do not use overflow-x: hidden here — it pairs with overflow-y:auto and clips the header’s
      absolutely positioned category menus. Horizontal containment stays on .public-main. */
   overflow-x: visible;
@@ -21,12 +21,20 @@
 .public-main {
   flex: 1;
   width: 100%;
-  min-width: 100%;
-  max-width: 100vw;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: hidden;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+}
+
+/* Direct page roots fill the viewport width */
+.public-main > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Mobile Responsiveness */
