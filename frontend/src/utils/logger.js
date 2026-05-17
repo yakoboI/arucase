@@ -231,15 +231,17 @@ window.addEventListener('unhandledrejection', (event) => {
   
   // Suppress known benign cases (same as main.jsx to avoid duplicate logging)
   if (
-    url.includes('ERR_BLOCKED_BY_CLIENT') || 
+    url.includes('ERR_BLOCKED_BY_CLIENT') ||
     reason?.message?.includes('ERR_BLOCKED_BY_CLIENT') ||
     reqInfo?.pathPrefix === '/writing' ||
     reqInfo?.path?.includes('/writing') ||
     (reason?.code === 403 && reason?.data?.code === 403 && reason?.data?.error === 'exceptions.UserAuthError') ||
     (reason?.code === 403 && (reason?.httpStatus === 200 || reason?.httpError === false)) ||
-    reason?.response?.status === 401 // Don't log 401 errors (expected when not authenticated)
+    reason?.code === 403 ||
+    String(reason?.code) === '403' ||
+    reason?.response?.status === 401
   ) {
-    return; // Silently ignore these cases
+    return;
   }
   
   // Only log unexpected errors

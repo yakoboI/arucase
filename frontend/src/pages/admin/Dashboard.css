@@ -70,7 +70,10 @@
   background: #e8eaed;
   color: #000000;
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 1.25rem 0 2.5rem;
   margin: 0;
   box-sizing: border-box;
@@ -479,9 +482,12 @@
   --teacher-dash-max: min(1200px, 100%);
   background: #e8eaed;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 0 0 2rem;
   margin: 0;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -785,43 +791,107 @@
 
 @media (max-width: 767px) {
   .dashboard-layout {
-    padding: 0.75rem 0 1.5rem;
+    padding: 0.5rem 0 1.25rem;
+    width: 100%;
+    max-width: 100%;
   }
 
   .teacher-dashboard-container {
     padding: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .teacher-dashboard-container .guidelines-section {
+    max-width: 100%;
+    width: 100%;
+    padding-left: clamp(0.5rem, 2.5vw, 0.75rem);
+    padding-right: clamp(0.5rem, 2.5vw, 0.75rem);
   }
 
   .dashboard-content-shell {
-    padding: 0 1rem;
+    max-width: 100%;
+    width: 100%;
+    padding: 0;
+    gap: 1rem;
   }
 
   .welcome-header {
-    padding: 1rem 1rem 0.75rem;
+    padding: 0.875rem clamp(0.5rem, 2.5vw, 0.75rem);
+  }
+
+  .welcome-header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .welcome-text h2 {
+    justify-content: flex-start;
+    font-size: clamp(1rem, 4.5vw, 1.25rem);
   }
 
   .dashboard-main-grid {
-    padding: 0 0 1.5rem;
+    padding: 0 0 1.25rem;
+    width: 100%;
   }
-  
+
+  .dashboard-layout .section-title {
+    font-size: clamp(1.125rem, 4vw, 1.375rem);
+    justify-content: flex-start;
+    text-align: left;
+  }
+
   .stats-grid,
   .stats-grid-students,
   .stats-grid-academic {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
   }
-  
+
+  .stats-grid-years {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  }
+
   .stat-card {
-    padding: 1rem;
-    min-height: 100px;
+    padding: 0.75rem;
+    min-height: 88px;
   }
-  
+
   .stat-number {
-    font-size: 1.5rem;
+    font-size: clamp(1.25rem, 5vw, 1.5rem);
   }
-  
+
+  .year-table-container.dashboard-surface-card {
+    padding: 0.75rem clamp(0.5rem, 2.5vw, 0.75rem);
+  }
+
+  .year-table--forms {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    max-width: 100%;
+  }
+
+  .year-table--forms .year-table-row {
+    min-width: max(100%, 280px);
+  }
+
   .guidelines-grid {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
+    grid-template-columns: 1fr;
+  }
+
+  .guidelines-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 380px) {
+  .stats-grid,
+  .stats-grid-students,
+  .stats-grid-academic {
+    grid-template-columns: 1fr;
   }
 }
 

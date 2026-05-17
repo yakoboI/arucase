@@ -13,16 +13,52 @@ import './utils/debugAuth.js'; // Import debug utility to make it available glob
 import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
 import './utils/tokenDecoder'; // Initialize token decoder (makes window.logTokenInfo available)
 
-// Global error handling for uncaught promises (silent)
-window.addEventListener('unhandledrejection', (event) => {
-  // Prevent the default browser behavior
-  event.preventDefault();
-});
+/** Vercel Toolbar / Live feedback failures when CSP blocks vercel.live */
+function isBenignUnhandledRejection(reason) {
+  if (!reason || typeof reason !== 'object') return false;
 
-// Global error handling for uncaught errors (silent)
-window.addEventListener('error', (event) => {
-  // Silent error handling
-});
+  const url = reason?.config?.url || reason?.message || '';
+  const reqInfo = reason?.reqInfo;
+
+  if (url.includes('ERR_BLOCKED_BY_CLIENT') || reason?.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
+    return true;
+  }
+
+  // Vercel Live feedback API (blocked script or connect-src)
+  if (
+    reason?.httpError === false &&
+    Number(reason?.code) === 403 &&
+    (reason?.httpStatus === 200 || reason?.httpStatus === undefined)
+  ) {
+    return true;
+  }
+
+  if (reason?.code === 403 || String(reason?.code) === '403') {
+    return true;
+  }
+
+  if (
+    reqInfo?.pathPrefix === '/writing' ||
+    reqInfo?.path?.includes('/writing') ||
+    (reason?.code === 403 && reason?.data?.code === 403 && reason?.data?.error === 'exceptions.UserAuthError')
+  ) {
+    return true;
+  }
+
+  if (reason?.response?.status === 401) {
+    return true;
+  }
+
+  if (reason?.message?.includes('Loading chunk') || reason?.message?.includes('chunk')) {
+    return true;
+  }
+
+  if (!reason.stack && !reason.message && typeof reason === 'object') {
+    return true;
+  }
+
+  return false;
+}
 
 // Detect network speed for adaptive loading (3G-4G optimization)
 const getNetworkSpeed = () => {
@@ -91,56 +127,13 @@ const queryClient = new QueryClient({
 
 // Global unhandled promise rejection handler
 window.addEventListener('unhandledrejection', (event) => {
-  const reason = event.reason;
-  const url = reason?.config?.url || reason?.message || '';
-  const reqInfo = reason?.reqInfo;
+  if (isBenignUnhandledRejection(event.reason)) {
+    event.preventDefault();
+    return;
+  }
 
-  // Suppress known benign cases
-  if (url.includes('ERR_BLOCKED_BY_CLIENT') || reason?.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
-    event.preventDefault();
-    return;
-  }
-  
-  // Suppress ALL 403 errors regardless of httpStatus - they're permission checks
-  if (reason?.code === 403 || String(reason?.code) === '403') {
-    event.preventDefault();
-    return;
-  }
-  
-  // Suppress browser extension errors (Grammarly, etc.)
-  // Suppress 403-in-body responses (HTTP 200 with {code: 403}) - auth/permission checks, UserAuthError, etc.
-  if (
-    reqInfo?.pathPrefix === '/writing' ||
-    reqInfo?.path?.includes('/writing') ||
-    (reason?.code === 403 && reason?.data?.code === 403 && reason?.data?.error === 'exceptions.UserAuthError') ||
-    (reason?.code === 403 && (reason?.httpStatus === 200 || reason?.httpError === false)) ||
-    (reason?.code === 403 && reason?.httpStatus === 200) ||
-    (String(reason?.code) === '403' && String(reason?.httpStatus) === '200')
-  ) {
-    event.preventDefault();
-    return;
-  }
-  
-  // Don't log 401 (expected when not logged in or token expired)
-  if (reason?.response?.status === 401) {
-    event.preventDefault();
-    return;
-  }
-  
-  // Suppress chunk loading errors (lazy loading failures) - they're handled by ErrorBoundary
-  if (reason?.message?.includes('Loading chunk') || reason?.message?.includes('chunk')) {
-    event.preventDefault();
-    return;
-  }
-  
-  // Suppress generic object errors without stack (likely chunk loading)
-  if (reason && typeof reason === 'object' && !reason.stack && !reason.message) {
-    event.preventDefault();
-    return;
-  }
-  
   if (import.meta.env.DEV) {
-    console.warn('Unhandled promise rejection:', reason);
+    console.warn('Unhandled promise rejection:', event.reason);
   }
   event.preventDefault();
 });

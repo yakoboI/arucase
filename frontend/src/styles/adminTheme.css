@@ -173,3 +173,106 @@
   border-radius: 0;
   box-shadow: none;
 }
+
+/* ===========================================
+   MOBILE: full viewport width, no horizontal scroll
+   =========================================== */
+@media (max-width: 768px) {
+  .admin-layout .admin-main-content > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .admin-layout .admin-main-content .excel-card,
+  .admin-layout .admin-main-content [class$="-page-container"],
+  .admin-layout .admin-main-content [class$="-page-container"] > .excel-card,
+  .admin-layout .admin-main-content .dashboard-layout,
+  .admin-layout .admin-main-content .teacher-dashboard-container,
+  .admin-layout .admin-main-content .monthly-results,
+  .admin-layout .admin-main-content .public-website-page-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Global full-bleed helpers use 100vw and cause side scroll inside admin */
+  .admin-layout .admin-main-content .container,
+  .admin-layout .admin-main-content .page-container,
+  .admin-layout .admin-main-content .full-width-container,
+  .admin-layout .admin-main-content .responsive-container,
+  .admin-layout .admin-main-content .responsive-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .admin-layout .admin-main-content .excel-card-header,
+  .admin-layout .admin-main-content .header-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .admin-layout .admin-main-content .header-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .admin-layout .admin-main-content .excel-card-body,
+  .admin-layout .admin-main-content [class*="table-container"],
+  .admin-layout .admin-main-content [class*="table-wrapper"],
+  .admin-layout .admin-main-content .year-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .admin-layout .admin-main-content table {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .admin-layout .admin-main-content .stats-grid,
+  .admin-layout .admin-main-content .stats-grid-students,
+  .admin-layout .admin-main-content .stats-grid-academic,
+  .admin-layout .admin-main-content .stats-grid-years,
+  .admin-layout .admin-main-content .guidelines-grid,
+  .admin-layout .admin-main-content .parish-stream-selection-grid,
+  .admin-layout .admin-main-content .subjects-stream-selection-grid,
+  .admin-layout .admin-main-content .year-selection-grid,
+  .admin-layout .admin-main-content .stream-selection-grid,
+  .admin-layout .admin-main-content .action-selection-grid {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  }
+
+  .admin-layout .admin-main-content .excel-btn,
+  .admin-layout .admin-main-content .btn {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .admin-layout .admin-main-content img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-layout .admin-main-content .stats-grid,
+  .admin-layout .admin-main-content .stats-grid-students,
+  .admin-layout .admin-main-content .stats-grid-academic,
+  .admin-layout .admin-main-content .guidelines-grid {
+    grid-template-columns: 1fr;
+  }
+}
