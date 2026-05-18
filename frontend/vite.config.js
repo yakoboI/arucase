@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -51,9 +52,58 @@ function devProxyTarget() {
 
 const apiProxyTarget = devProxyTarget();
 
+/** SHA-384 SRI hashes on same-origin script/link tags in dist/index.html (Mozilla Observatory bonus). */
+function injectSubresourceIntegrity() {
+  const distDir = path.resolve(__dirname, 'dist');
+
+  const hashFile = (urlPath) => {
+    const filePath = path.join(distDir, urlPath.replace(/^\//, '').split('?')[0]);
+    if (!fs.existsSync(filePath)) return null;
+    const digest = crypto.createHash('sha384').update(fs.readFileSync(filePath)).digest('base64');
+    return `sha384-${digest}`;
+  };
+
+  const withIntegrity = (tag, urlPath) => {
+    if (tag.includes('integrity=')) return tag;
+    const integrity = hashFile(urlPath);
+    if (!integrity) return tag;
+    let next = tag;
+    if (!/\bcrossorigin\b/i.test(next)) {
+      next = next.replace(/\s*\/?>$/, ' crossorigin="anonymous"$&');
+    }
+    return next.replace(/\s*\/?>$/, ` integrity="${integrity}"$&`);
+  };
+
+  return {
+    name: 'inject-subresource-integrity',
+    apply: 'build',
+    closeBundle() {
+      const indexPath = path.join(distDir, 'index.html');
+      if (!fs.existsSync(indexPath)) return;
+
+      let html = fs.readFileSync(indexPath, 'utf8');
+
+      html = html.replace(
+        /<script\b[^>]*\bsrc="(\/[^"]+)"[^>]*>/gi,
+        (tag, src) => withIntegrity(tag, src)
+      );
+      html = html.replace(
+        /<link\b[^>]*\bhref="(\/[^"]+)"[^>]*>/gi,
+        (tag, href) => {
+          if (!/\brel=["'](?:stylesheet|modulepreload)["']/i.test(tag)) return tag;
+          return withIntegrity(tag, href);
+        }
+      );
+
+      fs.writeFileSync(indexPath, html, 'utf8');
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     react(),
+    injectSubresourceIntegrity(),
     {
       name: 'seo-site-verification-and-bing-xml',
       transformIndexHtml(html) {

@@ -22,14 +22,7 @@ const Loading = ({ message = 'Loading...', minimal = false, skeleton = false, sk
         padding: '1rem',
         gap: '0.5rem'
       }}>
-        <div className="spinner-mini" style={{
-          width: '20px',
-          height: '20px',
-          border: '2px solid #f3f3f3',
-          borderTop: '2px solid #1a5490',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
-        }}></div>
+        <div className="spinner-mini"></div>
         {message && <span style={{ color: '#666', fontSize: '13px' }}>{message}</span>}
       </div>
     );
@@ -46,21 +39,8 @@ const Loading = ({ message = 'Loading...', minimal = false, skeleton = false, sk
       gap: '1rem',
       padding: '2rem'
     }}>
-      <div className="spinner" style={{
-        width: '32px', // Smaller spinner
-        height: '32px',
-        border: '3px solid #f3f3f3',
-        borderTop: '3px solid #1a5490',
-        borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite' // Faster animation
-      }}></div>
+      <div className="spinner"></div>
       {message && <p style={{ color: '#666', fontSize: '14px', marginTop: '0.5rem' }}>{message}</p>}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

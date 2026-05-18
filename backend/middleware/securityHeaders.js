@@ -10,22 +10,30 @@ const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      styleSrc: ["'self'"],
+      styleSrcElem: ["'self'"],
+      styleSrcAttr: ["'unsafe-inline'"],
+      fontSrc: ["'self'", "data:"],
       imgSrc: ["'self'", "data:", "https:"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'"],
+      connectSrc: [
+        "'self'",
+        "https://api.cloudinary.com",
+        "https://res.cloudinary.com",
+      ],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       manifestSrc: ["'self'"],
       workerSrc: ["'self'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
     }
   },
-  
-  // Cross-Origin Embedder Policy
-  crossOriginEmbedderPolicy: { policy: "require-corp" },
+
+  // COEP require-corp breaks cross-origin images (Cloudinary, static uploads)
+  crossOriginEmbedderPolicy: false,
   
   // Cross-Origin Opener Policy
   crossOriginOpenerPolicy: { policy: "same-origin" },

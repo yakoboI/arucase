@@ -6,7 +6,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
-const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const http = require('http');
@@ -231,10 +230,6 @@ app.use(customSecurityHeaders);
 app.use(securityMonitor);
 app.use(globalApiRateLimit);
 
-// Original middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
 app.use(compression());
 app.use(cookieParser());
 app.use(
@@ -291,6 +286,7 @@ app.use('/static/uploads', (req, res, next) => {
 
       res.setHeader('Content-Type', types[ext] || 'application/octet-stream');
       res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day - fast repeat loads on mobile
       res.setHeader('ETag', etag);
       res.setHeader('Last-Modified', stat.mtime.toUTCString());
@@ -299,6 +295,7 @@ app.use('/static/uploads', (req, res, next) => {
   }
   res.setHeader('Content-Type', 'image/svg+xml');
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   res.setHeader('Cache-Control', 'public, max-age=3600');
   return res.send(PLACEHOLDER_IMAGE);
 });
@@ -310,6 +307,7 @@ app.use('/static', express.static(path.join(__dirname, 'static'), {
   setHeaders: (res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   }
 }));
 
