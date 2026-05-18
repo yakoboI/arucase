@@ -11,7 +11,7 @@ const securityHeaders = helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'"],
-      styleSrcElem: ["'self'"],
+      styleSrcElem: ["'self'", "'unsafe-inline'"],
       styleSrcAttr: ["'unsafe-inline'"],
       fontSrc: ["'self'", "data:"],
       imgSrc: ["'self'", "data:", "https:"],
