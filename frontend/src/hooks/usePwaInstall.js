@@ -1,38 +1,29 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   dismissPwaInstall,
-  getDeferredInstallPrompt,
-  isIosDevice,
-  isPwaInstallDismissed,
+  pwaInstallStateKey,
+  readPwaInstallState,
   subscribePwaInstall,
   triggerPwaInstall,
 } from '../utils/pwaInstallManager';
 
-function isStandaloneMode() {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true
-  );
-}
-
-function getSnapshot() {
-  return {
-    dismissed: isPwaInstallDismissed(),
-    installed: isStandaloneMode(),
-    canInstall: Boolean(getDeferredInstallPrompt()),
-    isIos: isIosDevice() && !isStandaloneMode(),
-  };
-}
-
-const SERVER_SNAPSHOT = {
-  dismissed: false,
-  installed: false,
-  canInstall: false,
-  isIos: false,
-};
-
 export function usePwaInstall() {
-  const snap = useSyncExternalStore(subscribePwaInstall, getSnapshot, () => SERVER_SNAPSHOT);
+  const [snap, setSnap] = useState(() => readPwaInstallState());
+
+  useEffect(() => {
+    let lastKey = pwaInstallStateKey(readPwaInstallState());
+
+    const sync = () => {
+      const next = readPwaInstallState();
+      const nextKey = pwaInstallStateKey(next);
+      if (nextKey === lastKey) return;
+      lastKey = nextKey;
+      setSnap(next);
+    };
+
+    sync();
+    return subscribePwaInstall(sync);
+  }, []);
 
   const install = useCallback(async () => {
     const result = await triggerPwaInstall();
@@ -57,4 +48,8 @@ export function usePwaInstall() {
   };
 }
 
-export { dismissPwaInstall as dismissPwaInstallPrompt, isPwaInstallDismissed as wasPwaInstallDismissed };
+export {
+  dismissPwaInstall as dismissPwaInstallPrompt,
+  isPwaInstallDismissed,
+  isPwaInstallDismissed as wasPwaInstallDismissed,
+} from '../utils/pwaInstallManager';

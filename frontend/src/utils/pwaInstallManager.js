@@ -28,6 +28,25 @@ export function isPwaInstallDismissed() {
   }
 }
 
+export function isIosDevice() {
+  if (typeof navigator === 'undefined') return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+export function readPwaInstallState() {
+  const installed = isStandaloneMode();
+  return {
+    dismissed: isPwaInstallDismissed(),
+    installed,
+    canInstall: Boolean(deferredPrompt),
+    isIos: isIosDevice() && !installed,
+  };
+}
+
+export function pwaInstallStateKey(state) {
+  return `${state.dismissed}|${state.installed}|${state.canInstall}|${state.isIos}`;
+}
+
 export function dismissPwaInstall() {
   try {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
@@ -81,7 +100,9 @@ function bindInstallListeners() {
 export function subscribePwaInstall(listener) {
   bindInstallListeners();
   subscribers.add(listener);
-  return () => subscribers.delete(listener);
+  return () => {
+    subscribers.delete(listener);
+  };
 }
 
 export function getDeferredInstallPrompt() {
@@ -104,8 +125,4 @@ export async function triggerPwaInstall() {
     notify();
     return { ok: false, outcome: 'error', error: err };
   }
-}
-
-export function isIosDevice() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
