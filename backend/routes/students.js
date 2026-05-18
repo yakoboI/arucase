@@ -4321,11 +4321,20 @@ router.delete('/debt', async (req, res) => {
 // Bulk upload students from CSV
 router.post('/bulk-upload', csvUpload.single('file'), async (req, res) => {
   try {
-    const { level, stream, year } = req.body;
-    
+    let { level, stream, year, term } = req.body;
+
     if (!level || !stream || !year) {
       return res.status(400).json({ message: 'level, stream, and year are required' });
     }
+
+    level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    stream = decodeURIComponent(String(stream).replace(/\+/g, ' ')).trim();
+    const yearNum = parseInt(year, 10);
+    if (!Number.isFinite(yearNum) || yearNum <= 0) {
+      return res.status(400).json({ message: 'year is required' });
+    }
+    const studentTerm =
+      term != null && String(term).trim() !== '' ? String(term).trim() : 'First Term';
     
     if (!req.file) {
       return res.status(400).json({ message: 'CSV file is required' });
@@ -4444,10 +4453,11 @@ router.post('/bulk-upload', csvUpload.single('file'), async (req, res) => {
         middle_name: middleName || null,
         surname: surname,
         sex: finalSex,
-        level: level,
-        stream: stream,
-        year: parseInt(year),
-        status: 'PENDING'
+        level,
+        stream,
+        year: yearNum,
+        term: studentTerm,
+        status: 'PENDING',
       });
     }
     
@@ -4461,27 +4471,61 @@ router.post('/bulk-upload', csvUpload.single('file'), async (req, res) => {
       
       for (const student of students) {
         try {
-          await query(
-            `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             ON CONFLICT (adm_no, level, stream, year)
-             DO UPDATE SET 
-               first_name = EXCLUDED.first_name,
-               middle_name = EXCLUDED.middle_name,
-               surname = EXCLUDED.surname,
-               sex = EXCLUDED.sex`,
-            [
-              student.adm_no,
-              student.first_name,
-              student.middle_name,
-              student.surname,
-              student.sex,
-              student.level,
-              student.stream,
-              student.year,
-              student.status
-            ]
-          );
+          try {
+            await query(
+              `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, term, status)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+               ON CONFLICT (adm_no, level, stream, year, term)
+               DO UPDATE SET
+                 first_name = EXCLUDED.first_name,
+                 middle_name = EXCLUDED.middle_name,
+                 surname = EXCLUDED.surname,
+                 sex = EXCLUDED.sex,
+                 status = EXCLUDED.status`,
+              [
+                student.adm_no,
+                student.first_name,
+                student.middle_name,
+                student.surname,
+                student.sex,
+                student.level,
+                student.stream,
+                student.year,
+                student.term,
+                student.status,
+              ]
+            );
+          } catch (termConflictErr) {
+            const msg = String(termConflictErr?.message || '').toLowerCase();
+            const noTermConstraint =
+              termConflictErr?.code === '42P10' ||
+              (msg.includes('conflict') && msg.includes('term'));
+            if (!noTermConstraint) throw termConflictErr;
+            await query(
+              `INSERT INTO students (adm_no, first_name, middle_name, surname, sex, level, stream, year, term, status)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+               ON CONFLICT (adm_no, level, stream, year)
+               DO UPDATE SET
+                 first_name = EXCLUDED.first_name,
+                 middle_name = EXCLUDED.middle_name,
+                 surname = EXCLUDED.surname,
+                 sex = EXCLUDED.sex,
+                 term = EXCLUDED.term,
+                 status = EXCLUDED.status`,
+              [
+                student.adm_no,
+                student.first_name,
+                student.middle_name,
+                student.surname,
+                student.sex,
+                student.level,
+                student.stream,
+                student.year,
+                student.term,
+                student.status,
+              ]
+            );
+          }
           successCount++;
         } catch (dbError) {
           // Check if it's a duplicate key error

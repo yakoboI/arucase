@@ -424,7 +424,8 @@ const RegistrationForm = () => {
       formData.append('file', csvFile);
       formData.append('level', normalizedLevel);
       formData.append('stream', stream);
-      formData.append('year', year);
+      formData.append('year', String(apiYear));
+      formData.append('term', effectiveTerm);
 
       const res = await studentsAPI.bulkUpload(formData);
 
