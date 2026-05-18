@@ -1,28 +1,16 @@
 /**
- * Linear order for public-site Previous / Next navigation.
- * Matches PublicHeader: Shule Yetu → Wanafunzi (dropdown order) → Habari → Sera.
- * Wanafunzi menu: Udahili → Maisha → Ripoti za Mwanafunzi → Ada; Habari: Picha → Matangazo.
- * `/student-report` and `/student/dashboard` are appended after the main tour so Mbele from Ada ya Shule
- * goes to Picha, and Nyuma from Picha returns to Ada (they are not between Ada and Picha in the header).
+ * Prev/next tour — re-exported from publicSiteNav (single source of truth).
  */
-export const PUBLIC_SITE_NAV_ORDER = [
-  { path: '/about', label: 'Kuhusu Sisi' },
-  { path: '/staff', label: 'Watumishi' },
-  { path: '/necta-results', label: 'Matokeo ya NECTA' },
-  { path: '/contact', label: 'Mawasiliano' },
-  { path: '/admissions', label: 'Udahili' },
-  { path: '/admissions/apply', label: 'Maombi ya Udahili' },
-  { path: '/student-life', label: 'Maisha ya Wanafunzi' },
-  { path: '/student-login', label: 'Ripoti za Mwanafunzi' },
-  { path: '/school-fee', label: 'Ada ya Shule' },
-  { path: '/gallery', label: 'Picha' },
-  { path: '/announcements', label: 'Matangazo' },
-  { path: '/privacy-policy', label: 'Sera ya Faragha' },
-  { path: '/student-report', label: 'Ripoti ya Mwanafunzi' },
-  { path: '/student/dashboard', label: 'Dashibodi ya Mwanafunzi' },
-];
+import { PUBLIC_SITE_NAV_ORDER } from './publicSiteNav';
 
-export const PUBLIC_HOME_PATH = '/';
+export {
+  PUBLIC_SITE_NAV_ORDER,
+  PUBLIC_HOME_PATH,
+  PUBLIC_NAV_CATEGORIES,
+  PUBLIC_HOME_ITEM,
+  RIPOTI_MWANAFUNZI_LABEL,
+  getCategoryMenuId,
+} from './publicSiteNav';
 
 /**
  * @param {string} pathname

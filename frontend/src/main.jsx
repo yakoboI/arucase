@@ -13,6 +13,7 @@ import './utils/debugAuth.js'; // Import debug utility to make it available glob
 import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
 import './utils/tokenDecoder'; // Initialize token decoder (makes window.logTokenInfo available)
 import { registerServiceWorker } from './utils/registerServiceWorker';
+import { isBenignUnhandledRejection } from './utils/benignRejections';
 
 const CHUNK_RELOAD_KEY = 'arucase-chunk-reload';
 
@@ -41,53 +42,6 @@ function reloadOnceForStaleChunks() {
   sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
   window.location.reload();
   return true;
-}
-
-/** Vercel Toolbar / Live feedback failures when CSP blocks vercel.live */
-function isBenignUnhandledRejection(reason) {
-  if (!reason || typeof reason !== 'object') return false;
-
-  const url = reason?.config?.url || reason?.message || '';
-  const reqInfo = reason?.reqInfo;
-
-  if (url.includes('ERR_BLOCKED_BY_CLIENT') || reason?.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
-    return true;
-  }
-
-  if (String(url).includes('vercel.live') || String(reason?.message || '').includes('vercel.live')) {
-    return true;
-  }
-
-  if (String(url).includes('/auth/presence/')) {
-    return true;
-  }
-
-  // Vercel Live feedback API (blocked script or connect-src)
-  if (
-    reason?.httpError === false &&
-    Number(reason?.code) === 403 &&
-    (reason?.httpStatus === 200 || reason?.httpStatus === undefined)
-  ) {
-    return true;
-  }
-
-  if (reason?.code === 403 || String(reason?.code) === '403') {
-    return true;
-  }
-
-  if (
-    reqInfo?.pathPrefix === '/writing' ||
-    reqInfo?.path?.includes('/writing') ||
-    (reason?.code === 403 && reason?.data?.code === 403 && reason?.data?.error === 'exceptions.UserAuthError')
-  ) {
-    return true;
-  }
-
-  if (reason?.response?.status === 401) {
-    return true;
-  }
-
-  return false;
 }
 
 // Detect network speed for adaptive loading (3G-4G optimization)
@@ -155,8 +109,9 @@ const queryClient = new QueryClient({
   },
 });
 
-// Global unhandled promise rejection handler
+// Bubble phase — after logger capture; still preventDefault for remaining noise in dev
 window.addEventListener('unhandledrejection', (event) => {
+  if (event.defaultPrevented) return;
   if (isStaleChunkLoadFailure(event.reason)) {
     event.preventDefault();
     reloadOnceForStaleChunks();

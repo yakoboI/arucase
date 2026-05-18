@@ -150,7 +150,7 @@ Maisha ya seminari yanafuata ratiba iliyopangiliwa inayoweka uwiano kati ya sala
 - Ukumbi wa chakula
 - Kituo cha afya`;
 
-  const studentReportDefaultContent = `## Ripoti za Wanafunzi
+  const studentReportDefaultContent = `## Ripoti za Mwanafunzi
 
 ## Muundo wa Ripoti
 Ripoti za wanafunzi hujumuisha:
@@ -313,7 +313,7 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
     { name: 'admissions', publicPath: '/admissions', label: 'Udahili', icon: 'fa-user-plus', description: 'Vigezo na utaratibu wa udahili.', color: 'green' },
     { name: 'staff', publicPath: '/staff', label: 'Watumishi', icon: 'fa-users', description: 'Utangulizi hapa; wasifu: Admin → Staff Profiles.', color: 'orange' },
     { name: 'student-life', publicPath: '/student-life', label: 'Maisha ya Wanafunzi', icon: 'fa-heart', description: 'Maisha na shughuli za wanafunzi.', color: 'red' },
-    { name: 'student_report', publicPath: '/student-report', label: 'Ripoti za Wanafunzi', icon: 'fa-file-alt', description: 'Taarifa za mfumo wa ripoti.', color: 'blue' },
+    { name: 'student_report', publicPath: '/student-report', label: 'Ripoti za Mwanafunzi', icon: 'fa-file-alt', description: 'Taarifa za mfumo wa ripoti.', color: 'blue' },
     { name: 'school-fee', publicPath: '/school-fee', label: 'Ada ya Shule', icon: 'fa-money-bill-wave', description: 'Muundo wa ada na malipo.', color: 'green' },
     { name: 'contact', publicPath: '/contact', label: 'Mawasiliano', icon: 'fa-envelope', description: 'Maandishi ya ukurasa; simu/barua pepe: Site & Contacts.', color: 'green' },
     { name: 'privacy', publicPath: '/privacy-policy', label: 'Sera ya Faragha', icon: 'fa-shield-alt', description: 'Sera ya faragha kamili.', color: 'blue' },

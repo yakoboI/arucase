@@ -164,7 +164,8 @@
   border-top: clamp(1px, 0.2vw, 2px) solid #d1d5db;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .copyright-footer-container {
@@ -177,16 +178,10 @@
 .copyright-text {
   margin: 0;
   color: #6b7280;
-  font-size: clamp(0.75rem, 2vw, 0.9rem);
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  font-size: clamp(0.65rem, 2.2vw, 0.9rem);
   line-height: 1.5;
   text-align: center;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: clamp(2px, 0.5vw, 4px);
+  white-space: nowrap;
 }
 
 #current-year {
@@ -273,8 +268,9 @@
   }
   
   .copyright-text {
-    font-size: clamp(0.75rem, 2vw, 0.8rem) !important;
+    font-size: clamp(0.62rem, 2.4vw, 0.8rem) !important;
     line-height: 1.5;
+    white-space: nowrap;
   }
 }
 
@@ -294,7 +290,8 @@
   }
   
   .copyright-text {
-    font-size: clamp(0.7rem, 2.2vw, 0.75rem) !important;
+    font-size: clamp(0.58rem, 2.6vw, 0.72rem) !important;
     line-height: 1.5;
+    white-space: nowrap;
   }
 }

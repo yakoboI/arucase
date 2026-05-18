@@ -1,6 +1,18 @@
 @import '../../styles/public-common.css';
 
-/* ---- Student Report: gray shell, centred header + CTA, sharp cards ---------- */
+/* ---- Student Report: gray shell, centred header + CTA, flat cards ------------- */
+
+/* Shared card surface (no offset / left-accent shadows) */
+.student-report-page--immersive .student-report-page-header,
+.student-report-card,
+.student-report-md-card,
+.student-report-md-fallback,
+.student-report-card--prose.content-card,
+.student-report-page--immersive .student-report-surface--cms.content-card {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 6px 24px rgba(15, 23, 42, 0.1);
+}
 
 .student-report-page {
   --sr-gutter: clamp(0.75rem, 4vw, 3rem);
@@ -25,7 +37,6 @@
   text-align: center;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
   padding: clamp(1.25rem, 3.5vw, 2rem) clamp(1rem, 3vw, 2rem);
 }
 
@@ -74,15 +85,15 @@
   color: #ffffff;
   background: #1a5490;
   border: 2px solid #0f172a;
-  box-shadow: 5px 5px 0 #0f172a;
+  box-shadow: 0 4px 14px rgba(15, 45, 82, 0.2);
   border-radius: 0;
   box-sizing: border-box;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  transition: filter 0.12s ease, box-shadow 0.12s ease;
 }
 
 .student-report-page-cta__btn:hover {
   filter: brightness(1.04);
-  box-shadow: 6px 6px 0 #0f172a;
+  box-shadow: 0 6px 18px rgba(15, 45, 82, 0.28);
 }
 
 .student-report-page-cta__btn:active {
@@ -110,7 +121,6 @@
 .student-report-card {
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
   border-radius: 0;
   padding: clamp(1.15rem, 2.8vw, 1.65rem);
   box-sizing: border-box;
@@ -212,7 +222,7 @@
   padding: 0.65rem 0.85rem;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: #ffffff;
-  box-shadow: 2px 2px 0 rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .student-report-contact-list__key {
@@ -276,7 +286,6 @@
 .student-report-md-card {
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
   border-radius: 0;
   padding: clamp(1.15rem, 2.8vw, 1.65rem);
   box-sizing: border-box;
@@ -338,7 +347,6 @@
 .student-report-md-fallback {
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
   padding: 1rem;
   overflow-x: auto;
 }
@@ -364,7 +372,6 @@
   border-radius: 0;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;

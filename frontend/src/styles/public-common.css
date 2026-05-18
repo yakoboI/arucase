@@ -2,6 +2,8 @@
    COMMON STYLES FOR ALL PUBLIC PAGES
    =========================================== */
 
+@import './public-flat-cards.css';
+
 /* Page layout shell — vertical padding only so the content card spans full device width */
 .public-page,
 .about-page,

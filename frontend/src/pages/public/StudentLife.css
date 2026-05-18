@@ -59,7 +59,6 @@
 }
 
 .student-life-page--immersive .sl-surface--hero {
-  border-left: 4px solid #1e40af;
   padding: clamp(0.72rem, 2vw, 1.1rem) clamp(0.8rem, 2.2vw, 1.3rem);
   text-align: left;
   white-space: normal;
@@ -105,22 +104,6 @@
 
 .student-life-page--immersive .sl-surface--span-full {
   grid-column: 1 / -1;
-}
-
-.student-life-page--immersive .sl-surface--stripe-navy {
-  border-left: 4px solid #1e3a8a;
-}
-
-.student-life-page--immersive .sl-surface--stripe-teal {
-  border-left: 4px solid #0f766e;
-}
-
-.student-life-page--immersive .sl-surface--stripe-slate {
-  border-left: 4px solid #475569;
-}
-
-.student-life-page--immersive .sl-surface--stripe-gold {
-  border-left: 4px solid #b45309;
 }
 
 .sl-card__head {
@@ -198,7 +181,6 @@
 
 /* CMS */
 .student-life-page--immersive .sl-surface--cms {
-  border-left: 4px solid #1e3a8a;
   white-space: pre-wrap;
   padding: clamp(0.68rem, 1.95vw, 1.2rem) clamp(0.75rem, 2vw, 1.28rem);
 }

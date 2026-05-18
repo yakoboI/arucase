@@ -1,0 +1,112 @@
+/**
+ * Flat public cards — no coloured left accent, no offset “3D” shadows.
+ * Loaded after page CSS via public-common.css (and on standalone public routes).
+ */
+
+:root {
+  --public-card-border-color: rgba(15, 23, 42, 0.14);
+  --public-card-border: 1px solid var(--public-card-border-color);
+  --public-card-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 6px 24px rgba(15, 23, 42, 0.1);
+  --public-card-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+/* —— Remove left accent stripes —— */
+.public-layout .public-main [class*='--stripe-'],
+.public-layout .public-main [class*='-surface--hero'],
+.public-layout .public-main [class*='-surface--cms'],
+.public-layout .public-main [class*='-surface--filters'],
+.public-layout .public-main [class*='-surface--notice'],
+.public-layout .public-main .about-card,
+.public-layout .public-main .announcement-card,
+.public-layout .public-main .necta-card--hero,
+.public-layout .public-main .necta-stat-card,
+.public-layout .public-main .staff-surface--directory-intro,
+.public-layout .public-main .staff-surface--directory-teachers,
+.public-layout .public-main .staff-surface--directory-non,
+.admissions-apply-page [class*='--stripe-'],
+.admissions-apply-page [class*='-surface--hero'],
+.admissions-apply-page [class*='-surface--cms'],
+.necta-results [class*='--stripe-'],
+.necta-results .necta-card--hero,
+.necta-results .necta-stat-card {
+  border-left-width: 1px !important;
+  border-left-style: solid !important;
+  border-left-color: var(--public-card-border-color) !important;
+}
+
+/* —— Flat shadows on card shells —— */
+.public-layout .public-main :is(
+    .about-card,
+    .about-hero,
+    .about-page__intro,
+    .sl-surface,
+    .staff-surface,
+    .fees-surface,
+    .policy-surface,
+    .admissions-hero,
+    .admissions-card,
+    .admissions-apply-panel,
+    .admissions-apply-form-card,
+    .contact-card,
+    .necta-card,
+    .announcements-surface,
+    .announcement-card,
+    .gallery-surface,
+    .gallery-item-card,
+    .student-report-page-header,
+    .student-report-card,
+    .student-report-md-card,
+    .student-report-md-fallback,
+    .student-report-card--prose.content-card,
+    .student-report-surface--cms.content-card,
+    .months-selection,
+    .results-view,
+    .report-year-bar,
+    .month-card,
+    .assessment-card,
+    .subject-card,
+    .summary-panel
+  ),
+.admissions-apply-page :is(
+    .admissions-apply-panel,
+    .admissions-apply-form-card,
+    .admissions-apply-sidebar-card
+  ),
+.necta-results .necta-card {
+  box-shadow: var(--public-card-shadow) !important;
+}
+
+.public-layout .public-main .announcement-card:hover,
+.public-layout .public-main .gallery-item-card:hover,
+.public-layout .public-main .month-card:hover,
+.public-layout .public-main .assessment-card:hover {
+  box-shadow: var(--public-card-shadow-hover) !important;
+}
+
+.public-layout .public-main .student-dashboard {
+  --sd-card-shadow: var(--public-card-shadow);
+}
+
+.public-layout .public-main .student-dashboard .assessment-card:hover,
+.public-layout .public-main .student-dashboard .month-card:hover {
+  box-shadow: var(--public-card-shadow-hover) !important;
+}
+
+.public-layout .public-main .student-dashboard .report-term-btn,
+.public-layout .public-main .student-dashboard .logout-button {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+}
+
+.public-layout .public-main .student-dashboard .report-term-btn.active {
+  box-shadow: 0 2px 8px rgba(15, 45, 82, 0.2) !important;
+}
+
+.public-layout .public-main .admissions-apply-button,
+.admissions-apply-page .admissions-apply-submit,
+.admissions-apply-page .admissions-apply-back {
+  box-shadow: 0 4px 14px rgba(15, 45, 82, 0.18) !important;
+}

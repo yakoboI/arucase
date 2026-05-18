@@ -10,7 +10,9 @@
   /* Match Student Life `.student-life-card` shell */
   --sd-card-pad: clamp(1.15rem, 2.8vw, 1.65rem);
   --sd-card-border: 1px solid rgba(15, 23, 42, 0.16);
-  --sd-card-shadow: 5px 5px 0 rgba(15, 23, 42, 0.1);
+  --sd-card-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 6px 24px rgba(15, 23, 42, 0.1);
   --sd-card-head-rule: rgba(15, 23, 42, 0.08);
   --sd-icon-tile-border: 1px solid rgba(15, 23, 42, 0.14);
   width: 100%;

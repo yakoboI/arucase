@@ -4,6 +4,8 @@
   "description": "Arusha Catholic Seminary - React Frontend",
   "private": true,
   "dependencies": {
+    "@fontsource/libre-baskerville": "^5.2.10",
+    "@fontsource/source-sans-3": "^5.2.9",
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@tanstack/react-query": "^5.12.2",
     "@uiw/react-md-editor": "^4.0.11",

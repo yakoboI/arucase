@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
+import {
+  PUBLIC_HOME_ITEM,
+  PUBLIC_NAV_CATEGORIES,
+  getCategoryMenuId,
+} from '../../constants/publicSiteNav';
 import './PublicHeader.css';
 
 const PublicHeader = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const location = useLocation();
 
-  // Fetch settings for dynamic content
   const { data: homepageData } = useQuery({
     queryKey: ['homepage'],
     queryFn: async () => {
@@ -33,58 +37,30 @@ const PublicHeader = () => {
 
   const getImageUrl = (path) => (path ? resolveStaticUrl(path) : null);
 
-  // Navigation: Home standalone + 3 category dropdowns
-  const homeItem = { path: '/', label: 'Nyumbani', icon: 'fa-home' };
-
-  const navCategories = [
-    {
-      id: 'shule',
-      label: 'Shule Yetu',
-      icon: 'fa-school',
-      items: [
-        { path: '/about', label: 'Kuhusu Sisi', icon: 'fa-info-circle' },
-        { path: '/staff', label: 'Watumishi', icon: 'fa-users' },
-        { path: '/necta-results', label: 'Matokeo ya NECTA', icon: 'fa-certificate' },
-        { path: '/contact', label: 'Mawasiliano', icon: 'fa-envelope' },
-      ],
+  const isActive = useCallback(
+    (path) => {
+      if (path === '/') {
+        return location.pathname === '/';
+      }
+      if (path === '/student-report') {
+        const p = location.pathname;
+        return (
+          p === '/student-report' ||
+          p === '/student-login' ||
+          p.startsWith('/student/')
+        );
+      }
+      return location.pathname === path || location.pathname.startsWith(path + '/');
     },
-    {
-      id: 'wanafunzi',
-      label: 'Wanafunzi',
-      icon: 'fa-graduation-cap',
-      items: [
-        { path: '/admissions', label: 'Udahili', icon: 'fa-user-plus' },
-        { path: '/student-life', label: 'Maisha ya Wanafunzi', icon: 'fa-heart' },
-        { path: '/student-login', label: 'Ripoti za Mwanafunzi', icon: 'fa-file-alt' },
-        { path: '/school-fee', label: 'Ada ya Shule', icon: 'fa-money-bill-wave' },
-      ],
-    },
-    {
-      id: 'habari',
-      label: 'Habari',
-      icon: 'fa-newspaper',
-      items: [
-        { path: '/gallery', label: 'Picha', icon: 'fa-images' },
-        { path: '/announcements', label: 'Matangazo', icon: 'fa-bullhorn' },
-      ],
-    },
-  ];
+    [location.pathname]
+  );
 
-  const isActive = (path) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
-
-  const isCategoryActive = (category) =>
-    category.items.some((item) => isActive(item.path));
+  const isCategoryActive = (category) => category.items.some((item) => isActive(item.path));
 
   const toggleDropdown = (id) => {
     setOpenDropdown((prev) => (prev === id ? null : id));
   };
 
-  // Close dropdown on outside click
   useEffect(() => {
     if (!openDropdown) return;
     const handleClickOutside = (e) => {
@@ -96,14 +72,46 @@ const PublicHeader = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openDropdown]);
 
-  // Close menus on route change
+  useEffect(() => {
+    if (!openDropdown) return;
+    const menuId = getCategoryMenuId(openDropdown);
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setOpenDropdown(null);
+        return;
+      }
+      const menu = document.getElementById(menuId);
+      if (!menu) return;
+      const links = [...menu.querySelectorAll('a[role="menuitem"]')];
+      if (!links.length) return;
+      const currentIndex = links.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = currentIndex < links.length - 1 ? currentIndex + 1 : 0;
+        links[next]?.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = currentIndex > 0 ? currentIndex - 1 : links.length - 1;
+        links[prev]?.focus();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        links[0]?.focus();
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        links[links.length - 1]?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [openDropdown]);
+
   useEffect(() => {
     setOpenDropdown(null);
   }, [location.pathname]);
 
-  // Prefetch likely next pages on hover for faster navigation (fast-loading plan)
   const getPrefetchHandler = (path) => {
     if (path === '/gallery') return () => { import('../../pages/public/Gallery'); };
+    if (path === '/student-report') return () => { import('../../pages/public/StudentReport'); };
     if (path === '/student-login') return () => { import('../../pages/public/StudentLogin'); };
     if (path === '/login') return () => { import('../../pages/auth/Login'); };
     return undefined;
@@ -112,10 +120,8 @@ const PublicHeader = () => {
   return (
     <header className="header">
       <div className="header-content">
-        {/* School Branding Section */}
         <div className="school-branding">
           <div className="school-info">
-            {/* School name — above crest, motto, and patron */}
             <h1>{schoolName}</h1>
 
             <div
@@ -123,7 +129,6 @@ const PublicHeader = () => {
               role="group"
               aria-label="Nembo, maelezo ya seminari na somo la seminari"
             >
-              {/* School Crest/Logo */}
               <div className="school-crest">
                 {schoolLogo ? (
                   <figure className="header-tropical-frame">
@@ -141,7 +146,7 @@ const PublicHeader = () => {
                     </div>
                   </figure>
                 ) : (
-                  <i className="fas fa-school"></i>
+                  <i className="fas fa-school" aria-hidden />
                 )}
               </div>
 
@@ -150,7 +155,6 @@ const PublicHeader = () => {
                 <div className="banner">{bannerText}</div>
               </div>
 
-              {/* Patron Saint */}
               <div className="patron-saint">
                 {patronSaintImage ? (
                   <figure className="header-tropical-frame header-tropical-frame--patron">
@@ -169,7 +173,7 @@ const PublicHeader = () => {
                   </figure>
                 ) : (
                   <>
-                    <i className="fas fa-user-circle"></i>
+                    <i className="fas fa-user-circle" aria-hidden />
                     <span className="saint-label">Somo wa Seminari</span>
                   </>
                 )}
@@ -178,52 +182,70 @@ const PublicHeader = () => {
           </div>
         </div>
 
-        {/* Navigation Section */}
-        <nav className="navigation">
+        <nav className="navigation" aria-label="Urambazaji mkuu">
           <div className="nav-container">
             <ul className="nav-links">
               <li>
                 <Link
-                  to={homeItem.path}
-                  className={`${isActive(homeItem.path) ? 'active' : ''} icon-only nav-link-home`}
-                  aria-label={homeItem.label}
+                  to={PUBLIC_HOME_ITEM.path}
+                  className={`${isActive(PUBLIC_HOME_ITEM.path) ? 'active' : ''} icon-only nav-link-home`}
+                  aria-label={PUBLIC_HOME_ITEM.label}
                 >
-                  <i className={`fas ${homeItem.icon}`} aria-hidden="true"></i>
+                  <i className={`fas ${PUBLIC_HOME_ITEM.icon}`} aria-hidden="true" />
                 </Link>
               </li>
-              {navCategories.map((category) => (
-                <li key={category.id} className="nav-category-wrapper">
-                  <button
-                    type="button"
-                    className={`nav-category-btn ${isCategoryActive(category) ? 'category-active' : ''} ${openDropdown === category.id ? 'open' : ''}`}
-                    onClick={() => toggleDropdown(category.id)}
-                    aria-expanded={openDropdown === category.id}
-                    aria-haspopup="true"
-                  >
-                    <i className={`fas ${category.icon}`}></i>
-                    <span className="nav-link-text">{category.label}</span>
-                    <i className={`fas fa-chevron-down nav-category-chevron ${openDropdown === category.id ? 'rotated' : ''}`}></i>
-                  </button>
-                  {openDropdown === category.id && (
-                    <ul className="nav-category-dropdown" role="menu">
-                      {category.items.map((item) => (
-                        <li key={item.path} role="none">
-                          <Link
-                            to={item.path}
-                            className={isActive(item.path) ? 'active' : ''}
-                            onClick={() => setOpenDropdown(null)}
-                            onMouseEnter={getPrefetchHandler(item.path)}
-                            role="menuitem"
-                          >
-                            <i className={`fas ${item.icon}`}></i>
-                            <span>{item.label}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
+              {PUBLIC_NAV_CATEGORIES.map((category) => {
+                const menuId = getCategoryMenuId(category.id);
+                const isOpen = openDropdown === category.id;
+                return (
+                  <li key={category.id} className="nav-category-wrapper">
+                    <button
+                      type="button"
+                      className={`nav-category-btn ${isCategoryActive(category) ? 'category-active' : ''} ${isOpen ? 'open' : ''}`}
+                      onClick={() => toggleDropdown(category.id)}
+                      aria-expanded={isOpen}
+                      aria-haspopup="true"
+                      aria-controls={menuId}
+                      id={`${menuId}-button`}
+                    >
+                      <i className={`fas ${category.icon}`} aria-hidden="true" />
+                      <span className="nav-link-text">{category.label}</span>
+                      <i
+                        className={`fas fa-chevron-down nav-category-chevron ${isOpen ? 'rotated' : ''}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    {isOpen && (
+                      <ul
+                        className="nav-category-dropdown"
+                        id={menuId}
+                        role="menu"
+                        aria-labelledby={`${menuId}-button`}
+                      >
+                        {category.items.map((item) => (
+                          <li key={item.path} role="none">
+                            <Link
+                              to={item.path}
+                              className={isActive(item.path) ? 'active' : ''}
+                              onClick={() => setOpenDropdown(null)}
+                              onMouseEnter={getPrefetchHandler(item.path)}
+                              role="menuitem"
+                            >
+                              <i className={`fas ${item.icon}`} aria-hidden="true" />
+                              <span className="nav-dropdown-item__text">
+                                <span className="nav-dropdown-item__label">{item.label}</span>
+                                {item.subLabel ? (
+                                  <span className="nav-dropdown-item__sub">{item.subLabel}</span>
+                                ) : null}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </nav>
@@ -233,3 +255,4 @@ const PublicHeader = () => {
 };
 
 export default PublicHeader;
+

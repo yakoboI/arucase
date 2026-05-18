@@ -155,14 +155,6 @@ const PublicFooter = () => {
             <Link to="/privacy-policy" className="privacy-link">
               Sera ya Faragha
             </Link>
-            {' | '}
-            <Link to="/privacy-policy#haki-zako" className="privacy-link">
-              Haki Zako
-            </Link>
-            {' | '}
-            <Link to="/privacy-policy#mawasiliano" className="privacy-link">
-              Mawasiliano
-            </Link>
           </p>
           <p className="visitor-stats">
             <span className="visitor-label">Wageni:</span>

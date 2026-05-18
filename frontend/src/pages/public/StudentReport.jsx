@@ -4,6 +4,7 @@
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import PublicCmsPage from '../../components/public/PublicCmsPage';
+import { RIPOTI_MWANAFUNZI_LABEL } from '../../constants/publicSiteNav';
 import { prepareStudentReportHtml } from './studentReportCms';
 import './StudentReport.css';
 
@@ -19,7 +20,7 @@ const StudentReportCta = () => (
 const StudentReport = () => (
   <PublicCmsPage
     pageSlug="student_report"
-    pageLabel="Ripoti za Wanafunzi"
+    pageLabel={RIPOTI_MWANAFUNZI_LABEL}
     loadingMessage="Inapakia ukurasa wa ripoti..."
     shellClassName="student-report-page student-report-page--immersive"
     innerClassName="student-report-page__inner"

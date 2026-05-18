@@ -11,6 +11,8 @@
  * - console.getErrorSummary() - Shortcut to print error summary
  */
 
+import { isBenignUnhandledRejection } from './benignRejections';
+
 const LOG_LEVELS = {
   DEBUG: 0,
   INFO: 1,
@@ -221,32 +223,18 @@ window.addEventListener('error', (event) => {
   });
 });
 
-// Unhandled promise rejection handler
-// Note: This handler logs errors but doesn't prevent default - main.jsx handler will prevent default
-// This allows main.jsx to suppress known benign cases (401s, extension errors, etc.)
-window.addEventListener('unhandledrejection', (event) => {
-  const reason = event.reason;
-  const reqInfo = reason?.reqInfo;
-  const url = reason?.config?.url || reason?.message || '';
-  
-  // Suppress known benign cases (same as main.jsx to avoid duplicate logging)
-  if (
-    url.includes('ERR_BLOCKED_BY_CLIENT') ||
-    reason?.message?.includes('ERR_BLOCKED_BY_CLIENT') ||
-    reqInfo?.pathPrefix === '/writing' ||
-    reqInfo?.path?.includes('/writing') ||
-    (reason?.code === 403 && reason?.data?.code === 403 && reason?.data?.error === 'exceptions.UserAuthError') ||
-    (reason?.code === 403 && (reason?.httpStatus === 200 || reason?.httpError === false)) ||
-    reason?.code === 403 ||
-    String(reason?.code) === '403' ||
-    reason?.response?.status === 401
-  ) {
-    return;
-  }
-  
-  // Only log unexpected errors
-  logger.error('Unhandled Promise Rejection', event.reason, {
-    promise: event.promise,
-  });
-});
+// Capture phase — suppress benign rejections before they reach the console
+window.addEventListener(
+  'unhandledrejection',
+  (event) => {
+    if (isBenignUnhandledRejection(event.reason)) {
+      event.preventDefault();
+      return;
+    }
+    logger.error('Unhandled Promise Rejection', event.reason, {
+      promise: event.promise,
+    });
+  },
+  true
+);
 

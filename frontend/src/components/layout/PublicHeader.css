@@ -666,6 +666,33 @@
   color: #000000;
 }
 
+.nav-dropdown-item__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+  white-space: normal;
+}
+
+.nav-dropdown-item__label {
+  line-height: 1.25;
+}
+
+.nav-dropdown-item__sub {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+.nav-links .nav-category-dropdown a:hover .nav-dropdown-item__sub,
+.nav-links .nav-category-dropdown a.active .nav-dropdown-item__sub {
+  color: #475569;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .nav-links {

@@ -1,0 +1,451 @@
+/**
+ * Homepage — mathematical rhythm theme (φ, Fibonacci spacing, navy + gold).
+ * Scoped to .homepage only.
+ */
+
+.homepage {
+  --phi: 1.618;
+  --home-primary: #1a5490;
+  --home-primary-deep: #0f2d52;
+  --home-primary-mid: #234a73;
+  --home-accent: #c9a227;
+  --home-accent-deep: #9a7b1a;
+  --home-accent-soft: #f5ecd4;
+  --home-ink: #0f172a;
+  --home-ink-body: #334155;
+  --home-ink-muted: #64748b;
+  --home-ink-faint: #94a3b8;
+  --home-surface: #ffffff;
+  --home-surface-band: #f5f3ef;
+  --home-surface-elevated: #faf8f5;
+  --home-border: rgba(26, 84, 144, 0.14);
+  --home-border-strong: rgba(26, 84, 144, 0.28);
+
+  --home-space-1: var(--fibonacci-8, 8px);
+  --home-space-2: var(--fibonacci-13, 13px);
+  --home-space-3: var(--fibonacci-21, 21px);
+  --home-space-4: var(--fibonacci-34, 34px);
+  --home-space-5: var(--fibonacci-55, 55px);
+
+  --home-grid-gap: var(--home-space-3);
+  --home-card-pad: var(--home-space-4);
+  --home-section-pad-y: clamp(var(--home-space-4), 5vw, var(--home-space-5));
+  --home-radius: var(--home-space-2);
+  --home-radius-sm: var(--home-space-1);
+
+  --home-frame-border: 1px solid var(--home-border);
+  --home-frame-shadow: 0 1px 2px rgba(15, 45, 82, 0.06);
+  --home-frame-shadow-hover: 0 4px 14px rgba(15, 45, 82, 0.1);
+
+  --home-font-display: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+  --home-font-ui: 'Source Sans 3', system-ui, 'Segoe UI', sans-serif;
+
+  --home-type-sm: 0.8125rem;
+  --home-type-base: 1rem;
+  --home-type-md: var(--modular-scale-1, 1rem);
+  --home-type-lg: 1.125rem;
+  --home-type-xl: clamp(1.35rem, 3.5vw, var(--modular-scale-2, 1.618rem));
+  --home-type-stat: clamp(2rem, 5.5vw, var(--modular-scale-3, 2.618rem));
+
+  font-family: var(--home-font-ui);
+  color: var(--home-ink-body);
+}
+
+/* Subtle Fibonacci stripe on band sections */
+.homepage.home-band--light,
+.homepage .home-band--light {
+  background-color: var(--home-surface-band);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 20px,
+    rgba(26, 84, 144, 0.025) 20px,
+    rgba(26, 84, 144, 0.025) 21px
+  );
+}
+
+.homepage.home-band--white,
+.homepage .home-band--white {
+  background: var(--home-surface);
+}
+
+/* Typography */
+.homepage .home-section-eyebrow {
+  color: var(--home-accent-deep);
+  letter-spacing: 0.08em;
+}
+
+.homepage .home-section-title {
+  font-family: var(--home-font-display);
+  font-weight: 700;
+  color: var(--home-ink);
+  line-height: 1.2;
+  font-size: var(--home-type-xl);
+}
+
+.homepage .home-section-subtitle {
+  color: var(--home-ink-muted);
+  line-height: var(--phi);
+}
+
+.homepage .home-view-all,
+.homepage .home-text-link,
+.homepage .home-inline-cta,
+.homepage .home-announce-readmore,
+.homepage .home-faq-help a {
+  color: var(--home-primary);
+}
+
+.homepage .home-view-all:hover,
+.homepage .home-text-link:hover,
+.homepage .home-inline-cta:hover,
+.homepage .home-announce-readmore:hover {
+  color: var(--home-primary-mid);
+}
+
+/* Framed cards */
+.homepage .home-framed-card,
+.homepage .home-framed-panel,
+.homepage .home-stat-card,
+.homepage .home-quicklink-card,
+.homepage .home-program-card,
+.homepage .home-announce-item,
+.homepage .home-contact-card,
+.homepage .home-faq-item,
+.homepage .home-gallery-item,
+.homepage .admin-card--named {
+  border: var(--home-frame-border);
+  box-shadow: var(--home-frame-shadow);
+  background: var(--home-surface);
+  border-radius: var(--home-radius-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.homepage .home-framed-card:hover,
+.homepage .home-framed-panel:hover,
+.homepage .home-stat-card:hover,
+.homepage .home-quicklink-card:hover,
+.homepage .home-program-card:hover,
+.homepage .home-announce-item:hover,
+.homepage .home-faq-item:hover,
+.homepage .home-gallery-item:hover,
+.homepage .admin-card--named:hover {
+  box-shadow: var(--home-frame-shadow-hover);
+  border-color: var(--home-border-strong);
+}
+
+/* Stats — unified gold accent */
+.homepage .home-stats-section {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .home-stat-card {
+  padding: var(--home-card-pad) var(--home-space-3);
+}
+
+.homepage .home-stat-icon {
+  color: var(--home-primary);
+}
+
+.homepage .home-stat-card--graduates .home-stat-icon,
+.homepage .home-stat-card--enrolled .home-stat-icon,
+.homepage .home-stat-card--year .home-stat-icon {
+  color: var(--home-primary);
+}
+
+.homepage .home-stat-number {
+  font-family: var(--home-font-display);
+  font-size: var(--home-type-stat);
+  font-weight: 700;
+  color: var(--home-ink);
+  letter-spacing: -0.02em;
+}
+
+.homepage .home-stat-label {
+  color: var(--home-primary-mid);
+  font-weight: 600;
+}
+
+.homepage .home-stat-label-en,
+.homepage .home-stat-meta {
+  color: var(--home-ink-faint);
+}
+
+/* CMS block */
+.homepage .home-cms-section {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+/* Intro */
+.homepage .home-intro {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .home-intro-text {
+  line-height: var(--phi);
+  color: var(--home-ink-body);
+  max-width: 65ch;
+}
+
+.homepage .home-intro-text--en {
+  color: var(--home-ink-muted);
+}
+
+.homepage .home-framed-panel {
+  padding: var(--home-card-pad);
+}
+
+/* Quick links */
+.homepage .home-quicklinks {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .home-quicklink-card {
+  background: var(--home-surface-elevated);
+  border-radius: var(--home-radius-sm);
+}
+
+.homepage .home-quicklink-card:hover {
+  box-shadow: var(--home-frame-shadow-hover);
+  border-color: var(--home-border-strong);
+}
+
+.homepage .home-quicklink-icon {
+  background: var(--home-primary);
+  border-radius: var(--home-radius-sm);
+  width: calc(var(--home-space-4) + var(--home-space-1));
+  height: calc(var(--home-space-4) + var(--home-space-1));
+}
+
+.homepage .home-quicklink-label {
+  color: var(--home-ink);
+  font-weight: 600;
+}
+
+/* Programs */
+.homepage .home-programs {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .home-program-card {
+  padding: var(--home-space-3) var(--home-card-pad);
+}
+
+.homepage .home-program-icon {
+  background: var(--home-accent-soft);
+  color: var(--home-accent-deep);
+  border-radius: var(--home-radius-sm);
+}
+
+.homepage .home-program-title {
+  font-family: var(--home-font-display);
+  font-weight: 700;
+  color: var(--home-ink);
+}
+
+/* Announcements */
+.homepage .home-announcements {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .home-announce-item {
+  background: var(--home-surface-elevated);
+  padding: var(--home-space-3);
+}
+
+.homepage .home-announce-priority--normal,
+.homepage .home-announce-priority--medium {
+  background: var(--home-accent-soft);
+  color: var(--home-accent-deep);
+}
+
+.homepage .home-announce-title {
+  font-family: var(--home-font-display);
+  font-weight: 700;
+}
+
+/* Admissions CTA */
+.homepage .home-admissions-cta {
+  background: linear-gradient(
+    135deg,
+    var(--home-primary-deep) 0%,
+    var(--home-primary) 55%,
+    var(--home-primary-mid) 100%
+  );
+  padding: var(--home-section-pad-y) 0;
+}
+
+.homepage .home-admissions-cta .home-admissions-cta__frame {
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--home-ink-body);
+  border-color: rgba(201, 162, 39, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.homepage .home-admissions-cta .home-section-eyebrow {
+  color: var(--home-accent-deep);
+}
+
+.homepage .home-admissions-cta__title {
+  font-family: var(--home-font-display);
+  font-weight: 700;
+  color: var(--home-ink);
+}
+
+.homepage .home-admissions-cta__lead {
+  color: var(--home-ink-body);
+  opacity: 1;
+}
+
+.homepage .home-admissions-cta__lead-en {
+  color: var(--home-ink-muted);
+  opacity: 1;
+}
+
+.homepage .home-admissions-steps li {
+  color: var(--home-ink-body);
+}
+
+.homepage .home-admissions-steps li span {
+  background: var(--home-primary);
+  color: #fff;
+}
+
+.homepage .home-admissions-cta .home-admissions-btn {
+  color: var(--home-primary-deep);
+  border-color: var(--home-primary);
+}
+
+.homepage .home-admissions-cta .home-admissions-btn:hover {
+  background: var(--home-accent-soft);
+  border-color: var(--home-primary-mid);
+  color: var(--home-primary-deep);
+}
+
+.homepage .home-admissions-cta .home-admissions-btn--primary {
+  color: var(--home-primary-deep);
+}
+
+.homepage .home-admissions-cta .home-admissions-phone {
+  color: var(--home-primary);
+}
+
+.homepage .home-admissions-cta .home-admissions-phone:hover {
+  color: var(--home-primary-mid);
+}
+
+/* Gallery */
+.homepage .home-gallery {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .home-gallery-item {
+  overflow: hidden;
+}
+
+.homepage .home-gallery-item:hover {
+  box-shadow: var(--home-frame-shadow-hover);
+  transform: none;
+}
+
+/* Leadership */
+.homepage .administration-section {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .administration-title-icon {
+  color: var(--home-accent);
+}
+
+.homepage .admin-card--named .admin-name {
+  font-family: var(--home-font-display);
+  color: var(--home-ink);
+}
+
+.homepage .admin-year-badge {
+  background: var(--home-accent-soft);
+  color: var(--home-accent-deep);
+}
+
+/* FAQ */
+.homepage .home-faq {
+  padding: var(--home-section-pad-y) 0;
+  border-bottom: 1px solid var(--home-border);
+}
+
+.homepage .home-faq-item.is-open {
+  border-color: rgba(201, 162, 39, 0.45);
+  box-shadow: 0 3px 13px rgba(26, 84, 144, 0.08);
+}
+
+.homepage .home-faq-chevron.is-open {
+  color: var(--home-accent-deep);
+}
+
+.homepage .home-faq-category {
+  background: var(--home-accent-soft);
+  color: var(--home-accent-deep);
+}
+
+/* Contact strip */
+.homepage .home-contact-strip {
+  background: linear-gradient(180deg, var(--home-primary-deep) 0%, #0a1f38 100%);
+  padding: var(--home-section-pad-y) 0 calc(var(--home-space-5) + var(--home-space-2));
+}
+
+.homepage .home-contact-card i {
+  color: var(--home-accent);
+}
+
+.homepage .home-contact-page-link {
+  color: var(--home-accent);
+}
+
+.homepage .home-contact-page-link:hover {
+  color: #e8c96a;
+}
+
+/* Hero refinements */
+.homepage .main-content {
+  background: var(--home-primary-mid);
+}
+
+.homepage .hero-carousel {
+  background: linear-gradient(
+    135deg,
+    var(--home-primary-mid) 0%,
+    var(--home-primary) 45%,
+    var(--home-primary-deep) 100%
+  );
+}
+
+.homepage .scrolling-text-bottom {
+  border-top-color: rgba(201, 162, 39, 0.35);
+}
+
+.homepage .scrolling-text-content {
+  font-family: var(--home-font-ui);
+  font-weight: 600;
+}
+
+.homepage .hero-cta--primary {
+  background: var(--home-accent);
+  color: var(--home-primary-deep);
+  border-color: var(--home-accent);
+}
+
+.homepage .hero-cta--primary:hover {
+  background: #e8c96a;
+}
+
+.homepage .carousel-indicator.active {
+  background: var(--home-accent);
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { publicAPI } from '../services/public';
 
 /**
@@ -7,8 +8,11 @@ import { publicAPI } from '../services/public';
  */
 const VisitorTracker = () => {
   const hasTracked = useRef(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
+    if (pathname === '/login' || pathname === '/student-login') return;
+
     // Only track once per session
     if (hasTracked.current) return;
     
@@ -44,7 +48,7 @@ const VisitorTracker = () => {
     const timer = setTimeout(trackVisitor, 1000);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [pathname]);
 
   return null; // This component doesn't render anything
 };

@@ -10,6 +10,11 @@ import SkeletonLoader from '../../components/common/SkeletonLoader';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
+import '@fontsource/libre-baskerville/400.css';
+import '@fontsource/libre-baskerville/700.css';
+import '@fontsource/source-sans-3/400.css';
+import '@fontsource/source-sans-3/600.css';
+import '@fontsource/source-sans-3/700.css';
 import './HomePage.css';
 import { PublicCmsHtml, usePublicPage } from '../../components/public/PublicCmsPage';
 import { hasPublishedPage, settingValue } from '../../utils/publicPageContent';
@@ -250,7 +255,7 @@ const HomePage = () => {
                 <i className="fas fa-envelope" aria-hidden />
                 Wasiliana
               </Link>
-              <Link to="/student-login" className="hero-cta hero-cta--ghost">
+              <Link to="/student-report" className="hero-cta hero-cta--ghost">
                 <i className="fas fa-file-alt" aria-hidden />
                 Wanafunzi
               </Link>
@@ -275,7 +280,7 @@ const HomePage = () => {
         </section>
 
         {/* —— Stats —— */}
-        <section className="home-stats-section" aria-label="Takwimu za seminari">
+        <section className="home-stats-section home-band--light" aria-label="Takwimu za seminari">
           <div className="home-stats-grid">
             <article className="home-stat-card home-stat-card--graduates">
               <i className="fas fa-user-graduate home-stat-icon" aria-hidden />
@@ -308,7 +313,7 @@ const HomePage = () => {
         </section>
 
         {/* —— Intro —— */}
-        <section className="home-intro" aria-labelledby="home-intro-heading">
+        <section className="home-intro home-band--white" aria-labelledby="home-intro-heading">
           <div className="home-section-inner">
             <div className="home-framed-panel">
             <header className="home-section-header home-section-header--left">
@@ -342,7 +347,7 @@ const HomePage = () => {
         </section>
 
         {hasHomepageCms ? (
-          <section className="home-cms-section" aria-label="Homepage content">
+          <section className="home-cms-section home-band--light" aria-label="Homepage content">
             <div className="home-section-inner">
               <PublicCmsHtml page={homepageCms} className="content-card home-cms-body" />
             </div>
@@ -351,7 +356,7 @@ const HomePage = () => {
 
         {/* —— Announcements —— */}
         {(isLoading || previewAnnouncements.length > 0) && (
-          <section className="home-announcements" aria-labelledby="home-news-heading">
+          <section className="home-announcements home-band--white" aria-labelledby="home-news-heading">
             <div className="home-section-inner">
               <header className="home-section-header home-section-header--row">
                 <div>
@@ -459,7 +464,7 @@ const HomePage = () => {
 
         {/* —— Gallery preview —— */}
         {(isLoading || galleryPreviewPhotos.length > 0) && (
-          <section className="home-gallery" aria-labelledby="home-gallery-heading">
+          <section className="home-gallery home-band--light" aria-labelledby="home-gallery-heading">
             <div className="home-section-inner">
               <header className="home-section-header home-section-header--row">
                 <div>
@@ -513,7 +518,7 @@ const HomePage = () => {
         )}
 
         {/* —— Leadership —— */}
-        <section className="administration-section" aria-labelledby="home-leadership-heading">
+        <section className="administration-section home-band--white" aria-labelledby="home-leadership-heading">
           <div className="administration-container">
             <header className="administration-header">
               <h2 id="home-leadership-heading" className="administration-title">
@@ -578,7 +583,7 @@ const HomePage = () => {
         </section>
 
         {/* —— FAQ —— */}
-        <section className="home-faq" aria-labelledby="home-faq-heading">
+        <section className="home-faq home-band--light" aria-labelledby="home-faq-heading">
           <div className="home-section-inner home-faq__inner">
             <header className="home-section-header">
               <h2 id="home-faq-heading" className="home-section-title">
