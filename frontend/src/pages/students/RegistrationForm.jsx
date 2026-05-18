@@ -8,6 +8,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 import { studentsAPI } from '../../services/students';
 import './RegistrationForm.css';
 
@@ -16,7 +17,8 @@ const RegistrationForm = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const location = useLocation();
-  
+  const { isAdminLike } = useAuth();
+
   const [formData, setFormData] = useState({
     adm_no: '',
     first_name: '',
@@ -27,9 +29,10 @@ const RegistrationForm = () => {
   });
 
   const [editingStudent, setEditingStudent] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [csvFile, setCsvFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeletePhrase, setBulkDeletePhrase] = useState('');
 
   // Update term in formData when URL term parameter changes
   useEffect(() => {
@@ -55,6 +58,26 @@ const RegistrationForm = () => {
   // Form VI Second Term (Jan-Jun 2027) -> year 2027
   const apiYear = useMemo(() => parseInt(year), [year]);
 
+  const effectiveTerm = useMemo(
+    () => term || formData.term || 'First Term',
+    [term, formData.term]
+  );
+
+  const studentsQueryKey = useMemo(
+    () => ['students', normalizedLevel, stream, apiYear, effectiveTerm],
+    [normalizedLevel, stream, apiYear, effectiveTerm]
+  );
+
+  const bulkDeleteConfirmPhrase = useMemo(() => {
+    const isFormIV = /^FORM\s+(I|II|III|IV)$/i.test(normalizedLevel);
+    const streamPart =
+      isFormIV && (stream === 'A' || stream === 'NA' || !stream)
+        ? 'A/NA'
+        : stream;
+    const termPart = term ? effectiveTerm : 'all terms';
+    return `DELETE ${normalizedLevel} ${streamPart} ${apiYear} (${termPart})`;
+  }, [normalizedLevel, stream, apiYear, term, effectiveTerm]);
+
   // Helper function to sort students by name: first_name, then middle_name, then surname (A-Z)
   const sortStudentsByName = useCallback((students) => {
     return [...students].sort((a, b) => {
@@ -76,7 +99,7 @@ const RegistrationForm = () => {
 
   // Fetch students for this class - sorted by name: first_name, then middle_name, then surname (A-Z)
   const { data: studentsData = [], isLoading, error: studentsError } = useQuery({
-    queryKey: ['students', normalizedLevel, stream, apiYear, term],
+    queryKey: studentsQueryKey,
     queryFn: async () => {
       if (!normalizedLevel || !stream || !apiYear) {
         throw new Error('Missing required parameters');
@@ -85,7 +108,7 @@ const RegistrationForm = () => {
         level: normalizedLevel,
         stream: stream,
         year: apiYear,
-        term: term || 'First Term',
+        term: effectiveTerm,
       });
       const students = res.data.students || [];
       // Sort students by name: first_name, then middle_name, then surname (A-Z)
@@ -145,6 +168,21 @@ const RegistrationForm = () => {
     return false;
   }, []);
 
+  const handleMutationAuthError = useCallback((error, fallbackMessage) => {
+    if (error.response?.status === 401) {
+      toast.error('Your session has expired. Please log in again.');
+      setTimeout(() => {
+        if (window.location.pathname !== '/login') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
+      }, 2000);
+      return;
+    }
+    toast.error(error.response?.data?.message || fallbackMessage);
+  }, []);
+
   // Create student mutation
   const createMutation = useMutation({
     mutationFn: (data) => studentsAPI.createStudent({
@@ -152,31 +190,14 @@ const RegistrationForm = () => {
       level: normalizedLevel,
       stream: stream,
       year: apiYear,
-      term: formData.term,
+      term: data.term || effectiveTerm,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, term]);
+      queryClient.invalidateQueries({ queryKey: studentsQueryKey });
       toast.success('Student added successfully!');
       resetFormData();
-      setIsSubmitting(false);
     },
-    onError: (error) => {
-      // Handle 401 errors specifically - token might be expired
-      if (error.response?.status === 401) {
-        toast.error('Your session has expired. Please log in again.');
-        // Let the API interceptor handle redirect after a delay
-        setTimeout(() => {
-          if (window.location.pathname !== '/login') {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-          }
-        }, 2000); // Give user time to see the error message
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to add student');
-      }
-      setIsSubmitting(false);
-    },
+    onError: (error) => handleMutationAuthError(error, 'Failed to add student'),
   });
 
   // Update student mutation
@@ -186,23 +207,15 @@ const RegistrationForm = () => {
       level: normalizedLevel,
       stream: stream,
       year: apiYear,
-      term: formData.term,
-    }, { level: normalizedLevel, stream: stream, year: apiYear, term: formData.term }),
+      term: data.term || effectiveTerm,
+    }, { level: normalizedLevel, stream: stream, year: apiYear, term: data.term || effectiveTerm }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, formData.term]);
+      queryClient.invalidateQueries({ queryKey: studentsQueryKey });
       toast.success('Student updated successfully!');
       setEditingStudent(null);
-      setFormData({
-        adm_no: '',
-        first_name: '',
-        middle_name: '',
-        surname: '',
-        sex: '',
-      });
+      resetFormData();
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update student');
-    },
+    onError: (error) => handleMutationAuthError(error, 'Failed to update student'),
   });
 
   // Delete student mutation
@@ -211,10 +224,10 @@ const RegistrationForm = () => {
       level: normalizedLevel,
       stream: stream,
       year: apiYear,
-      term: formData.term,
+      term: effectiveTerm,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, formData.term]);
+      queryClient.invalidateQueries({ queryKey: studentsQueryKey });
       toast.success('Student deleted successfully!');
     },
     onError: (error) => {
@@ -222,23 +235,58 @@ const RegistrationForm = () => {
     },
   });
 
+  const isFormSubmitting = createMutation.isPending || updateMutation.isPending;
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: () =>
+      studentsAPI.bulkDeleteClass(
+        {
+          level: normalizedLevel,
+          stream,
+          year: apiYear,
+          ...(term ? { term: effectiveTerm } : {}),
+        },
+        bulkDeletePhrase.trim()
+      ),
+    onSuccess: (res) => {
+      const d = res.data?.deleted || {};
+      queryClient.invalidateQueries({ queryKey: studentsQueryKey });
+      toast.success(res.data?.message || 'Class deleted successfully');
+      setShowBulkDeleteModal(false);
+      setBulkDeletePhrase('');
+      setEditingStudent(null);
+      resetFormData();
+      console.info('[bulk-delete] purged:', d);
+    },
+    onError: (error) => {
+      const expected = error.response?.data?.expectedPhrase;
+      if (expected) {
+        toast.error(`Type exactly: ${expected}`);
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to delete class');
+      }
+    },
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.adm_no || !formData.first_name || !formData.surname || !formData.sex) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    setIsSubmitting(true);
-
-    if (editingStudent) {
-      updateMutation.mutate({
-        admNo: editingStudent.adm_no,
-        data: formData,
-      });
-    } else {
-      createMutation.mutate(formData);
+    try {
+      if (editingStudent) {
+        await updateMutation.mutateAsync({
+          admNo: editingStudent.adm_no,
+          data: formData,
+        });
+      } else {
+        await createMutation.mutateAsync(formData);
+      }
+    } catch {
+      // Errors surfaced via mutation onError
     }
   };
 
@@ -377,7 +425,7 @@ const RegistrationForm = () => {
       const res = await studentsAPI.bulkUpload(formData);
 
       // Refresh students list
-      queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear, term]);
+      queryClient.invalidateQueries({ queryKey: studentsQueryKey });
       
       // Show success message with details
       const { success_count, duplicate_count, error_count, errors } = res.data;
@@ -488,7 +536,7 @@ const RegistrationForm = () => {
                       placeholder="Adm No"
                       value={formData.adm_no}
                       onChange={(e) => setFormData({ ...formData, adm_no: e.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isFormSubmitting}
                       autoFocus
                     />
                   </div>
@@ -505,7 +553,7 @@ const RegistrationForm = () => {
                       placeholder="First Name"
                       value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isFormSubmitting}
                     />
                   </div>
                 </div>
@@ -520,7 +568,7 @@ const RegistrationForm = () => {
                       placeholder="Middle Name"
                       value={formData.middle_name}
                       onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isFormSubmitting}
                     />
                   </div>
                 </div>
@@ -536,7 +584,7 @@ const RegistrationForm = () => {
                       placeholder="Surname"
                       value={formData.surname}
                       onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isFormSubmitting}
                     />
                   </div>
                 </div>
@@ -550,7 +598,7 @@ const RegistrationForm = () => {
                       required
                       value={formData.sex}
                       onChange={(e) => setFormData({ ...formData, sex: e.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isFormSubmitting}
                     >
                       <option value="">Select</option>
                       <option value="Male">Male</option>
@@ -568,7 +616,7 @@ const RegistrationForm = () => {
                       required
                       value={formData.term}
                       onChange={(e) => setFormData({ ...formData, term: e.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isFormSubmitting}
                     >
                       <option value="First Term">First Term (Jul-Dec)</option>
                       <option value="Second Term">Second Term (Jan-Jun)</option>
@@ -580,10 +628,10 @@ const RegistrationForm = () => {
                     type="submit"
                     className="form-btn primary"
                     id="submitBtn"
-                    disabled={isSubmitting}
+                    disabled={isFormSubmitting}
                   >
-                    <i className={`fas ${isSubmitting ? 'fa-spinner fa-spin' : editingStudent ? 'fa-save' : 'fa-plus'}`}></i>
-                    <span className="btn-text">{isSubmitting ? (editingStudent ? 'Saving...' : 'Adding...') : (editingStudent ? 'Save' : 'Add')}</span>
+                    <i className={`fas ${isFormSubmitting ? 'fa-spinner fa-spin' : editingStudent ? 'fa-save' : 'fa-plus'}`}></i>
+                    <span className="btn-text">{isFormSubmitting ? (editingStudent ? 'Saving...' : 'Adding...') : (editingStudent ? 'Save' : 'Add')}</span>
                   </button>
                 </div>
                 {editingStudent && (
@@ -592,7 +640,7 @@ const RegistrationForm = () => {
                       type="button"
                       className="form-btn secondary"
                       onClick={handleCancelEdit}
-                      disabled={isSubmitting}
+                      disabled={isFormSubmitting}
                     >
                       <i className="fas fa-times"></i>
                       <span className="btn-text">Cancel</span>
@@ -672,6 +720,89 @@ const RegistrationForm = () => {
           </div>
         </div>
 
+        {isAdminLike() && (
+          <div className="bulk-delete-card">
+            <div className="bulk-delete-card-header">
+              <i className="fas fa-exclamation-triangle"></i>
+              <span>Danger zone — delete entire class</span>
+            </div>
+            <div className="bulk-delete-card-body">
+              <p className="bulk-delete-warning">
+                Permanently removes <strong>all {students.length}</strong> registered student(s) for{' '}
+                <strong>{normalizedLevel} {stream} {apiYear}</strong>
+                {term ? ` (${effectiveTerm})` : ''}, including scores, photos, parishes, comments,
+                monthly results, tabia mwenendo, debt, promotion records, and score audit logs. This cannot be undone.
+              </p>
+              <button
+                type="button"
+                className="form-btn danger"
+                disabled={students.length === 0 || bulkDeleteMutation.isPending || isFormSubmitting}
+                onClick={() => {
+                  setBulkDeletePhrase('');
+                  setShowBulkDeleteModal(true);
+                }}
+              >
+                <i className={`fas ${bulkDeleteMutation.isPending ? 'fa-spinner fa-spin' : 'fa-trash-alt'}`}></i>
+                <span className="btn-text">
+                  {bulkDeleteMutation.isPending ? 'Deleting class...' : 'Delete all students in this class'}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showBulkDeleteModal && (
+          <div
+            className="bulk-delete-modal-overlay"
+            onClick={() => !bulkDeleteMutation.isPending && setShowBulkDeleteModal(false)}
+          >
+            <div
+              className="bulk-delete-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="bulk-delete-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 id="bulk-delete-title">Confirm permanent deletion</h3>
+              <p>
+                You are about to delete every student and related data for this class. Type the phrase
+                below exactly:
+              </p>
+              <p className="bulk-delete-phrase-box">{bulkDeleteConfirmPhrase}</p>
+              <input
+                type="text"
+                className="form-input"
+                value={bulkDeletePhrase}
+                onChange={(e) => setBulkDeletePhrase(e.target.value)}
+                placeholder="Type confirmation phrase"
+                disabled={bulkDeleteMutation.isPending}
+                autoComplete="off"
+              />
+              <div className="bulk-delete-modal-actions">
+                <button
+                  type="button"
+                  className="form-btn secondary"
+                  disabled={bulkDeleteMutation.isPending}
+                  onClick={() => setShowBulkDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="form-btn danger"
+                  disabled={
+                    bulkDeleteMutation.isPending ||
+                    bulkDeletePhrase.trim() !== bulkDeleteConfirmPhrase
+                  }
+                  onClick={() => bulkDeleteMutation.mutate()}
+                >
+                  {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete permanently'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Registered Students Table */}
         <div className="registered-students-card">
           <div className="registered-students-card-header">
@@ -689,7 +820,7 @@ const RegistrationForm = () => {
                 <button
                   type="button"
                   className="form-btn primary"
-                  onClick={() => queryClient.invalidateQueries(['students', normalizedLevel, stream, apiYear])}
+                  onClick={() => queryClient.invalidateQueries({ queryKey: studentsQueryKey })}
                   style={{ marginTop: '12px' }}
                 >
                   <i className="fas fa-sync-alt"></i> Retry

@@ -227,6 +227,14 @@ export const studentsAPI = {
   // Bulk upload students from CSV
   bulkUpload: (formData) => api.post('/students/bulk-upload', formData),
 
+  /** Permanently delete all students in a class (+ scores, photos, comments, etc.) */
+  bulkDeleteClass: (params, confirmPhrase) => {
+    const queryString = new URLSearchParams(params).toString();
+    return api.delete(`/students/class?${queryString}`, {
+      data: { confirmPhrase },
+    });
+  },
+
   // Download Photo Entry Form PDF
   downloadPhotoEntryFormPDF: (level, stream, year, month = null, term = null) => {
     const params = new URLSearchParams();

@@ -6,7 +6,8 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const { purgeStudentsByClass, parseClassScope } = require('../utils/purgeStudentsByClass');
 const { query, withTransaction } = require('../config/database');
 const { saveUserActivity } = require('../utils/activityLogger');
 const { generatePhotoEntryFormPDF, generateMonthlyResultsPDF } = require('../utils/pdfGenerator');
@@ -1420,6 +1421,55 @@ router.delete('/teachers', async (req, res) => {
     res.json({ message: 'Teacher assignment deleted successfully' });
   } catch (error) {
     console.error('DELETE /teachers error:', error);
+    return sendError(res, error, 500);
+  }
+});
+
+// Bulk delete all students in a class (level + stream + year [+ term]) and related records
+router.delete('/class', requireRole('admin', 'superadmin'), async (req, res) => {
+  try {
+    let { level, stream, year, term } = req.query;
+    const { confirmPhrase } = req.body || {};
+
+    if (!level || !stream || !year) {
+      return res.status(400).json({ message: 'level, stream, and year are required' });
+    }
+
+    if (level) {
+      level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim();
+    }
+    if (stream) {
+      stream = decodeURIComponent(String(stream).replace(/\+/g, ' ')).trim();
+    }
+
+    const scope = parseClassScope({ level, stream, year, term });
+    const expectedPhrase = `DELETE ${scope.label}`;
+    const provided = String(confirmPhrase || '').trim();
+    if (provided !== expectedPhrase) {
+      return res.status(400).json({
+        message: 'Confirmation phrase does not match. Type the exact phrase shown in the dialog.',
+        expectedPhrase,
+      });
+    }
+
+    const result = await withTransaction(async (client) => purgeStudentsByClass(client, { level, stream, year, term }));
+
+    if (req.user?.username) {
+      await saveUserActivity({
+        username: req.user.username,
+        activity_type: 'students_class_purged',
+        description: `Purged class: ${scope.label} (${result.deleted.students} students)`,
+        details: { scope: result.scope, deleted: result.deleted },
+      });
+    }
+
+    res.json({
+      message: `Permanently deleted ${result.deleted.students} student(s) and related records for ${scope.label}`,
+      scope: result.scope,
+      deleted: result.deleted,
+    });
+  } catch (error) {
+    console.error('DELETE /students/class error:', error);
     return sendError(res, error, 500);
   }
 });

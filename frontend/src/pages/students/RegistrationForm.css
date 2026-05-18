@@ -10,6 +10,7 @@
 
 .registration-form-card,
 .bulk-upload-card,
+.bulk-delete-card,
 .registered-students-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -52,8 +53,84 @@
 
 .registration-form-card-body,
 .bulk-upload-card-body,
+.bulk-delete-card-body,
 .registered-students-card-body {
   padding: clamp(0.5rem, 1.5vw, 0.75rem);
+}
+
+.bulk-delete-card {
+  border-color: #fecaca;
+}
+
+.bulk-delete-card-header {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: clamp(0.5rem, 1.5vw, 0.75rem);
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #fecaca;
+}
+
+.bulk-delete-warning {
+  margin: 0 0 0.75rem;
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  color: #7f1d1d;
+  line-height: 1.5;
+}
+
+.bulk-delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.bulk-delete-modal {
+  background: #fff;
+  border: 1px solid #fecaca;
+  max-width: 32rem;
+  width: 100%;
+  padding: 1.25rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.bulk-delete-modal h3 {
+  margin: 0 0 0.5rem;
+  color: #991b1b;
+}
+
+.bulk-delete-modal p {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.bulk-delete-phrase-box {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  background: #fef2f2;
+  border: 1px dashed #f87171;
+  padding: 0.5rem 0.75rem;
+  word-break: break-word;
+}
+
+.bulk-delete-modal .form-input {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.bulk-delete-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 /* Form Grid - single row: Adm No, First Name, Middle Name, Surname, Sex, Add, Back */
