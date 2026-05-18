@@ -2568,6 +2568,18 @@ async function ensureDepartmentContactColumns() {
     ADD COLUMN IF NOT EXISTS map_heading VARCHAR(255),
     ADD COLUMN IF NOT EXISTS social_heading VARCHAR(255)
   `);
+
+  await query(`
+    UPDATE website_settings
+    SET footer_copyright = 'Arusha Catholic Seminary'
+    WHERE id = 1
+      AND (
+        footer_copyright IS NULL
+        OR TRIM(footer_copyright) = ''
+        OR footer_copyright ~* '^jimbo[[:space:]]+kuu'
+        OR footer_copyright ~* '^seminari[[:space:]]+ya[[:space:]]+kikatoliki[[:space:]]+arusha'
+      )
+  `);
 }
 
 const SITE_CONTACT_FIELDS = [

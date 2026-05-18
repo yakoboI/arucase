@@ -118,6 +118,17 @@ router.get('/homepage', async (req, res) => {
     // Get website settings
     const settingsResult = await query('SELECT * FROM website_settings WHERE id = 1');
     const settings = settingsResult.rows[0] || {};
+
+    const legacyCopyright =
+      settings.footer_copyright &&
+      /jimbo\s+kuu|seminari\s+ya\s+kikatoliki\s+arusha/i.test(String(settings.footer_copyright));
+    if (legacyCopyright) {
+      settings.footer_copyright = 'Arusha Catholic Seminary';
+      query(
+        `UPDATE website_settings SET footer_copyright = $1, updated_at = NOW() WHERE id = 1`,
+        ['Arusha Catholic Seminary']
+      ).catch(() => {});
+    }
     
     // Get school logo from school_logo table and add to settings
     try {

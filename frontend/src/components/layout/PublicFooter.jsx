@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { publicAPI } from '../../services/public';
 import { settingValue } from '../../utils/publicPageContent';
+import { FOOTER_COPYRIGHT_NAME, resolveFooterCopyrightName } from '../../utils/footerCopyright';
 import './PublicFooter.css';
 
 const PublicFooter = () => {
@@ -51,8 +52,8 @@ const PublicFooter = () => {
   const socialInstagram = settingValue(settings, 'social_instagram');
   const socialTwitter = settingValue(settings, 'social_twitter');
   const footerSocialLabel = settingValue(settings, 'footer_social_label');
-  const footerCopyright = settingValue(settings, 'footer_copyright');
-  const schoolName = settingValue(settings, 'school_name');
+  const footerCopyright = resolveFooterCopyrightName(settingValue(settings, 'footer_copyright'));
+  const schoolName = resolveFooterCopyrightName(settingValue(settings, 'school_name'));
 
   const whatsappNumber = contactWhatsapp.replace(/[+\s]/g, '');
   const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : '';
@@ -147,7 +148,7 @@ const PublicFooter = () => {
             ) : (
               <>
                 &copy; <span id="current-year">{new Date().getFullYear()}</span>{' '}
-                {schoolName || 'Seminari ya Kikatoliki Arusha'}. Haki zote zimehifadhiwa.
+                {schoolName || FOOTER_COPYRIGHT_NAME}. Haki zote zimehifadhiwa.
               </>
             )}
             {' '}

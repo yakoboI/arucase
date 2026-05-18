@@ -55,7 +55,12 @@ export const SITE_CONTACT_FIELD_GROUPS = [
     description: 'Shown on every public page.',
     fields: [
       { key: 'footer_social_label', label: 'Social bar label (e.g. Ungana Nasi)', type: 'text' },
-      { key: 'footer_copyright', label: 'Copyright line', type: 'textarea' },
+      {
+        key: 'footer_copyright',
+        label: 'Copyright line',
+        type: 'textarea',
+        placeholder: 'Arusha Catholic Seminary',
+      },
     ],
   },
 ];
@@ -66,3 +71,4 @@ export const EMPTY_SITE_CONTACT_FORM = SITE_CONTACT_FIELD_GROUPS.reduce((acc, gr
   });
   return acc;
 }, {});
+EMPTY_SITE_CONTACT_FORM.footer_copyright = 'Arusha Catholic Seminary';

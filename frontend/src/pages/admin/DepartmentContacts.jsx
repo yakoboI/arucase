@@ -104,6 +104,7 @@ const DepartmentContacts = () => {
                             onChange={(e) => handleFieldChange(field.key, e.target.value)}
                             className="excel-input"
                             rows={3}
+                            placeholder={field.placeholder || ''}
                           />
                         ) : (
                           <input
@@ -112,6 +113,7 @@ const DepartmentContacts = () => {
                             value={formData[field.key] || ''}
                             onChange={(e) => handleFieldChange(field.key, e.target.value)}
                             className="excel-input"
+                            placeholder={field.placeholder || ''}
                           />
                         )}
                         {errors[field.key] ? (
