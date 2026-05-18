@@ -166,9 +166,9 @@ initPerformanceOptimizations();
 // Prefetch login and high-traffic route chunks on idle to improve LCP (e.g. logout→login, nav to student portal/gallery)
 function prefetchLCPRoutes() {
   const prefetch = () => {
-    import('./pages/auth/Login');           // /login – after logout
-    import('./pages/public/StudentLogin'); // /student-login
-    import('./pages/public/Gallery');      // /gallery
+    import('./pages/auth/Login').catch(() => {});           // /login – after logout
+    import('./pages/public/StudentLogin').catch(() => {}); // /student-login
+    import('./pages/public/Gallery').catch(() => {});      // /gallery
   };
   if (typeof requestIdleCallback !== 'undefined') {
     requestIdleCallback(prefetch, { timeout: 2000 });

@@ -259,6 +259,10 @@ const RegistrationForm = () => {
       console.info('[bulk-delete] purged:', d);
     },
     onError: (error) => {
+      if (error.response?.status === 401) {
+        handleMutationAuthError(error, 'Failed to delete class');
+        return;
+      }
       const expected = error.response?.data?.expectedPhrase;
       if (expected) {
         toast.error(`Type exactly: ${expected}`);
@@ -456,7 +460,11 @@ const RegistrationForm = () => {
         fileInput.value = '';
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to upload CSV file');
+      if (error.response?.status === 401) {
+        handleMutationAuthError(error, 'Failed to upload CSV file');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to upload CSV file');
+      }
     } finally {
       setIsUploading(false);
     }

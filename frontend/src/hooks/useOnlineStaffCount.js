@@ -54,10 +54,12 @@ export function useOnlineStaffCount() {
     const sendHeartbeat = async () => {
       try {
         const res = await api.post('/auth/presence/heartbeat');
+        if (res?.status === 401 || res?.status === 403) return;
         applyCount(res.data?.count);
       } catch {
         try {
           const res = await api.get('/auth/presence/online-count');
+          if (res?.status === 401 || res?.status === 403) return;
           applyCount(res.data?.count);
         } catch {
           /* offline or unauthenticated — keep last count */

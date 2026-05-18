@@ -20,6 +20,10 @@ export function isBenignUnhandledRejection(reason) {
     return true;
   }
 
+  if (String(url).includes('/students/bulk-upload')) {
+    return true;
+  }
+
   if (String(url).includes('fonts.googleapis.com') || String(url).includes('typekit.net')) {
     return true;
   }
