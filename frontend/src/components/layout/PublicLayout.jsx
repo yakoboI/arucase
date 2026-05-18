@@ -1,11 +1,8 @@
-import { lazy, Suspense } from 'react';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import PublicPrevNextNav from './PublicPrevNextNav';
 import '../../styles/public-a11y.css';
 import './PublicLayout.css';
-
-const Chatbot = lazy(() => import('../public/Chatbot'));
 
 const PublicLayout = ({ children }) => {
   return (
@@ -19,10 +16,6 @@ const PublicLayout = ({ children }) => {
         {children}
       </main>
       <PublicFooter />
-      {/* Floating AI chat – portal-rendered, always visible on all public pages */}
-      <Suspense fallback={null}>
-        <Chatbot />
-      </Suspense>
     </div>
   );
 };

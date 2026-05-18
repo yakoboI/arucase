@@ -34,7 +34,13 @@ const PwaInstallBanner = () => {
         </div>
         <div className="pwa-install-banner__actions">
           {canInstall && (
-            <button type="button" className="pwa-install-banner__install" onClick={install}>
+            <button
+              type="button"
+              className="pwa-install-banner__install"
+              onClick={() => {
+                void install().catch(() => {});
+              }}
+            >
               Sakinisha
             </button>
           )}

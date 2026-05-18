@@ -501,69 +501,30 @@ router.post('/chat', async (req, res) => {
         reply: 'Sorry, the assistant is not available right now. Please contact the school directly for questions.',
       });
     }
-    const faqsResult = await query(
-      'SELECT question, answer, category FROM faqs WHERE active = TRUE ORDER BY display_order, created_at'
-    );
-    const faqList = (faqsResult.rows || []).map((f) => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
-
-    let docContent = '';
-    try {
-      const docsResult = await query(
-        'SELECT name, extracted_text FROM ai_matters_documents WHERE extracted_text IS NOT NULL AND extracted_text != \'\' ORDER BY created_at DESC'
-      );
-      docContent = (docsResult.rows || [])
-        .map((d) => `--- Document: ${d.name} ---\n${(d.extracted_text || '').slice(0, 150000)}`)
-        .join('\n\n');
-    } catch (e) {
-      // ai_matters_documents table may not exist yet
-    }
-
-    let publicPagesContent = '';
-    try {
-      const pagesResult = await query(
-        'SELECT page_name, title, html_content FROM public_pages WHERE html_content IS NOT NULL AND html_content != \'\''
-      );
-      publicPagesContent = (pagesResult.rows || [])
-        .map((p) => {
-          const $ = cheerio.load(p.html_content || '');
-          const text = ($('body').length ? $('body').text() : $.root().text()).replace(/\s+/g, ' ').trim().slice(0, 80000);
-          return `--- Public page: ${p.title || p.page_name} (${p.page_name}) ---\n${text}`;
-        })
-        .filter((block) => block.length > 30)
-        .join('\n\n');
-    } catch (e) {
-      // public_pages table may not exist
-    }
+    const { buildPublicChatContext } = require('../utils/publicChatContext');
 
     let nectaSummary = '';
     try {
       nectaSummary = await getNectaSummaryForAI(query, { includeTopCandidates: false });
     } catch (e) {
-      nectaSummary = 'No NECTA data available.';
+      nectaSummary = '';
     }
-    const nectaSection = nectaSummary ? `\n\n${nectaSummary}` : '';
-    const docSection = docContent
-      ? `\n\nAttached documents (AI Matters – search and use when relevant):\n${docContent}`
-      : '';
-    const publicPagesSection = publicPagesContent
-      ? `\n\nPublic website pages (search and use when relevant):\n${publicPagesContent}`
-      : '';
-    const systemPrompt = `You are the friendly, professional assistant for Arusha Catholic Seminary (Arusha, Tanzania). Your role is to answer questions about the school using ONLY the content provided below.
+
+    const knowledgeBase = await buildPublicChatContext(query, { nectaSummary });
+
+    const systemPrompt = `You are the assistant for Arusha Catholic Seminary (ARUCASE), Arusha, Tanzania.
+
+Answer ONLY using the knowledge base below (public pages, FAQs, uploaded documents, contacts, staff, announcements, NECTA). Do not invent facts.
 
 Rules:
-1. Use only the FAQs, attached documents, public pages, and NECTA summary below. Do not invent facts or figures.
-2. When you use specific information, briefly say where it comes from (e.g. "According to our FAQs...", "On the fees page...").
-3. Answer in the same language the user used (English or Swahili). If unclear, use English.
-4. Be concise and clear. Use short paragraphs or bullet points when it helps.
-5. Do NOT mention individual student names, admission numbers, or any confidential data. You MAY use aggregated NECTA data (totals, subject GPAs, grade counts by year).
-6. If the question is not covered by the content below, say so and suggest contacting the school: arucase@gmail.com or the Contact page.
+- Match the user's language (Swahili or English).
+- Keep answers short: 2–4 sentences or a few bullets.
+- When relevant, mention the page path (e.g. /school-fee, /admissions, /contact).
+- Never reveal private student records, admission numbers, or passwords.
+- If unsure, say so and suggest arucase@gmail.com or /contact.
 
-School identity: Arusha Catholic Seminary. Contact: arucase@gmail.com.
-
-FAQ content:
-${faqList || 'No FAQ content available.'}${docSection}${publicPagesSection}${nectaSection}
-
-If you cannot find an answer above, reply that the user should contact the school (arucase@gmail.com or the Contact page).`;
+Knowledge base:
+${knowledgeBase || 'No published content available yet.'}`;
 
     const reply = await callClaude(systemPrompt, userMessage, 2048);
     res.json({ reply: (reply || '').trim() || "I couldn't find an answer. Please contact the school directly." });

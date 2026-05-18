@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import VisitorTracker from './components/VisitorTracker';
 import NetworkStatusBanner from './components/common/NetworkStatusBanner';
 import PwaInstallBanner from './components/common/PwaInstallBanner';
+import PublicChatbotLayer from './components/public/PublicChatbotLayer';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Loading from './components/common/Loading';
 import logger from './utils/logger';
@@ -214,6 +215,7 @@ function App() {
           <VisitorTracker />
           <NetworkStatusBanner />
           <PwaInstallBanner />
+          <PublicChatbotLayer />
           <Suspense fallback={<Loading minimal message="" />}>
           <DeferredRoutes>
             {/* Public Routes */}
