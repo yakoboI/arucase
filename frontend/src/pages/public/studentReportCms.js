@@ -10,13 +10,9 @@ function escapeHtml(text) {
   return s.replace(/[&<>"']/g, (ch) => map[ch] || ch);
 }
 
-export function looksLikeMarkdownPlain(s) {
-  if (!s || typeof s !== 'string') return false;
-  const t = s.trim();
-  if (!t) return false;
-  if (/<[a-z][\s\S]*?>/i.test(t)) return false;
-  return /^##\s/m.test(t);
-}
+import { looksLikeMarkdownPlain } from '../../utils/publicCmsMarkdown';
+
+export { looksLikeMarkdownPlain };
 
 function hasRealHtml(s) {
   return s && /<[a-z][\s\S]*?>/i.test(String(s).trim());

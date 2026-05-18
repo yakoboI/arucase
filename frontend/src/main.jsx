@@ -12,6 +12,7 @@ import '@fortawesome/fontawesome-free/css/brands.css';
 import './utils/debugAuth.js'; // Import debug utility to make it available globally
 import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
 import './utils/tokenDecoder'; // Initialize token decoder (makes window.logTokenInfo available)
+import { registerServiceWorker } from './utils/registerServiceWorker';
 
 const CHUNK_RELOAD_KEY = 'arucase-chunk-reload';
 
@@ -228,24 +229,7 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Service Worker disabled temporarily for deployment
-// if ('serviceWorker' in navigator && import.meta.env.PROD) {
-//   window.addEventListener('load', () => {
-//     navigator.serviceWorker
-//       .register('/sw.js')
-//       .then((registration) => {
-//         console.log('[SW] Service Worker registered successfully:', registration.scope);
-//         
-//         // Check for updates periodically
-//         setInterval(() => {
-//           registration.update();
-//         }, 60 * 60 * 1000); // Check every hour
-//       })
-//       .catch((error) => {
-//         console.warn('[SW] Service Worker registration failed:', error);
-//       });
-//   });
-// }
+registerServiceWorker();
 
 // App booted — allow one auto-reload again after the next deployment
 sessionStorage.removeItem(CHUNK_RELOAD_KEY);

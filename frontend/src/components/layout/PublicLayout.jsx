@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import PublicPrevNextNav from './PublicPrevNextNav';
+import '../../styles/public-a11y.css';
 import './PublicLayout.css';
 
 const Chatbot = lazy(() => import('../public/Chatbot'));
@@ -9,8 +10,11 @@ const Chatbot = lazy(() => import('../public/Chatbot'));
 const PublicLayout = ({ children }) => {
   return (
     <div className="public-layout">
+      <a href="#public-main-content" className="public-skip-to-content">
+        Ruka hadi maudhui kuu
+      </a>
       <PublicHeader />
-      <main className="public-main">
+      <main id="public-main-content" className="public-main" tabIndex={-1}>
         <PublicPrevNextNav />
         {children}
       </main>

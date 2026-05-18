@@ -47,6 +47,12 @@ const PublicFooter = () => {
   const contactWhatsapp = settingValue(settings, 'contact_whatsapp');
   const socialLocation = settingValue(settings, 'social_location');
   const socialYoutube = settingValue(settings, 'social_youtube');
+  const socialFacebook = settingValue(settings, 'social_facebook');
+  const socialInstagram = settingValue(settings, 'social_instagram');
+  const socialTwitter = settingValue(settings, 'social_twitter');
+  const footerSocialLabel = settingValue(settings, 'footer_social_label');
+  const footerCopyright = settingValue(settings, 'footer_copyright');
+  const schoolName = settingValue(settings, 'school_name');
 
   const whatsappNumber = contactWhatsapp.replace(/[+\s]/g, '');
   const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : '';
@@ -69,7 +75,9 @@ const PublicFooter = () => {
       {/* Social Media Footer */}
       <footer className="social-footer">
         <div className="social-footer-content">
-          <span className="social-label">Ungana Nasi</span>
+          {footerSocialLabel || socialYoutube || contactEmail || whatsappUrl || socialLocation ? (
+            <span className="social-label">{footerSocialLabel || 'Ungana Nasi'}</span>
+          ) : null}
           <div className="social-icons">
             {socialYoutube ? (
               <a
@@ -109,6 +117,21 @@ const PublicFooter = () => {
                 <i className="fas fa-map-marker-alt" />
               </a>
             ) : null}
+            {socialFacebook ? (
+              <a href={socialFacebook} target="_blank" rel="noopener noreferrer" className="facebook" title="Facebook">
+                <i className="fab fa-facebook" />
+              </a>
+            ) : null}
+            {socialInstagram ? (
+              <a href={socialInstagram} target="_blank" rel="noopener noreferrer" className="instagram" title="Instagram">
+                <i className="fab fa-instagram" />
+              </a>
+            ) : null}
+            {socialTwitter ? (
+              <a href={socialTwitter} target="_blank" rel="noopener noreferrer" className="twitter" title="X">
+                <i className="fab fa-x-twitter" />
+              </a>
+            ) : null}
           </div>
         </div>
       </footer>
@@ -117,7 +140,16 @@ const PublicFooter = () => {
       <footer className="copyright-footer">
         <div className="copyright-footer-container">
           <p className="copyright-text">
-            &copy; <span id="current-year">2026</span> Seminari ya Kikatoliki Arusha. Haki zote zimehifadhiwa.
+            {footerCopyright ? (
+              <>
+                &copy; <span id="current-year">{new Date().getFullYear()}</span> {footerCopyright}
+              </>
+            ) : (
+              <>
+                &copy; <span id="current-year">{new Date().getFullYear()}</span>{' '}
+                {schoolName || 'Seminari ya Kikatoliki Arusha'}. Haki zote zimehifadhiwa.
+              </>
+            )}
             {' '}
             <Link to="/privacy-policy" className="privacy-link">
               Sera ya Faragha

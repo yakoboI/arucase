@@ -95,7 +95,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(15.5rem, 38vw, 22rem)), 1fr));
   gap: clamp(0.5rem, 1.4vw, 0.85rem);
-  align-items: start;
+  align-items: stretch;
 }
 
 .student-life-page--immersive .sl-surface--chunk {

@@ -1,9 +1,9 @@
 // Service Worker for Arusha Catholic Seminary
 // Optimized for 3G-4G networks in Tanzania
 
-const CACHE_NAME = 'arucase-v1';
-const STATIC_CACHE_NAME = 'arucase-static-v1';
-const IMAGE_CACHE_NAME = 'arucase-images-v1';
+const CACHE_NAME = 'arucase-v2';
+const STATIC_CACHE_NAME = 'arucase-static-v2';
+const IMAGE_CACHE_NAME = 'arucase-images-v2';
 
 // Resources to cache immediately on install
 const STATIC_ASSETS = [
@@ -32,22 +32,25 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating service worker...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => {
-            return name !== CACHE_NAME && 
-                   name !== STATIC_CACHE_NAME && 
-                   name !== IMAGE_CACHE_NAME;
-          })
-          .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) =>
+        Promise.all(
+          cacheNames
+            .filter(
+              (name) =>
+                name !== CACHE_NAME &&
+                name !== STATIC_CACHE_NAME &&
+                name !== IMAGE_CACHE_NAME
+            )
+            .map((name) => {
+              console.log('[SW] Deleting old cache:', name);
+              return caches.delete(name);
+            })
+        )
+      )
+      .then(() => self.clients.claim())
   );
-  return self.clients.claim(); // Take control of all pages immediately
 });
 
 // Fetch event - network-first strategy with fallback to cache

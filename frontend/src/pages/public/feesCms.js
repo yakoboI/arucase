@@ -4,7 +4,12 @@
  * splitting does not apply.
  */
 import DOMPurify from 'dompurify';
-import { looksLikeMarkdownPlain } from './studentReportCms';
+import {
+  looksLikeMarkdownPlain,
+  escapeHtml,
+  hasRealHtml,
+  applyBoldMarkers,
+} from '../../utils/publicCmsMarkdown';
 
 const STRIPES = [
   'fees-surface--stripe-navy',
@@ -12,22 +17,6 @@ const STRIPES = [
   'fees-surface--stripe-teal',
   'fees-surface--stripe-gold',
 ];
-
-function escapeHtml(text) {
-  if (text == null) return '';
-  const s = String(text);
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return s.replace(/[&<>"']/g, (ch) => map[ch] || ch);
-}
-
-function hasRealHtml(s) {
-  return s && /<[a-z][\s\S]*?>/i.test(String(s).trim());
-}
-
-/** Safe line after escapeHtml: turn **word** into <strong> */
-function applyBoldMarkers(safeLine) {
-  return safeLine.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-}
 
 function bodyMarkdownToFeesHtml(body) {
   const b = String(body || '').trim();
@@ -98,7 +87,7 @@ function markdownFeesToGridHtml(markdown) {
     .filter(Boolean);
 
   if (sections.length === 0) return '';
-  return `<div class="fees-grid">${sections.join('')}</div>`;
+  return `<div class="fees-grid public-cms-grid">${sections.join('')}</div>`;
 }
 
 /**
@@ -191,7 +180,7 @@ export function prepareSchoolFeeHtml(page) {
     const parts = splitSanitizedHtmlByH2(clean);
     if (parts && parts.length > 0) {
       const wrapped = parts.map((inner, i) => wrapHtmlSplitSection(inner, i)).join('');
-      return { html: DOMPurify.sanitize(`<div class="fees-grid">${wrapped}</div>`), variant: 'grid' };
+      return { html: DOMPurify.sanitize(`<div class="fees-grid public-cms-grid">${wrapped}</div>`), variant: 'grid' };
     }
     return { html: clean, variant: 'prose' };
   }

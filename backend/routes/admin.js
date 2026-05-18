@@ -2559,7 +2559,14 @@ async function ensureDepartmentContactColumns() {
     ADD COLUMN IF NOT EXISTS academics_email VARCHAR(255),
     ADD COLUMN IF NOT EXISTS bursar_email VARCHAR(255),
     ADD COLUMN IF NOT EXISTS alumni_email VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS parents_email VARCHAR(255)
+    ADD COLUMN IF NOT EXISTS parents_email VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS footer_social_label VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS footer_copyright TEXT,
+    ADD COLUMN IF NOT EXISTS contact_info_heading VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS office_hours_heading VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS department_contacts_heading VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS map_heading VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS social_heading VARCHAR(255)
   `);
 }
 
@@ -2582,6 +2589,13 @@ const SITE_CONTACT_FIELDS = [
   'bursar_email',
   'alumni_email',
   'parents_email',
+  'footer_social_label',
+  'footer_copyright',
+  'contact_info_heading',
+  'office_hours_heading',
+  'department_contacts_heading',
+  'map_heading',
+  'social_heading',
 ];
 
 // Get department contacts (from website settings)

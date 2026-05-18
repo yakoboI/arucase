@@ -8,7 +8,26 @@ import PublicLayout from '../layout/PublicLayout';
 import Loading from '../common/Loading';
 import { publicAPI } from '../../services/public';
 import { getPageHtml, hasPublishedPage } from '../../utils/publicPageContent';
+import PublicPageHero from './PublicPageHero';
+import { createPublicCmsPrepareHtml, preparePublicMarkdownHtml } from '../../utils/publicMarkdownGrid';
 import './PublicCmsPage.css';
+
+export { createPublicCmsPrepareHtml };
+
+/** Standalone CMS block (e.g. Contact page custom layout). */
+export function PublicCmsPreparedBlock({ page, themeKey, proseClassName = 'public-cms-body content-card' }) {
+  const prepared = preparePublicMarkdownHtml(page, themeKey);
+  if (!prepared.html) return null;
+  if (prepared.variant === 'grid') {
+    return <div dangerouslySetInnerHTML={{ __html: prepared.html }} />;
+  }
+  return (
+    <article
+      className={proseClassName}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(prepared.html) }}
+    />
+  );
+}
 
 export function PublicCmsEmpty({ pageLabel }) {
   return (
@@ -56,11 +75,27 @@ export default function PublicCmsPage({
   header = null,
   footer = null,
   children = null,
+  afterHero = null,
   prepareHtml = null,
   cmsClassName,
   hashScroll = false,
+  showPageHero = false,
+  heroVariant = 'default',
+  heroSettings = null,
 }) {
   const { data: pageData, isLoading, isError } = usePublicPage(pageSlug);
+
+  const { data: heroSettingsData } = useQuery({
+    queryKey: ['homepage'],
+    queryFn: async () => {
+      const res = await publicAPI.getHomepage();
+      return res.data?.settings || {};
+    },
+    enabled: showPageHero && !heroSettings,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const settingsForHero = heroSettings || heroSettingsData || {};
 
   const page = pageData?.data?.page;
   const published = !isLoading && !isError && hasPublishedPage(page);
@@ -111,6 +146,15 @@ export default function PublicCmsPage({
       <div className={shellClassName}>
         <div className={innerClassName}>
           {header}
+          {showPageHero ? (
+            <PublicPageHero
+              page={page}
+              fallbackTitle={pageLabel}
+              settings={settingsForHero}
+              variant={heroVariant}
+            />
+          ) : null}
+          {afterHero}
           {published ? cmsNode : <PublicCmsEmpty pageLabel={pageLabel} />}
           {children}
           {footer}

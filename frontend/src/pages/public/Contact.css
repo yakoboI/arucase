@@ -30,12 +30,25 @@
   box-sizing: border-box;
 }
 
+/* CMS markdown sections from Public Pages */
+.contact-cms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(1rem, 2.2vw, 1.5rem);
+  align-items: stretch;
+  width: 100%;
+}
+
+.contact-cms-grid .contact-card {
+  margin: 0;
+}
+
 /* Auto-fit grid: two columns when space allows (office hours | departments, visit | directions) */
 .contact-page-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: clamp(1rem, 2.2vw, 1.5rem);
-  align-items: start;
+  align-items: stretch;
 }
 
 .contact-card {
@@ -55,6 +68,15 @@
 
 .contact-card--center {
   text-align: center;
+}
+
+.contact-page-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
 .contact-page-title {

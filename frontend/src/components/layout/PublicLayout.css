@@ -2,6 +2,7 @@
    PUBLIC LAYOUT - Full device width, fill viewport
    =========================================== */
 .public-layout {
+  position: relative;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;

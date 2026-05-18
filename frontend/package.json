@@ -42,7 +42,8 @@
     "dev:force": "vite --force",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext js,jsx"
+    "lint": "eslint src --ext js,jsx",
+    "verify:cms": "node scripts/verify-public-cms-markdown.mjs"
   },
   "browserslist": {
     "production": [

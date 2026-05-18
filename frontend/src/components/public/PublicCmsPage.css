@@ -1,9 +1,35 @@
+@import '../../styles/public-cms-grid.css';
+
 .public-cms-empty {
   padding: 2rem 1.25rem;
   text-align: center;
   border: 1px solid #e5e7eb;
   background: #f9fafb;
   color: #374151;
+}
+
+.public-page-hero--default {
+  margin-bottom: 1rem;
+  padding: clamp(1.15rem, 2.8vw, 1.65rem);
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-sizing: border-box;
+}
+
+.public-page-hero__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.public-page-hero__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .public-cms-empty__hint {

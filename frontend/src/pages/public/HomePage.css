@@ -918,6 +918,12 @@
   min-width: min(280px, 100%);
 }
 
+.home-admissions-cta__btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 .home-admissions-btn {
   display: inline-flex;
   align-items: center;
@@ -1350,8 +1356,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* Uongozi wa Shule: at most 2 leadership photos per row on small screens */
   .administrators-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 100%;
   }
 
   .home-admissions-cta__inner,
@@ -1364,7 +1372,25 @@
     width: 100%;
   }
 
-  .home-admissions-btn,
+  .home-admissions-cta__btn-row {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .home-admissions-cta__btn-row .home-admissions-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    padding: 0.7rem 0.45rem;
+    font-size: clamp(0.65rem, 2.8vw, 0.8125rem);
+    line-height: 1.25;
+  }
+
+  .home-admissions-cta__btn-row .home-admissions-btn i {
+    font-size: 0.85em;
+  }
+
   .home-admissions-phone {
     width: 100%;
     box-sizing: border-box;
@@ -1434,10 +1460,6 @@
 
   .carousel-indicators {
     bottom: calc(52px + 8.5rem);
-  }
-
-  .administrators-grid {
-    grid-template-columns: 1fr;
   }
 
   .home-quicklinks-grid {
@@ -1514,6 +1536,13 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--home-col-4)), 1fr));
   gap: var(--home-grid-gap);
   width: 100%;
+}
+
+/* Tablets / narrow desktop: cap leadership row at 2 when auto-fill would fit more */
+@media (max-width: 1024px) {
+  .administrators-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .admin-card--named {

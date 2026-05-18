@@ -39,6 +39,25 @@ export const SITE_CONTACT_FIELD_GROUPS = [
       { key: 'parents_email', label: 'Parents office', type: 'email' },
     ],
   },
+  {
+    title: 'Contact page section titles',
+    description: 'Optional headings on /contact (main text is edited in Public Pages → Mawasiliano).',
+    fields: [
+      { key: 'contact_info_heading', label: 'Contact details heading', type: 'text' },
+      { key: 'office_hours_heading', label: 'Office hours heading', type: 'text' },
+      { key: 'department_contacts_heading', label: 'Department emails heading', type: 'text' },
+      { key: 'map_heading', label: 'Map heading', type: 'text' },
+      { key: 'social_heading', label: 'Social media heading', type: 'text' },
+    ],
+  },
+  {
+    title: 'Footer',
+    description: 'Shown on every public page.',
+    fields: [
+      { key: 'footer_social_label', label: 'Social bar label (e.g. Ungana Nasi)', type: 'text' },
+      { key: 'footer_copyright', label: 'Copyright line', type: 'textarea' },
+    ],
+  },
 ];
 
 export const EMPTY_SITE_CONTACT_FORM = SITE_CONTACT_FIELD_GROUPS.reduce((acc, group) => {

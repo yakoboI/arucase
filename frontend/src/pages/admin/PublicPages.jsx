@@ -8,6 +8,7 @@ import DOMPurify from 'dompurify';
 import MDEditor from '@uiw/react-md-editor';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
+import { PUBLIC_PAGE_SLUG_TO_PATH, PUBLIC_SITE_CONTENT_SOURCES } from '../../constants/publicSiteContentMap';
 import './PublicWebsite.css';
 import './PublicPages.css';
 
@@ -85,7 +86,7 @@ Seminari ya Kikatoliki Arusha ilianzishwa mwaka **1967** ikiwa na dhamira ya kut
 - **Utumishi:** Kumtumikia Mungu na wanadamu kwa unyenyekevu na upendo
 - **Jumuiya:** Kujenga undugu na umoja miongoni mwa wanafunzi wa seminari
 
-### Mlinzi Wetu
+## Mlinzi Wetu
 Seminari iko chini ya ulinzi wa Mtakatifu Thomas wa Akwino.`;
 
   const staffDefaultContent = `## Watumishi
@@ -307,15 +308,15 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
 
   // Available public pages for content management
   const availablePages = [
-    { name: 'homepage', label: 'Ukurasa wa Mwanzo', icon: 'fa-home', description: 'Maudhui ya ziada chini ya hero (kurasa za haraka, programu, nk.)', color: 'blue' },
-    { name: 'about', label: 'Kuhusu Sisi', icon: 'fa-info-circle', description: 'Taarifa kuhusu Seminari ya Kikatoliki Arusha', color: 'blue' },
-    { name: 'admissions', label: 'Udahili', icon: 'fa-user-plus', description: 'Vigezo na utaratibu wa udahili', color: 'green' },
-    { name: 'staff', label: 'Watumishi', icon: 'fa-users', description: 'Utangulizi wa ukurasa wa watumishi (wasifu kutoka Staff Profiles)', color: 'orange' },
-    { name: 'student-life', label: 'Maisha ya Wanafunzi', icon: 'fa-heart', description: 'Maisha na shughuli za wanafunzi', color: 'red' },
-    { name: 'student_report', label: 'Ripoti za Wanafunzi', icon: 'fa-file-alt', description: 'Taarifa za mfumo wa ripoti za wanafunzi', color: 'blue' },
-    { name: 'school-fee', label: 'Ada ya Shule', icon: 'fa-money-bill-wave', description: 'Muundo wa ada na malipo', color: 'green' },
-    { name: 'contact', label: 'Mawasiliano', icon: 'fa-envelope', description: 'Maandishi ya ziada ya ukurasa wa mawasiliano', color: 'green' },
-    { name: 'privacy', label: 'Sera ya Faragha', icon: 'fa-shield-alt', description: 'Sera ya faragha kamili', color: 'blue' },
+    { name: 'homepage', publicPath: '/', label: 'Ukurasa wa Mwanzo', icon: 'fa-home', description: 'Maudhui ya ziada chini ya hero. Jina la shule/rector: School Branding.', color: 'blue' },
+    { name: 'about', publicPath: '/about', label: 'Kuhusu Sisi', icon: 'fa-info-circle', description: 'Ukurasa kamili wa kuhusu sisi.', color: 'blue' },
+    { name: 'admissions', publicPath: '/admissions', label: 'Udahili', icon: 'fa-user-plus', description: 'Vigezo na utaratibu wa udahili.', color: 'green' },
+    { name: 'staff', publicPath: '/staff', label: 'Watumishi', icon: 'fa-users', description: 'Utangulizi hapa; wasifu: Admin → Staff Profiles.', color: 'orange' },
+    { name: 'student-life', publicPath: '/student-life', label: 'Maisha ya Wanafunzi', icon: 'fa-heart', description: 'Maisha na shughuli za wanafunzi.', color: 'red' },
+    { name: 'student_report', publicPath: '/student-report', label: 'Ripoti za Wanafunzi', icon: 'fa-file-alt', description: 'Taarifa za mfumo wa ripoti.', color: 'blue' },
+    { name: 'school-fee', publicPath: '/school-fee', label: 'Ada ya Shule', icon: 'fa-money-bill-wave', description: 'Muundo wa ada na malipo.', color: 'green' },
+    { name: 'contact', publicPath: '/contact', label: 'Mawasiliano', icon: 'fa-envelope', description: 'Maandishi ya ukurasa; simu/barua pepe: Site & Contacts.', color: 'green' },
+    { name: 'privacy', publicPath: '/privacy-policy', label: 'Sera ya Faragha', icon: 'fa-shield-alt', description: 'Sera ya faragha kamili.', color: 'blue' },
   ];
 
   // Fetch all public pages
@@ -431,6 +432,28 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
               <div className="loading-state">Inapakia kurasa...</div>
             ) : (
               <>
+                <div className="public-pages-source-guide" role="note">
+                  <h2 className="public-pages-source-guide__title">
+                    <i className="fas fa-sitemap" aria-hidden /> Chanzo cha maudhui ya tovuti ya umma
+                  </h2>
+                  <p>
+                    Kadi hapa chini = <strong>Public Pages</strong> (maandishi marefu). Kurasa nyingine za umma
+                    zinahaririwa kwenye menyu ya Public Website (Gallery, Announcements, nk.).
+                  </p>
+                  <ul className="public-pages-source-guide__list">
+                    {PUBLIC_SITE_CONTENT_SOURCES.map((row) => (
+                      <li key={row.path}>
+                        <strong>{row.label}</strong> ({row.path})
+                        {row.publicPagesSlug ? (
+                          <> — hariri hapa (slug: <code>{row.publicPagesSlug}</code>)</>
+                        ) : (
+                          <> — {row.alsoFrom?.map((a) => a.label).join(', ') || 'admin nyingine'}</>
+                        )}
+                        {row.note ? <span className="public-pages-source-guide__note"> — {row.note}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 <div className="management-grid">
                   {availablePages.map((pageInfo) => {
                     const existingPage = getExistingPage(pageInfo.name);
@@ -485,7 +508,7 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
                               </button>
                             )}
                             <a
-                              href={`/${pageInfo.name}`}
+                              href={pageInfo.publicPath || PUBLIC_PAGE_SLUG_TO_PATH[pageInfo.name] || `/${pageInfo.name}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="admin-btn admin-btn-purple"
@@ -525,7 +548,10 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
                           />
                         </div>
                         <div className="form-group">
-                          <label>Kichwa</label>
+                          <label>Kichwa cha ukurasa (hero)</label>
+                          <p className="form-hint" style={{ margin: '0 0 0.35rem', fontSize: '0.88rem', opacity: 0.85 }}>
+                            Kinaonyeshwa juu ya ukurasa wa umma. Jina la shule (juu) linatoka School Branding.
+                          </p>
                           <input
                             type="text"
                             value={formData.title}

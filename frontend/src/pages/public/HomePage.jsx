@@ -13,6 +13,7 @@ import { resolveStaticUrl } from '../../utils/backendUrl';
 import './HomePage.css';
 import { PublicCmsHtml, usePublicPage } from '../../components/public/PublicCmsPage';
 import { hasPublishedPage, settingValue } from '../../utils/publicPageContent';
+import { syncFaqJsonLd, removeFaqJsonLd } from '../../utils/faqJsonLd';
 
 function stripHtml(html) {
   if (!html) return '';
@@ -126,6 +127,11 @@ const HomePage = () => {
   );
 
   const displayFaqs = useMemo(() => (faqs || []).slice(0, 5), [faqs]);
+
+  useEffect(() => {
+    syncFaqJsonLd(displayFaqs);
+    return () => removeFaqJsonLd();
+  }, [displayFaqs]);
 
   const handleImageError = useCallback((imageUrl) => {
     if (imageUrl) {
@@ -431,13 +437,15 @@ const HomePage = () => {
               </ol>
             </div>
             <div className="home-admissions-cta__actions">
-              <Link to="/admissions/apply" className="home-admissions-btn home-admissions-btn--primary">
-                <i className="fas fa-pen-to-square" aria-hidden />
-                Omba Udahili / Apply Online
-              </Link>
-              <Link to="/admissions" className="home-admissions-btn">
-                Maelezo ya Udahili
-              </Link>
+              <div className="home-admissions-cta__btn-row">
+                <Link to="/admissions/apply" className="home-admissions-btn home-admissions-btn--primary">
+                  <i className="fas fa-pen-to-square" aria-hidden />
+                  Omba Udahili / Apply Online
+                </Link>
+                <Link to="/admissions" className="home-admissions-btn">
+                  Maelezo ya Udahili
+                </Link>
+              </div>
               {contactPhone && (
                 <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="home-admissions-phone">
                   <i className="fas fa-phone" aria-hidden />
@@ -563,7 +571,7 @@ const HomePage = () => {
               </div>
             ) : (
               <div className="administrators-empty">
-                <p>Administrator information will be available soon.</p>
+                <p>Taarifa za uongozi zitapatikana hivi karibuni.</p>
               </div>
             )}
           </div>

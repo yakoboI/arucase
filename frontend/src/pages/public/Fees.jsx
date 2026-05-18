@@ -12,12 +12,9 @@ const Fees = () => (
     loadingMessage="Inapakia ukurasa wa ada…"
     shellClassName="fees-page fees-page--immersive"
     innerClassName="fees-page__inner"
-    header={
-      <header className="content-card fees-surface fees-surface--hero">
-        <p className="fees-hero__eyebrow">Seminari ya Kikatoliki Arusha</p>
-        <h1 className="fees-hero__title">Ada ya shule</h1>
-      </header>
-    }
+    header={<div className="fees-page__bg" aria-hidden />}
+    showPageHero
+    heroVariant="fees"
     prepareHtml={(page) => {
       const prepared = prepareSchoolFeeHtml(page);
       return { html: prepared.html, variant: prepared.variant };

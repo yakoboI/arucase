@@ -6,6 +6,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import VisitorTracker from './components/VisitorTracker';
 import NetworkStatusBanner from './components/common/NetworkStatusBanner';
+import PwaInstallBanner from './components/common/PwaInstallBanner';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Loading from './components/common/Loading';
 import logger from './utils/logger';
@@ -212,6 +213,7 @@ function App() {
           <SchoolFavicon />
           <VisitorTracker />
           <NetworkStatusBanner />
+          <PwaInstallBanner />
           <Suspense fallback={<Loading minimal message="" />}>
           <DeferredRoutes>
             {/* Public Routes */}

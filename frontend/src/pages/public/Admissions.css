@@ -140,7 +140,7 @@
   margin: 0 auto;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(260px, 42vw, 380px)), 1fr));
   gap: clamp(1rem, 2.2vw, 1.75rem);
-  align-items: start;
+  align-items: stretch;
 }
 
 .admissions-card {

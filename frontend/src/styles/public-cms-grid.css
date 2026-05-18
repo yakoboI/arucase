@@ -1,0 +1,26 @@
+/**
+ * Equal-height cards in public CMS markdown grids (contact, privacy, staff, etc.)
+ */
+.public-cms-grid {
+  align-items: stretch;
+}
+
+.public-cms-grid > * {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.public-cms-grid [class*='__head'],
+.public-cms-grid .staff-chunk__title {
+  flex-shrink: 0;
+}
+
+.public-cms-grid .about-card__cms-body,
+.public-cms-grid [class*='__body'],
+.public-cms-grid .fees-md-split__body {
+  flex: 1 1 auto;
+  min-height: 0;
+}

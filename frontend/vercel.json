@@ -6,7 +6,7 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!js/|assets/|images/|fonts/|icons/|sounds/).*)",
+      "source": "/((?!js/|assets/|images/|fonts/|icons/|sounds/|sw\\.js|manifest\\.json|BingSiteAuth\\.xml).*)",
       "destination": "/index.html"
     }
   ],
@@ -42,6 +42,32 @@
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
         }
       ]
     },
