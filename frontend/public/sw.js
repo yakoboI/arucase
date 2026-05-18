@@ -1,11 +1,10 @@
 // Service Worker for Arusha Catholic Seminary
-// Optimized for 3G-4G networks in Tanzania
+// Only caches same-origin assets — never intercepts third-party or extension requests.
 
-const CACHE_NAME = 'arucase-v2';
-const STATIC_CACHE_NAME = 'arucase-static-v2';
-const IMAGE_CACHE_NAME = 'arucase-images-v2';
+const CACHE_NAME = 'arucase-v3';
+const STATIC_CACHE_NAME = 'arucase-static-v3';
+const IMAGE_CACHE_NAME = 'arucase-images-v3';
 
-// Resources to cache immediately on install
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -14,205 +13,189 @@ const STATIC_ASSETS = [
   '/icons/icon-512x512.png',
 ];
 
-// Install event - cache static assets
-self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
-  event.waitUntil(
-    caches.open(STATIC_CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn('[SW] Failed to cache some static assets:', err);
-      });
-    })
+function offlineJsonResponse() {
+  return new Response(
+    JSON.stringify({ error: 'Offline', message: 'No internet connection' }),
+    {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'application/json' },
+    }
   );
-  self.skipWaiting(); // Activate immediately
+}
+
+function offlineHtmlResponse() {
+  return caches.match('/index.html').then(
+    (cached) =>
+      cached ||
+      new Response('Offline', {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'text/plain' },
+      })
+  );
+}
+
+function networkFirst(request, cacheName) {
+  return fetch(request)
+    .then((response) => {
+      if (response.ok && cacheName) {
+        const clone = response.clone();
+        caches.open(cacheName).then((cache) => cache.put(request, clone));
+      }
+      return response;
+    })
+    .catch(() =>
+      caches.match(request).then((cached) => cached || offlineJsonResponse())
+    );
+}
+
+function cacheFirst(request, cacheName) {
+  return caches.match(request).then((cached) => {
+    if (cached) return cached;
+    return fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(cacheName).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(
+        () =>
+          new Response('', {
+            status: 504,
+            statusText: 'Gateway Timeout',
+          })
+      );
+  });
+}
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE_NAME).then((cache) =>
+      cache.addAll(STATIC_ASSETS).catch((err) => {
+        console.warn('[SW] Failed to cache some static assets:', err);
+      })
+    )
+  );
+  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
   event.waitUntil(
     caches
       .keys()
-      .then((cacheNames) =>
+      .then((names) =>
         Promise.all(
-          cacheNames
+          names
             .filter(
               (name) =>
                 name !== CACHE_NAME &&
                 name !== STATIC_CACHE_NAME &&
                 name !== IMAGE_CACHE_NAME
             )
-            .map((name) => {
-              console.log('[SW] Deleting old cache:', name);
-              return caches.delete(name);
-            })
+            .map((name) => caches.delete(name))
         )
       )
       .then(() => self.clients.claim())
   );
 });
 
-// Fetch event - network-first strategy with fallback to cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+  if (request.method !== 'GET') return;
+
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
     return;
   }
 
-  // Skip chrome-extension and other non-http(s) requests
-  if (!url.protocol.startsWith('http')) {
-    return;
-  }
+  if (!url.protocol.startsWith('http')) return;
 
-  // API requests - network first, cache fallback
+  // Never intercept cross-origin (extensions, Google Fonts, analytics, etc.)
+  if (url.origin !== self.location.origin) return;
+
+  // API — network first
   if (url.pathname.startsWith('/api/')) {
+    event.respondWith(networkFirst(request, CACHE_NAME));
+    return;
+  }
+
+  // Hashed build assets + local fonts
+  if (url.pathname.match(/^\/(js|assets|fonts|icons|sounds)\//)) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE_NAME));
+    return;
+  }
+
+  // Uploaded / backend static images on same host
+  if (
+    url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i) ||
+    url.pathname.startsWith('/static/')
+  ) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache successful API responses (but not auth endpoints)
-          if (response.ok && !url.pathname.includes('/auth/')) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Network failed, try cache
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // Return offline response for API calls
-            return new Response(
-              JSON.stringify({ error: 'Offline', message: 'No internet connection' }),
-              {
-                status: 503,
-                statusText: 'Service Unavailable',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Access-Control-Allow-Origin': '*'
-                },
+      caches.match(request).then((cached) => {
+        if (cached) {
+          fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const clone = response.clone();
+                caches.open(IMAGE_CACHE_NAME).then((cache) => cache.put(request, clone));
               }
-            );
-          });
-        })
-    );
-    return;
-  }
-
-  // Static files (JS, CSS) - cache first, network fallback
-  if (url.pathname.match(/\.(js|css|woff2?|eot|ttf|otf)$/)) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
+            })
+            .catch(() => {});
+          return cached;
         }
-        return fetch(request).then((response) => {
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(STATIC_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        });
-      })
-    );
-    return;
-  }
-
-  // Images - cache first with network update (stale-while-revalidate)
-  if (url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i) || 
-      url.pathname.includes('/static/uploads/')) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        // Return cached image immediately if available
-        if (cachedResponse) {
-          // Update cache in background
-          fetch(request).then((response) => {
+        return fetch(request)
+          .then((response) => {
             if (response.ok) {
-              const responseClone = response.clone();
-              caches.open(IMAGE_CACHE_NAME).then((cache) => {
-                cache.put(request, responseClone);
-              });
+              const clone = response.clone();
+              caches.open(IMAGE_CACHE_NAME).then((cache) => cache.put(request, clone));
             }
-          }).catch(() => {
-            // Ignore network errors for background updates
-          });
-          return cachedResponse;
-        }
-        // No cache, fetch from network
-        return fetch(request).then((response) => {
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(IMAGE_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        }).catch(() => {
-          // Network failed, return placeholder or error
-          return new Response('', { 
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Access-Control-Allow-Origin': '*' }
-          });
-        });
+            return response;
+          })
+          .catch(
+            () =>
+              new Response('', {
+                status: 504,
+                statusText: 'Gateway Timeout',
+              })
+          );
       })
     );
     return;
   }
 
-  // HTML pages - network first, cache fallback
-  if (request.headers.get('accept').includes('text/html')) {
+  // SPA navigation
+  const accept = request.headers.get('accept') || '';
+  if (request.mode === 'navigate' || accept.includes('text/html')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         })
-        .catch(() => {
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // Fallback to index.html for SPA routing
-            return caches.match('/index.html');
-          });
-        })
+        .catch(() => offlineHtmlResponse())
     );
     return;
   }
 
-  // Default: network first
-  event.respondWith(
-    fetch(request).catch(() => {
-      return caches.match(request);
-    })
-  );
+  // Other same-origin GET: browser default (no respondWith)
 });
 
-// Message handler for cache management
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => caches.delete(name))
-      );
-    });
+  if (event.data?.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))))
+    );
   }
 });
