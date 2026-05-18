@@ -39,7 +39,9 @@ function parseClassScope({ level, stream, year, term }) {
   if (!level || !String(level).trim()) throw new Error('level is required');
   if (!stream || !String(stream).trim()) throw new Error('stream is required');
   const yearNum = parseInt(year, 10);
-  if (!Number.isFinite(yearNum) || yearNum <= 0) throw new Error('year is required');
+  if (!Number.isFinite(yearNum) || yearNum <= 0 || yearNum > 2100) {
+    throw new Error('year is required');
+  }
 
   const levelValues = getLevelMatchValues(level);
   const normalizedStream = normalizeStream(String(stream).trim());
@@ -59,9 +61,16 @@ function parseClassScope({ level, stream, year, term }) {
   return { levelValues, streams, yearNum, termValues, label, primaryLevel };
 }
 
+/** Must match client confirmation dialog (RegistrationForm bulk delete). */
+function buildBulkDeleteConfirmPhrase(scopeInput) {
+  const scope = parseClassScope(scopeInput);
+  return `DELETE ${scope.label}`;
+}
+
 module.exports = {
   getTermMatchValues,
   getLevelMatchValues,
   parseClassScope,
+  buildBulkDeleteConfirmPhrase,
   normalizeStream,
 };

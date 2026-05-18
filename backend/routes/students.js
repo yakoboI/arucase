@@ -7,7 +7,12 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 const { requireAuth, requireRole } = require('../middleware/auth');
-const { purgeStudentsByClass, parseClassScope } = require('../utils/purgeStudentsByClass');
+const {
+  purgeStudentsByClass,
+  destroyCollectedPhotos,
+  parseClassScope,
+} = require('../utils/purgeStudentsByClass');
+const { buildBulkDeleteConfirmPhrase } = require('../utils/classScope');
 const { query, withTransaction } = require('../config/database');
 const { saveUserActivity } = require('../utils/activityLogger');
 const { generatePhotoEntryFormPDF, generateMonthlyResultsPDF } = require('../utils/pdfGenerator');
@@ -1441,9 +1446,15 @@ router.delete('/class', requireRole('admin', 'superadmin'), async (req, res) => 
     if (stream) {
       stream = decodeURIComponent(String(stream).replace(/\+/g, ' ')).trim();
     }
+    if (term != null && String(term).trim() !== '') {
+      term = decodeURIComponent(String(term).replace(/\+/g, ' ')).trim();
+    } else {
+      term = undefined;
+    }
 
-    const scope = parseClassScope({ level, stream, year, term });
-    const expectedPhrase = `DELETE ${scope.label}`;
+    const scopeInput = { level, stream, year, term };
+    const scope = parseClassScope(scopeInput);
+    const expectedPhrase = buildBulkDeleteConfirmPhrase(scopeInput);
     const provided = String(confirmPhrase || '').trim();
     if (provided !== expectedPhrase) {
       return res.status(400).json({
@@ -1452,7 +1463,14 @@ router.delete('/class', requireRole('admin', 'superadmin'), async (req, res) => 
       });
     }
 
-    const result = await withTransaction(async (client) => purgeStudentsByClass(client, { level, stream, year, term }));
+    const result = await withTransaction(async (client) =>
+      purgeStudentsByClass(client, scopeInput)
+    );
+    try {
+      await destroyCollectedPhotos(result.photosToDestroy);
+    } catch (photoErr) {
+      console.warn('DELETE /students/class: photo file cleanup failed:', photoErr.message);
+    }
 
     if (req.user?.username) {
       await saveUserActivity({

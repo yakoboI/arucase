@@ -9,6 +9,16 @@ const fs = require('fs').promises;
 const cloudinary = require('../config/cloudinary');
 const { parseClassScope } = require('./classScope');
 
+const CLASS_SCOPED_TABLES = new Set([
+  'student_photos',
+  'student_parishes',
+  'comments',
+  'monthly_results',
+  'tabia_mwenendo',
+  'individual_debt',
+  'score_change_audit',
+]);
+
 async function tableHasColumn(client, tableName, columnName) {
   const r = await client.query(
     `SELECT 1 FROM information_schema.columns
@@ -20,13 +30,15 @@ async function tableHasColumn(client, tableName, columnName) {
 }
 
 async function deleteByClass(client, table, { levelValues, streams, yearNum, termValues, termColumn }) {
+  if (!CLASS_SCOPED_TABLES.has(table)) {
+    throw new Error(`Invalid purge table: ${table}`);
+  }
   const params = [levelValues, streams, yearNum];
   let sql = `DELETE FROM ${table} WHERE level = ANY($1::text[]) AND stream = ANY($2::text[]) AND year = $3`;
   if (termValues && termColumn) {
     sql += ` AND ${termColumn} = ANY($4::text[])`;
     params.push(termValues);
   }
-  sql += ' RETURNING id';
   const result = await client.query(sql, params);
   return result.rowCount || 0;
 }
@@ -54,9 +66,10 @@ async function deleteStudents(client, scope) {
   }
   sql += ' RETURNING adm_no';
   const result = await client.query(sql, params);
+  const admNos = [...new Set(result.rows.map((r) => String(r.adm_no).trim()).filter(Boolean))];
   return {
     count: result.rowCount || 0,
-    admNos: result.rows.map((r) => r.adm_no),
+    admNos,
   };
 }
 
@@ -67,6 +80,18 @@ async function deleteByAdmNos(client, table, admNos, extraSql = '', extraParams 
     [admNos, ...extraParams]
   );
   return result.rowCount || 0;
+}
+
+/** Admission numbers with no row left in students (same adm_no often used across years/levels). */
+async function admNosFullyUnregistered(client, admNos) {
+  const unique = [...new Set(admNos.map((a) => String(a).trim()).filter(Boolean))];
+  if (!unique.length) return [];
+  const stillRegistered = await client.query(
+    `SELECT adm_no FROM students WHERE adm_no = ANY($1::text[])`,
+    [unique]
+  );
+  const stillSet = new Set(stillRegistered.rows.map((r) => String(r.adm_no)));
+  return unique.filter((adm) => !stillSet.has(adm));
 }
 
 async function collectPhotosForClass(client, scope) {
@@ -125,6 +150,7 @@ async function purgeStudentsByClass(client, scopeInput) {
     promotion_sessions: 0,
     student_history: 0,
     student_pass_ids: 0,
+    student_pass_ids_retained: 0,
     score_change_audit: 0,
   };
 
@@ -194,12 +220,21 @@ async function purgeStudentsByClass(client, scopeInput) {
   deleted.students = studentResult.count;
 
   if (studentResult.admNos.length > 0) {
-    deleted.student_pass_ids = await deleteByAdmNos(client, 'student_pass_ids', studentResult.admNos);
-  }
-
-  for (const photo of photosToDestroy) {
-    await destroyCloudinaryAsset(photo);
-    await destroyLocalPhoto(photo.photo_filename);
+    const passTable = await client.query(
+      `SELECT to_regclass('public.student_pass_ids') AS reg`
+    );
+    if (passTable.rows[0]?.reg) {
+      const admNosForPassDelete = await admNosFullyUnregistered(client, studentResult.admNos);
+      deleted.student_pass_ids_retained =
+        studentResult.admNos.length - admNosForPassDelete.length;
+      if (admNosForPassDelete.length > 0) {
+        deleted.student_pass_ids = await deleteByAdmNos(
+          client,
+          'student_pass_ids',
+          admNosForPassDelete
+        );
+      }
+    }
   }
 
   return {
@@ -212,7 +247,15 @@ async function purgeStudentsByClass(client, scopeInput) {
     },
     deleted,
     admNos: studentResult.admNos,
+    photosToDestroy,
   };
 }
 
-module.exports = { purgeStudentsByClass, parseClassScope };
+async function destroyCollectedPhotos(photos) {
+  for (const photo of photos || []) {
+    await destroyCloudinaryAsset(photo);
+    await destroyLocalPhoto(photo.photo_filename);
+  }
+}
+
+module.exports = { purgeStudentsByClass, destroyCollectedPhotos, parseClassScope };

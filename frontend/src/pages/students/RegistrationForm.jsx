@@ -58,14 +58,27 @@ const RegistrationForm = () => {
   // Form VI Second Term (Jan-Jun 2027) -> year 2027
   const apiYear = useMemo(() => parseInt(year), [year]);
 
+  /** Form V/VI URLs include :term; Form I–IV list/delete entire class year (all terms). */
+  const termScoped = Boolean(term);
+
   const effectiveTerm = useMemo(
     () => term || formData.term || 'First Term',
     [term, formData.term]
   );
 
+  const classListParams = useMemo(() => {
+    const params = {
+      level: normalizedLevel,
+      stream,
+      year: apiYear,
+    };
+    if (termScoped) params.term = effectiveTerm;
+    return params;
+  }, [normalizedLevel, stream, apiYear, termScoped, effectiveTerm]);
+
   const studentsQueryKey = useMemo(
-    () => ['students', normalizedLevel, stream, apiYear, effectiveTerm],
-    [normalizedLevel, stream, apiYear, effectiveTerm]
+    () => ['students', normalizedLevel, stream, apiYear, termScoped ? effectiveTerm : 'ALL_TERMS'],
+    [normalizedLevel, stream, apiYear, termScoped, effectiveTerm]
   );
 
   const bulkDeleteConfirmPhrase = useMemo(() => {
@@ -74,9 +87,9 @@ const RegistrationForm = () => {
       isFormIV && (stream === 'A' || stream === 'NA' || !stream)
         ? 'A/NA'
         : stream;
-    const termPart = term ? effectiveTerm : 'all terms';
+    const termPart = termScoped ? effectiveTerm : 'all terms';
     return `DELETE ${normalizedLevel} ${streamPart} ${apiYear} (${termPart})`;
-  }, [normalizedLevel, stream, apiYear, term, effectiveTerm]);
+  }, [normalizedLevel, stream, apiYear, termScoped, effectiveTerm]);
 
   // Helper function to sort students by name: first_name, then middle_name, then surname (A-Z)
   const sortStudentsByName = useCallback((students) => {
@@ -104,12 +117,7 @@ const RegistrationForm = () => {
       if (!normalizedLevel || !stream || !apiYear) {
         throw new Error('Missing required parameters');
       }
-      const res = await studentsAPI.getStudents({
-        level: normalizedLevel,
-        stream: stream,
-        year: apiYear,
-        term: effectiveTerm,
-      });
+      const res = await studentsAPI.getStudents(classListParams);
       const students = res.data.students || [];
       // Sort students by name: first_name, then middle_name, then surname (A-Z)
       return sortStudentsByName(students);
@@ -239,15 +247,7 @@ const RegistrationForm = () => {
 
   const bulkDeleteMutation = useMutation({
     mutationFn: () =>
-      studentsAPI.bulkDeleteClass(
-        {
-          level: normalizedLevel,
-          stream,
-          year: apiYear,
-          ...(term ? { term: effectiveTerm } : {}),
-        },
-        bulkDeletePhrase.trim()
-      ),
+      studentsAPI.bulkDeleteClass(classListParams, bulkDeletePhrase.trim()),
     onSuccess: (res) => {
       const d = res.data?.deleted || {};
       queryClient.invalidateQueries({ queryKey: studentsQueryKey });
@@ -730,7 +730,7 @@ const RegistrationForm = () => {
               <p className="bulk-delete-warning">
                 Permanently removes <strong>all {students.length}</strong> registered student(s) for{' '}
                 <strong>{normalizedLevel} {stream} {apiYear}</strong>
-                {term ? ` (${effectiveTerm})` : ''}, including scores, photos, parishes, comments,
+                {termScoped ? ` (${effectiveTerm})` : ' (all terms)'}, including scores, photos, parishes, comments,
                 monthly results, tabia mwenendo, debt, promotion records, and score audit logs. This cannot be undone.
               </p>
               <button
