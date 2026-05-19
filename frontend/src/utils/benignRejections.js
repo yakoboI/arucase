@@ -5,6 +5,28 @@
 export function isBenignUnhandledRejection(reason) {
   if (reason == null) return true;
 
+  // Vercel Live toolbar / browser extensions (non-axios plain objects)
+  if (
+    typeof reason === 'object' &&
+    !(reason instanceof Error) &&
+    !reason.response &&
+    !reason.request &&
+    reason.httpError === false
+  ) {
+    return true;
+  }
+
+  if (
+    typeof reason === 'object' &&
+    !(reason instanceof Error) &&
+    !reason.response &&
+    !reason.request &&
+    !reason.config?.url &&
+    Object.keys(reason).length === 0
+  ) {
+    return true;
+  }
+
   const url = reason?.config?.url || reason?.message || '';
   const reqInfo = reason?.reqInfo;
 

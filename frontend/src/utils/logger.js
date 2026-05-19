@@ -229,11 +229,14 @@ window.addEventListener(
   (event) => {
     if (isBenignUnhandledRejection(event.reason)) {
       event.preventDefault();
+      event.stopImmediatePropagation();
       return;
     }
-    logger.error('Unhandled Promise Rejection', event.reason, {
-      promise: event.promise,
-    });
+    if (import.meta.env.DEV) {
+      logger.error('Unhandled Promise Rejection', event.reason, {
+        promise: event.promise,
+      });
+    }
   },
   true
 );

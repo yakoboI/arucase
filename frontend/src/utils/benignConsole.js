@@ -1,20 +1,9 @@
 /**
  * Filter known third-party console noise (Vercel Live toolbar, extensions).
- * Import first from main.jsx.
+ * Import first from main.jsx. Early handler: public/js/benign-rejections.js
  */
 
-function isBenignRejectionReason(reason) {
-  if (reason == null) return true;
-  if (reason instanceof Error) return false;
-  if (reason.response || reason.request || reason.config?.url) return false;
-  if (reason.code === 403 || reason.code === '403' || Number(reason.code) === 403) {
-    return true;
-  }
-  if (reason.httpError === false && (reason.code === 403 || Number(reason.code) === 403)) {
-    return true;
-  }
-  return false;
-}
+import { isBenignUnhandledRejection } from './benignRejections';
 
 export function installBenignConsoleFilters() {
   const nativeWarn = console.warn.bind(console);
@@ -26,7 +15,7 @@ export function installBenignConsoleFilters() {
   };
 
   const onRejection = (event) => {
-    if (isBenignRejectionReason(event.reason)) {
+    if (isBenignUnhandledRejection(event.reason)) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }

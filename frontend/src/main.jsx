@@ -168,7 +168,8 @@ initPerformanceOptimizations();
 // Defer non-critical icon fonts + route chunks (skip on homepage — prefetch hurt mobile LCP)
 function deferNonCriticalAssets() {
   const path = window.location.pathname;
-  if (path !== '/' && path !== '') {
+  const isAuthScreen = path === '/login' || path === '/student-login';
+  if (path !== '/' && path !== '' && !isAuthScreen) {
     import('./pages/auth/Login').catch(() => {});
     import('./pages/public/StudentLogin').catch(() => {});
     import('./pages/public/Gallery').catch(() => {});
