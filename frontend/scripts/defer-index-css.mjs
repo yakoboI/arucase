@@ -1,6 +1,6 @@
 /**
  * Post-build: load the main index CSS without blocking first paint.
- * Inline critical CSS lives in index.html; full styles apply via preload onload.
+ * Inline critical CSS lives in index.html; full styles apply via external loader (CSP-safe).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,7 +23,8 @@ const before = html;
 html = html.replace(INDEX_CSS_RE, (_full, href, attrs) => {
   const trimmedAttrs = attrs.trim();
   return [
-    `<link rel="preload" href="${href}" as="style"${trimmedAttrs ? ` ${trimmedAttrs}` : ''} onload="this.onload=null;this.rel='stylesheet'">`,
+    `<link id="app-deferred-styles" rel="preload" href="${href}" as="style"${trimmedAttrs ? ` ${trimmedAttrs}` : ''}>`,
+    `<script src="/js/load-deferred-css.js" defer></script>`,
     `<noscript><link rel="stylesheet" crossorigin href="${href}"${trimmedAttrs ? ` ${trimmedAttrs}` : ''}></noscript>`,
   ].join('\n    ');
 });
@@ -34,4 +35,4 @@ if (html === before) {
 }
 
 fs.writeFileSync(indexPath, html, 'utf8');
-console.log('[defer-index-css] Main stylesheet loads asynchronously');
+console.log('[defer-index-css] Main stylesheet loads asynchronously (CSP-safe)');

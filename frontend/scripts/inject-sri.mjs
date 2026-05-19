@@ -21,7 +21,9 @@ function hashFile(urlPath) {
 function withIntegrity(tag, urlPath) {
   if (tag.includes('integrity=')) return tag;
   // Tiny bootstrap script — skip SRI so a post-build byte mismatch cannot block the handler
-  if (urlPath.includes('benign-rejections.js')) return tag;
+  if (urlPath.includes('benign-rejections.js') || urlPath.includes('load-deferred-css.js')) {
+    return tag;
+  }
   const integrity = hashFile(urlPath);
   if (!integrity) return tag;
   let next = tag;
