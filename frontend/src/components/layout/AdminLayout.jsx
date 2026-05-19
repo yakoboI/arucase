@@ -1,6 +1,5 @@
 import { useLocation } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
-import '../../styles/adminTheme.css';
 import './AdminLayout.css';
 
 const AdminLayout = ({ children }) => {

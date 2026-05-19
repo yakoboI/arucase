@@ -27,13 +27,17 @@ export const deferNonCriticalResources = () => {
 };
 
 /**
- * Optimize images with loading="lazy" — no layout reads (avoids forced reflow).
+ * Optimize images with loading="lazy" attribute
  */
 export const optimizeImages = () => {
   const images = document.querySelectorAll('img:not([loading])');
   images.forEach((img) => {
-    img.loading = 'lazy';
-    img.decoding = 'async';
+    // Only lazy load images below the fold
+    const rect = img.getBoundingClientRect();
+    if (rect.top > window.innerHeight) {
+      img.loading = 'lazy';
+      img.decoding = 'async';
+    }
   });
 };
 
