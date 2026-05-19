@@ -15,6 +15,48 @@ function shouldRestoreStaffSession(pathname) {
 
 const AuthContext = createContext(null);
 
+/** Modules that view data by class/year without requiring class–subject teaching assignments. */
+export const VIEW_CLASS_MODULES = new Set([
+  'student_parishes',
+  'student_photo',
+  'individual_debt',
+  'fees_announcements',
+]);
+
+function hasExplicitClassAssignments(perms) {
+  const cs = perms?.class_subjects;
+  if (cs && typeof cs === 'object' && Object.keys(cs).length > 0) return true;
+  const classes = perms?.classes;
+  return Array.isArray(classes) && classes.length > 0;
+}
+
+function userHasViewModule(perms, moduleId) {
+  if (!moduleId || !VIEW_CLASS_MODULES.has(moduleId)) return false;
+  const modules = perms?.modules;
+  if (!Array.isArray(modules)) return false;
+  return modules.includes('all') || modules.includes(moduleId);
+}
+
+function hasModuleOnlyViewAccess(perms, moduleId) {
+  return userHasViewModule(perms, moduleId) && !hasExplicitClassAssignments(perms);
+}
+
+function classInAssignments(perms, className) {
+  if (perms?.class_subjects && Object.keys(perms.class_subjects).includes(className)) {
+    return true;
+  }
+  if ((perms?.classes || []).includes(className)) return true;
+  if (className === 'FORM V' || className === 'FORM VI') {
+    const streams = ['PCB', 'PCM', 'CBG', 'HGL', 'HKL', 'EGM', 'HGE', 'PGM'];
+    for (const stream of streams) {
+      const streamClass = `${className} ${stream}`;
+      const subjects = perms?.class_subjects?.[streamClass];
+      if (Array.isArray(subjects) && subjects.length > 0) return true;
+    }
+  }
+  return false;
+}
+
 /** Normalize API error bodies (string, { message }, validation arrays) for login UI. */
 function pickAuthErrorMessage(data, fallback = 'Invalid response from server.') {
   if (data == null || data === '') return fallback;
@@ -290,12 +332,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   /** For non-admin: returns allowed years for a class, or null = all years, or [] = no access */
-  const getAllowedYearsForClass = (className) => {
+  const getAllowedYearsForClass = (className, { moduleId } = {}) => {
     if (isAdminLike()) return null;
     const perms = getParsedPermissions();
-    const hasAccess = (perms.class_subjects && Object.keys(perms.class_subjects).includes(className)) ||
-      (perms.classes || []).includes(className);
+
+    if (moduleId && hasModuleOnlyViewAccess(perms, moduleId)) {
+      return null;
+    }
+
+    const hasAccess = classInAssignments(perms, className);
     if (!hasAccess) return [];
+
     const cp = perms.class_permissions || {};
     const years = cp[className]?.years;
     if (Array.isArray(years) && years.length > 0) return years.map((y) => Number(y));
@@ -338,28 +385,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   /** True if user has access to this class (admin always true) */
-  const hasClass = (className) => {
+  const hasClass = (className, { moduleId } = {}) => {
     if (isAdminLike()) return true;
     const perms = getParsedPermissions();
-    if (perms.class_subjects && Object.keys(perms.class_subjects).includes(className)) return true;
-    if ((perms.classes || []).includes(className)) return true;
-    
-    // For FORM V/VI, also check if user has any subject permissions for streams of that form
-    // This enables together mode access for users with subject permissions
-    if (className === 'FORM V' || className === 'FORM VI') {
-      const streams = ['PCB', 'PCM', 'CBG', 'HGL', 'HKL', 'EGM', 'HGE', 'PGM'];
-      for (const stream of streams) {
-        const streamClass = `${className} ${stream}`;
-        if (perms.class_subjects && perms.class_subjects[streamClass]) {
-          const subjects = perms.class_subjects[streamClass];
-          if (Array.isArray(subjects) && subjects.length > 0) {
-            return true;
-          }
-        }
-      }
+
+    if (moduleId && hasModuleOnlyViewAccess(perms, moduleId)) {
+      return true;
     }
-    
-    return false;
+
+    return classInAssignments(perms, className);
   };
 
   /** True if user has the given module (admin/superadmin always have all). Used for registration, etc. */

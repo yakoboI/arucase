@@ -21,7 +21,7 @@ const ParishYearSelection = ({ formLevel }) => {
   }, [endYear]);
 
   const years = useMemo(() => {
-    const allowed = getAllowedYearsForClass(formLevel);
+    const allowed = getAllowedYearsForClass(formLevel, { moduleId: 'student_parishes' });
     if (allowed === null) return fullYears;
     if (allowed.length === 0) return [];
     return fullYears.filter((y) => allowed.includes(y));

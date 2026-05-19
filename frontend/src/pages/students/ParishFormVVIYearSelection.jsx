@@ -19,7 +19,7 @@ const ParishFormVVIYearSelection = ({ formLevel }) => {
 
   const className = stream ? `${formLevel} ${stream}` : formLevel;
   const years = useMemo(() => {
-    const allowed = getAllowedYearsForClass(className);
+    const allowed = getAllowedYearsForClass(className, { moduleId: 'student_parishes' });
     if (allowed === null) return availableYears;
     if (allowed.length === 0) return [];
     return availableYears.filter((yearObj) => allowed.includes(yearObj.year));

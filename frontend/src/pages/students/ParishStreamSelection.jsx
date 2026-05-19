@@ -20,13 +20,20 @@ const FORM_VVI_STREAMS = [
 
 const ParishStreamSelection = ({ formLevel, isFormVOrVI = false }) => {
   const { year } = useParams();
-  const { hasClass } = useAuth();
+  const { hasClass, isAdminLike } = useAuth();
+  const parishModule = { moduleId: 'student_parishes' };
   const standardStreams = ['A', 'B'];
 
   const formVVIStreams = useMemo(() => {
     if (!isFormVOrVI) return FORM_VVI_STREAMS;
-    return FORM_VVI_STREAMS.filter((s) => hasClass(`${formLevel} ${s.code}`));
+    return FORM_VVI_STREAMS.filter((s) => hasClass(`${formLevel} ${s.code}`, parishModule));
   }, [isFormVOrVI, formLevel, hasClass]);
+
+  const visibleStandardStreams = useMemo(() => {
+    if (isFormVOrVI) return standardStreams;
+    if (isAdminLike()) return standardStreams;
+    return standardStreams.filter(() => hasClass(formLevel, parishModule));
+  }, [isFormVOrVI, isAdminLike, formLevel, hasClass, standardStreams]);
 
   const getBackPath = () => {
     if (isFormVOrVI) {
@@ -92,7 +99,7 @@ const ParishStreamSelection = ({ formLevel, isFormVOrVI = false }) => {
                   ))
                 ) : (
                   // FORM I-IV standard streams
-                  standardStreams.map((stream) => (
+                  visibleStandardStreams.map((stream) => (
                     <Link
                       key={stream}
                       to={getStreamDetailPath(stream)}
