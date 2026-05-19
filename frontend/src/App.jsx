@@ -3,16 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import VisitorTracker from './components/VisitorTracker';
+import ToastStylesLoader from './components/common/ToastStylesLoader';
 import NetworkStatusBanner from './components/common/NetworkStatusBanner';
 import PwaInstallBanner from './components/common/PwaInstallBanner';
 import PublicChatbotLayer from './components/public/PublicChatbotLayer';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Loading from './components/common/Loading';
 import logger from './utils/logger';
-import './styles/tables-sharp.css';
-
 /** Split modules + legacy `student_registration` for registration routes */
 const REGISTRATION_MODULES_FORM_I_IV = ['student_registration_form_i_iv', 'student_registration'];
 const REGISTRATION_MODULES_FORM_V_VI = ['student_registration_form_v_vi', 'student_registration'];
@@ -212,6 +210,7 @@ function App() {
         >
           <PageSEO />
           <SchoolFavicon />
+          <ToastStylesLoader />
           <VisitorTracker />
           <NetworkStatusBanner />
           <PwaInstallBanner />

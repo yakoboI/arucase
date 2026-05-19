@@ -46,9 +46,27 @@ export function optimizeCloudinaryUrl(url, opts = {}) {
   return `${head}${parts.join(',')}/${tail}`;
 }
 
-/** Hero carousel — sized for ~960px max display (mobile LCP) */
+/** Hero carousel — default ~960px desktop */
 export function heroImageUrl(url) {
   return optimizeCloudinaryUrl(url, { width: 960, crop: 'limit', quality: 'auto:eco' });
+}
+
+/** Smaller hero for mobile LCP (~412px viewport) */
+export function heroImageUrlMobile(url) {
+  return optimizeCloudinaryUrl(url, { width: 640, crop: 'limit', quality: 'auto:eco' });
+}
+
+/** Responsive src/srcSet for hero carousel LCP */
+export function heroImageSources(url) {
+  const normalized = normalizeUrl(url);
+  if (!normalized) return { src: '', srcSet: '' };
+  const mobile = heroImageUrlMobile(normalized);
+  const desktop = heroImageUrl(normalized);
+  if (mobile === desktop) return { src: desktop, srcSet: '' };
+  return {
+    src: mobile,
+    srcSet: `${mobile} 640w, ${desktop} 960w`,
+  };
 }
 
 /** Gallery grid thumbnails on homepage (~320×240 display) */

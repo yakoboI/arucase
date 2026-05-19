@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Howl } from 'howler';
 
 /** Staff app areas that may use httpOnly cookies without a localStorage JWT. */
 function shouldRestoreStaffSession(pathname) {
@@ -83,16 +82,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Play logout sound directly using Howl
   const playLogoutSound = () => {
     const isMuted = localStorage.getItem('uiSoundsMuted') === 'true';
     if (isMuted) return;
 
-    const logoutSound = new Howl({
-      src: ['/sounds/logout.mp3'],
-      volume: 0.3,
-    });
-    logoutSound.play();
+    import('howler').then(({ Howl }) => {
+      const logoutSound = new Howl({
+        src: ['/sounds/logout.mp3'],
+        volume: 0.3,
+      });
+      logoutSound.play();
+    }).catch(() => {});
   };
 
   useEffect(() => {

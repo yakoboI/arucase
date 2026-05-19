@@ -1,10 +1,15 @@
+import { useEffect } from 'react';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import PublicPrevNextNav from './PublicPrevNextNav';
+import { loadFontAwesomeWhenIdle } from '../../utils/loadFontAwesome';
 import '../../styles/public-a11y.css';
 import './PublicLayout.css';
 
 const PublicLayout = ({ children }) => {
+  useEffect(() => {
+    loadFontAwesomeWhenIdle({ includeBrands: true });
+  }, []);
   return (
     <div className="public-layout">
       <a href="#public-main-content" className="public-skip-to-content">

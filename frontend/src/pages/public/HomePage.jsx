@@ -10,7 +10,7 @@ import SkeletonLoader from '../../components/common/SkeletonLoader';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
-import { heroImageUrl, galleryThumbUrl } from '../../utils/cloudinaryImage';
+import { heroImageSources, galleryThumbUrl } from '../../utils/cloudinaryImage';
 import './HomePage.css';
 import { PublicCmsHtml, usePublicPage } from '../../components/public/PublicCmsPage';
 import { hasPublishedPage, settingValue } from '../../utils/publicPageContent';
@@ -73,7 +73,7 @@ const HomePage = () => {
   }, []);
 
   const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
-  const getHeroUrl = useCallback((path) => heroImageUrl(getImageUrl(path)), [getImageUrl]);
+  const getHeroSources = useCallback((path) => heroImageSources(getImageUrl(path)), [getImageUrl]);
   const getThumbUrl = useCallback((path) => galleryThumbUrl(getImageUrl(path)), [getImageUrl]);
 
   const { data, isLoading } = useQuery({
@@ -133,11 +133,11 @@ const HomePage = () => {
   const validGalleryPhotos = useMemo(() => {
     return (
       gallery_photos?.filter((photo) => {
-        const imageUrl = getHeroUrl(photo.path);
-        return !failedImages.has(imageUrl);
+        const { src } = getHeroSources(photo.path);
+        return src && !failedImages.has(src);
       }) || []
     );
-  }, [gallery_photos, failedImages, getHeroUrl]);
+  }, [gallery_photos, failedImages, getHeroSources]);
 
   const carouselPhotos = useMemo(
     () => validGalleryPhotos.slice(0, Math.min(10, validGalleryPhotos.length)),
@@ -204,12 +204,10 @@ const HomePage = () => {
               <>
                 <div className="carousel-wrapper">
                   {carouselPhotos.map((photo, index) => {
-                    const imageUrl = getHeroUrl(photo.path);
+                    const { src: imageUrl, srcSet } = getHeroSources(photo.path);
                     const isActive = index === carouselIndex;
                     const shouldLoad = isActive || Math.abs(index - carouselIndex) <= 1;
-                    const slideAlt =
-                      photo.caption ||
-                      `${schoolName} — picha ya seminari ${index + 1}`;
+                    const slideAlt = photo.caption || (index === 0 ? '' : `Picha ${index + 1}`);
                     const isLcpCandidate = index === 0;
                     return (
                       <div
@@ -221,6 +219,7 @@ const HomePage = () => {
                             <img
                               className="carousel-slide-media"
                               src={imageUrl}
+                              srcSet={srcSet || undefined}
                               alt={slideAlt}
                               width={960}
                               height={540}

@@ -139,7 +139,7 @@ const PublicHeader = () => {
                       <div className="header-tropical-frame__mat">
                         <img
                           src={getImageUrl(schoolLogo)}
-                          alt="Arusha Catholic Seminary official school logo"
+                          alt=""
                           className="header-tropical-frame__img header-tropical-frame__img--logo"
                           loading="eager"
                           fetchPriority="low"
@@ -167,7 +167,7 @@ const PublicHeader = () => {
                       <div className="header-tropical-frame__mat">
                         <img
                           src={getImageUrl(patronSaintImage)}
-                          alt="Picha ya somo wa seminari"
+                          alt=""
                           className="header-tropical-frame__img header-tropical-frame__img--patron"
                           loading="eager"
                           fetchPriority="low"

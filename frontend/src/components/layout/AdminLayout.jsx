@@ -1,6 +1,11 @@
 import { useLocation } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
+import '../../styles/adminTheme.css';
+import '../../styles/tables-sharp.css';
+import { loadFontAwesome } from '../../utils/loadFontAwesome';
 import './AdminLayout.css';
+
+loadFontAwesome({ includeBrands: true }).catch(() => {});
 
 const AdminLayout = ({ children }) => {
   const { pathname } = useLocation();

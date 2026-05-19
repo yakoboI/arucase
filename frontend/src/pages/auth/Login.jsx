@@ -1,4 +1,5 @@
-import { useState, useId } from 'react';
+import { useState, useId, useEffect } from 'react';
+import { loadFontAwesome } from '../../utils/loadFontAwesome';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
@@ -12,6 +13,10 @@ import './Login.css';
 const DEFAULT_LOGO = '/uploads/photos/9749b4af-7e1c-454b-a482-37a0f64162f1.jpg';
 
 const Login = () => {
+  useEffect(() => {
+    loadFontAwesome().catch(() => {});
+  }, []);
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

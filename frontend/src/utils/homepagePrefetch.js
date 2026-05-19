@@ -1,6 +1,6 @@
 import { publicAPI } from '../services/public';
 import { resolveStaticUrl } from './backendUrl';
-import { heroImageUrl } from './cloudinaryImage';
+import { heroImageSources } from './cloudinaryImage';
 
 export function isHomeRoute() {
   const path = window.location.pathname;
@@ -22,17 +22,21 @@ export async function prefetchHomepageData(queryClient) {
   const firstPhoto = data?.gallery_photos?.[0];
   if (!firstPhoto?.path) return;
 
-  const url = heroImageUrl(resolveStaticUrl(firstPhoto.path));
-  if (!url) return;
+  const { src, srcSet } = heroImageSources(resolveStaticUrl(firstPhoto.path));
+  if (!src) return;
 
-  const existing = document.querySelector(`link[rel="preload"][as="image"][href="${CSS.escape(url)}"]`);
+  const existing = document.querySelector(`link[rel="preload"][as="image"][href="${CSS.escape(src)}"]`);
   if (existing) return;
 
   const link = document.createElement('link');
   link.rel = 'preload';
   link.as = 'image';
-  link.href = url;
+  link.href = src;
   link.fetchPriority = 'high';
+  if (srcSet) {
+    link.setAttribute('imagesrcset', srcSet);
+    link.setAttribute('imagesizes', '(max-width: 768px) 100vw, 960px');
+  }
   document.head.appendChild(link);
 }
 

@@ -6,14 +6,12 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './styles/index.css';
-import './styles/adminTheme.css';
-import '@fortawesome/fontawesome-free/css/fontawesome.css';
-import '@fortawesome/fontawesome-free/css/solid.css';
-// Brands + regular load after first paint (homepage header uses solid only)
-// Initialize utilities
-import './utils/debugAuth.js'; // Import debug utility to make it available globally
-import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
-import './utils/tokenDecoder'; // Initialize token decoder (makes window.logTokenInfo available)
+// adminTheme + Font Awesome load from AdminLayout / PublicLayout (smaller public entry)
+if (import.meta.env.DEV) {
+  import('./utils/debugAuth.js');
+  import('./utils/logHelper');
+  import('./utils/tokenDecoder');
+}
 import { registerServiceWorker } from './utils/registerServiceWorker';
 import { isBenignUnhandledRejection } from './utils/benignRejections';
 import {
@@ -180,7 +178,6 @@ function deferNonCriticalAssets() {
     import('./pages/public/Gallery').catch(() => {});
   }
   import('@fortawesome/fontawesome-free/css/regular.css').catch(() => {});
-  import('@fortawesome/fontawesome-free/css/brands.css').catch(() => {});
 }
 
 if (typeof window !== 'undefined') {
