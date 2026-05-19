@@ -1,5 +1,6 @@
 /**
- * Post-build SRI injection for index.html (runs after Vite so .map files stay valid).
+ * Post-build SRI injection for index.html.
+ * Must run last (after patch-fa-font-display.mjs) so integrity hashes match final file bytes.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';

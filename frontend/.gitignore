@@ -9,6 +9,10 @@ node_modules/
 # Production
 /build
 /dist
+# Local Vite experiment builds (source-map / minify tests)
+/dist-*/
+/dist_*/
+/dist[0-9]*/
 
 # Misc
 .DS_Store
