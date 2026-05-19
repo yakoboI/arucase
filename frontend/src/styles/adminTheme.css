@@ -183,6 +183,43 @@
   box-shadow: none;
 }
 
+/* Back navigation — orange across admin pages */
+.admin-layout .admin-main-content [class*='-back-btn'],
+.admin-layout .admin-main-content .back-button,
+.admin-layout .admin-main-content a.excel-btn.secondary:has(.fa-arrow-left),
+.admin-layout .admin-main-content a.excel-btn.small.secondary:has(.fa-arrow-left),
+.admin-layout .admin-main-content button.excel-btn.secondary:has(.fa-arrow-left),
+.admin-layout .admin-main-content button.excel-btn.small.secondary:has(.fa-arrow-left),
+.admin-layout .admin-main-content a.form-btn.secondary:has(.fa-arrow-left) {
+  background: #ea580c !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #c2410c !important;
+}
+
+.admin-layout .admin-main-content [class*='-back-btn']:hover,
+.admin-layout .admin-main-content .back-button:hover,
+.admin-layout .admin-main-content a.excel-btn.secondary:has(.fa-arrow-left):hover,
+.admin-layout .admin-main-content a.excel-btn.small.secondary:has(.fa-arrow-left):hover,
+.admin-layout .admin-main-content button.excel-btn.secondary:has(.fa-arrow-left):hover,
+.admin-layout .admin-main-content button.excel-btn.small.secondary:has(.fa-arrow-left):hover,
+.admin-layout .admin-main-content a.form-btn.secondary:has(.fa-arrow-left):hover {
+  background: #c2410c !important;
+  color: #ffffff !important;
+  border-color: #9a3412 !important;
+  text-decoration: none;
+}
+
+.admin-layout .admin-main-content [class*='-back-btn'] i,
+.admin-layout .admin-main-content .back-button i,
+.admin-layout .admin-main-content a.excel-btn.secondary:has(.fa-arrow-left) i,
+.admin-layout .admin-main-content a.excel-btn.small.secondary:has(.fa-arrow-left) i,
+.admin-layout .admin-main-content button.excel-btn.secondary:has(.fa-arrow-left) i,
+.admin-layout .admin-main-content button.excel-btn.small.secondary:has(.fa-arrow-left) i,
+.admin-layout .admin-main-content a.form-btn.secondary:has(.fa-arrow-left) i {
+  color: #ffffff !important;
+}
+
 /* ===========================================
    MOBILE: full viewport width, no horizontal scroll
    =========================================== */
