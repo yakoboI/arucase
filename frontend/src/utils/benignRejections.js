@@ -91,6 +91,18 @@ export function isBenignUnhandledRejection(reason) {
     return true;
   }
 
+  // Extensions / Vercel instrument.js — plain object, not an axios error
+  if (
+    typeof reason === 'object' &&
+    !(reason instanceof Error) &&
+    !reason.response &&
+    !reason.request &&
+    !reason.config?.url
+  ) {
+    const keyCount = Object.keys(reason).length;
+    if (keyCount > 0 && keyCount <= 24) return true;
+  }
+
   return false;
 }
 

@@ -118,9 +118,9 @@ export default defineConfig({
     outDir: 'dist',
     // Avoid esbuild CSS minify "Unexpected }" false positive on valid CSS
     cssMinify: false,
-    // Valid .map files for Lighthouse (requires minify:false; vendor manualChunk also breaks maps)
-    sourcemap: true,
-    minify: false,
+    // Hidden maps: generated at build for CI/upload; no sourceMappingURL in shipped JS
+    sourcemap: 'hidden',
+    minify: 'esbuild',
     chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {

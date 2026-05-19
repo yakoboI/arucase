@@ -197,9 +197,9 @@ const HomePage = () => {
                               className="carousel-slide-media"
                               src={imageUrl}
                               alt={slideAlt}
-                              width={1200}
-                              height={675}
-                              sizes="100vw"
+                              width={960}
+                              height={540}
+                              sizes="(max-width: 768px) 100vw, 960px"
                               loading={isLcpCandidate ? 'eager' : 'lazy'}
                               fetchPriority={isLcpCandidate ? 'high' : 'auto'}
                               decoding="async"
@@ -498,7 +498,11 @@ const HomePage = () => {
                         <img
                           src={imageUrl}
                           alt={photo.caption || 'Picha ya seminari'}
+                          width={320}
+                          height={240}
+                          sizes="(max-width: 768px) 50vw, 320px"
                           loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                           }}

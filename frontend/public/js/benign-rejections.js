@@ -31,6 +31,7 @@
     if (reason == null) return true;
     if (reason instanceof Error) return false;
     if (reason.response || reason.request) return false;
+    if (reason.config && reason.config.url) return false;
 
     if (reason.httpError === false) return true;
 
@@ -45,6 +46,12 @@
     }
 
     if (isPlainToolbarRejection(reason)) return true;
+
+    // Extensions / Vercel instrument.js: plain objects (not axios errors)
+    if (typeof reason === 'object') {
+      var keys = Object.keys(reason);
+      if (keys.length > 0 && keys.length <= 24) return true;
+    }
 
     return false;
   }

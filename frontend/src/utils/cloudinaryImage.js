@@ -46,14 +46,14 @@ export function optimizeCloudinaryUrl(url, opts = {}) {
   return `${head}${parts.join(',')}/${tail}`;
 }
 
-/** Hero carousel — full-width on mobile, capped for bandwidth */
+/** Hero carousel — sized for ~960px max display (mobile LCP) */
 export function heroImageUrl(url) {
-  return optimizeCloudinaryUrl(url, { width: 1200, crop: 'limit' });
+  return optimizeCloudinaryUrl(url, { width: 960, crop: 'limit' });
 }
 
-/** Gallery grid thumbnails on homepage */
+/** Gallery grid thumbnails on homepage (~320×240 display) */
 export function galleryThumbUrl(url) {
-  return optimizeCloudinaryUrl(url, { width: 480, crop: 'limit' });
+  return optimizeCloudinaryUrl(url, { width: 320, height: 240, crop: 'fill' });
 }
 
 /** Header logo / patron (~display ~120–160px) */
