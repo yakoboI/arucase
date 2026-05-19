@@ -9,8 +9,7 @@ import './styles/index.css';
 import './styles/adminTheme.css';
 import '@fortawesome/fontawesome-free/css/fontawesome.css';
 import '@fortawesome/fontawesome-free/css/solid.css';
-import '@fortawesome/fontawesome-free/css/regular.css';
-import '@fortawesome/fontawesome-free/css/brands.css';
+// Brands + regular load after first paint (homepage header uses solid only)
 // Initialize utilities
 import './utils/debugAuth.js'; // Import debug utility to make it available globally
 import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
@@ -166,24 +165,30 @@ window.addEventListener('error', (event) => {
 import { initPerformanceOptimizations } from './utils/performanceUtils';
 initPerformanceOptimizations();
 
-// Prefetch login and high-traffic route chunks on idle to improve LCP (e.g. logout→login, nav to student portal/gallery)
-function prefetchLCPRoutes() {
-  const prefetch = () => {
-    import('./pages/auth/Login').catch(() => {});           // /login – after logout
-    import('./pages/public/StudentLogin').catch(() => {}); // /student-login
-    import('./pages/public/Gallery').catch(() => {});      // /gallery
-  };
-  if (typeof requestIdleCallback !== 'undefined') {
-    requestIdleCallback(prefetch, { timeout: 2000 });
-  } else {
-    setTimeout(prefetch, 1500);
+// Defer non-critical icon fonts + route chunks (skip on homepage — prefetch hurt mobile LCP)
+function deferNonCriticalAssets() {
+  const path = window.location.pathname;
+  if (path !== '/' && path !== '') {
+    import('./pages/auth/Login').catch(() => {});
+    import('./pages/public/StudentLogin').catch(() => {});
+    import('./pages/public/Gallery').catch(() => {});
   }
+  import('@fortawesome/fontawesome-free/css/regular.css').catch(() => {});
+  import('@fortawesome/fontawesome-free/css/brands.css').catch(() => {});
 }
+
 if (typeof window !== 'undefined') {
+  const runDefer = () => {
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(deferNonCriticalAssets, { timeout: 8000 });
+    } else {
+      setTimeout(deferNonCriticalAssets, 4000);
+    }
+  };
   if (document.readyState === 'complete') {
-    prefetchLCPRoutes();
+    runDefer();
   } else {
-    window.addEventListener('load', prefetchLCPRoutes);
+    window.addEventListener('load', runDefer, { once: true });
   }
 }
 

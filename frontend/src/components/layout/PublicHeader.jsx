@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
+import { headerImageUrl } from '../../utils/cloudinaryImage';
 import {
   PUBLIC_HOME_ITEM,
   PUBLIC_NAV_CATEGORIES,
@@ -35,7 +36,7 @@ const PublicHeader = () => {
   const schoolLogo = settings?.school_logo || '/uploads/photos/9749b4af-7e1c-454b-a482-37a0f64162f1.jpg';
   const patronSaintImage = settings?.patron_saint_image;
 
-  const getImageUrl = (path) => (path ? resolveStaticUrl(path) : null);
+  const getImageUrl = (path) => (path ? headerImageUrl(resolveStaticUrl(path)) : null);
 
   const isActive = useCallback(
     (path) => {

@@ -1,6 +1,11 @@
 /* Import common public page styles */
 @import '../../styles/public-common.css';
 @import '../../styles/home-math-theme.css';
+@import '@fontsource/libre-baskerville/400.css';
+@import '@fontsource/libre-baskerville/700.css';
+@import '@fontsource/source-sans-3/400.css';
+@import '@fontsource/source-sans-3/600.css';
+@import '@fontsource/source-sans-3/700.css';
 
 /* Homepage — width tokens (all card grids derive from these) */
 .homepage {
@@ -130,18 +135,22 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-size: 100% auto; /* Fill width, maintain aspect ratio - shows full image height */
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-color: transparent; /* Let parent gradient show through */
+  background-color: #1a3a5c;
   opacity: 0;
   transition: opacity 1.2s ease-in-out;
   will-change: opacity;
   z-index: 1;
   pointer-events: none;
-  /* Performance optimization - lazy load offscreen slides */
-  content-visibility: auto;
-  contain-intrinsic-size: 100% 100%;
+  overflow: hidden;
+}
+
+.carousel-slide-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .carousel-slide.active {

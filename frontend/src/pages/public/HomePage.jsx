@@ -10,11 +10,7 @@ import SkeletonLoader from '../../components/common/SkeletonLoader';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { publicAPI } from '../../services/public';
 import { resolveStaticUrl } from '../../utils/backendUrl';
-import '@fontsource/libre-baskerville/400.css';
-import '@fontsource/libre-baskerville/700.css';
-import '@fontsource/source-sans-3/400.css';
-import '@fontsource/source-sans-3/600.css';
-import '@fontsource/source-sans-3/700.css';
+import { heroImageUrl, galleryThumbUrl } from '../../utils/cloudinaryImage';
 import './HomePage.css';
 import { PublicCmsHtml, usePublicPage } from '../../components/public/PublicCmsPage';
 import { hasPublishedPage, settingValue } from '../../utils/publicPageContent';
@@ -52,6 +48,8 @@ const HomePage = () => {
   const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState(null);
 
   const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
+  const getHeroUrl = useCallback((path) => heroImageUrl(getImageUrl(path)), [getImageUrl]);
+  const getThumbUrl = useCallback((path) => galleryThumbUrl(getImageUrl(path)), [getImageUrl]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['homepage'],
@@ -110,11 +108,11 @@ const HomePage = () => {
   const validGalleryPhotos = useMemo(() => {
     return (
       gallery_photos?.filter((photo) => {
-        const imageUrl = getImageUrl(photo.path);
+        const imageUrl = getHeroUrl(photo.path);
         return !failedImages.has(imageUrl);
       }) || []
     );
-  }, [gallery_photos, failedImages, getImageUrl]);
+  }, [gallery_photos, failedImages, getHeroUrl]);
 
   const carouselPhotos = useMemo(
     () => validGalleryPhotos.slice(0, Math.min(10, validGalleryPhotos.length)),
@@ -181,30 +179,30 @@ const HomePage = () => {
               <>
                 <div className="carousel-wrapper">
                   {carouselPhotos.map((photo, index) => {
-                    const imageUrl = getImageUrl(photo.path);
+                    const imageUrl = getHeroUrl(photo.path);
                     const isActive = index === carouselIndex;
                     const shouldLoad = isActive || Math.abs(index - carouselIndex) <= 1;
                     const slideAlt =
                       photo.caption ||
                       `${schoolName} — picha ya seminari ${index + 1}`;
+                    const isLcpCandidate = index === 0;
                     return (
                       <div
                         key={photo.id || index}
                         className={`carousel-slide ${isActive ? 'active' : ''}`}
-                        style={{
-                          backgroundImage:
-                            shouldLoad && imageUrl ? `url("${imageUrl}")` : 'none',
-                        }}
                       >
                         {shouldLoad && imageUrl && (
                           <>
                             <img
+                              className="carousel-slide-media"
                               src={imageUrl}
                               alt={slideAlt}
                               width={1200}
-                              height={600}
-                              style={{ display: 'none' }}
-                              loading={isActive ? 'eager' : 'lazy'}
+                              height={675}
+                              sizes="100vw"
+                              loading={isLcpCandidate ? 'eager' : 'lazy'}
+                              fetchPriority={isLcpCandidate ? 'high' : 'auto'}
+                              decoding="async"
                               onError={() => handleImageError(imageUrl)}
                               onLoad={() => {
                                 setFailedImages((prev) => {
@@ -488,7 +486,7 @@ const HomePage = () => {
               ) : (
                 <div className="home-gallery-grid">
                   {galleryPreviewPhotos.map((photo) => {
-                    const imageUrl = getImageUrl(photo.path);
+                    const imageUrl = getThumbUrl(photo.path);
                     return (
                       <button
                         key={photo.id}
@@ -768,7 +766,7 @@ const HomePage = () => {
                 <i className="fas fa-times" aria-hidden />
               </button>
               <img
-                src={getImageUrl(selectedGalleryPhoto.path)}
+                src={getHeroUrl(selectedGalleryPhoto.path)}
                 alt={selectedGalleryPhoto.caption || 'Picha ya seminari'}
               />
               {selectedGalleryPhoto.caption && (

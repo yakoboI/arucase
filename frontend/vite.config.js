@@ -103,6 +103,15 @@ function injectSubresourceIntegrity() {
 export default defineConfig({
   plugins: [
     react(),
+    {
+      name: 'fontawesome-font-display-swap',
+      transform(code, id) {
+        if (id.includes('@fortawesome') && id.endsWith('.css')) {
+          return code.replace(/font-display:\s*block/gi, 'font-display: swap');
+        }
+        return code;
+      },
+    },
     injectSubresourceIntegrity(),
     {
       name: 'seo-site-verification-and-bing-xml',
