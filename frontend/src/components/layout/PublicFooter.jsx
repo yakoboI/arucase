@@ -1,12 +1,24 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { publicAPI } from '../../services/public';
 import { settingValue } from '../../utils/publicPageContent';
 import { FOOTER_COPYRIGHT_NAME, resolveFooterCopyrightName } from '../../utils/footerCopyright';
 import './PublicFooter.css';
 
 const PublicFooter = () => {
+  const [visitorStatsEnabled, setVisitorStatsEnabled] = useState(false);
+
+  useEffect(() => {
+    const enable = () => setVisitorStatsEnabled(true);
+    if (typeof requestIdleCallback !== 'undefined') {
+      const id = requestIdleCallback(enable, { timeout: 6000 });
+      return () => cancelIdleCallback(id);
+    }
+    const timer = setTimeout(enable, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const { data: homepageData } = useQuery({
     queryKey: ['homepage'],
     queryFn: async () => {
@@ -33,6 +45,7 @@ const PublicFooter = () => {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: visitorStatsEnabled,
   });
 
   useEffect(() => {

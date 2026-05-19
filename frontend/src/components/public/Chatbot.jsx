@@ -173,11 +173,14 @@ export default function Chatbot() {
     if (e.button !== 0 && e.button !== undefined) return;
     if (e.target.closest('.chatbot-close')) return;
     e.currentTarget.setPointerCapture(e.pointerId);
+    const panelEl = panelRef.current;
     panelDragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       left: panelPos.left,
       top: panelPos.top,
+      panelW: panelEl?.offsetWidth || PANEL_W,
+      panelH: panelEl?.offsetHeight || PANEL_H_EST,
     };
     setPanelDragging(true);
   };
@@ -185,10 +188,9 @@ export default function Chatbot() {
   useEffect(() => {
     if (!panelDragging) return;
     const onMove = (ev) => {
-      const { startX, startY, left, top } = panelDragRef.current;
-      const panelEl = panelRef.current;
-      const w = panelEl?.offsetWidth || PANEL_W;
-      const h = panelEl?.offsetHeight || PANEL_H_EST;
+      const { startX, startY, left, top, panelW, panelH } = panelDragRef.current;
+      const w = panelW || PANEL_W;
+      const h = panelH || PANEL_H_EST;
       const maxX = window.innerWidth - w - 8;
       const maxY = window.innerHeight - h - 8;
       setPanelPos({

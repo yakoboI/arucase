@@ -46,6 +46,31 @@ const HomePage = () => {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState(null);
+  const [cmsEnabled, setCmsEnabled] = useState(false);
+
+  useEffect(() => {
+    const loadFonts = () => {
+      import('@fontsource/libre-baskerville/400.css');
+      import('@fontsource/libre-baskerville/700.css');
+      import('@fontsource/source-sans-3/400.css');
+      import('@fontsource/source-sans-3/600.css');
+      import('@fontsource/source-sans-3/700.css');
+    };
+    if (typeof requestIdleCallback !== 'undefined') {
+      const fontId = requestIdleCallback(loadFonts, { timeout: 5000 });
+      const cmsId = requestIdleCallback(() => setCmsEnabled(true), { timeout: 6000 });
+      return () => {
+        cancelIdleCallback(fontId);
+        cancelIdleCallback(cmsId);
+      };
+    }
+    const fontTimer = setTimeout(loadFonts, 1500);
+    const cmsTimer = setTimeout(() => setCmsEnabled(true), 2500);
+    return () => {
+      clearTimeout(fontTimer);
+      clearTimeout(cmsTimer);
+    };
+  }, []);
 
   const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
   const getHeroUrl = useCallback((path) => heroImageUrl(getImageUrl(path)), [getImageUrl]);
@@ -92,7 +117,7 @@ const HomePage = () => {
   const contactWhatsapp = settingValue(settings, 'contact_whatsapp');
   const contactAddress = settingValue(settings, 'contact_address');
   const socialLocation = settingValue(settings, 'social_location');
-  const { data: homepageCmsData } = usePublicPage('homepage');
+  const { data: homepageCmsData } = usePublicPage('homepage', { enabled: cmsEnabled });
   const homepageCms = homepageCmsData?.data?.page;
   const hasHomepageCms = hasPublishedPage(homepageCms);
   const whatsappUrl = contactWhatsapp

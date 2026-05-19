@@ -48,12 +48,17 @@ export function optimizeCloudinaryUrl(url, opts = {}) {
 
 /** Hero carousel — sized for ~960px max display (mobile LCP) */
 export function heroImageUrl(url) {
-  return optimizeCloudinaryUrl(url, { width: 960, crop: 'limit' });
+  return optimizeCloudinaryUrl(url, { width: 960, crop: 'limit', quality: 'auto:eco' });
 }
 
 /** Gallery grid thumbnails on homepage (~320×240 display) */
 export function galleryThumbUrl(url) {
-  return optimizeCloudinaryUrl(url, { width: 320, height: 240, crop: 'fill' });
+  return optimizeCloudinaryUrl(url, {
+    width: 320,
+    height: 240,
+    crop: 'fill',
+    quality: 'auto:eco',
+  });
 }
 
 /** Header logo / patron (~display ~120–160px) */

@@ -44,10 +44,22 @@ const VisitorTracker = () => {
       }
     };
 
-    // Small delay to ensure page is loaded
-    const timer = setTimeout(trackVisitor, 1000);
-    
-    return () => clearTimeout(timer);
+    const trackWhenIdle = () => {
+      trackVisitor();
+    };
+
+    let idleId;
+    let fallbackTimer;
+    if (typeof requestIdleCallback !== 'undefined') {
+      idleId = requestIdleCallback(trackWhenIdle, { timeout: 8000 });
+    } else {
+      fallbackTimer = setTimeout(trackWhenIdle, 5000);
+    }
+
+    return () => {
+      if (idleId != null) cancelIdleCallback(idleId);
+      if (fallbackTimer != null) clearTimeout(fallbackTimer);
+    };
   }, [pathname]);
 
   return null; // This component doesn't render anything

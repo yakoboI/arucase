@@ -16,6 +16,11 @@ import './utils/logHelper'; // Initialize log helper (makes window.logHelper ava
 import './utils/tokenDecoder'; // Initialize token decoder (makes window.logTokenInfo available)
 import { registerServiceWorker } from './utils/registerServiceWorker';
 import { isBenignUnhandledRejection } from './utils/benignRejections';
+import {
+  isHomeRoute,
+  prefetchHomepageData,
+  prefetchHomePageChunks,
+} from './utils/homepagePrefetch';
 
 const CHUNK_RELOAD_KEY = 'arucase-chunk-reload';
 
@@ -197,6 +202,11 @@ registerServiceWorker();
 
 // App booted — allow one auto-reload again after the next deployment
 sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+
+if (typeof window !== 'undefined' && isHomeRoute()) {
+  prefetchHomePageChunks();
+  prefetchHomepageData(queryClient).catch(() => {});
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

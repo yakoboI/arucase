@@ -85,14 +85,17 @@ export const optimizeFontLoading = () => {
  * Initialize performance optimizations
  */
 export const initPerformanceOptimizations = () => {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      optimizeImages();
-      optimizeFontLoading();
-    });
-  } else {
+  const runDeferredLayoutWork = () => {
     optimizeImages();
     optimizeFontLoading();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      requestIdleCallback(runDeferredLayoutWork);
+    });
+  } else {
+    requestIdleCallback(runDeferredLayoutWork);
   }
 
   // Defer non-critical resources after initial load

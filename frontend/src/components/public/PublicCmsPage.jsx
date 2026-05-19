@@ -41,12 +41,13 @@ export function PublicCmsEmpty({ pageLabel }) {
   );
 }
 
-export function usePublicPage(slug) {
+export function usePublicPage(slug, options = {}) {
   return useQuery({
     queryKey: ['page', slug],
     queryFn: () => publicAPI.getPage(slug),
     retry: false,
     staleTime: 10 * 60 * 1000,
+    ...options,
   });
 }
 
