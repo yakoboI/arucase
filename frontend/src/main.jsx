@@ -1,3 +1,6 @@
+import { installBenignConsoleFilters } from './utils/benignConsole';
+installBenignConsoleFilters();
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -109,7 +112,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Bubble phase — after logger capture; still preventDefault for remaining noise in dev
+// Capture phase — suppress extension/Vercel toolbar rejections before Chrome logs them
 window.addEventListener('unhandledrejection', (event) => {
   if (event.defaultPrevented) return;
   if (isStaleChunkLoadFailure(event.reason)) {
@@ -127,7 +130,7 @@ window.addEventListener('unhandledrejection', (event) => {
     console.warn('Unhandled promise rejection:', event.reason);
   }
   event.preventDefault();
-});
+}, true);
 
 // Failed lazy route scripts (e.g. old AdminLayout-*.js after deploy)
 window.addEventListener(

@@ -41,14 +41,15 @@ export function isBenignUnhandledRejection(reason) {
     typeof reason === 'object' &&
     !(reason instanceof Error) &&
     !reason.response &&
-    reason.httpError === false &&
+    !reason.request &&
+    !reason.config?.url &&
     (Number(reason.code) === 403 || reason.code === '403')
   ) {
     return true;
   }
 
   if (reason?.code === 403 || String(reason?.code) === '403') {
-    return true;
+    if (!reason.response && !reason.request) return true;
   }
 
   if (
