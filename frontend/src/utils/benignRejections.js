@@ -35,10 +35,14 @@ export function isBenignUnhandledRejection(reason) {
     return true;
   }
 
-  // Vercel Live / feedback.js (CSP-blocked on production)
+  // Browser extensions + Vercel Live toolbar: { code: 403, httpError: false, httpStatus: 200, ... }
   if (
-    reason?.httpError === false &&
-    (Number(reason?.code) === 403 || reason?.code === '403')
+    reason &&
+    typeof reason === 'object' &&
+    !(reason instanceof Error) &&
+    !reason.response &&
+    reason.httpError === false &&
+    (Number(reason.code) === 403 || reason.code === '403')
   ) {
     return true;
   }
@@ -80,6 +84,7 @@ function isPlainToolbarRejection(reason) {
     'data',
     'httpError',
     'httpStatus',
+    'httpStatusText',
     'message',
     'name',
     'reqInfo',
