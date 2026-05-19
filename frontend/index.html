@@ -269,21 +269,6 @@
       }
     }
     </script>
-    <script>
-      (function () {
-        function benign(r) {
-          if (r == null) return true;
-          if (r && typeof r === 'object' && !r.response && !r.request && (r.code === 403 || r.code === '403')) return true;
-          return false;
-        }
-        window.addEventListener('unhandledrejection', function (e) {
-          if (benign(e.reason)) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-          }
-        }, true);
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

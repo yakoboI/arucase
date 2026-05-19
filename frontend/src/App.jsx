@@ -250,7 +250,7 @@ function App() {
             <Route
               path="/admin/users"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredAdmin>
                   <AdminUsers />
                 </ProtectedRoute>
               }
@@ -339,7 +339,7 @@ function App() {
             <Route
               path="/admin/staff-profiles"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredAdmin>
                   <StaffProfiles />
                 </ProtectedRoute>
               }
@@ -2140,7 +2140,7 @@ function App() {
 
             {/* Administration Routes */}
             {/* User Management */}
-            <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requiredAdmin><Users /></ProtectedRoute>} />
             
 
             {/* Student Promotion */}

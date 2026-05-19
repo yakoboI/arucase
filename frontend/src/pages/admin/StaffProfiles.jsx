@@ -19,7 +19,7 @@ const emptyForm = {
 };
 
 export default function StaffProfiles() {
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, isAdminLike } = useAuth();
   const queryClient = useQueryClient();
   const fileRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -48,8 +48,10 @@ export default function StaffProfiles() {
       const res = await adminAPI.getUsers();
       return res.data?.users || [];
     },
-    enabled: !authLoading,
+    enabled: !authLoading && isAdminLike(),
     staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const linkableUsers = useMemo(

@@ -5,6 +5,7 @@
  */
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
@@ -111,6 +112,7 @@ const defaultPermissions = () => ({
 });
 
 const Users = () => {
+  const { isAdminLike } = useAuth();
   const queryClient = useQueryClient();
   const modalContentRef = useRef(null);
   const modalOverlayRef = useRef(null);
@@ -151,6 +153,9 @@ const Users = () => {
       const res = await adminAPI.getUsers();
       return res.data.users || [];
     },
+    enabled: isAdminLike(),
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch subjects for permission management
