@@ -51,15 +51,33 @@ export function useOnlineStaffCount() {
 
     socket?.on('presence:online-count', onPresence);
 
+    let intervalId = null;
+    let stopped = false;
+
+    const stopHeartbeat = () => {
+      stopped = true;
+      if (intervalId != null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
     const sendHeartbeat = async () => {
+      if (stopped) return;
       try {
         const res = await api.post('/auth/presence/heartbeat');
-        if (res?.status === 401 || res?.status === 403) return;
+        if (res?.status === 401 || res?.status === 403) {
+          stopHeartbeat();
+          return;
+        }
         applyCount(res.data?.count);
       } catch {
         try {
           const res = await api.get('/auth/presence/online-count');
-          if (res?.status === 401 || res?.status === 403) return;
+          if (res?.status === 401 || res?.status === 403) {
+            stopHeartbeat();
+            return;
+          }
           applyCount(res.data?.count);
         } catch {
           /* offline or unauthenticated — keep last count */
@@ -68,11 +86,11 @@ export function useOnlineStaffCount() {
     };
 
     sendHeartbeat();
-    const intervalId = setInterval(sendHeartbeat, HEARTBEAT_MS);
+    intervalId = setInterval(sendHeartbeat, HEARTBEAT_MS);
 
     return () => {
       socket?.off('presence:online-count', onPresence);
-      clearInterval(intervalId);
+      stopHeartbeat();
     };
   }, [socket, isAuthenticated, location.pathname]);
 

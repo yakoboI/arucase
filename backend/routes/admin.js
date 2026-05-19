@@ -2552,34 +2552,73 @@ router.post('/faqs/bulk', async (req, res) => {
 
 // ========== DEPARTMENT CONTACTS ==========
 
-async function ensureDepartmentContactColumns() {
+async function ensureWebsiteSettingsTable() {
   await query(`
-    ALTER TABLE website_settings
-    ADD COLUMN IF NOT EXISTS admissions_email VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS academics_email VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS bursar_email VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS alumni_email VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS parents_email VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS footer_social_label VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS footer_copyright TEXT,
-    ADD COLUMN IF NOT EXISTS contact_info_heading VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS office_hours_heading VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS department_contacts_heading VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS map_heading VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS social_heading VARCHAR(255)
+    CREATE TABLE IF NOT EXISTS website_settings (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      school_name VARCHAR(255),
+      tagline VARCHAR(255),
+      banner_text TEXT,
+      contact_address TEXT,
+      contact_phone VARCHAR(50),
+      contact_email VARCHAR(255),
+      contact_whatsapp VARCHAR(50),
+      social_youtube VARCHAR(255),
+      social_facebook VARCHAR(255),
+      social_instagram VARCHAR(255),
+      social_twitter VARCHAR(255),
+      social_location TEXT,
+      office_weekdays VARCHAR(255),
+      office_saturday VARCHAR(255),
+      office_sunday VARCHAR(255),
+      office_holidays VARCHAR(255),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
   `);
+  await query(`
+    INSERT INTO website_settings (id)
+    VALUES (1)
+    ON CONFLICT (id) DO NOTHING
+  `);
+}
 
-  await query(`
-    UPDATE website_settings
-    SET footer_copyright = 'Arusha Catholic Seminary'
-    WHERE id = 1
-      AND (
-        footer_copyright IS NULL
-        OR TRIM(footer_copyright) = ''
-        OR footer_copyright ~* '^jimbo[[:space:]]+kuu'
-        OR footer_copyright ~* '^seminari[[:space:]]+ya[[:space:]]+kikatoliki[[:space:]]+arusha'
-      )
-  `);
+const DEPARTMENT_CONTACT_EXTRA_COLUMNS = [
+  ['admissions_email', 'VARCHAR(255)'],
+  ['academics_email', 'VARCHAR(255)'],
+  ['bursar_email', 'VARCHAR(255)'],
+  ['alumni_email', 'VARCHAR(255)'],
+  ['parents_email', 'VARCHAR(255)'],
+  ['footer_social_label', 'VARCHAR(255)'],
+  ['footer_copyright', 'TEXT'],
+  ['contact_info_heading', 'VARCHAR(255)'],
+  ['office_hours_heading', 'VARCHAR(255)'],
+  ['department_contacts_heading', 'VARCHAR(255)'],
+  ['map_heading', 'VARCHAR(255)'],
+  ['social_heading', 'VARCHAR(255)'],
+];
+
+async function ensureDepartmentContactColumns() {
+  await ensureWebsiteSettingsTable();
+  for (const [name, type] of DEPARTMENT_CONTACT_EXTRA_COLUMNS) {
+    await query(
+      `ALTER TABLE website_settings ADD COLUMN IF NOT EXISTS ${name} ${type}`
+    );
+  }
+  try {
+    await query(`
+      UPDATE website_settings
+      SET footer_copyright = 'Arusha Catholic Seminary'
+      WHERE id = 1
+        AND (
+          footer_copyright IS NULL
+          OR TRIM(footer_copyright) = ''
+          OR footer_copyright ~* '^jimbo[[:space:]]+kuu'
+          OR footer_copyright ~* '^seminari[[:space:]]+ya[[:space:]]+kikatoliki[[:space:]]+arusha'
+        )
+    `);
+  } catch (footerErr) {
+    console.warn('[department-contacts] footer_copyright cleanup skipped:', footerErr.message);
+  }
 }
 
 const SITE_CONTACT_FIELDS = [

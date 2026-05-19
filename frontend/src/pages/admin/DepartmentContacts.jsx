@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
+import { handleAdminSessionError } from '../../utils/adminSession';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { adminAPI } from '../../services/admin';
 import { EMPTY_SITE_CONTACT_FORM, SITE_CONTACT_FIELD_GROUPS } from './departmentContactFields';
@@ -35,13 +36,23 @@ const DepartmentContacts = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const { data: contactsData, isLoading } = useQuery({
+  const { data: contactsData, isLoading, error: contactsError } = useQuery({
     queryKey: ['admin-department-contacts'],
     queryFn: async () => {
       const res = await adminAPI.getDepartmentContacts();
       return res.data.contacts || {};
     },
+    retry: (failureCount, error) => error?.response?.status !== 401 && failureCount < 1,
   });
+
+  useEffect(() => {
+    if (!contactsError) return;
+    if (contactsError.response?.status === 401) {
+      handleAdminSessionError(contactsError, 'Failed to load contacts');
+    } else {
+      toast.error(contactsError.response?.data?.message || 'Failed to load contacts');
+    }
+  }, [contactsError]);
 
   useEffect(() => {
     if (!contactsData) return;
@@ -56,7 +67,7 @@ const DepartmentContacts = () => {
       toast.success('Site and department contacts saved.');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to save contacts');
+      if (!handleAdminSessionError(error, 'Failed to save contacts')) return;
     },
   });
 

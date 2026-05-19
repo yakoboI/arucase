@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { handleAdminSessionError } from '../../utils/adminSession';
 import DOMPurify from 'dompurify';
 import MDEditor from '@uiw/react-md-editor';
 import AdminLayout from '../../components/layout/AdminLayout';
@@ -320,13 +321,23 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
   ];
 
   // Fetch all public pages
-  const { data: pages = [], isLoading } = useQuery({
+  const { data: pages = [], isLoading, error: pagesError } = useQuery({
     queryKey: ['admin-public-pages'],
     queryFn: async () => {
       const res = await adminAPI.getPublicPages();
       return res.data.pages || [];
     },
+    retry: (failureCount, error) => error?.response?.status !== 401 && failureCount < 1,
   });
+
+  useEffect(() => {
+    if (!pagesError) return;
+    if (pagesError.response?.status === 401) {
+      handleAdminSessionError(pagesError, 'Imeshindikana kupakia kurasa');
+    } else {
+      toast.error(pagesError.response?.data?.message || 'Imeshindikana kupakia kurasa');
+    }
+  }, [pagesError]);
 
   // Save page mutation
   const saveMutation = useMutation({
@@ -340,7 +351,7 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
       resetForm();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Imeshindikana kuhifadhi ukurasa');
+      if (!handleAdminSessionError(error, 'Imeshindikana kuhifadhi ukurasa')) return;
     },
   });
 
@@ -352,7 +363,7 @@ Kutuma ombi, wasiliana kupitia **arucase@gmail.com**.
       toast.success('Maudhui ya ukurasa yamefutwa. Ukurasa wa umma utaonyesha hali tupu hadi uchapishe tena.');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Imeshindikana kufuta maudhui ya ukurasa');
+      if (!handleAdminSessionError(error, 'Imeshindikana kufuta maudhui ya ukurasa')) return;
     },
   });
 
