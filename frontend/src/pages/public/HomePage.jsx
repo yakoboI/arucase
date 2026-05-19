@@ -47,6 +47,7 @@ const HomePage = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState(null);
   const [cmsEnabled, setCmsEnabled] = useState(false);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
 
   useEffect(() => {
     const loadFonts = () => {
@@ -56,20 +57,23 @@ const HomePage = () => {
       import('@fontsource/source-sans-3/600.css');
       import('@fontsource/source-sans-3/700.css');
     };
-    if (typeof requestIdleCallback !== 'undefined') {
-      const fontId = requestIdleCallback(loadFonts, { timeout: 5000 });
-      const cmsId = requestIdleCallback(() => setCmsEnabled(true), { timeout: 6000 });
-      return () => {
-        cancelIdleCallback(fontId);
-        cancelIdleCallback(cmsId);
-      };
+    const scheduleFonts = () => setTimeout(loadFonts, 3000);
+    if (document.readyState === 'complete') {
+      const fontTimer = scheduleFonts();
+      return () => clearTimeout(fontTimer);
     }
-    const fontTimer = setTimeout(loadFonts, 1500);
-    const cmsTimer = setTimeout(() => setCmsEnabled(true), 2500);
-    return () => {
-      clearTimeout(fontTimer);
-      clearTimeout(cmsTimer);
-    };
+    window.addEventListener('load', scheduleFonts, { once: true });
+    return () => window.removeEventListener('load', scheduleFonts);
+  }, []);
+
+  useEffect(() => {
+    const enableCms = () => setCmsEnabled(true);
+    if (typeof requestIdleCallback !== 'undefined') {
+      const cmsId = requestIdleCallback(enableCms, { timeout: 8000 });
+      return () => cancelIdleCallback(cmsId);
+    }
+    const cmsTimer = setTimeout(enableCms, 4000);
+    return () => clearTimeout(cmsTimer);
   }, []);
 
   const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
@@ -168,15 +172,15 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    if (!carouselPhotos.length) return;
+    if (!carouselPhotos.length || !heroImageLoaded) return;
     const interval = setInterval(() => {
       setCarouselIndex((prev) => {
         const maxIndex = carouselPhotos.length - 1;
         return prev >= maxIndex ? 0 : prev + 1;
       });
-    }, 4000);
+    }, 5000);
     return () => clearInterval(interval);
-  }, [carouselPhotos.length]);
+  }, [carouselPhotos.length, heroImageLoaded]);
 
   useEffect(() => {
     if (!selectedAdmin && !selectedGalleryPhoto) return;
@@ -206,9 +210,10 @@ const HomePage = () => {
                   {carouselPhotos.map((photo, index) => {
                     const { src: imageUrl, srcSet } = getHeroSources(photo.path);
                     const isActive = index === carouselIndex;
-                    const shouldLoad = isActive || Math.abs(index - carouselIndex) <= 1;
+                    const shouldLoad =
+                      index === 0 ||
+                      (heroImageLoaded && (isActive || Math.abs(index - carouselIndex) <= 1));
                     const slideAlt = photo.caption || (index === 0 ? '' : `Picha ${index + 1}`);
-                    const isLcpCandidate = index === 0;
                     return (
                       <div
                         key={photo.id || index}
@@ -223,10 +228,10 @@ const HomePage = () => {
                               alt={slideAlt}
                               width={960}
                               height={540}
-                              sizes="(max-width: 768px) 100vw, 960px"
-                              loading={isLcpCandidate ? 'eager' : 'lazy'}
-                              fetchPriority={isLcpCandidate ? 'high' : 'auto'}
-                              decoding="async"
+                              sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, 960px"
+                              loading={isActive ? 'eager' : 'lazy'}
+                              fetchPriority={isActive ? 'high' : 'low'}
+                              decoding={index === 0 ? 'sync' : 'async'}
                               onError={() => handleImageError(imageUrl)}
                               onLoad={() => {
                                 setFailedImages((prev) => {
@@ -234,6 +239,7 @@ const HomePage = () => {
                                   next.delete(imageUrl);
                                   return next;
                                 });
+                                if (index === 0) setHeroImageLoaded(true);
                               }}
                             />
                             <div className="carousel-overlay" aria-hidden />

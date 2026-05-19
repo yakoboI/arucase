@@ -51,9 +51,19 @@ export function heroImageUrl(url) {
   return optimizeCloudinaryUrl(url, { width: 960, crop: 'limit', quality: 'auto:eco' });
 }
 
-/** Smaller hero for mobile LCP (~412px viewport) */
+/** Smaller hero for mobile LCP (~412px viewport, 2x DPR ≈ 480px) */
 export function heroImageUrlMobile(url) {
-  return optimizeCloudinaryUrl(url, { width: 640, crop: 'limit', quality: 'auto:eco' });
+  return optimizeCloudinaryUrl(url, {
+    width: 480,
+    crop: 'limit',
+    quality: 'auto:low',
+    format: 'auto',
+  });
+}
+
+/** Mid size for tablets */
+export function heroImageUrlTablet(url) {
+  return optimizeCloudinaryUrl(url, { width: 720, crop: 'limit', quality: 'auto:eco', format: 'auto' });
 }
 
 /** Responsive src/srcSet for hero carousel LCP */
@@ -61,11 +71,11 @@ export function heroImageSources(url) {
   const normalized = normalizeUrl(url);
   if (!normalized) return { src: '', srcSet: '' };
   const mobile = heroImageUrlMobile(normalized);
+  const tablet = heroImageUrlTablet(normalized);
   const desktop = heroImageUrl(normalized);
-  if (mobile === desktop) return { src: desktop, srcSet: '' };
   return {
     src: mobile,
-    srcSet: `${mobile} 640w, ${desktop} 960w`,
+    srcSet: `${mobile} 480w, ${tablet} 720w, ${desktop} 960w`,
   };
 }
 

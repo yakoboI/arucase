@@ -65,25 +65,12 @@ export const requestIdleCallback = (callback) => {
 /**
  * Optimize font loading
  */
-export const optimizeFontLoading = () => {
-  // Use font-display: swap for better perceived performance
-  const style = document.createElement('style');
-  style.textContent = `
-    @font-face {
-      font-family: 'FontAwesome';
-      font-display: swap;
-    }
-  `;
-  document.head.appendChild(style);
-};
-
 /**
  * Initialize performance optimizations
  */
 export const initPerformanceOptimizations = () => {
   const runDeferredLayoutWork = () => {
     optimizeImages();
-    optimizeFontLoading();
   };
 
   if (document.readyState === 'loading') {

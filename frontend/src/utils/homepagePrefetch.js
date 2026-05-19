@@ -35,7 +35,7 @@ export async function prefetchHomepageData(queryClient) {
   link.fetchPriority = 'high';
   if (srcSet) {
     link.setAttribute('imagesrcset', srcSet);
-    link.setAttribute('imagesizes', '(max-width: 768px) 100vw, 960px');
+    link.setAttribute('imagesizes', '(max-width: 480px) 100vw, (max-width: 768px) 100vw, 960px');
   }
   document.head.appendChild(link);
 }
