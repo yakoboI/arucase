@@ -6,10 +6,8 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './styles/index.css';
-import './styles/adminTheme.css';
-import '@fortawesome/fontawesome-free/css/fontawesome.css';
-import '@fortawesome/fontawesome-free/css/solid.css';
-// Brands + regular load after first paint (homepage header uses solid only)
+// adminTheme.css loads with AdminLayout (admin routes only)
+// Font Awesome loads after first paint (see loadIconFonts below)
 // Initialize utilities
 import './utils/debugAuth.js'; // Import debug utility to make it available globally
 import './utils/logHelper'; // Initialize log helper (makes window.logHelper available)
@@ -170,7 +168,14 @@ window.addEventListener('error', (event) => {
 import { initPerformanceOptimizations } from './utils/performanceUtils';
 initPerformanceOptimizations();
 
-// Defer non-critical icon fonts + route chunks (skip on homepage — prefetch hurt mobile LCP)
+function loadIconFonts() {
+  import('@fortawesome/fontawesome-free/css/fontawesome.css').catch(() => {});
+  import('@fortawesome/fontawesome-free/css/solid.css').catch(() => {});
+  import('@fortawesome/fontawesome-free/css/regular.css').catch(() => {});
+  import('@fortawesome/fontawesome-free/css/brands.css').catch(() => {});
+}
+
+// Defer non-critical route chunks (skip on homepage — prefetch hurt mobile LCP)
 function deferNonCriticalAssets() {
   const path = window.location.pathname;
   const isAuthScreen = path === '/login' || path === '/student-login';
@@ -179,8 +184,7 @@ function deferNonCriticalAssets() {
     import('./pages/public/StudentLogin').catch(() => {});
     import('./pages/public/Gallery').catch(() => {});
   }
-  import('@fortawesome/fontawesome-free/css/regular.css').catch(() => {});
-  import('@fortawesome/fontawesome-free/css/brands.css').catch(() => {});
+  loadIconFonts();
 }
 
 if (typeof window !== 'undefined') {
@@ -206,6 +210,11 @@ sessionStorage.removeItem(CHUNK_RELOAD_KEY);
 if (typeof window !== 'undefined' && isHomeRoute()) {
   prefetchHomePageChunks();
   prefetchHomepageData(queryClient).catch(() => {});
+} else if (typeof window !== 'undefined') {
+  // Non-home public/admin routes: load icons soon after first paint
+  requestAnimationFrame(() => {
+    requestAnimationFrame(loadIconFonts);
+  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

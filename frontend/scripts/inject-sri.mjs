@@ -45,7 +45,7 @@ html = html.replace(
 html = html.replace(
   /<link\b[^>]*\bhref="(\/[^"]+)"[^>]*>/gi,
   (tag, href) => {
-    if (!/\brel=["'](?:stylesheet|modulepreload)["']/i.test(tag)) return tag;
+    if (!/\brel=["'](?:stylesheet|modulepreload|preload)["']/i.test(tag)) return tag;
     return withIntegrity(tag, href);
   }
 );

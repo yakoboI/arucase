@@ -2,7 +2,7 @@
  * Public chatbot – viewport-fixed on all public routes, draggable to any corner.
  * Portaled to document.body so page scroll/transform never hides it.
  */
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import DOMPurify from 'dompurify';
 import { publicAPI } from '../../services/public';
@@ -58,8 +58,10 @@ export default function Chatbot() {
     setPanelPos(pos);
   }, [anchor.corner, fabPos]);
 
-  useLayoutEffect(() => {
-    updatePanelPos();
+  useEffect(() => {
+    if (!open) return;
+    const id = requestAnimationFrame(() => updatePanelPos());
+    return () => cancelAnimationFrame(id);
   }, [updatePanelPos, open]);
 
   useEffect(() => {
@@ -71,15 +73,13 @@ export default function Chatbot() {
     return () => window.removeEventListener('resize', onResize);
   }, [anchor.corner]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-  };
-
   useEffect(() => {
-    if (open) {
-      scrollToBottom();
+    if (!open) return;
+    const id = requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
       inputRef.current?.focus();
-    }
+    });
+    return () => cancelAnimationFrame(id);
   }, [open, messages]);
 
   const sendText = useCallback(
@@ -173,14 +173,13 @@ export default function Chatbot() {
     if (e.button !== 0 && e.button !== undefined) return;
     if (e.target.closest('.chatbot-close')) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    const panelEl = panelRef.current;
     panelDragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       left: panelPos.left,
       top: panelPos.top,
-      panelW: panelEl?.offsetWidth || PANEL_W,
-      panelH: panelEl?.offsetHeight || PANEL_H_EST,
+      panelW: PANEL_W,
+      panelH: PANEL_H_EST,
     };
     setPanelDragging(true);
   };
