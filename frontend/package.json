@@ -42,7 +42,7 @@
   "scripts": {
     "dev": "vite",
     "dev:force": "vite --force",
-    "build": "vite build",
+    "build": "vite build && node scripts/inject-sri.mjs && node scripts/patch-fa-font-display.mjs",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx",
     "verify:cms": "node scripts/verify-public-cms-markdown.mjs"

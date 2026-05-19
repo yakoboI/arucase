@@ -52,67 +52,10 @@ function devProxyTarget() {
 
 const apiProxyTarget = devProxyTarget();
 
-/** SHA-384 SRI hashes on same-origin script/link tags in dist/index.html (Mozilla Observatory bonus). */
-function injectSubresourceIntegrity() {
-  const distDir = path.resolve(__dirname, 'dist');
-
-  const hashFile = (urlPath) => {
-    const filePath = path.join(distDir, urlPath.replace(/^\//, '').split('?')[0]);
-    if (!fs.existsSync(filePath)) return null;
-    const digest = crypto.createHash('sha384').update(fs.readFileSync(filePath)).digest('base64');
-    return `sha384-${digest}`;
-  };
-
-  const withIntegrity = (tag, urlPath) => {
-    if (tag.includes('integrity=')) return tag;
-    const integrity = hashFile(urlPath);
-    if (!integrity) return tag;
-    let next = tag;
-    if (!/\bcrossorigin\b/i.test(next)) {
-      next = next.replace(/\s*\/?>$/, ' crossorigin="anonymous"$&');
-    }
-    return next.replace(/\s*\/?>$/, ` integrity="${integrity}"$&`);
-  };
-
-  return {
-    name: 'inject-subresource-integrity',
-    apply: 'build',
-    closeBundle() {
-      const indexPath = path.join(distDir, 'index.html');
-      if (!fs.existsSync(indexPath)) return;
-
-      let html = fs.readFileSync(indexPath, 'utf8');
-
-      html = html.replace(
-        /<script\b[^>]*\bsrc="(\/[^"]+)"[^>]*>/gi,
-        (tag, src) => withIntegrity(tag, src)
-      );
-      html = html.replace(
-        /<link\b[^>]*\bhref="(\/[^"]+)"[^>]*>/gi,
-        (tag, href) => {
-          if (!/\brel=["'](?:stylesheet|modulepreload)["']/i.test(tag)) return tag;
-          return withIntegrity(tag, href);
-        }
-      );
-
-      fs.writeFileSync(indexPath, html, 'utf8');
-    },
-  };
-}
-
 export default defineConfig({
   plugins: [
     react(),
-    {
-      name: 'fontawesome-font-display-swap',
-      transform(code, id) {
-        if (id.includes('@fortawesome') && id.endsWith('.css')) {
-          return code.replace(/font-display:\s*block/gi, 'font-display: swap');
-        }
-        return code;
-      },
-    },
-    injectSubresourceIntegrity(),
+    // font-display:swap for FA runs post-build (see scripts/patch-fa-font-display.mjs) — Vite transform broke source maps
     {
       name: 'seo-site-verification-and-bing-xml',
       transformIndexHtml(html) {
@@ -175,23 +118,14 @@ export default defineConfig({
     outDir: 'dist',
     // Avoid esbuild CSS minify "Unexpected }" false positive on valid CSS
     cssMinify: false,
-    // Disable sourcemaps in production for smaller bundle size (3G-4G optimization)
-    sourcemap: process.env.NODE_ENV === 'development',
-    // Enable minification and compression
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug'],
-      },
-    },
-    // Single vendor chunk is ~2.2 MB; raise limit so we don't warn (splitting caused circular deps)
+    // Valid .map files for Lighthouse (requires minify:false; vendor manualChunk also breaks maps)
+    sourcemap: true,
+    minify: false,
     chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
-        // Single vendor chunk avoids circular chunk dependency warnings
-        manualChunks: (id) => (id.includes('node_modules') ? 'vendor' : undefined),
+        sourcemapExcludeSources: false,
+        // Single vendor manualChunk produced empty .map files; default chunking keeps valid maps
         // Optimize chunk file names for better caching
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',
