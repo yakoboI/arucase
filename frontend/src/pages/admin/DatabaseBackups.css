@@ -1,0 +1,346 @@
+/* Database Backups — aligned with admin excel-card / flat frame theme */
+
+.database-backups-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.db-backups-card {
+  border: 1px solid #c9cdd4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.db-backups-card .excel-card-header {
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.db-backups-card .admin-page-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.db-backups-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.database-backups-page .admin-page-description {
+  margin: 0;
+  max-width: 52rem;
+  color: #4b5563;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+/* —— Summary stat cards —— */
+.db-backups-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.db-backups-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left-width: 4px;
+  box-sizing: border-box;
+}
+
+.db-backups-stat--schedule {
+  border-left-color: #3b82f6;
+}
+
+.db-backups-stat--retention {
+  border-left-color: #6366f1;
+}
+
+.db-backups-stat--count {
+  border-left-color: #01a72b;
+}
+
+.db-backups-stat-icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 1.1rem;
+}
+
+.db-backups-stat--schedule .db-backups-stat-icon {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.db-backups-stat--retention .db-backups-stat-icon {
+  color: #4338ca;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.db-backups-stat--count .db-backups-stat-icon {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.db-backups-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.db-backups-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.db-backups-stat-content strong {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.db-backups-stat-hint {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+/* —— Backups list panel —— */
+.db-backups-panel {
+  border: 1px solid #d1d5db;
+  background: #fafafa;
+}
+
+.db-backups-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  padding: 0.875rem 1.125rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.db-backups-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
+}
+
+.db-backups-panel-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.db-backups-panel-title i {
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.db-backups-marked-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.db-backups-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.db-backups-table-frame {
+  padding: 0.75rem 1rem 1rem;
+  background: #ffffff;
+  min-height: 8rem;
+}
+
+.db-backups-table-frame .data-table-container {
+  margin: 0;
+}
+
+.db-backups-table-frame .data-table-header {
+  display: none;
+}
+
+/* Table cell styling */
+.db-backups-filename {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  font-size: 0.8125rem;
+  color: #1f2937;
+  word-break: break-all;
+}
+
+.db-backups-filename i {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.db-backups-size,
+.db-backups-date {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.db-backups-row-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Mark button — outline style on white */
+.db-backups-btn-mark {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.db-backups-btn-mark:hover:not(:disabled) {
+  background: #f9fafb !important;
+  border-color: #9ca3af !important;
+}
+
+.db-backups-btn-mark.is-marked {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+}
+
+/* —— States —— */
+.db-backups-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.db-backups-error i {
+  font-size: 1.25rem;
+  margin-top: 0.1rem;
+}
+
+.db-backups-error p {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.db-backups-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.db-backups-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  border: 1px dashed #d1d5db;
+  background: #f9fafb;
+}
+
+.db-backups-empty > i {
+  font-size: 2.5rem;
+  color: #9ca3af;
+  margin-bottom: 0.75rem;
+}
+
+.db-backups-empty h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.125rem;
+  color: #111827;
+}
+
+.db-backups-empty p {
+  margin: 0 0 1.25rem;
+  max-width: 22rem;
+  color: #6b7280;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* —— Responsive —— */
+@media (max-width: 900px) {
+  .db-backups-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .db-backups-body {
+    padding: 1rem;
+  }
+
+  .db-backups-card .excel-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .db-backups-card .header-actions {
+    width: 100%;
+  }
+
+  .db-backups-card .header-actions .excel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .db-backups-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .db-backups-panel-actions .excel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .db-backups-row-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .db-backups-row-actions .excel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

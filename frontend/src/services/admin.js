@@ -64,6 +64,16 @@ export const adminAPI = {
   // Delete user
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
 
+  // ========== DATABASE BACKUPS ==========
+  getDatabaseBackups: () => api.get('/admin/database-backups'),
+  runDatabaseBackup: () => api.post('/admin/database-backups/run'),
+  deleteDatabaseBackup: (filename) => api.delete(`/admin/database-backups/${encodeURIComponent(filename)}`),
+  downloadDatabaseBackup: (filename) =>
+    api.get('/admin/database-backups/download', {
+      params: { filename },
+      responseType: 'blob',
+    }),
+
   // Get subjects list
   getSubjectsList: () => api.get('/admin/subjects-list'),
 

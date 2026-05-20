@@ -185,6 +185,7 @@ const AdminSidebar = () => {
         { path: '/admin/administrators', label: 'Admin', icon: 'fa-user-shield' },
         { path: '/admin/users', label: 'Users', icon: 'fa-users-cog' },
         { path: '/admin/promotion', label: 'Promotion', icon: 'fa-graduation-cap' },
+        { path: '/admin/database-backups', label: 'Database Backup', icon: 'fa-database' },
       ]
     },
     {

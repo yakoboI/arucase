@@ -2461,55 +2461,65 @@ router.post('/:admNo/scores', async (req, res) => {
     );
 
     // DTA Monitor: Log score change to audit table
+    const monthStr = String(month).trim();
+    const changedBy = req.user?.username || 'system';
+    const scoresAreDifferent = (a, b) => {
+      if (a == null && b == null) return false;
+      if (a == null || b == null) return true;
+      return Number(a) !== Number(b);
+    };
+
     const logScoreChange = async (client) => {
       if (!isModification) {
-        // First entry - create audit record with initial score
+        // First entry - baseline audit row (change_count stays 0 until a real edit)
         await client.query(
           `INSERT INTO score_change_audit 
            (student_adm_no, student_name, level, stream, year, month, subject_code, subject_name, initial_score, current_score, change_count, change_history, last_changed_by, last_changed_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, '[]'::jsonb, $11, NOW())`,
-          [admNo, studentName, level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, subjectName, scoreNum, scoreNum, req.user?.username || 'system']
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, '[]'::jsonb, $11, NOW())
+           ON CONFLICT (student_adm_no, level, stream, year, month, subject_code)
+           DO UPDATE SET
+             student_name = EXCLUDED.student_name,
+             subject_name = EXCLUDED.subject_name,
+             current_score = EXCLUDED.current_score,
+             last_changed_by = EXCLUDED.last_changed_by,
+             last_changed_at = NOW(),
+             updated_at = NOW()`,
+          [admNo, studentName, level, actualStream, yearNum, monthStr, scoreSubjectCode, subjectName, scoreNum, scoreNum, changedBy]
         );
-      } else if (oldScore !== scoreNum) {
-        // Score changed - update audit record
-        const auditResult = await client.query(
-          `SELECT * FROM score_change_audit 
-           WHERE student_adm_no = $1 AND level = $2 AND stream = $3 AND year = $4 AND month = $5 AND subject_code = $6`,
-          [admNo, level, actualStream, yearNum, String(month).trim(), scoreSubjectCode]
+        return;
+      }
+
+      if (!scoresAreDifferent(oldScore, scoreNum)) {
+        return;
+      }
+
+      const historyEntry = JSON.stringify([{
+        timestamp: new Date().toISOString(),
+        username: changedBy,
+        old_score: oldScore != null ? Number(oldScore) : null,
+        new_score: scoreNum
+      }]);
+
+      const updateResult = await client.query(
+        `UPDATE score_change_audit 
+         SET current_score = $1,
+             change_count = change_count + 1,
+             change_history = COALESCE(change_history, '[]'::jsonb) || $2::jsonb,
+             last_changed_by = $3,
+             last_changed_at = NOW(),
+             updated_at = NOW()
+         WHERE student_adm_no = $4 AND level = $5 AND stream = $6 AND year = $7 AND month = $8 AND subject_code = $9`,
+        [scoreNum, historyEntry, changedBy, admNo, level, actualStream, yearNum, monthStr, scoreSubjectCode]
+      );
+
+      if (updateResult.rowCount === 0) {
+        // Score existed before DTA tracking — create audit with this change
+        await client.query(
+          `INSERT INTO score_change_audit 
+           (student_adm_no, student_name, level, stream, year, month, subject_code, subject_name, initial_score, current_score, change_count, change_history, last_changed_by, last_changed_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11::jsonb, $12, NOW())`,
+          [admNo, studentName, level, actualStream, yearNum, monthStr, scoreSubjectCode, subjectName, oldScore != null ? Number(oldScore) : null, scoreNum, historyEntry, changedBy]
         );
-
-        if (auditResult.rows.length > 0) {
-          // Update existing audit record
-          const existingAudit = auditResult.rows[0];
-          const changeHistory = existingAudit.change_history || [];
-          changeHistory.push({
-            timestamp: new Date().toISOString(),
-            username: req.user?.username || 'system',
-            old_score: oldScore,
-            new_score: scoreNum
-          });
-
-          await client.query(
-            `UPDATE score_change_audit 
-             SET current_score = $1, change_count = change_count + 1, change_history = $2, 
-                 last_changed_by = $3, last_changed_at = NOW(), updated_at = NOW()
-             WHERE id = $4`,
-            [scoreNum, JSON.stringify(changeHistory), req.user?.username || 'system', existingAudit.id]
-          );
-        } else {
-          // Audit record doesn't exist (shouldn't happen, but handle it)
-          await client.query(
-            `INSERT INTO score_change_audit 
-             (student_adm_no, student_name, level, stream, year, month, subject_code, subject_name, initial_score, current_score, change_count, change_history, last_changed_by, last_changed_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11::jsonb, $12, NOW())`,
-            [admNo, studentName, level, actualStream, yearNum, String(month).trim(), scoreSubjectCode, subjectName, oldScore, scoreNum, JSON.stringify([{
-              timestamp: new Date().toISOString(),
-              username: req.user?.username || 'system',
-              old_score: oldScore,
-              new_score: scoreNum
-            }]), req.user?.username || 'system']
-          );
-        }
       }
     };
 

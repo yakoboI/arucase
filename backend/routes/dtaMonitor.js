@@ -38,7 +38,10 @@ router.get('/changes', requireAuth, async (req, res) => {
         subject_name,
         initial_score,
         current_score,
-        change_count,
+        GREATEST(
+          change_count,
+          jsonb_array_length(COALESCE(change_history, '[]'::jsonb))
+        ) AS change_count,
         change_history,
         last_changed_by,
         last_changed_at,
@@ -180,7 +183,12 @@ router.get('/changes/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
 
     const result = await query(
-      `SELECT * FROM score_change_audit WHERE id = $1`,
+      `SELECT *,
+        GREATEST(
+          change_count,
+          jsonb_array_length(COALESCE(change_history, '[]'::jsonb))
+        ) AS change_count
+       FROM score_change_audit WHERE id = $1`,
       [id]
     );
 

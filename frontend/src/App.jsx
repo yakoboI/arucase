@@ -49,6 +49,7 @@ const AdminDepartmentContacts = lazy(() => import('./pages/admin/DepartmentConta
 const AIMatters = lazy(() => import('./pages/admin/AIMatters'));
 const AdmissionApplications = lazy(() => import('./pages/admin/AdmissionApplications'));
 const StaffProfiles = lazy(() => import('./pages/admin/StaffProfiles'));
+const DatabaseBackups = lazy(() => import('./pages/admin/DatabaseBackups'));
 
 // Student Management (lazy)
 const StudentRegistration = lazy(() => import('./pages/students/StudentRegistration'));
@@ -340,6 +341,14 @@ function App() {
               element={
                 <ProtectedRoute requiredAdmin>
                   <StaffProfiles />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/database-backups"
+              element={
+                <ProtectedRoute requiredAdmin>
+                  <DatabaseBackups />
                 </ProtectedRoute>
               }
             />

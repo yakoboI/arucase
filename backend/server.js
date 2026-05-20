@@ -80,6 +80,69 @@ const io = new Server(server, {
 // Lightweight schema guards for development convenience.
 // Ensures new columns exist without requiring a manual initDatabase run.
 const { query } = require('./config/database');
+const { createBackup, pruneBackups } = require('./scripts/backupDatabase');
+
+const BACKUP_RUN_DAYS = [1, 8, 15, 22];
+const BACKUP_RUN_HOUR_TZ = 2;
+const BACKUP_TIMEZONE = 'Africa/Dar_es_Salaam';
+const BACKUP_SCHEDULE_STATE_FILE = path.join(__dirname, 'backups', 'backup-schedule-state.json');
+let backupScheduleInFlight = false;
+
+function loadBackupScheduleState() {
+  try {
+    if (!fs.existsSync(BACKUP_SCHEDULE_STATE_FILE)) return {};
+    const raw = fs.readFileSync(BACKUP_SCHEDULE_STATE_FILE, 'utf8');
+    return JSON.parse(raw || '{}');
+  } catch (error) {
+    console.warn('[backup] failed to read schedule state:', error.message);
+    return {};
+  }
+}
+
+function saveBackupScheduleState(state) {
+  try {
+    fs.mkdirSync(path.dirname(BACKUP_SCHEDULE_STATE_FILE), { recursive: true });
+    fs.writeFileSync(BACKUP_SCHEDULE_STATE_FILE, JSON.stringify(state), 'utf8');
+  } catch (error) {
+    console.warn('[backup] failed to persist schedule state:', error.message);
+  }
+}
+
+async function runScheduledBackupTick() {
+  if (backupScheduleInFlight) return;
+
+  const now = new Date();
+  const tzParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BACKUP_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+
+  const getPart = (type) => tzParts.find((part) => part.type === type)?.value || '';
+  const tzDay = Number(getPart('day'));
+  const tzHour = Number(getPart('hour'));
+  const dayKey = `${getPart('year')}-${getPart('month')}-${getPart('day')}`;
+  const isScheduleWindow = BACKUP_RUN_DAYS.includes(tzDay) && tzHour === BACKUP_RUN_HOUR_TZ;
+  if (!isScheduleWindow) return;
+
+  const state = loadBackupScheduleState();
+  if (state.lastScheduledRunDay === dayKey) return;
+
+  backupScheduleInFlight = true;
+  try {
+    const backup = await createBackup({ verify: true });
+    pruneBackups();
+    saveBackupScheduleState({ lastScheduledRunDay: dayKey });
+    console.log('[backup] scheduled backup created:', backup.name);
+  } catch (error) {
+    console.error('[backup] scheduled backup failed:', error.message);
+  } finally {
+    backupScheduleInFlight = false;
+  }
+}
 
 async function ensureStudentsComColumn() {
   try {
@@ -218,6 +281,13 @@ setImmediate(() => {
       }
     })
     .catch(err => console.warn('[migration] DIV to A/DIV migration failed:', err.message));
+
+  // Database backups: auto-generate 4 times monthly in Tanzania timezone and keep latest files only.
+  pruneBackups();
+  runScheduledBackupTick().catch((e) => console.warn('[backup] startup schedule check failed:', e.message));
+  setInterval(() => {
+    runScheduledBackupTick().catch((e) => console.warn('[backup] schedule check failed:', e.message));
+  }, 60 * 60 * 1000);
 });
 
 // Enhanced Security Middleware

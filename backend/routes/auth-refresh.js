@@ -14,8 +14,25 @@ const { cookieShape } = require('../utils/hostingEnv');
 
 const router = express.Router();
 
-// Refresh token secret (different from access token)
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET_KEY;
+// Keep auth-refresh aligned with middleware/auth fallback behavior.
+const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET_KEY || 'dev-secret-key';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || ACCESS_TOKEN_SECRET;
+
+async function ensureRefreshTokensTable() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) NOT NULL,
+      token TEXT NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_refresh_tokens_user_unique ON refresh_tokens(user_id)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at)`);
+}
 
 // Store refresh tokens in database (more secure than memory)
 const storeRefreshToken = async (userId, refreshToken, expiresAt) => {
@@ -49,7 +66,7 @@ const validateRefreshToken = async (refreshToken) => {
 const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { user_id: user.username, role: user.role, permissions: user.permissions || {} },
-    process.env.JWT_SECRET_KEY,
+    ACCESS_TOKEN_SECRET,
     { expiresIn: '15m' }
   );
   
@@ -65,6 +82,7 @@ const generateTokens = (user) => {
 // Enhanced login with refresh tokens
 router.post('/login-enhanced', protectByUsername, validators.login, trackByUsername, async (req, res) => {
   try {
+    await ensureRefreshTokensTable();
     const { username, password } = req.body;
     
     // ... existing user validation code from auth.js ...
@@ -157,6 +175,7 @@ router.post('/login-enhanced', protectByUsername, validators.login, trackByUsern
 // Refresh token endpoint
 router.post('/refresh', async (req, res) => {
   try {
+    await ensureRefreshTokensTable();
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
     
     if (!refreshToken) {
@@ -223,6 +242,7 @@ router.post('/refresh', async (req, res) => {
 // Enhanced logout with token cleanup
 router.post('/logout-enhanced', async (req, res) => {
   try {
+    await ensureRefreshTokensTable();
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
     
     if (refreshToken) {

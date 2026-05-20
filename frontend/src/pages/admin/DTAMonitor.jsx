@@ -107,6 +107,26 @@ const DTAMonitor = () => {
     return 'text-gray-600';
   };
 
+  const parseChangeHistory = (history) => {
+    if (!history) return [];
+    if (Array.isArray(history)) return history;
+    if (typeof history === 'string') {
+      try {
+        const parsed = JSON.parse(history);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const getDisplayChangeCount = (change) => {
+    const historyLen = parseChangeHistory(change.change_history).length;
+    const stored = parseInt(change.change_count, 10) || 0;
+    return Math.max(stored, historyLen);
+  };
+
   const handleClearRecords = async () => {
     if (!isAdmin) {
       toast.error('Only admins can clear records');
@@ -317,7 +337,7 @@ const DTAMonitor = () => {
                         <td>{change.subject_name}</td>
                         <td>{change.initial_score ?? '-'}</td>
                         <td>{change.current_score ?? '-'}</td>
-                        <td className="change-count">{change.change_count}</td>
+                        <td className="change-count">{getDisplayChangeCount(change)}</td>
                         <td>{change.last_changed_by || '-'}</td>
                         <td>{formatDate(change.last_changed_at)}</td>
                         <td>
@@ -377,12 +397,12 @@ const DTAMonitor = () => {
                   <p><strong>Subject:</strong> {selectedChange.subject_name}</p>
                   <p><strong>Initial Score:</strong> {selectedChange.initial_score ?? '-'}</p>
                   <p><strong>Current Score:</strong> {selectedChange.current_score ?? '-'}</p>
-                  <p><strong>Total Changes:</strong> {selectedChange.change_count}</p>
+                  <p><strong>Total Changes:</strong> {getDisplayChangeCount(selectedChange)}</p>
                 </div>
                 <h3>Change Timeline</h3>
-                {selectedChange.change_history && selectedChange.change_history.length > 0 ? (
+                {parseChangeHistory(selectedChange.change_history).length > 0 ? (
                   <div className="timeline">
-                    {selectedChange.change_history.map((entry, index) => (
+                    {parseChangeHistory(selectedChange.change_history).map((entry, index) => (
                       <div key={index} className="timeline-item">
                         <div className="timeline-time">{formatDate(entry.timestamp)}</div>
                         <div className="timeline-user">By: {entry.username}</div>

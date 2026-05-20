@@ -6,12 +6,14 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { query, withTransaction } = require('../config/database');
 const { cacheRoutes, clearCachePattern } = require('../middleware/cache');
 const { saveUserActivity } = require('../utils/activityLogger');
 const bcrypt = require('bcryptjs');
+const { createBackup, listBackups, pruneBackups, backupsDir } = require('../scripts/backupDatabase');
 const { extractText } = require('../utils/documentParser');
 const { getClient, callClaude } = require('../utils/anthropic');
 const { getNectaSummaryForAI } = require('../utils/nectaAnalyticsForAI');
@@ -341,7 +343,6 @@ router.delete('/admission-applications/:id', requireRole('admin', 'superadmin'),
 
 // Configure multer for file uploads (for non-photo uploads)
 // Use sync fs operations for multer destination to avoid async issues
-const fsSync = require('fs');
 
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -3478,6 +3479,139 @@ router.post('/pass-ids/regenerate', async (req, res) => {
     return sendError(res, error, 500);
   }
 });
+
+router.get('/database-backups', requireRole('admin', 'superadmin'), async (req, res) => {
+  try {
+    pruneBackups();
+    const backups = listBackups(20).map((item) => ({
+      name: item.name,
+      sizeBytes: item.sizeBytes,
+      createdAt: item.createdAt,
+    }));
+
+    return res.json({
+      schedule: {
+        frequency: '4 per month',
+        timezone: 'Africa/Dar_es_Salaam',
+        daysOfMonth: [1, 8, 15, 22],
+        hour: 2,
+      },
+      retention: {
+        maxFiles: 20,
+      },
+      backups,
+    });
+  } catch (error) {
+    console.error('Failed to list database backups:', error);
+    return res.status(500).json({ message: 'Failed to list backups' });
+  }
+});
+
+router.post('/database-backups/run', requireRole('admin', 'superadmin'), async (req, res) => {
+  try {
+    const backup = await createBackup({ verify: true });
+    pruneBackups();
+    return res.status(201).json({
+      message: 'Backup created successfully',
+      backup: {
+        name: backup.name,
+        sizeBytes: backup.sizeBytes,
+        createdAt: backup.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to create database backup:', error);
+    const message = error?.message || 'Failed to create backup';
+    const isOperationalBackupIssue =
+      /pg_dump is not available/i.test(message) ||
+      /pg_restore/i.test(message) ||
+      /exited with code/i.test(message) ||
+      /not recognized as an internal or external command/i.test(message) ||
+      /spawn .*ENOENT/i.test(message);
+    return res.status(isOperationalBackupIssue ? 400 : 500).json({
+      message: isOperationalBackupIssue ? message : `Failed to create backup. ${message}`,
+    });
+  }
+});
+
+function resolveSafeBackupPath(filename) {
+  let decoded = String(filename || '').trim();
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    return { error: 'Invalid backup filename' };
+  }
+  const safeName = path.basename(decoded);
+  const isValidBackupName = /^arucase_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}\.dump$/.test(safeName);
+  if (!safeName || !isValidBackupName) {
+    return { error: 'Invalid backup filename' };
+  }
+
+  const fullPath = path.join(backupsDir, safeName);
+  if (!fsSync.existsSync(fullPath)) {
+    return { error: 'Backup file not found', status: 404 };
+  }
+
+  return { safeName, fullPath };
+}
+
+function sendBackupDownload(req, res) {
+  try {
+    const filename = req.query?.filename || req.params?.filename;
+    const resolved = resolveSafeBackupPath(filename);
+    if (resolved.error) {
+      return res.status(resolved.status || 400).json({ message: resolved.error });
+    }
+    return res.download(resolved.fullPath, resolved.safeName);
+  } catch (error) {
+    console.error('Failed to download database backup:', error);
+    return res.status(500).json({ message: 'Failed to download backup file' });
+  }
+}
+
+// Query-based download (preferred — avoids path encoding / legacy URL issues).
+router.get('/database-backups/download', requireRole('admin', 'superadmin'), sendBackupDownload);
+
+// Legacy URLs (cached clients / extensions): /database-backups/arucase_....dump[/download]
+router.get(
+  /^\/database-backups\/(arucase_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}\.dump)(?:\/download)?\/?$/i,
+  requireRole('admin', 'superadmin'),
+  (req, res) => {
+    req.params.filename = req.params[0];
+    return sendBackupDownload(req, res);
+  }
+);
+
+router.get(
+  '/database-backups/:filename(arucase_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.dump)/download',
+  requireRole('admin', 'superadmin'),
+  sendBackupDownload
+);
+router.get(
+  '/database-backups/:filename(arucase_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.dump)',
+  requireRole('admin', 'superadmin'),
+  sendBackupDownload
+);
+
+router.delete(
+  '/database-backups/:filename(arucase_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.dump)',
+  requireRole('admin', 'superadmin'),
+  async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const resolved = resolveSafeBackupPath(filename);
+      if (resolved.error) {
+        return res.status(resolved.status || 400).json({ message: resolved.error });
+      }
+
+      await fs.unlink(resolved.fullPath);
+      return res.json({ message: 'Backup deleted successfully', filename: resolved.safeName });
+    } catch (error) {
+      console.error('Failed to delete database backup:', error);
+      return res.status(500).json({ message: 'Failed to delete backup file' });
+    }
+  }
+);
 
 // ========== AI MATTERS (admin-only: upload PDF/CSV/DOCX, chat over content) ==========
 

@@ -115,9 +115,23 @@ async function ensureAdmissionsTables() {
 // Homepage data
 router.get('/homepage', async (req, res) => {
   try {
+    const safeRows = async (sql, params = [], fallback = []) => {
+      try {
+        const result = await query(sql, params);
+        return result.rows || fallback;
+      } catch (error) {
+        // Fail soft for optional/public content tables.
+        if (error?.code === '42P01' || error?.code === '42703') return fallback;
+        throw error;
+      }
+    };
+    const safeSingle = async (sql, params = [], fallback = {}) => {
+      const rows = await safeRows(sql, params, []);
+      return rows[0] || fallback;
+    };
+
     // Get website settings
-    const settingsResult = await query('SELECT * FROM website_settings WHERE id = 1');
-    const settings = settingsResult.rows[0] || {};
+    const settings = await safeSingle('SELECT * FROM website_settings WHERE id = 1', [], {});
 
     const legacyCopyright =
       settings.footer_copyright &&
@@ -131,44 +145,36 @@ router.get('/homepage', async (req, res) => {
     }
     
     // Get school logo from school_logo table and add to settings
-    try {
-      const logoResult = await query('SELECT logo_image_path FROM school_logo WHERE id = 1');
-      if (logoResult.rows.length > 0 && logoResult.rows[0] && logoResult.rows[0].logo_image_path) {
-        settings.school_logo = logoResult.rows[0].logo_image_path;
-      }
-    } catch (logoError) {
-      // If school_logo table doesn't exist or has no logo, use default or keep existing
+    const logo = await safeSingle('SELECT logo_image_path FROM school_logo WHERE id = 1', [], {});
+    if (logo?.logo_image_path) {
+      settings.school_logo = logo.logo_image_path;
     }
     
     // Get gallery photos (limit 12)
-    const galleryResult = await query(
+    const gallery_photos = await safeRows(
       'SELECT * FROM gallery_photos ORDER BY created_at DESC LIMIT 12'
     );
-    const gallery_photos = galleryResult.rows;
     
     // Get active FAQs (limit 5)
-    const faqsResult = await query(
+    const faqs = await safeRows(
       'SELECT * FROM faqs WHERE active = TRUE ORDER BY display_order, created_at LIMIT 5'
     );
-    const faqs = faqsResult.rows;
     
     // Get active administrators
-    const adminResult = await query(
+    const administrators = await safeRows(
       'SELECT * FROM administrators WHERE active = TRUE ORDER BY display_order, created_at'
     );
-    const administrators = adminResult.rows;
     
     // Get recent announcements (limit 5)
-    const announcementsResult = await query(
+    const announcements = await safeRows(
       'SELECT * FROM public_announcements WHERE active = TRUE ORDER BY created_at DESC LIMIT 5'
     );
-    const announcements = announcementsResult.rows;
 
     // School stats for homepage (current enrollment + graduates since founding)
     // Use calendar year (not MAX(year) from DB — Form VI Second Term rows can be stored as year+1)
     const currentYear = new Date().getFullYear();
     let current_students = 0;
-    const enrolledResult = await query(
+    const enrolledRows = await safeRows(
       `SELECT COALESCE(SUM(term_total), 0) AS count
        FROM (
          SELECT
@@ -183,9 +189,10 @@ router.get('/homepage', async (req, res) => {
          WHERE year = $1
          GROUP BY term
        ) per_term`,
-      [currentYear]
+      [currentYear],
+      [{ count: 0 }]
     );
-    current_students = parseInt(enrolledResult.rows[0]?.count, 10) || 0;
+    current_students = parseInt(enrolledRows[0]?.count, 10) || 0;
 
     // Wahitimu tangu 1967: base (pre-2025) + Form I intake + Form VI (graduating class) per year from 2025
     const GRADUATES_BASE_BEFORE_2025 = 2475;
@@ -194,7 +201,7 @@ router.get('/homepage', async (req, res) => {
     let form_six_since_2025 = 0;
     const formSixThroughYear = currentYear + 1; // Form VI Second Term often stored as year + 1
     if (currentYear >= GRADUATE_COUNT_START_YEAR) {
-      const graduateCohortResult = await query(
+      const graduateCohortRows = await safeRows(
         `SELECT
            COALESCE(SUM(CASE WHEN lvl = 'FORM I' THEN year_count ELSE 0 END), 0) AS form_one_total,
            COALESCE(SUM(CASE WHEN lvl = 'FORM VI' THEN year_count ELSE 0 END), 0) AS form_six_total
@@ -209,9 +216,10 @@ router.get('/homepage', async (req, res) => {
              )
            GROUP BY year, UPPER(TRIM(level))
          ) cohort_by_year`,
-        [GRADUATE_COUNT_START_YEAR, currentYear, formSixThroughYear]
+        [GRADUATE_COUNT_START_YEAR, currentYear, formSixThroughYear],
+        [{ form_one_total: 0, form_six_total: 0 }]
       );
-      const cohort = graduateCohortResult.rows[0] || {};
+      const cohort = graduateCohortRows[0] || {};
       form_one_since_2025 = parseInt(cohort.form_one_total, 10) || 0;
       form_six_since_2025 = parseInt(cohort.form_six_total, 10) || 0;
     }

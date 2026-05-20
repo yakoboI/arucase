@@ -78,6 +78,7 @@ const HomePage = () => {
 
   const getImageUrl = useCallback((path) => resolveStaticUrl(path), []);
   const getHeroSources = useCallback((path) => heroImageSources(getImageUrl(path)), [getImageUrl]);
+  const getHeroUrl = useCallback((path) => getHeroSources(path).src || '', [getHeroSources]);
   const getThumbUrl = useCallback((path) => galleryThumbUrl(getImageUrl(path)), [getImageUrl]);
 
   const { data, isLoading } = useQuery({
@@ -230,7 +231,7 @@ const HomePage = () => {
                               height={540}
                               sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, 960px"
                               loading={isActive ? 'eager' : 'lazy'}
-                              fetchPriority={isActive ? 'high' : 'low'}
+                              fetchpriority={isActive ? 'high' : 'low'}
                               decoding={index === 0 ? 'sync' : 'async'}
                               onError={() => handleImageError(imageUrl)}
                               onLoad={() => {

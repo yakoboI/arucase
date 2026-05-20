@@ -121,11 +121,11 @@ const customSecurityHeaders = (req, res, next) => {
     res.setHeader('Expires', '0');
   }
   
-  // CORS headers (if needed)
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
+  // CORS headers — keep in sync with utils/hostingEnv.js (Express cors middleware)
+  const { isOriginAllowed } = require('../utils/hostingEnv');
   const origin = req.headers.origin;
-  
-  if (allowedOrigins.includes(origin)) {
+
+  if (origin && isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   

@@ -142,7 +142,7 @@ const PublicHeader = () => {
                           alt=""
                           className="header-tropical-frame__img header-tropical-frame__img--logo"
                           loading="eager"
-                          fetchPriority="low"
+                          fetchpriority="low"
                           decoding="async"
                         />
                       </div>
@@ -170,7 +170,7 @@ const PublicHeader = () => {
                           alt=""
                           className="header-tropical-frame__img header-tropical-frame__img--patron"
                           loading="eager"
-                          fetchPriority="low"
+                          fetchpriority="low"
                           decoding="async"
                         />
                       </div>

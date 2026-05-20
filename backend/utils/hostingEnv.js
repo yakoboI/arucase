@@ -16,6 +16,13 @@
 
 const CLOUDINARY_ORIGINS = ['https://res.cloudinary.com', 'https://api.cloudinary.com'];
 
+/** Production SPA origins — merged even when ALLOWED_ORIGINS omits them (custom domain + Vercel). */
+const DEFAULT_PRODUCTION_FRONTEND_ORIGINS = [
+  'https://arucase.vercel.app',
+  'https://www.arushacatholicseminary.co.tz',
+  'https://arushacatholicseminary.co.tz',
+];
+
 function parseCsv(str) {
   if (!str || typeof str !== 'string') return [];
   return str.split(',').map((s) => s.trim()).filter(Boolean);
@@ -76,12 +83,34 @@ function buildStaticOriginList() {
     merged = [...new Set([...uniq, ...defaultLocalOrigins(), ...CLOUDINARY_ORIGINS])];
     return merged;
   }
-  merged = [...new Set([...uniq, ...CLOUDINARY_ORIGINS])];
-  const nonCdn = merged.filter((o) => !CLOUDINARY_ORIGINS.includes(o));
-  if (nonCdn.length === 0) {
-    merged.unshift('https://arucase.vercel.app');
-  }
+  merged = [...new Set([...uniq, ...DEFAULT_PRODUCTION_FRONTEND_ORIGINS, ...CLOUDINARY_ORIGINS])];
   return merged;
+}
+
+/** Whether a browser Origin is allowed (static list + optional Vercel preview rule). */
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  const staticList = buildStaticOriginList();
+  if (staticList.includes(origin)) return true;
+  if (isTruthy(process.env.CORS_ALLOW_VERCEL_PREVIEWS)) {
+    try {
+      const { hostname } = new URL(origin);
+      if (hostname === 'vercel.app' || hostname.endsWith('.vercel.app')) return true;
+    } catch (_) {
+      /* ignore */
+    }
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      const u = new URL(origin);
+      if (u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')) {
+        return true;
+      }
+    } catch (_) {
+      /* ignore */
+    }
+  }
+  return false;
 }
 
 /**
@@ -123,5 +152,7 @@ module.exports = {
   cookieShape,
   createCorsOriginValidator,
   buildStaticOriginList,
+  isOriginAllowed,
   CLOUDINARY_ORIGINS,
+  DEFAULT_PRODUCTION_FRONTEND_ORIGINS,
 };
