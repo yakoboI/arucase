@@ -17,6 +17,34 @@ const DEFAULT_MAX_FILES = 20;
 const DEFAULT_RETENTION_DAYS = 60;
 let cachedPgTools = null;
 
+function needsPgSsl() {
+  return (
+    process.env.NODE_ENV === 'production' ||
+    process.env.DATABASE_SSL === 'true' ||
+    (process.env.DATABASE_URL && /[?&]sslmode=require/i.test(process.env.DATABASE_URL))
+  );
+}
+
+function normalizeDatabaseUrlForPgTools(urlString) {
+  try {
+    const parsedUrl = new URL(urlString);
+    if (needsPgSsl() && !parsedUrl.searchParams.has('sslmode')) {
+      parsedUrl.searchParams.set('sslmode', 'require');
+    }
+    return parsedUrl.toString();
+  } catch {
+    return null;
+  }
+}
+
+function pgToolEnv(baseEnv = process.env) {
+  const env = { ...baseEnv };
+  if (needsPgSsl() && !env.PGSSLMODE) {
+    env.PGSSLMODE = 'require';
+  }
+  return env;
+}
+
 function runCmd(command, args, env) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -206,18 +234,12 @@ async function createBackup({ verify = true } = {}) {
   const timeStr = now.toTimeString().slice(0, 5).replace(':', '-');
   const outFile = path.join(backupsDir, `arucase_${dateStr}_${timeStr}.dump`);
 
-  const env = { ...process.env };
+  const env = pgToolEnv({ ...process.env });
   let args;
   let normalizedDatabaseUrl = null;
   if (env.DATABASE_URL) {
-    try {
-      // Validate URL to avoid invalid DSNs (common when password has unescaped special chars).
-      // If valid, use normalized/encoded string so libpq can parse special chars in credentials.
-      const parsedUrl = new URL(env.DATABASE_URL);
-      normalizedDatabaseUrl = parsedUrl.toString();
-    } catch {
-      normalizedDatabaseUrl = null;
-    }
+    // Validate URL and add sslmode=require for managed Postgres (Railway) when needed.
+    normalizedDatabaseUrl = normalizeDatabaseUrlForPgTools(env.DATABASE_URL);
   }
 
   if (normalizedDatabaseUrl) {
