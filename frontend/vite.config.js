@@ -18,7 +18,9 @@ function escapeHtmlAttr(value) {
 /** Injected into index.html at build/dev time when env vars are set (Search Console, Webmaster tools). */
 function buildVerificationMetaTags() {
   const tags = [];
-  const google = process.env.VITE_GOOGLE_SITE_VERIFICATION?.trim();
+  const google = (
+    process.env.VITE_GOOGLE_SITE_VERIFICATION || 'EG4yBli8Hgq0AcnB5a8migcVmpabJ2zjKLpwt3YCmK4'
+  ).trim();
   if (google) {
     tags.push(`<meta name="google-site-verification" content="${escapeHtmlAttr(google)}" />`);
   }

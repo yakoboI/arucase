@@ -6,7 +6,7 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!js/|assets/|images/|fonts/|icons/|sounds/|sw\\.js|manifest\\.json|BingSiteAuth\\.xml).*)",
+      "source": "/((?!js/|assets/|images/|fonts/|icons/|sounds/|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|BingSiteAuth\\.xml|googlea7be70d078753cc0\\.html|yandex-verification\\.html).*)",
       "destination": "/index.html"
     }
   ],
@@ -80,7 +80,46 @@
       ]
     },
     {
-      "source": "/((?!js/|assets/|images/|fonts/|icons/|sounds/).*)",
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        },
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/googlea7be70d078753cc0.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        },
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/((?!js/|assets/|images/|fonts/|icons/|sounds/|robots\\.txt|sitemap\\.xml).*)",
       "headers": [
         {
           "key": "Cache-Control",
