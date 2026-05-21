@@ -894,32 +894,43 @@ router.get('/class-grades', async (req, res) => {
     const { calculateWeightedTotal, calculateGrade, calculateOverallAverage } = require('../utils/calculations');
     let { level, stream, year, term } = req.query;
     if (level) level = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    if (term) term = decodeURIComponent(String(term).replace(/\+/g, ' ')).trim();
     if (!level || !stream || !year || !term) {
       return res.status(400).json({ message: 'level, stream, year, and term are required' });
     }
     const normalizedStream = normalizeStream(stream);
     const isFormVOrVI = level === 'FORM V' || level === 'FORM VI';
+    // Match Comments UI + reports: First Term / Term I vs Second Term / Term II
+    const isFirstTerm = (t) =>
+      /^Term\s+I$/i.test(t) || /^Term\s+1$/i.test(t) || /^First\s+Term$/i.test(t);
     // Form V/VI: Academic year July-June. Term I (Jul-Dec): Aug-Nov, Term II (Jan-Jun): Feb-May
     // Form I-IV: Term I: Feb-May, Term II: Aug-Nov
     const getMonthsForTerm = (t) => {
       if (isFormVOrVI) {
-        return (t === 'Term I' || t === 'Term 1') 
-          ? ['August', 'September', 'October', 'November'] 
+        return isFirstTerm(t)
+          ? ['August', 'September', 'October', 'November']
           : ['February', 'March', 'April', 'May'];
-      } else {
-        return (t === 'Term I' || t === 'Term 1') 
-          ? ['February', 'March', 'April', 'May'] 
-          : ['August', 'September', 'October', 'November'];
       }
+      return isFirstTerm(t)
+        ? ['February', 'March', 'April', 'May']
+        : ['August', 'September', 'October', 'November'];
     };
     const months = getMonthsForTerm(term);
 
-    let marksConfig = { month_weights: { February: 40, March: 0, April: 40, May: 20, August: 40, September: 0, October: 40, November: 20 } };
+    let marksConfig = {
+      month_weights: {
+        February: 40, March: 0, April: 40, May: 20,
+        August: 40, September: 0, October: 40, November: 20,
+      },
+    };
     try {
-      const mc = await query('SELECT * FROM marks_config WHERE id = 1');
-      if (mc.rows.length > 0 && mc.rows[0]) {
-        const c = mc.rows[0];
-        marksConfig = { month_weights: { February: parseFloat(c.february_weight) || 40, March: parseFloat(c.march_weight) || 0, April: parseFloat(c.april_weight) || 40, May: parseFloat(c.may_weight) || 20, August: parseFloat(c.august_weight) || 40, September: parseFloat(c.september_weight) || 0, October: parseFloat(c.october_weight) || 40, November: parseFloat(c.november_weight) || 20 } };
+      const mc = await query('SELECT month, weight FROM marks_config');
+      if (mc.rows.length > 0) {
+        const monthWeights = {};
+        mc.rows.forEach((row) => {
+          monthWeights[row.month] = parseFloat(row.weight);
+        });
+        marksConfig = { month_weights: monthWeights };
       }
     } catch (e) { /* use defaults */ }
 
@@ -954,7 +965,7 @@ router.get('/class-grades', async (req, res) => {
         const codes = [subject.subject_code, subject.subject_abbreviation].filter(Boolean);
         const monthScores = {};
         months.forEach((m) => {
-          let s = 0;
+          let s = null;
           for (const code of codes) {
             if (studentScores[code] && studentScores[code][m] !== undefined) {
               s = studentScores[code][m];
