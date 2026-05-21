@@ -68,6 +68,12 @@ function runCmd(command, args, env) {
   });
 }
 
+function requiredPgDumpMajor() {
+  const fromEnv = parseInt(process.env.PG_DUMP_MIN_MAJOR, 10);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return fromEnv;
+  return 18;
+}
+
 async function canRunCommand(command, versionArg = '--version') {
   try {
     await runCmd(command, [versionArg], process.env);
@@ -75,6 +81,34 @@ async function canRunCommand(command, versionArg = '--version') {
   } catch {
     return false;
   }
+}
+
+async function pgDumpMajorVersion(pgDumpCmd) {
+  try {
+    const { stdout, stderr } = await runCmd(pgDumpCmd, ['--version'], process.env);
+    const match = `${stdout}${stderr}`.match(/\(PostgreSQL\)\s*(\d+)/i);
+    return match ? parseInt(match[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getLinuxPostgresBinCandidates() {
+  const pgLib = '/usr/lib/postgresql';
+  if (!fs.existsSync(pgLib)) return [];
+
+  let versionDirs = [];
+  try {
+    versionDirs = fs
+      .readdirSync(pgLib, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && /^\d+$/.test(entry.name))
+      .map((entry) => entry.name)
+      .sort((a, b) => Number(b) - Number(a));
+  } catch {
+    return [];
+  }
+
+  return versionDirs.map((version) => path.join(pgLib, version, 'bin'));
 }
 
 function getWindowsPostgresBinCandidates() {
@@ -104,40 +138,88 @@ function getWindowsPostgresBinCandidates() {
   return candidates;
 }
 
+async function resolvePgToolsFromBinDir(binDir, { dumpName, restoreName, minMajor }) {
+  const dumpPath = path.join(binDir, dumpName);
+  const restorePath = path.join(binDir, restoreName);
+  if (!fs.existsSync(dumpPath)) return null;
+
+  const dumpOk = await canRunCommand(dumpPath);
+  if (!dumpOk) return null;
+
+  const major = await pgDumpMajorVersion(dumpPath);
+  if (major == null || major < minMajor) return null;
+
+  const restoreOk = fs.existsSync(restorePath) && (await canRunCommand(restorePath));
+  return {
+    pgDumpCmd: dumpPath,
+    pgRestoreCmd: restoreOk ? restorePath : null,
+    pgDumpMajor: major,
+  };
+}
+
+async function resolvePgToolsFromDumpPath(dumpPath, { restoreName, minMajor }) {
+  if (!dumpPath || !fs.existsSync(dumpPath)) return null;
+  const dumpOk = await canRunCommand(dumpPath);
+  if (!dumpOk) return null;
+
+  const major = await pgDumpMajorVersion(dumpPath);
+  if (major == null || major < minMajor) return null;
+
+  const restorePath = path.join(path.dirname(dumpPath), restoreName);
+  const restoreOk = fs.existsSync(restorePath) && (await canRunCommand(restorePath));
+  return {
+    pgDumpCmd: dumpPath,
+    pgRestoreCmd: restoreOk ? restorePath : null,
+    pgDumpMajor: major,
+  };
+}
+
 async function resolvePgTools() {
   if (cachedPgTools) return cachedPgTools;
 
-  const directPgDumpOk = await canRunCommand('pg_dump');
-  const directPgRestoreOk = await canRunCommand('pg_restore');
-
-  if (directPgDumpOk) {
-    cachedPgTools = {
-      pgDumpCmd: 'pg_dump',
-      pgRestoreCmd: directPgRestoreOk ? 'pg_restore' : null,
-    };
-    return cachedPgTools;
-  }
-
+  const minMajor = requiredPgDumpMajor();
   const isWindows = process.platform === 'win32';
-  if (!isWindows) {
-    cachedPgTools = { pgDumpCmd: null, pgRestoreCmd: null };
-    return cachedPgTools;
+  const dumpName = isWindows ? 'pg_dump.exe' : 'pg_dump';
+  const restoreName = isWindows ? 'pg_restore.exe' : 'pg_restore';
+
+  if (process.env.PG_DUMP_PATH) {
+    const fromEnv = await resolvePgToolsFromDumpPath(process.env.PG_DUMP_PATH, {
+      restoreName,
+      minMajor,
+    });
+    if (fromEnv) {
+      cachedPgTools = fromEnv;
+      return cachedPgTools;
+    }
   }
 
-  for (const binDir of getWindowsPostgresBinCandidates()) {
-    const dumpPath = path.join(binDir, 'pg_dump.exe');
-    const restorePath = path.join(binDir, 'pg_restore.exe');
-    if (!fs.existsSync(dumpPath)) continue;
+  const binCandidates = [];
+  if (process.platform === 'win32') {
+    binCandidates.push(...getWindowsPostgresBinCandidates());
+  } else if (process.platform === 'linux') {
+    binCandidates.push(...getLinuxPostgresBinCandidates());
+  }
 
-    const dumpOk = await canRunCommand(dumpPath);
-    if (!dumpOk) continue;
+  for (const binDir of binCandidates) {
+    const resolved = await resolvePgToolsFromBinDir(binDir, { dumpName, restoreName, minMajor });
+    if (resolved) {
+      cachedPgTools = resolved;
+      return cachedPgTools;
+    }
+  }
 
-    const restoreOk = fs.existsSync(restorePath) && (await canRunCommand(restorePath));
-    cachedPgTools = {
-      pgDumpCmd: dumpPath,
-      pgRestoreCmd: restoreOk ? restorePath : null,
-    };
-    return cachedPgTools;
+  const directPgDumpOk = await canRunCommand('pg_dump');
+  if (directPgDumpOk) {
+    const major = await pgDumpMajorVersion('pg_dump');
+    if (major != null && major >= minMajor) {
+      const directPgRestoreOk = await canRunCommand('pg_restore');
+      cachedPgTools = {
+        pgDumpCmd: 'pg_dump',
+        pgRestoreCmd: directPgRestoreOk ? 'pg_restore' : null,
+        pgDumpMajor: major,
+      };
+      return cachedPgTools;
+    }
   }
 
   cachedPgTools = { pgDumpCmd: null, pgRestoreCmd: null };
@@ -254,7 +336,10 @@ async function createBackup({ verify = true } = {}) {
 
   const { pgDumpCmd, pgRestoreCmd } = await resolvePgTools();
   if (!pgDumpCmd) {
-    throw new Error('pg_dump is not available in PATH. Install PostgreSQL client tools and restart the server.');
+    const minMajor = requiredPgDumpMajor();
+    throw new Error(
+      `pg_dump ${minMajor}+ is not available. Railway Postgres is v18 — redeploy after backend/nixpacks.toml installs postgresql-client-18, or set PG_DUMP_PATH to a matching client binary.`
+    );
   }
 
   await runCmd(pgDumpCmd, args, env);

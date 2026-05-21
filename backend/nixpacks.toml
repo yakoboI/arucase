@@ -1,14 +1,25 @@
 # Railway/Nixpacks — backend API (root directory should be `backend/`)
-# PostgreSQL client: pg_dump / pg_restore for admin backups
+# PostgreSQL client: pg_dump / pg_restore for admin backups (must match server major version).
+# Ubuntu's default postgresql-client is v16; Railway Postgres is v18 — install client-18 from PGDG.
 # Chrome system libs: installed via `puppeteer browsers install --install-deps`
 # (uses deb.deps + apt-get satisfy — correct on Ubuntu 24.04 Noble, incl. t64 packages).
 # Do NOT list legacy apt names (libasound2, etc.) here — Noble has no install candidate.
 
 [phases.setup]
-aptPkgs = ["postgresql-client"]
+cmds = [
+  """apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
+  && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+     | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" \
+     > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client-18 \
+  && apt-get remove -y postgresql-client postgresql-client-16 2>/dev/null || true""",
+]
 
 [phases.build]
 cmds = [
   "npx puppeteer browsers install chrome --install-deps",
   "node scripts/verify-puppeteer-chrome.js",
+  "node scripts/verify-pg-dump.js",
 ]

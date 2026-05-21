@@ -3524,6 +3524,8 @@ router.post('/database-backups/run', requireRole('admin', 'superadmin'), async (
     const message = error?.message || 'Failed to create backup';
     const isOperationalBackupIssue =
       /pg_dump is not available/i.test(message) ||
+      /pg_dump \d+\+ is not available/i.test(message) ||
+      /server version mismatch/i.test(message) ||
       /pg_restore/i.test(message) ||
       /exited with code/i.test(message) ||
       /not recognized as an internal or external command/i.test(message) ||
