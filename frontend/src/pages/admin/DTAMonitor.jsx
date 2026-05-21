@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
+import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/layout/AdminLayout';
 import api from '../../services/api';
 import './DTAMonitor.css';
@@ -34,10 +35,10 @@ const DTAMonitor = () => {
   const [isDeletingMarked, setIsDeletingMarked] = useState(false);
 
   const queryClient = useQueryClient();
+  const { isAdminLike } = useAuth();
 
-  // Check if user is admin
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = ['admin', 'superadmin'].includes((user.role || '').toLowerCase());
+  // Admin/superadmin only (matches backend bulk-delete); use AuthContext, not localStorage
+  const isAdmin = isAdminLike();
 
   // Fetch statistics
   const { data: statsData, isLoading: statsLoading } = useQuery({

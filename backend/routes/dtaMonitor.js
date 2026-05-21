@@ -298,7 +298,7 @@ router.get('/statistics', requireAuth, async (req, res) => {
 });
 
 // Clear all DTA Monitor records (Admin only)
-router.delete('/clear', requireAuth, requireRole('admin'), async (req, res) => {
+router.delete('/clear', requireAuth, requireRole('admin', 'superadmin'), async (req, res) => {
   try {
     const { date_from, date_to } = req.query;
     
