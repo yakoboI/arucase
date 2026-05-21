@@ -20,7 +20,7 @@ function isStaffAppRoute(pathname) {
  * Socket updates when available; HTTP heartbeat every 60s as fallback.
  */
 export function useOnlineStaffCount() {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { socket } = useSocket();
   const location = useLocation();
   const [count, setCount] = useState(0);
@@ -34,7 +34,7 @@ export function useOnlineStaffCount() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated?.() || !isStaffAppRoute(location.pathname)) {
+    if (!user || !isAuthenticated?.() || !isStaffAppRoute(location.pathname)) {
       setCount(0);
       return undefined;
     }
@@ -62,12 +62,20 @@ export function useOnlineStaffCount() {
       }
     };
 
+    const handleSessionExpired = () => {
+      stopHeartbeat();
+      setCount(0);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+      }
+    };
+
     const sendHeartbeat = async () => {
       if (stopped) return;
       try {
         const res = await api.post('/auth/presence/heartbeat');
         if (res?.status === 401 || res?.status === 403) {
-          stopHeartbeat();
+          handleSessionExpired();
           return;
         }
         applyCount(res.data?.count);
@@ -75,7 +83,7 @@ export function useOnlineStaffCount() {
         try {
           const res = await api.get('/auth/presence/online-count');
           if (res?.status === 401 || res?.status === 403) {
-            stopHeartbeat();
+            handleSessionExpired();
             return;
           }
           applyCount(res.data?.count);
@@ -92,7 +100,7 @@ export function useOnlineStaffCount() {
       socket?.off('presence:online-count', onPresence);
       stopHeartbeat();
     };
-  }, [socket, isAuthenticated, location.pathname]);
+  }, [socket, user, isAuthenticated, location.pathname]);
 
   return count;
 }

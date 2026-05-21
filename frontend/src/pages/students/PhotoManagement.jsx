@@ -363,6 +363,9 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
       setCapturedPhoto(false);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {
+          /* autoplay policy — user can still capture once frames render */
+        });
       }
     } catch (error) {
       toast.error('Error accessing camera: ' + (error.message || 'Permission denied'));
@@ -401,17 +404,25 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
     const currentStudentIndex = getStudentIndex(selectedStudent);
     
     canvasRef.current.toBlob(async (blob) => {
-      const formData = new FormData();
-      formData.append('photo', blob, 'camera-photo.jpg');
-      formData.append('level', normalizedLevel);
-      formData.append('stream', stream);
-      formData.append('year', apiYear);
-      formData.append('student_index', currentStudentIndex.toString());
+      if (!blob) {
+        toast.error('Could not capture photo. Please try again.');
+        return;
+      }
+      try {
+        const formData = new FormData();
+        formData.append('photo', blob, 'camera-photo.jpg');
+        formData.append('level', normalizedLevel);
+        formData.append('stream', stream);
+        formData.append('year', apiYear);
+        formData.append('student_index', currentStudentIndex.toString());
 
-      uploadMutation.mutate({
-        admNo: selectedStudent.adm_no,
-        formData
-      });
+        await uploadMutation.mutateAsync({
+          admNo: selectedStudent.adm_no,
+          formData
+        });
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to upload photo');
+      }
     }, 'image/jpeg', 0.8);
   };
 
@@ -589,7 +600,8 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                                   className="student-photo"
                                   width={50}
                                   height={50}
-                                  loading="lazy"
+                                  loading="eager"
+                                  decoding="async"
                                   style={{ display: 'block', margin: '0 auto' }}
                                   onError={(e) => {
                                     e.target.style.display = 'none';
@@ -797,6 +809,8 @@ const PhotoManagement = ({ formLevel: formLevelProp }) => {
                       className="view-photo"
                       width={400}
                       height={300}
+                      loading="eager"
+                      decoding="async"
                       onError={(e) => {
                         e.target.style.display = 'none';
                         handleImageError(viewPhoto.filename, null);
