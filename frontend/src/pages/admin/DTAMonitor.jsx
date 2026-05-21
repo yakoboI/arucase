@@ -2,7 +2,7 @@
  * DTA Monitor - Score Change Audit Trail
  */
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '../../utils/toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import api from '../../services/api';
@@ -29,10 +29,15 @@ const DTAMonitor = () => {
   const [clearDateFrom, setClearDateFrom] = useState('');
   const [clearDateTo, setClearDateTo] = useState('');
   const [isClearing, setIsClearing] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showDeleteMarkedModal, setShowDeleteMarkedModal] = useState(false);
+  const [isDeletingMarked, setIsDeletingMarked] = useState(false);
+
+  const queryClient = useQueryClient();
 
   // Check if user is admin
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = user.role === 'admin';
+  const isAdmin = ['admin', 'superadmin'].includes((user.role || '').toLowerCase());
 
   // Fetch statistics
   const { data: statsData, isLoading: statsLoading } = useQuery({
@@ -73,9 +78,11 @@ const DTAMonitor = () => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
     setPage(1);
+    setSelectedIds(new Set());
   };
 
   const handleResetFilters = () => {
+    setSelectedIds(new Set());
     setFilters({
       student_adm_no: '',
       level: '',
@@ -125,6 +132,64 @@ const DTAMonitor = () => {
     const historyLen = parseChangeHistory(change.change_history).length;
     const stored = parseInt(change.change_count, 10) || 0;
     return Math.max(stored, historyLen);
+  };
+
+  const pageIds = changes.map((c) => c.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const somePageSelected = pageIds.some((id) => selectedIds.has(id));
+
+  const toggleSelectRow = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllOnPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleDeleteMarked = async () => {
+    if (!isAdmin) {
+      toast.error('Only admins can delete records');
+      return;
+    }
+
+    const ids = [...selectedIds];
+    if (ids.length === 0) {
+      toast.error('No records selected');
+      return;
+    }
+
+    setIsDeletingMarked(true);
+    try {
+      const res = await api.delete('/dta-monitor/changes/bulk', { data: { ids } });
+      toast.success(`Deleted ${res.data.deletedCount} record(s)`);
+      setShowDeleteMarkedModal(false);
+      clearSelection();
+      await queryClient.invalidateQueries({ queryKey: ['dta-changes'] });
+      await queryClient.invalidateQueries({ queryKey: ['dta-statistics'] });
+      refetch();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete selected records');
+    } finally {
+      setIsDeletingMarked(false);
+    }
   };
 
   const handleClearRecords = async () => {
@@ -304,6 +369,25 @@ const DTAMonitor = () => {
 
         {/* Data Table */}
         <div className="table-container">
+          {isAdmin && selectedIds.size > 0 && (
+            <div className="bulk-actions-bar">
+              <span className="bulk-actions-count">
+                {selectedIds.size} record{selectedIds.size === 1 ? '' : 's'} marked
+              </span>
+              <div className="bulk-actions-buttons">
+                <button type="button" onClick={clearSelection} className="btn-secondary">
+                  Clear selection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteMarkedModal(true)}
+                  className="btn-danger"
+                >
+                  Delete marked
+                </button>
+              </div>
+            </div>
+          )}
           {changesLoading ? (
             <div className="loading">Loading...</div>
           ) : (
@@ -311,6 +395,19 @@ const DTAMonitor = () => {
               <table className="data-table">
                 <thead>
                   <tr>
+                    {isAdmin && (
+                      <th className="col-select">
+                        <input
+                          type="checkbox"
+                          checked={allPageSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = somePageSelected && !allPageSelected;
+                          }}
+                          onChange={toggleSelectAllOnPage}
+                          aria-label="Select all on this page"
+                        />
+                      </th>
+                    )}
                     <th>Student</th>
                     <th>Adm No</th>
                     <th>Class</th>
@@ -326,11 +423,24 @@ const DTAMonitor = () => {
                 <tbody>
                   {changes.length === 0 ? (
                     <tr>
-                      <td colSpan="10" className="no-data">No changes found</td>
+                      <td colSpan={isAdmin ? 11 : 10} className="no-data">No changes found</td>
                     </tr>
                   ) : (
                     changes.map((change) => (
-                      <tr key={change.id}>
+                      <tr
+                        key={change.id}
+                        className={selectedIds.has(change.id) ? 'row-selected' : undefined}
+                      >
+                        {isAdmin && (
+                          <td className="col-select">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(change.id)}
+                              onChange={() => toggleSelectRow(change.id)}
+                              aria-label={`Mark ${change.student_name || change.student_adm_no}`}
+                            />
+                          </td>
+                        )}
                         <td>{change.student_name}</td>
                         <td>{change.student_adm_no}</td>
                         <td>{change.level} - {change.stream} ({change.year})</td>
@@ -417,6 +527,45 @@ const DTAMonitor = () => {
                 ) : (
                   <p className="no-history">No change history recorded</p>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Marked Modal */}
+        {showDeleteMarkedModal && (
+          <div className="modal-overlay" onClick={() => setShowDeleteMarkedModal(false)}>
+            <div className="modal-content modal-content-small" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Delete marked records</h2>
+                <button onClick={() => setShowDeleteMarkedModal(false)} className="btn-close">
+                  ×
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="clear-warning">
+                  <p><strong>Warning:</strong> This action cannot be undone!</p>
+                  <p>
+                    You are about to permanently delete <strong>{selectedIds.size}</strong> score
+                    audit record{selectedIds.size === 1 ? '' : 's'}.
+                  </p>
+                </div>
+                <div className="clear-actions">
+                  <button
+                    onClick={() => setShowDeleteMarkedModal(false)}
+                    className="btn-secondary"
+                    disabled={isDeletingMarked}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteMarked}
+                    className="btn-danger"
+                    disabled={isDeletingMarked}
+                  >
+                    {isDeletingMarked ? 'Deleting...' : 'Delete marked'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

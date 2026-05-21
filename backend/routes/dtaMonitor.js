@@ -177,6 +177,43 @@ router.get('/changes', requireAuth, async (req, res) => {
   }
 });
 
+// Delete selected audit records by id (admin only)
+router.delete('/changes/bulk', requireAuth, requireRole('admin', 'superadmin'), async (req, res) => {
+  try {
+    const ids = req.body?.ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'ids must be a non-empty array' });
+    }
+
+    const parsedIds = [...new Set(
+      ids.map((id) => parseInt(id, 10)).filter((id) => Number.isInteger(id) && id > 0)
+    )];
+
+    if (parsedIds.length === 0) {
+      return res.status(400).json({ message: 'No valid record ids provided' });
+    }
+
+    const MAX_BULK_DELETE = 500;
+    if (parsedIds.length > MAX_BULK_DELETE) {
+      return res.status(400).json({ message: `Cannot delete more than ${MAX_BULK_DELETE} records at once` });
+    }
+
+    const result = await query(
+      'DELETE FROM score_change_audit WHERE id = ANY($1::int[])',
+      [parsedIds]
+    );
+
+    res.json({
+      message: 'Selected DTA records deleted successfully',
+      deletedCount: result.rowCount,
+      requestedCount: parsedIds.length
+    });
+  } catch (error) {
+    console.error('Error bulk deleting DTA Monitor records:', error);
+    return sendError(res, error, 500);
+  }
+});
+
 // Get specific change record details
 router.get('/changes/:id', requireAuth, async (req, res) => {
   try {
