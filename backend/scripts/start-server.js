@@ -26,7 +26,7 @@ console.log('📊 NODE_ENV:', process.env.NODE_ENV);
 // Prefer system Chromium on Railway/Linux when Puppeteer's bundled binary cannot start.
 if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
   const fsSync = require('fs');
-  const chromiumCandidates = ['/usr/bin/chromium', '/usr/bin/chromium-browser'];
+  const chromiumCandidates = ['/usr/bin/chromium-browser', '/usr/bin/chromium'];
   for (const candidate of chromiumCandidates) {
     if (fsSync.existsSync(candidate)) {
       process.env.PUPPETEER_EXECUTABLE_PATH = candidate;

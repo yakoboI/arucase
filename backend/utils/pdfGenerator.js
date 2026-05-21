@@ -1969,10 +1969,18 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
         if (aHasTot && bHasTot && totA !== totB) return totB - totA;
       }
 
-      // If averages missing, sort alphabetically
-      if (a.first_name !== b.first_name) return a.first_name.localeCompare(b.first_name);
-      if ((a.middle_name || '') !== (b.middle_name || '')) return (a.middle_name || '').localeCompare(b.middle_name || '');
-      return a.surname.localeCompare(b.surname);
+      // If averages missing, sort alphabetically (guard null names)
+      const fn = String(a.first_name || '').localeCompare(String(b.first_name || ''), undefined, {
+        sensitivity: 'base',
+      });
+      if (fn !== 0) return fn;
+      const mn = String(a.middle_name || '').localeCompare(String(b.middle_name || ''), undefined, {
+        sensitivity: 'base',
+      });
+      if (mn !== 0) return mn;
+      return String(a.surname || '').localeCompare(String(b.surname || ''), undefined, {
+        sensitivity: 'base',
+      });
     });
 
     // Add student rows
@@ -2065,6 +2073,7 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     }
     
     // Launch browser and generate PDF
+    console.log('Launching Puppeteer for monthly results PDF...');
     browser = await launchBrowser({ timeout: 120000 });
     
     const page = await browser.newPage();
@@ -2074,8 +2083,8 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     // Set content directly (no navigation needed)
     try {
       await page.setContent(html, { 
-        waitUntil: 'load',
-        timeout: 30000
+        waitUntil: 'domcontentloaded',
+        timeout: 90000
       });
       console.log('Page content set successfully');
     } catch (contentError) {
@@ -2083,8 +2092,8 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
       // Try with a simpler wait condition
       try {
         await page.setContent(html, { 
-          waitUntil: 'domcontentloaded',
-          timeout: 30000
+          waitUntil: 'load',
+          timeout: 90000
         });
         console.log('Page content set with domcontentloaded');
       } catch (retryError) {
