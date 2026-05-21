@@ -3,7 +3,7 @@
  * Then converts the entire HTML to PDF using Puppeteer (like Python version)
  * This is much more efficient than generating individual PDFs and merging them
  */
-const puppeteer = require('puppeteer');
+const { acquirePage, releasePage, PAGE_TIMEOUT_MS } = require('./puppeteerPool');
 const axios = require('axios');
 const { generateReportHTML } = require('./htmlReportRenderer');
 const fs = require('fs').promises;
@@ -574,7 +574,7 @@ async function generateBulkReportPDFWithBatches(
   console.log(`[BULK PDF] Using Python-style approach: Generate ONE HTML with all reports, then convert to PDF`);
   
   const startTime = Date.now();
-  let browser = null;
+  let page = null;
   
   try {
     // Step 1: Generate HTML for all individual reports
@@ -737,30 +737,17 @@ async function generateBulkReportPDFWithBatches(
     console.log('[BULK PDF] Inlining images (logo, photos, stamp, signatures) as data URIs for reliable multi-page PDF...');
     const htmlForPdf = await inlineBulkReportImages(combinedHTML, publicOrigin, authToken);
     
-    // Step 3: Convert combined HTML to PDF using Puppeteer
-    console.log(`[BULK PDF] Step 3: Converting HTML to PDF using Puppeteer...`);
+    // Step 3: Convert combined HTML to PDF using Puppeteer (pooled browser)
+    console.log(`[BULK PDF] Step 3: Converting HTML to PDF using Puppeteer (pooled browser)...`);
     const pdfStartTime = Date.now();
-    
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process'
-      ],
-      timeout: 300000 // 5 minutes timeout for browser launch (bulk PDFs can take time)
-    });
-    
-    const page = await browser.newPage();
-    
+
+    // Acquire a page from the shared browser pool (no per-request browser launch).
+    page = await acquirePage();
+
     // Set default timeout for page operations (5 minutes for bulk PDFs)
     page.setDefaultTimeout(300000);
     page.setDefaultNavigationTimeout(300000);
-    
+
     // Set viewport to match premium local development appearance
     await page.setViewport({
       width: 1200,
@@ -772,46 +759,26 @@ async function generateBulkReportPDFWithBatches(
     });
 
     await page.emulateMediaType('print');
-    
+
     // Set auth headers for image requests
     if (authToken) {
       await page.setExtraHTTPHeaders({
         'Authorization': `Bearer ${authToken}`
       });
     }
-    
+
     // Set base URL for relative image paths
     const baseUrl = apiUrl.replace('/api', '');
-    
-    // Set content and wait for it to load
-    // Use 'load' instead of 'networkidle0' for bulk PDFs to avoid timeout issues
-    // networkidle0 waits for no network activity, which can timeout with many reports
-    try {
-      await page.setContent(htmlForPdf, {
-        waitUntil: 'load', // Changed from 'networkidle0' to 'load' for better reliability
-        timeout: 300000, // 5 minutes timeout for setContent (bulk PDFs can be large)
-        baseURL: baseUrl
-      });
-    } catch (contentError) {
-      // If 'load' times out, try with 'domcontentloaded' as fallback
-      console.warn('[BULK PDF] setContent with "load" timed out, trying "domcontentloaded"...');
-      try {
-        await page.setContent(htmlForPdf, {
-          waitUntil: 'domcontentloaded',
-          timeout: 300000,
-          baseURL: baseUrl
-        });
-      } catch (domError) {
-        // Last resort: set content without waiting
-        console.warn('[BULK PDF] setContent with "domcontentloaded" also timed out, setting content without wait...');
-        await page.setContent(htmlForPdf, {
-          waitUntil: 'commit',
-          timeout: 300000,
-          baseURL: baseUrl
-        });
-      }
-    }
-    
+
+    // Set content and wait for it to load.
+    // 'domcontentloaded' is sufficient because all images are already inlined as data URIs
+    // by inlineBulkReportImages() above — no external network requests are needed.
+    await page.setContent(htmlForPdf, {
+      waitUntil: 'domcontentloaded',
+      timeout: 300000, // 5 minutes for very large bulk HTML documents
+      baseURL: baseUrl
+    });
+
     try {
       await page.evaluate(() => document.fonts.ready);
     } catch (e) {
@@ -1060,12 +1027,12 @@ async function generateBulkReportPDFWithBatches(
     }
     throw error;
   } finally {
-    // Always close browser
-    if (browser) {
+    // Return the page to the pool so the next request can reuse it immediately.
+    if (page) {
       try {
-        await browser.close();
-      } catch (closeError) {
-        console.error('[BULK PDF] Error closing browser:', closeError);
+        await releasePage(page);
+      } catch (releaseError) {
+        console.error('[BULK PDF] Error releasing page to pool:', releaseError);
       }
     }
   }

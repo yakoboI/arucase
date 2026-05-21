@@ -2,7 +2,7 @@
  * Puppeteer-based PDF Generator for Individual Reports
  * Renders the actual HTML page to PDF, preserving all CSS styling
  */
-const puppeteer = require('puppeteer');
+const { acquirePage, releasePage } = require('./puppeteerPool');
 const axios = require('axios');
 const { normalizeStream } = require('./streamNormalizer');
 const { FONT_STACK } = require('./reportPdfFontSnippets');
@@ -28,8 +28,8 @@ async function generateIndividualReportPDFWithPuppeteer(
   apiUrl = process.env.API_URL || 'http://localhost:5000',
   authToken = null
 ) {
-  let browser = null;
-  
+  let page = null;
+
   try {
     // Normalize stream: NA -> A (important for database queries)
     const normalizedStream = normalizeStream(stream || 'NA');
@@ -103,29 +103,10 @@ async function generateIndividualReportPDFWithPuppeteer(
     
     console.log(`HTML generated successfully. Length: ${html.length} characters`);
     
-    // Launch browser with optimized settings
-    console.log('Launching Puppeteer browser...');
-    try {
-      browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--disable-gpu',
-          '--disable-web-security',
-          '--disable-features=IsolateOrigins,site-per-process'
-        ],
-        timeout: 30000
-      });
-      console.log('Browser launched successfully');
-    } catch (browserError) {
-      console.error('Failed to launch browser:', browserError);
-      throw new Error(`Browser launch failed: ${browserError.message}`);
-    }
-    
-    const page = await browser.newPage();
+    // Acquire a page from the shared browser pool (no per-request browser launch).
+    console.log('Acquiring page from browser pool...');
+    page = await acquirePage();
+    console.log('Page acquired from pool');
 
     // Collect useful diagnostics for debugging missing images in PDF.
     page.on('console', (msg) => {
@@ -169,10 +150,12 @@ async function generateIndividualReportPDFWithPuppeteer(
     
     await page.setExtraHTTPHeaders(imageHeaders);
     
-    // Set content directly from HTML string
+    // Set content directly from HTML string.
+    // 'domcontentloaded' is sufficient for static server-rendered HTML — no external
+    // network requests are needed, so 'networkidle0' would only add unnecessary wait time.
     try {
       await page.setContent(html, {
-        waitUntil: 'networkidle0',
+        waitUntil: 'domcontentloaded',
         timeout: 30000,
         baseURL: baseUrl
       });
@@ -468,11 +451,12 @@ async function generateIndividualReportPDFWithPuppeteer(
       throw new Error(`Failed to generate PDF: ${error.message}`);
     }
   } finally {
-    if (browser) {
+    // Return the page to the pool so the next request can reuse it immediately.
+    if (page) {
       try {
-        await browser.close();
-      } catch (closeError) {
-        console.error('Error closing browser:', closeError);
+        await releasePage(page);
+      } catch (releaseError) {
+        console.error('Error releasing page to pool:', releaseError);
       }
     }
   }
