@@ -1,26 +1,10 @@
 # pg_dump / pg_restore for admin database backups (Railway API service)
-# Chromium libs for Puppeteer PDF generation (monthly results, reports, etc.)
+# Chromium for Puppeteer PDF generation (monthly results, reports, etc.)
+# On Ubuntu 24.04 (Noble), rely on the chromium package deps — do not pin libasound2 etc.
+# (renamed to libasound2t64 and other t64 packages; explicit old names break apt install).
 [phases.setup]
 aptPkgs = [
   "postgresql-client",
   "chromium",
   "fonts-liberation",
-  "libnss3",
-  "libatk1.0-0",
-  "libatk-bridge2.0-0",
-  "libcups2",
-  "libdrm2",
-  "libgbm1",
-  "libasound2",
-  "libx11-6",
-  "libxcomposite1",
-  "libxdamage1",
-  "libxext6",
-  "libxfixes3",
-  "libxrandr2",
-  "libxrender1",
-  "libxss1",
-  "libxtst6",
-  "libpangocairo-1.0-0",
-  "libcairo2",
 ]
