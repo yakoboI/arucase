@@ -23,16 +23,27 @@ const sharp = require('sharp');
 const cloudinary = require('../config/cloudinary');
 const NodeCache = require('node-cache');
 
-// Per-user photo upload rate limiter: max 20 uploads per hour per user
-const photoUploadCache = new NodeCache({ stdTTL: 3600 });
-const PHOTO_UPLOAD_LIMIT = 20;
+// Per-user student photo upload rate limiter (users with student_photo module)
+const isProduction = process.env.NODE_ENV === 'production';
+const PHOTO_UPLOAD_WINDOW_SEC = isProduction ? 60 : 3600;
+const PHOTO_UPLOAD_LIMIT = isProduction ? 30 : 20;
+const photoUploadCache = new NodeCache({ stdTTL: PHOTO_UPLOAD_WINDOW_SEC });
+
+function photoUploadRateLimitMessage() {
+  if (isProduction) {
+    return 'Photo upload limit reached. Maximum 30 uploads per minute per user.';
+  }
+  return 'Photo upload limit reached. Maximum 20 uploads per hour per user.';
+}
+
 function checkPhotoUploadRateLimit(username) {
   const key = `photo_upload_${username}`;
   const count = photoUploadCache.get(key) || 0;
   if (count >= PHOTO_UPLOAD_LIMIT) {
     return false;
   }
-  photoUploadCache.set(key, count + 1, photoUploadCache.getTtl(key) ? Math.ceil((photoUploadCache.getTtl(key) - Date.now()) / 1000) : 3600);
+  const remainingTtl = photoUploadCache.getTtl(key);
+  photoUploadCache.set(key, count + 1, remainingTtl > 0 ? remainingTtl : PHOTO_UPLOAD_WINDOW_SEC);
   return true;
 }
 
@@ -1612,11 +1623,16 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
     const { admNo } = req.params;
     let { level, stream, year, student_index } = req.body;
 
-    // Per-user rate limit: 20 uploads per hour
+    // Per-user rate limit (production: 30/min; development: 20/hour)
     const uploaderUsername = req.user?.user_id || req.user?.username || 'unknown';
     if (!checkPhotoUploadRateLimit(uploaderUsername)) {
       if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
-      return res.status(429).json({ message: 'Photo upload limit reached. Maximum 20 uploads per hour per user.' });
+      const retryKey = `photo_upload_${uploaderUsername}`;
+      const retryAfter = photoUploadCache.getTtl(retryKey);
+      if (retryAfter > 0) {
+        res.setHeader('Retry-After', String(retryAfter));
+      }
+      return res.status(429).json({ message: photoUploadRateLimitMessage() });
     }
 
     if (!req.file) {
