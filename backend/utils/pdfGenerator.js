@@ -1477,10 +1477,696 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null, term
   });
 }
 
+/**
+ * Generate Monthly Results PDF using Puppeteer
+ * Generates PDF directly from database data (no frontend scraping)
+ */
 async function generateMonthlyResultsPDF(level, stream, year, month) {
-  const { renderMonthlyResultsPdf } = require('./monthlyResultsPdfKit');
-  return renderMonthlyResultsPdf(level, stream, year, month);
-}module.exports = {
+  const { launchBrowser } = require('./puppeteerLaunch');
+  const { calculateGrade, getSwahiliRemarks } = require('./calculations');
+  const bwipjs = require('bwip-js');
+  let browser = null;
+  
+  try {
+    // Normalize parameters
+    const normalizedLevel = decodeURIComponent(String(level).replace(/\+/g, ' ')).trim().toUpperCase();
+    const normalizedStream = normalizeStream(stream);
+    const normalizedMonth = decodeURIComponent(String(month).replace(/\+/g, ' ')).trim();
+    const normalizedYear = parseInt(year);
+    
+    console.log('Generating PDF for:', { level: normalizedLevel, stream: normalizedStream, year: normalizedYear, month: normalizedMonth });
+    
+    // Fetch all data from database
+    // Check if this is FORM I-IV (which may have students with stream 'A' or 'NA')
+    const isFormIV = /^FORM\s+(I|II|III|IV)$/i.test(normalizedLevel);
+    
+    // Get students
+    // For FORM I-IV, check both 'A' and 'NA' streams since students may have either
+    // For combined mode, stream=ALL includes all streams for this level/year
+    let studentsResult;
+    if (normalizedStream === 'ALL') {
+      studentsResult = await query(
+        'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND year = $2 ORDER BY adm_no',
+        [normalizedLevel, normalizedYear]
+      );
+    } else if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
+      studentsResult = await query(
+        'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND (stream = $2 OR stream = $3) AND year = $4 ORDER BY adm_no',
+        [normalizedLevel, 'A', 'NA', normalizedYear]
+      );
+    } else {
+      studentsResult = await query(
+        'SELECT adm_no, first_name, middle_name, surname, stream, com FROM students WHERE level = $1 AND stream = $2 AND year = $3 ORDER BY adm_no',
+        [normalizedLevel, normalizedStream, normalizedYear]
+      );
+    }
+    
+    if (studentsResult.rows.length === 0) {
+      const err = new Error('No students found for this class');
+      err.status = 404;
+      throw err;
+    }
+    
+    // Get subjects
+    let subjectsResult;
+    if (normalizedStream === 'ALL') {
+      subjectsResult = await query(
+        'SELECT DISTINCT subject_code, subject_abbreviation, subject_name FROM subjects WHERE level = $1 AND year = $2 ORDER BY subject_code',
+        [normalizedLevel, normalizedYear]
+      );
+    } else {
+      subjectsResult = await query(
+        'SELECT subject_code, subject_abbreviation, subject_name FROM subjects WHERE level = $1 AND stream IN ($2, $3) AND year = $4 ORDER BY subject_code',
+        [normalizedLevel, normalizedStream, 'NA', normalizedYear]
+      );
+    }
+    
+    // Get scores
+    const scoresResult = normalizedStream === 'ALL'
+      ? await query(
+        `SELECT adm_no, subject_code, score
+         FROM individual_scores
+         WHERE level = $1 AND year = $2 AND month = $3`,
+        [normalizedLevel, normalizedYear, normalizedMonth]
+      )
+      : await query(
+        `SELECT adm_no, subject_code, score 
+         FROM individual_scores 
+         WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
+        [normalizedLevel, normalizedStream, 'NA', normalizedYear, normalizedMonth]
+      );
+    
+    // Get monthly results (for totals, averages, grades, positions, remarks)
+    // For FORM I-IV, check both 'A' and 'NA' streams since results may be stored with either
+    let monthlyResultsResult;
+    if (isFormIV && (normalizedStream === 'A' || normalizedStream === 'NA')) {
+      monthlyResultsResult = await query(
+        `SELECT student_index, total_marks, average, grade, position, remarks 
+         FROM monthly_results 
+         WHERE level = $1 AND stream IN ($2, $3) AND year = $4 AND month = $5`,
+        [normalizedLevel, 'A', 'NA', normalizedYear, normalizedMonth]
+      );
+    } else {
+      monthlyResultsResult = await query(
+        `SELECT student_index, total_marks, average, grade, position, remarks 
+         FROM monthly_results 
+         WHERE level = $1 AND stream = $2 AND year = $3 AND month = $4`,
+        [normalizedLevel, normalizedStream, normalizedYear, normalizedMonth]
+      );
+    }
+    
+    // Build lookup maps
+    const monthlyResultsMap = {};
+    monthlyResultsResult.rows.forEach(row => {
+      monthlyResultsMap[row.student_index] = row;
+    });
+    
+    const scoreLookup = {};
+    scoresResult.rows.forEach(row => {
+      if (!scoreLookup[row.adm_no]) {
+        scoreLookup[row.adm_no] = {};
+      }
+      scoreLookup[row.adm_no][row.subject_code] = parseFloat(row.score);
+    });
+    
+    // Get school logo
+    let leftLogoBase64 = null;
+    let rightLogoBase64 = null;
+    try {
+      const logoResult = await query('SELECT logo_image_path FROM school_logo WHERE id = 1');
+      if (logoResult.rows.length > 0 && logoResult.rows[0].logo_image_path) {
+        const logoPath = logoResult.rows[0].logo_image_path;
+        
+        try {
+          let logoBuffer;
+          let logoExtension;
+          
+          // Check if it's a URL (Cloudinary) or local file
+          if (logoPath.startsWith('http')) {
+            // For Cloudinary URLs, fetch the image
+            const axios = require('axios');
+            const response = await axios.get(logoPath, { 
+              responseType: 'arraybuffer',
+              timeout: 10000 
+            });
+            logoBuffer = Buffer.from(response.data);
+            
+            // Extract extension from URL or default to jpg
+            const urlPath = new URL(logoPath).pathname;
+            logoExtension = path.extname(urlPath).toLowerCase().substring(1) || 'jpg';
+            console.log(`Logo fetched from URL: ${logoPath}`);
+          } else {
+            // Local file path
+            const fullLogoPath = path.join(__dirname, '../static', logoPath);
+            logoBuffer = await fs.readFile(fullLogoPath);
+            logoExtension = path.extname(logoPath).toLowerCase().substring(1);
+            console.log(`Logo loaded from file: ${logoPath}`);
+          }
+          
+          // Convert to base64
+          const logoBase64 = logoBuffer.toString('base64');
+          const mimeType = logoExtension === 'png' ? 'image/png' : 
+                          logoExtension === 'jpg' || logoExtension === 'jpeg' ? 'image/jpeg' : 
+                          logoExtension === 'webp' ? 'image/webp' : 'image/jpeg';
+          
+          leftLogoBase64 = `data:${mimeType};base64,${logoBase64}`;
+          rightLogoBase64 = `data:${mimeType};base64,${logoBase64}`; // Use same logo for both sides
+        } catch (logoError) {
+          console.warn('Could not load logo:', logoError.message);
+        }
+      }
+    } catch (logoQueryError) {
+      console.warn('Could not fetch logo from database:', logoQueryError.message);
+    }
+    
+    // Get school info
+    const schoolName = 'ARUSHA CATHOLIC SEMINARY-OLDONYOSAMBU';
+    const schoolFullName = 'CATHOLIC ARCHDIOCESE OF ARUSHA';
+    const contactInfo = 'P.O BOX 3102 Arusha, Tanzania\n+255 754 92 60 22 / +255 765 394 802\nEmail: arucase@gmail.com';
+    
+    // Determine test type based on month and form level (same logic as frontend)
+    const isALevel = normalizedLevel.includes('FORM V') || normalizedLevel.includes('FORM VI');
+    const getTestType = (month, level) => {
+      const testTypes = {
+        'February': 'MONTHLY',
+        'March': 'MIDTERM',
+        'April': 'MONTHLY',
+        'May': isALevel ? 'ANNUAL' : 'TERMINAL',
+        'June': 'MONTHLY',
+        'July': 'MONTHLY',
+        'August': 'MONTHLY',
+        'September': 'MIDTERM',
+        'October': 'MONTHLY',
+        'November': isALevel ? 'TERMINAL' : 'ANNUAL',
+        'December': 'MONTHLY',
+        'January': 'MONTHLY'
+      };
+      return testTypes[month] || 'MONTHLY';
+    };
+    const testTypeRaw = getTestType(normalizedMonth, normalizedLevel);
+    // Format: MIDTERM -> MIDTERM RESULTS (no "TEST" in output)
+    const testType = testTypeRaw + ' RESULTS';
+    
+    // Helper function to escape HTML
+    const escapeHtml = (text) => {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    // Barcode text should standardize on PDF generation date.
+    // Using YYYY-MM-DD makes it deterministic per generation day.
+    const generationDateISO = new Date().toISOString().slice(0, 10);
+    const barcodeText = `RESULTS-${generationDateISO}`;
+    let barcodeSvg = '';
+    try {
+      // Use Code128 so we can encode the standardized date string.
+      barcodeSvg = bwipjs.toSVG({
+        bcid: 'code128',
+        text: barcodeText,
+        scale: 3,
+        height: 22,
+        includetext: false,
+        padding: 0,
+        rotate: 'N'
+      });
+    } catch (e) {
+      console.warn('Failed to generate barcode SVG:', e.message);
+      barcodeSvg = '';
+    }
+
+    // Single horizontal barcode to print after the last student row.
+    const barcodeBottomHtml = barcodeSvg
+      ? `<div class="barcode-bottom" aria-label="Results generation barcode">${barcodeSvg}</div>`
+      : '';
+
+    // Build HTML
+    let html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 10mm 10mm 20mm 10mm;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+    }
+    .report-header-section {
+      background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
+      padding: 15px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+      page-break-inside: avoid;
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+      padding-bottom: 20px;
+      position: relative;
+    }
+    .logo-section, .logo-section-right {
+      flex: 0 0 100px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 0;
+      margin-top: 0;
+    }
+    .school-logo, .school-logo-right {
+      width: 80px;
+      height: auto;
+      display: block;
+      vertical-align: top;
+    }
+    .school-logo-placeholder {
+      width: 80px;
+      height: 80px;
+      border: 1px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3f4f6;
+      font-size: 1.5rem;
+      color: #6b7280;
+      vertical-align: top;
+    }
+    .school-info {
+      flex: 1;
+      text-align: center;
+    }
+    .school-info h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+      color: #000000;
+    }
+    .school-info h2 {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 5px 0;
+      color: #000000;
+    }
+    .contact-info {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .test-info-bar {
+      background-color: #87ceeb;
+      color: #000000;
+      text-align: center;
+      padding: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    .compact-results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 5px;
+    }
+    .compact-results-table th,
+    .compact-results-table td {
+      border: 1px solid #000;
+      padding: 4px 6px;
+      text-align: center;
+      vertical-align: middle;
+      page-break-inside: avoid;
+    }
+    .compact-results-table th {
+      background-color: #e5e7eb;
+      font-weight: bold;
+    }
+    .compact-results-table tbody tr {
+      page-break-inside: avoid;
+    }
+    .compact-results-table thead {
+      display: table-header-group;
+    }
+    /* Ensure header repeats on each page automatically */
+    .compact-results-table thead tr {
+      page-break-after: avoid;
+    }
+    .text-left {
+      text-align: left !important;
+      padding-left: 6px !important;
+    }
+    .grade-row-A { background: linear-gradient(90deg, #166534 0%, #22c55e 100%) !important; color: white !important; }
+    .grade-row-B { background: #86efac !important; color: #14532d !important; }
+    .a-level.grade-row-B { background: #22c55e !important; color: white !important; }
+    .grade-row-C { background: #fef9c3 !important; color: #713f12 !important; }
+    .a-level.grade-row-C { background: #86efac !important; color: #14532d !important; }
+    .grade-row-C-low { background: #fecaca !important; color: #7f1d1d !important; }
+    .grade-row-D, .grade-row-E, .grade-row-S, .grade-row-F { background: #fecaca !important; color: #7f1d1d !important; }
+    .a-level.grade-row-D { background: #fef9c3 !important; color: #713f12 !important; }
+
+    /* Horizontal barcode printed after the results table */
+    .barcode-bottom {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: auto; /* push to bottom of page */
+      padding-bottom: 4mm;
+      page-break-inside: avoid;
+    }
+    .barcode-bottom svg {
+      height: 18mm;
+      width: auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="report-header-section">
+    <div class="report-header">
+      <div class="logo-section">
+        ${leftLogoBase64 
+          ? `<img src="${leftLogoBase64}" alt="School Logo" class="school-logo" />`
+          : `<div class="school-logo-placeholder">🏫</div>`
+        }
+      </div>
+      <div class="school-info">
+        <h1>${escapeHtml(schoolFullName)}</h1>
+        <h2>${escapeHtml(schoolName)}</h2>
+        <div class="contact-info">${escapeHtml(contactInfo).replace(/\n/g, '<br>')}</div>
+      </div>
+      <div class="logo-section-right">
+        ${rightLogoBase64 
+          ? `<img src="${rightLogoBase64}" alt="School Logo" class="school-logo-right" />`
+          : `<div class="school-logo-placeholder">🏫</div>`
+        }
+      </div>
+    </div>
+  </div>
+  <div class="test-info-bar">
+    ${normalizedLevel} ${testType} ${normalizedMonth.toUpperCase()} ${normalizedYear}
+  </div>
+  <table class="compact-results-table">
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th class="text-left">F.Name</th>
+        <th class="text-left">M.Name</th>
+        <th class="text-left">Surname</th>`;
+
+    const formatALevelSubjectHeader = (label) => {
+      const s = String(label || '').trim();
+      if (!s) return s;
+
+      // Database may store A-level advanced subjects with prefixes like "A/BIO"
+      // but printed results expect: BIO, CHE, ACOM, DIV, HTM, MAT, PHY.
+      const m1 = s.match(/^A\/(BIO|CHE|COM|DIV|HTM|MAT|PHY)$/i);
+      if (m1) {
+        const code = m1[1].toUpperCase();
+        return code === 'COM' ? 'ACOM' : code;
+      }
+
+      const m2 = s.match(/^A_(BIO|CHE|COM|DIV|HTM|MAT|PHY)$/i);
+      if (m2) {
+        const code = m2[1].toUpperCase();
+        return code === 'COM' ? 'ACOM' : code;
+      }
+
+      return s;
+    };
+
+    // Add subject columns
+    subjectsResult.rows.forEach(subject => {
+      const rawAbbrev = subject.subject_abbreviation || subject.subject_code;
+      const abbrev = isALevel ? formatALevelSubjectHeader(rawAbbrev) : rawAbbrev;
+      html += `<th>${escapeHtml(abbrev)}</th>`;
+    });
+    // Always show COM column between POS and REMARKS.
+    // O-Level uses Sc/Ss/Ui; A-Level uses combination shortforms like PCM/HGE/HGL.
+    const shouldShowCom = true;
+
+    html += `
+        <th>TOT</th>
+        <th>AVR</th>
+        <th>GRD</th>
+        <th>POS</th>
+        ${shouldShowCom ? '<th>COM</th>' : ''}
+        <th class="text-left">REMARKS</th>
+      </tr>
+    </thead>
+    <tbody>`;
+    
+    // Sort students: by position if results exist, otherwise alphabetically
+    const studentsWithResults = studentsResult.rows.map((student, idx) => {
+      const studentIndex = idx.toString();
+      return {
+        ...student,
+        studentIndex,
+        result: monthlyResultsMap[studentIndex] || {}
+      };
+    });
+    
+    studentsWithResults.sort((a, b) => {
+      const resultA = a.result;
+      const resultB = b.result;
+
+      // Sort by AVR (average) desc only.
+      const avgA = resultA?.average !== null && resultA?.average !== undefined ? Number(resultA.average) : null;
+      const avgB = resultB?.average !== null && resultB?.average !== undefined ? Number(resultB.average) : null;
+
+      const aHasAvg = avgA !== null && Number.isFinite(avgA);
+      const bHasAvg = avgB !== null && Number.isFinite(avgB);
+      if (aHasAvg && bHasAvg && avgA !== avgB) return avgB - avgA;
+      if (aHasAvg && !bHasAvg) return -1;
+      if (!aHasAvg && bHasAvg) return 1;
+
+      // If AVR ties, rank by TOT desc so POS is chronological.
+      if (aHasAvg && bHasAvg && avgA === avgB) {
+        const totA = resultA?.total_marks !== null && resultA?.total_marks !== undefined ? Number(resultA.total_marks) : null;
+        const totB = resultB?.total_marks !== null && resultB?.total_marks !== undefined ? Number(resultB.total_marks) : null;
+        const aHasTot = totA !== null && Number.isFinite(totA);
+        const bHasTot = totB !== null && Number.isFinite(totB);
+        if (aHasTot && bHasTot && totA !== totB) return totB - totA;
+      }
+
+      // If averages missing, sort alphabetically
+      if (a.first_name !== b.first_name) return a.first_name.localeCompare(b.first_name);
+      if ((a.middle_name || '') !== (b.middle_name || '')) return (a.middle_name || '').localeCompare(b.middle_name || '');
+      return a.surname.localeCompare(b.surname);
+    });
+
+    // Add student rows
+    studentsWithResults.forEach((student, index) => {
+      const monthlyResult = student.result;
+      const studentScores = scoreLookup[student.adm_no] || {};
+      const grade = monthlyResult.grade || '';
+      const avgValue = monthlyResult.average ? parseFloat(monthlyResult.average) : null;
+
+      const formatComDisplay = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw) return '-';
+        const code = raw.toLowerCase();
+        if (code === 'sc') return 'Science';
+        if (code === 'ss') return 'Art';
+        if (code === 'ui') return 'Under investigation';
+        // A-Level: store combination shortform like PCM/HGE/HGL
+        return raw.toUpperCase();
+      };
+
+      // Format numbers consistently (remove trailing ".00")
+      const formatScore = (value) => {
+        if (value === undefined || value === null || value === '') return '-';
+        const num = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(num)) return String(value);
+        if (Math.abs(num - Math.round(num)) < 1e-9) return String(Math.round(num));
+        return String(num)
+          .replace(/(\.\d*?[1-9])0+$/, '$1')
+          .replace(/\.0+$/, '');
+      };
+      
+      // Grade C-low only applies to O-Level when average < 55
+      let gradeClass = '';
+      if (grade) {
+        if (grade === 'C' && avgValue !== null && avgValue < 55 && !isALevel) {
+          gradeClass = 'grade-row-C-low';
+        } else {
+          gradeClass = `grade-row-${grade}${isALevel ? ' a-level' : ''}`;
+        }
+      }
+      
+      // Automatic pagination - no manual page breaks needed
+      html += `<tr class="${gradeClass}">
+        <td>${index + 1}</td>
+        <td class="text-left">${escapeHtml(student.first_name || '')}</td>
+        <td class="text-left">${escapeHtml(student.middle_name || '-')}</td>
+        <td class="text-left">${escapeHtml(student.surname || '')}</td>`;
+      
+      // Add subject scores (try both abbreviation and code)
+      subjectsResult.rows.forEach(subject => {
+        const subjectKey = subject.subject_abbreviation || subject.subject_code;
+        const score = studentScores[subjectKey] || studentScores[subject.subject_code];
+        const scoreDisplay = formatScore(score);
+        html += `<td>${escapeHtml(scoreDisplay)}</td>`;
+      });
+      
+      const totalMarks = formatScore(monthlyResult.total_marks);
+      
+      const average = monthlyResult.average !== null && monthlyResult.average !== undefined 
+        ? Math.round(monthlyResult.average)
+        : '-';
+      
+      html += `
+        <td>${escapeHtml(String(totalMarks))}</td>
+        <td>${escapeHtml(String(average))}</td>
+        <td>${escapeHtml(grade || '-')}</td>
+        <td>${escapeHtml(String(monthlyResult.position || '-'))}</td>
+        ${shouldShowCom
+          ? `<td>${escapeHtml(formatComDisplay(isALevel ? (student.com || student.stream) : student.com))}</td>`
+          : ''}
+        <td class="text-left">${escapeHtml(monthlyResult.remarks || '-')}</td>
+      </tr>`;
+    });
+    
+    html += `
+    </tbody>
+  </table>
+  ${barcodeBottomHtml || ''}
+</body>
+</html>`;
+    
+    // Log HTML length for debugging
+    console.log(`Generated HTML length: ${html.length} characters`);
+    console.log(`Number of students: ${studentsWithResults.length}`);
+    console.log(`Number of subjects: ${subjectsResult.rows.length}`);
+    
+    // Validate HTML structure (basic check)
+    if (!html.includes('</html>') || !html.includes('</body>') || !html.includes('</table>')) {
+      console.warn('HTML structure may be incomplete');
+    }
+    
+    // Launch browser and generate PDF
+    browser = await launchBrowser({ timeout: 120000 });
+    
+    const page = await browser.newPage();
+    page.setDefaultTimeout(120000);
+    await page.setViewport({ width: 1920, height: 1080 });
+    
+    // Set content directly (no navigation needed)
+    try {
+      await page.setContent(html, { 
+        waitUntil: 'load',
+        timeout: 30000
+      });
+      console.log('Page content set successfully');
+    } catch (contentError) {
+      console.error('Error setting page content:', contentError);
+      // Try with a simpler wait condition
+      try {
+        await page.setContent(html, { 
+          waitUntil: 'domcontentloaded',
+          timeout: 30000
+        });
+        console.log('Page content set with domcontentloaded');
+      } catch (retryError) {
+        console.error('Failed to set page content even with domcontentloaded:', retryError);
+        throw new Error('Failed to load HTML content: ' + retryError.message);
+      }
+    }
+    
+    // Wait for table to be rendered
+    try {
+      await page.waitForSelector('.compact-results-table', { timeout: 10000 });
+    } catch (selectorError) {
+      console.warn('Table selector not found, continuing anyway:', selectorError.message);
+    }
+    
+    // Wait a bit for rendering (using Promise-based setTimeout instead of deprecated waitForTimeout)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Generate PDF
+    console.log('Generating PDF from HTML...');
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      landscape: true,
+      margin: {
+        top: '10mm',
+        right: '10mm',
+        bottom: '20mm',
+        left: '10mm'
+      },
+      printBackground: true,
+      preferCSSPageSize: false,
+      displayHeaderFooter: false
+    });
+    
+    console.log('PDF generated, buffer type:', typeof pdfBuffer, 'is Buffer:', Buffer.isBuffer(pdfBuffer), 'length:', pdfBuffer?.length);
+    
+    await browser.close();
+    browser = null;
+    
+    // Validate PDF buffer
+    if (!pdfBuffer) {
+      throw new Error('PDF buffer is null or undefined');
+    }
+    
+    // Ensure it's a Buffer
+    let buffer;
+    if (Buffer.isBuffer(pdfBuffer)) {
+      buffer = pdfBuffer;
+    } else if (pdfBuffer instanceof Uint8Array) {
+      buffer = Buffer.from(pdfBuffer);
+    } else if (typeof pdfBuffer === 'string') {
+      buffer = Buffer.from(pdfBuffer, 'binary');
+    } else {
+      buffer = Buffer.from(pdfBuffer);
+    }
+    
+    if (buffer.length === 0) {
+      throw new Error('Generated PDF buffer is empty');
+    }
+    
+    // Check if it's a valid PDF (starts with %PDF)
+    const firstBytes = buffer.slice(0, 4);
+    if (firstBytes[0] !== 0x25 || firstBytes[1] !== 0x50 || firstBytes[2] !== 0x44 || firstBytes[3] !== 0x46) {
+      console.error('PDF buffer first 20 bytes (hex):', buffer.slice(0, 20).toString('hex'));
+      console.error('PDF buffer first 20 bytes (ascii):', buffer.slice(0, 20).toString('ascii'));
+      throw new Error(`Generated PDF buffer is not a valid PDF file. First bytes: ${firstBytes.toString('hex')}`);
+    }
+    
+    console.log(`PDF generated successfully: ${buffer.length} bytes`);
+    console.log('PDF first bytes:', buffer.slice(0, 10).toString('hex'));
+    
+    return buffer;
+  } catch (error) {
+    if (browser) {
+      await browser.close();
+    }
+    console.error('Error generating monthly results PDF:', error);
+    throw error;
+  }
+}
+
+module.exports = {
   generateIndividualReportPDF,
   generateBulkReportPDF,
   generatePhotoEntryFormPDF,
