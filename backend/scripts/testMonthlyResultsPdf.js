@@ -4,12 +4,12 @@
  * Usage: node scripts/testMonthlyResultsPdf.js FORM IV A 2025 November
  */
 require('dotenv').config();
-const { generateMonthlyResultsPDF } = require('../utils/pdfGenerator');
+const { renderMonthlyResultsPdf } = require('../utils/monthlyResultsPdfKit');
 
 async function main() {
   const [level = 'FORM IV', stream = 'A', year = '2025', month = 'November'] = process.argv.slice(2);
   console.log('Testing PDF:', { level, stream, year, month });
-  const buffer = await generateMonthlyResultsPDF(level, stream, year, month);
+  const buffer = await renderMonthlyResultsPdf(level, stream, year, month);
   const isPdf =
     buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
   console.log('OK:', { bytes: buffer.length, isPdf });
