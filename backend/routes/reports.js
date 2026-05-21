@@ -9,9 +9,9 @@ const PDFDocument = require('pdfkit');
 const { generateIndividualReportPDF, generateBulkReportPDF } = require('../utils/pdfGenerator');
 const { normalizeStream } = require('../utils/streamNormalizer');
 const {
-  dedupeCommentRowsByTypePreferA,
-  dedupeTabiaRowsByCriterionPreferA
-} = require('../utils/reportCommentDedupe');
+  loadReportStudentExtras,
+  buildAdmNoToStudentIndexMap,
+} = require('../utils/reportStudentExtras');
 const { sendError } = require('../utils/safeError');
 const {
   calculateGrade,
@@ -347,37 +347,22 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', requireModule('indivi
       (s) => String(s.adm_no) === String(admNo)
     );
     const studentIndex = (studentIndexPos >= 0 ? studentIndexPos : -1).toString();
-    
-    // Get comments using student_index — FORM I–IV: match bulk report + /comments/list (stream may be A or NA in DB)
-    let commentsResult;
-    if (isFormIToIV && normalizedStream === 'A') {
-      const cr = await query(
-        `SELECT * FROM comments WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5 AND term = $6`,
-        [studentIndex, form, 'A', 'NA', parseInt(year), normalizedTerm]
-      );
-      commentsResult = { rows: dedupeCommentRowsByTypePreferA(cr.rows) };
-    } else {
-      commentsResult = await query(
-        'SELECT * FROM comments WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4 AND term = $5',
-        [studentIndex, form, normalizedStream, parseInt(year), normalizedTerm]
-      );
-    }
-    
-    // Get tabia mwenendo using student_index (same A/NA rule as comments)
-    let tabiaResult;
-    if (isFormIToIV && normalizedStream === 'A') {
-      const tr = await query(
-        `SELECT * FROM tabia_mwenendo WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5 AND term = $6`,
-        [studentIndex, form, 'A', 'NA', parseInt(year), normalizedTerm]
-      );
-      tabiaResult = { rows: dedupeTabiaRowsByCriterionPreferA(tr.rows) };
-    } else {
-      tabiaResult = await query(
-        'SELECT * FROM tabia_mwenendo WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4 AND term = $5',
-        [studentIndex, form, normalizedStream, parseInt(year), normalizedTerm]
-      );
-    }
-    
+
+    const {
+      comments: commentsRows,
+      tabia_mwenendo: tabiaRows,
+      student_parish: studentParish,
+      student_fees_debt: studentFeesDebt,
+      class_fees_announcements: classFeesAnnouncements,
+    } = await loadReportStudentExtras({
+      studentIndex,
+      student,
+      form,
+      normalizedStream,
+      yearNum: parseInt(year, 10),
+      normalizedTerm,
+    });
+
     // Get subject teacher signatures
     const subjectTeachersResult = await query(
       'SELECT subject_code, teacher_signature FROM subject_teachers WHERE level = $1 AND stream = $2 AND year = $3',
@@ -393,54 +378,7 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', requireModule('indivi
     const logoResult = await query('SELECT * FROM school_logo WHERE id = 1');
     const stampResult = await query('SELECT * FROM school_stamp WHERE id = 1');
     const authorityResult = await query('SELECT * FROM authority_data WHERE id = 1');
-    
-    // Get student parish from parishes table if exists
-    let studentParish = 'Not specified';
-    try {
-      const parishResult = (isFormIToIV && normalizedStream === 'A')
-        ? await query(
-            `SELECT parish_name FROM student_parishes WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5
-             ORDER BY CASE WHEN stream = $3 THEN 0 ELSE 1 END LIMIT 1`,
-            [studentIndex, form, 'A', 'NA', parseInt(year)]
-          )
-        : await query(
-            'SELECT parish_name FROM student_parishes WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
-            [studentIndex, form, normalizedStream, parseInt(year)]
-          );
-      if (parishResult.rows.length > 0 && parishResult.rows[0]) {
-        studentParish = parishResult.rows[0].parish_name || student.parish || student.parish_name || 'Not specified';
-      } else {
-        studentParish = student.parish || student.parish_name || 'Not specified';
-      }
-    } catch (e) {
-      studentParish = student.parish || student.parish_name || 'Not specified';
-    }
-    
-    // Get student fees debt from individual_debt table
-    let studentFeesDebt = '0.00';
-    try {
-      const debtResult = (isFormIToIV && normalizedStream === 'A')
-        ? await query(
-            `SELECT amount, description FROM individual_debt WHERE student_index = $1 AND level = $2 AND stream IN ($3, $4) AND year = $5
-             ORDER BY CASE WHEN stream = $3 THEN 0 ELSE 1 END LIMIT 1`,
-            [studentIndex, form, 'A', 'NA', parseInt(year)]
-          )
-        : await query(
-            'SELECT amount, description FROM individual_debt WHERE student_index = $1 AND level = $2 AND stream = $3 AND year = $4',
-            [studentIndex, form, normalizedStream, parseInt(year)]
-          );
-      const debt = debtResult.rows[0] || null;
-      if (debt) {
-        if (debt.amount && debt.description) {
-          studentFeesDebt = `${parseFloat(debt.amount).toFixed(0)} - ${debt.description}`;
-        } else if (debt.amount) {
-          studentFeesDebt = parseFloat(debt.amount).toFixed(0);
-        }
-      }
-    } catch (e) {
-      studentFeesDebt = student.fees_debt || student.debt || '0.00';
-    }
-    
+
     // Get student photo
     // IMPORTANT: student_index must match photo management sorting (by name, not adm_no)
     let studentPhoto = null;
@@ -467,41 +405,7 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', requireModule('indivi
       // Photo not found, use student.photo_filename if available
       studentPhoto = student.photo_filename || null;
     }
-    
-    // Get class fees announcements (if available) - filter by term
-    let classFeesAnnouncements = {};
-    try {
-      // Try with term first (new format) - use case-insensitive matching for level
-      let feesAnnouncementsResult;
-      try {
-        feesAnnouncementsResult = await query(
-          `SELECT announcement_index, announcement_text FROM fees_announcements
-           WHERE UPPER(TRIM(level)) = UPPER(TRIM($1)) AND stream IN ($2, $3) AND year = $4 AND term = $5 ORDER BY announcement_index`,
-          [form, normalizedStream, 'NA', parseInt(year), normalizedTerm]
-        );
-      } catch (e) {
-        // If term column doesn't exist, fall back to old query (backward compatibility)
-        if (e.message.includes('column') && e.message.includes('term')) {
-          feesAnnouncementsResult = await query(
-            `SELECT announcement_index, announcement_text FROM fees_announcements
-             WHERE UPPER(TRIM(level)) = UPPER(TRIM($1)) AND stream IN ($2, $3) AND year = $4 ORDER BY announcement_index`,
-            [form, normalizedStream, 'NA', parseInt(year)]
-          );
-        } else {
-          throw e;
-        }
-      }
-      
-      feesAnnouncementsResult.rows.forEach((row) => {
-        const index = row.announcement_index || (feesAnnouncementsResult.rows.indexOf(row) + 1).toString();
-        classFeesAnnouncements[index.toString()] = row.announcement_text || '';
-      });
-    } catch (e) {
-      // Fees announcements table doesn't exist or error occurred, use empty object
-      classFeesAnnouncements = {};
-    }
-    
-    
+
     // Calculate weighted totals per subject and build subjects data
     const subjectsData = {};
     let totalMarks = 0;
@@ -561,8 +465,8 @@ router.get('/individual/:form/:stream/:year/:term/:admNo', requireModule('indivi
       },
       subjects: subjectsResult.rows,
       monthly_results: monthlyResult.rows,
-      comments: commentsResult.rows,
-      tabia_mwenendo: tabiaResult.rows,
+      comments: commentsRows,
+      tabia_mwenendo: tabiaRows,
       subject_rankings: subjectRankings,
       subject_teacher_signatures: subjectTeacherSignatures,
       overall_rank: overallRank,
@@ -853,12 +757,20 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
     const allCommentsLookup = {}; // {student_index: {comment_type: value}}
     const commentTypes = ['sala', 'huduma', 'tabia', 'michezo', 'mwalimu_taaluma', 'mkuu_shule', 'taaluma'];
     
-    // Get student indices (sorted adm_no list)
-    const sortedAdmNos = students.map(s => s.adm_no).sort();
-    const admNoToIndex = {};
-    sortedAdmNos.forEach((admNo, idx) => {
-      admNoToIndex[admNo] = (idx + 1).toString();
-    });
+    // Name-ordered 0-based student_index per stream (matches Comments & Assessment)
+    const admNoToIndexByStream = {};
+    const streamsForIndex = stream
+      ? [stream]
+      : [...new Set(students.map((s) => normalizeStream(s.stream || 'A')))];
+    await Promise.all(
+      streamsForIndex.map(async (streamKey) => {
+        admNoToIndexByStream[streamKey] = await buildAdmNoToStudentIndexMap(
+          decodedForm,
+          streamKey,
+          parseInt(year, 10)
+        );
+      })
+    );
     
     let commentsResult;
     try {
@@ -932,7 +844,8 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
     
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
-      const studentIndex = admNoToIndex[student.adm_no] || (i + 1).toString();
+      const streamKey = normalizeStream(student.stream || stream || 'A');
+      const studentIndex = admNoToIndexByStream[streamKey]?.[student.adm_no];
       
       // Get student's scores
       const studentScores = allScoresLookup[student.adm_no] || {};
@@ -976,13 +889,15 @@ router.get('/bulk/:form/:year/:term', requireModule('bulk_report'), async (req, 
       const overallGrade = calculateGrade(average, decodedForm);
       
       // Get comments for this student
-      const studentComments = allCommentsLookup[studentIndex] || {};
+      const studentComments =
+        studentIndex !== undefined ? (allCommentsLookup[studentIndex] || {}) : {};
       
       // Build report data
       studentReports.push({
         student: {
           ...student,
-          student_index: studentIndex
+          student_index:
+            studentIndex !== undefined ? studentIndex : undefined,
         },
         subjects_data: subjectsData,
         monthly_results: Object.keys(studentScores).flatMap(subjectCode => 

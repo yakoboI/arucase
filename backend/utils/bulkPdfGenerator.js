@@ -20,6 +20,11 @@ const {
   calculateWeightedTotal,
   calculateOverallAverage
 } = require('./calculations');
+const {
+  getStudentIndexListQuery,
+  studentIndexForAdmNo,
+  loadReportStudentExtras,
+} = require('./reportStudentExtras');
 
 /** Must match htmlReportRenderer.js (single-report HTML slice for bulk merge). */
 const REPORT_INNER_START = '<!-- __ARUCASE_REPORT_INNER_START__ -->';
@@ -423,28 +428,32 @@ async function getReportDataInternal(form, stream, year, term, admNo, branding) 
     division = getOLevelDivision(divisionPoint);
   }
 
-  // Student index for photos (must match Individual report route / PhotoManagement ordering)
-  const isFormIToIV = /^FORM\s+(I|II|III|IV)$/i.test(form);
-  const studentIndexStudentsQuery = (isFormIToIV && normalizedStream === 'A')
-    ? `SELECT adm_no, first_name, middle_name, surname
-       FROM students
-       WHERE level = $1 AND stream IN ($2, $3) AND year = $4
-       ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC`
-    : `SELECT adm_no, first_name, middle_name, surname
-       FROM students
-       WHERE level = $1 AND stream = $2 AND year = $3
-       ORDER BY first_name ASC, middle_name ASC NULLS LAST, surname ASC`;
-  const studentIndexStudentsQueryWithLimit = `${studentIndexStudentsQuery} LIMIT 500`;
-  const studentIndexStudentsParams = (isFormIToIV && normalizedStream === 'A')
-    ? [form, 'A', 'NA', yearNum]
-    : [form, normalizedStream, yearNum];
-  const studentIndexStudentsResult = await query(studentIndexStudentsQueryWithLimit, studentIndexStudentsParams);
-  const studentIndexPos = studentIndexStudentsResult.rows.findIndex(
-    (s) => String(s.adm_no) === String(admNo)
+  // Student index: name order, 0-based (matches Comments & Assessment + individual report)
+  const { sql: studentIndexSql, params: studentIndexParams } = getStudentIndexListQuery(
+    form,
+    normalizedStream,
+    yearNum
   );
-  const studentIndex = (studentIndexPos >= 0 ? studentIndexPos : -1).toString();
+  const studentIndexStudentsResult = await query(studentIndexSql, studentIndexParams);
+  const studentIndex = studentIndexForAdmNo(admNo, studentIndexStudentsResult.rows);
+
+  const {
+    comments,
+    tabia_mwenendo,
+    student_parish,
+    student_fees_debt,
+    class_fees_announcements,
+  } = await loadReportStudentExtras({
+    studentIndex,
+    student,
+    form,
+    normalizedStream,
+    yearNum,
+    normalizedTerm,
+  });
 
   let studentPhoto = null;
+  const isFormIToIV = /^FORM\s+(I|II|III|IV)$/i.test(form);
   try {
     const photoStreamsToCheck = (isFormIToIV && normalizedStream === 'A') ? ['A', 'NA'] : [normalizedStream];
     const photoResult = (photoStreamsToCheck.length === 2)
@@ -472,7 +481,6 @@ async function getReportDataInternal(form, stream, year, term, admNo, branding) 
     subjectTeacherSignatures[row.subject_code] = row.teacher_signature || '';
   });
 
-  // Get basic report data (simplified for bulk PDF) + assets required by htmlReportRenderer
   return {
     student: {
       ...student,
@@ -480,6 +488,8 @@ async function getReportDataInternal(form, stream, year, term, admNo, branding) 
     },
     subjects: subjectsResult.rows,
     monthly_results: deduplicatedMonthlyResults,
+    comments,
+    tabia_mwenendo,
     months,
     form,
     term: normalizedTerm,
@@ -500,7 +510,10 @@ async function getReportDataInternal(form, stream, year, term, admNo, branding) 
     school_logo: branding.school_logo,
     school_stamp: branding.school_stamp,
     authority_data: branding.authority_data,
-    subject_teacher_signatures: subjectTeacherSignatures
+    subject_teacher_signatures: subjectTeacherSignatures,
+    student_parish,
+    student_fees_debt,
+    class_fees_announcements,
   };
 }
 
