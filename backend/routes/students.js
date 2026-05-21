@@ -23,9 +23,9 @@ const sharp = require('sharp');
 const cloudinary = require('../config/cloudinary');
 const NodeCache = require('node-cache');
 
-// Per-user photo upload rate limiter: max 5 uploads per hour per user
+// Per-user photo upload rate limiter: max 20 uploads per hour per user
 const photoUploadCache = new NodeCache({ stdTTL: 3600 });
-const PHOTO_UPLOAD_LIMIT = 5;
+const PHOTO_UPLOAD_LIMIT = 20;
 function checkPhotoUploadRateLimit(username) {
   const key = `photo_upload_${username}`;
   const count = photoUploadCache.get(key) || 0;
@@ -1612,11 +1612,11 @@ router.post('/:admNo/photo', upload.single('photo'), async (req, res) => {
     const { admNo } = req.params;
     let { level, stream, year, student_index } = req.body;
 
-    // Per-user rate limit: 5 uploads per hour
+    // Per-user rate limit: 20 uploads per hour
     const uploaderUsername = req.user?.user_id || req.user?.username || 'unknown';
     if (!checkPhotoUploadRateLimit(uploaderUsername)) {
       if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
-      return res.status(429).json({ message: 'Photo upload limit reached. Maximum 5 uploads per hour per user.' });
+      return res.status(429).json({ message: 'Photo upload limit reached. Maximum 20 uploads per hour per user.' });
     }
 
     if (!req.file) {

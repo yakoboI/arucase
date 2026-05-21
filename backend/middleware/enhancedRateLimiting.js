@@ -170,7 +170,7 @@ const extractIp = (req) => req.ip || req.connection.remoteAddress || req.headers
 const enhancedAuthRateLimit = enhancedRateLimit(extractUsername);
 const trackAuthFailures = trackAuthFailure(extractUsername);
 const clearAuthSuccess = clearAuthRateLimit(extractUsername);
-const globalApiRateLimit = globalRateLimit(1000, 15 * 60 * 1000); // 1000 requests per 15 minutes
+const globalApiRateLimit = globalRateLimit(4000, 15 * 60 * 1000); // 4000 requests per 15 minutes
 
 module.exports = {
   enhancedRateLimit,

@@ -316,8 +316,8 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Rate limiting - production-appropriate limits to prevent DDoS attacks
 const rateLimitMax = process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX, 10) : null;
 const defaultMax = process.env.NODE_ENV === 'production'
-  ? (rateLimitMax || 500)   // Production: 500 requests per 15 minutes per IP (reasonable limit)
-  : 5000;                    // Development: 5000 requests per 15 minutes
+  ? (rateLimitMax || 2000)  // Production: 2000 requests per 15 minutes per IP (override via RATE_LIMIT_MAX)
+  : 20000;                   // Development: 20000 requests per 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: defaultMax,
