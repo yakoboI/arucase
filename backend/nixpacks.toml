@@ -1,10 +1,11 @@
 # pg_dump / pg_restore for admin database backups (Railway API service)
-# Chromium for Puppeteer PDF generation (monthly results, reports, etc.)
-# On Ubuntu 24.04 (Noble), rely on the chromium package deps — do not pin libasound2 etc.
-# (renamed to libasound2t64 and other t64 packages; explicit old names break apt install).
+# chromium apt: shared libs for Puppeteer's bundled Chrome (not /usr/bin/chromium-browser — snap stub on Noble)
 [phases.setup]
 aptPkgs = [
   "postgresql-client",
   "chromium",
   "fonts-liberation",
 ]
+
+[phases.build]
+cmds = ["npx puppeteer browsers install chrome"]

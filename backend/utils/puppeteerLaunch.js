@@ -1,5 +1,8 @@
 /**
  * Shared Puppeteer launch settings for local dev and Railway/Linux production.
+ *
+ * Ubuntu 24.04: /usr/bin/chromium-browser is often a snap stub ("snap install chromium").
+ * Prefer Puppeteer's bundled Chrome; use system binaries only when verified real.
  */
 const fs = require('fs');
 const puppeteer = require('puppeteer');
@@ -14,35 +17,71 @@ const DEFAULT_ARGS = [
   '--disable-features=IsolateOrigins,site-per-process',
 ];
 
-/** Extra flags for Docker/Railway when using system Chromium */
 const LINUX_CONTAINER_ARGS = ['--no-zygote', '--disable-software-rasterizer'];
 
+/** System paths to try after bundled Chrome (snap stubs excluded by isUsableChromiumBinary) */
 const SYSTEM_CHROMIUM_PATHS = [
-  '/usr/bin/chromium-browser',
+  '/usr/lib/chromium/chromium',
   '/usr/bin/chromium',
   '/usr/bin/google-chrome-stable',
   '/usr/bin/google-chrome',
+  '/usr/bin/chromium-browser',
 ];
 
-function resolveExecutablePath() {
-  const explicit = process.env.PUPPETEER_EXECUTABLE_PATH;
-  if (explicit && fs.existsSync(explicit)) {
-    return explicit;
+function isSnapChromiumStub(filePath) {
+  try {
+    const head = fs.readFileSync(filePath, { encoding: 'utf8' }).slice(0, 800);
+    return /requires the chromium snap|snap install chromium/i.test(head);
+  } catch {
+    return false;
   }
+}
+
+function isUsableChromiumBinary(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return false;
+  try {
+    const stat = fs.statSync(filePath);
+    if (!stat.isFile()) return false;
+    if (isSnapChromiumStub(filePath)) {
+      console.warn('[Puppeteer] Skipping snap wrapper:', filePath);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getBundledExecutablePath() {
   try {
     const bundled = puppeteer.executablePath();
-    if (bundled && fs.existsSync(bundled)) {
+    if (bundled && isUsableChromiumBinary(bundled)) {
       return bundled;
     }
-  } catch {
-    // bundled chromium not installed
-  }
-  for (const candidate of SYSTEM_CHROMIUM_PATHS) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
+  } catch (e) {
+    console.warn('[Puppeteer] Bundled Chrome not available:', e.message);
   }
   return null;
+}
+
+function collectExecutableCandidates() {
+  const candidates = [];
+  const seen = new Set();
+  const add = (p) => {
+    if (!p || seen.has(p) || !isUsableChromiumBinary(p)) return;
+    seen.add(p);
+    candidates.push(p);
+  };
+
+  // Bundled Chrome first (works on Railway when installed at build time)
+  add(getBundledExecutablePath());
+
+  const explicit = process.env.PUPPETEER_EXECUTABLE_PATH;
+  if (explicit) add(explicit);
+
+  for (const p of SYSTEM_CHROMIUM_PATHS) add(p);
+
+  return candidates;
 }
 
 /**
@@ -51,61 +90,52 @@ function resolveExecutablePath() {
  */
 async function launchBrowser(options = {}) {
   const timeout = options.timeout ?? 120000;
-  const executablePath = resolveExecutablePath();
-  const useSystemChrome =
-    executablePath &&
-    SYSTEM_CHROMIUM_PATHS.some((p) => executablePath === p || executablePath.startsWith('/usr/bin/'));
+  const candidates = collectExecutableCandidates();
 
-  const args = [
-    ...DEFAULT_ARGS,
-    ...(useSystemChrome ? LINUX_CONTAINER_ARGS : []),
-    ...(options.extraArgs || []),
-  ];
+  console.log('[Puppeteer] Launch candidates:', candidates.length ? candidates : ['(puppeteer default)']);
 
-  const launchOptions = {
-    headless: true,
-    args,
-    timeout,
-    ...(executablePath ? { executablePath } : {}),
-  };
-
-  console.log('[Puppeteer] Launching browser', {
-    executablePath: executablePath || '(puppeteer default)',
-    useSystemChrome,
-  });
-
-  const attempts = [];
-  if (executablePath) attempts.push(executablePath);
-  try {
-    const bundled = puppeteer.executablePath();
-    if (bundled && !attempts.includes(bundled)) attempts.push(bundled);
-  } catch {
-    /* ignore */
-  }
-  for (const p of SYSTEM_CHROMIUM_PATHS) {
-    if (!attempts.includes(p) && fs.existsSync(p)) attempts.push(p);
-  }
-  if (attempts.length === 0) attempts.push(null);
-
+  const attempts = candidates.length > 0 ? candidates : [null];
   let lastError;
-  for (const pathTry of attempts) {
-    const opts = pathTry ? { ...launchOptions, executablePath: pathTry } : launchOptions;
+
+  for (const executablePath of attempts) {
+    const useSystemChrome =
+      executablePath &&
+      (executablePath.startsWith('/usr/') || executablePath.includes('chrome-linux'));
+
+    const args = [
+      ...DEFAULT_ARGS,
+      ...(useSystemChrome && executablePath.startsWith('/usr/') ? LINUX_CONTAINER_ARGS : []),
+      ...(options.extraArgs || []),
+    ];
+
+    const launchOptions = {
+      headless: true,
+      args,
+      timeout,
+      ...(executablePath ? { executablePath } : {}),
+    };
+
     try {
-      const browser = await puppeteer.launch(opts);
-      console.log('[Puppeteer] Browser launched:', pathTry || 'default');
+      const browser = await puppeteer.launch(launchOptions);
+      console.log('[Puppeteer] Browser launched:', executablePath || 'default');
       return browser;
     } catch (err) {
       lastError = err;
-      console.warn('[Puppeteer] Launch failed:', pathTry || 'default', err.message);
+      console.warn('[Puppeteer] Launch failed:', executablePath || 'default', err.message);
     }
   }
 
   const hint =
-    'PDF generation requires Chromium. On Railway, install the chromium apt package ' +
-    'or set PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser';
+    'PDF generation requires Chrome. Ensure Puppeteer bundled Chrome is installed at build ' +
+    '(npx puppeteer browsers install chrome). Do not set PUPPETEER_EXECUTABLE_PATH to ' +
+    '/usr/bin/chromium-browser on Ubuntu 24.04 (snap stub).';
   const error = new Error(`${hint} (${lastError?.message || 'unknown'})`);
   error.cause = lastError;
   throw error;
 }
 
-module.exports = { launchBrowser, DEFAULT_ARGS, resolveExecutablePath };
+function resolveExecutablePath() {
+  return collectExecutableCandidates()[0] || null;
+}
+
+module.exports = { launchBrowser, DEFAULT_ARGS, resolveExecutablePath, isUsableChromiumBinary };

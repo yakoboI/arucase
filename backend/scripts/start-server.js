@@ -23,16 +23,17 @@ console.log('🔧 Environment variables configured');
 console.log('📊 PORT:', process.env.PORT);
 console.log('📊 NODE_ENV:', process.env.NODE_ENV);
 
-// Prefer system Chromium on Railway/Linux when Puppeteer's bundled binary cannot start.
-if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
-  const fsSync = require('fs');
-  const chromiumCandidates = ['/usr/bin/chromium-browser', '/usr/bin/chromium'];
-  for (const candidate of chromiumCandidates) {
-    if (fsSync.existsSync(candidate)) {
-      process.env.PUPPETEER_EXECUTABLE_PATH = candidate;
-      console.log('📊 PUPPETEER_EXECUTABLE_PATH:', candidate);
-      break;
-    }
+// Do not auto-set PUPPETEER_EXECUTABLE_PATH to /usr/bin/chromium-browser on Ubuntu 24.04 —
+// it is a snap wrapper and breaks PDF generation. puppeteerLaunch.js prefers bundled Chrome.
+if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+  console.log('📊 PUPPETEER_EXECUTABLE_PATH (env):', process.env.PUPPETEER_EXECUTABLE_PATH);
+} else {
+  try {
+    const { resolveExecutablePath } = require('../utils/puppeteerLaunch');
+    const resolved = resolveExecutablePath();
+    if (resolved) console.log('📊 Puppeteer will use:', resolved);
+  } catch {
+    /* resolved at first PDF request */
   }
 }
 
