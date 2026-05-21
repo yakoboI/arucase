@@ -2478,7 +2478,7 @@ router.post('/:admNo/scores', async (req, res) => {
 
     // DTA Monitor: Log score change to audit table
     const monthStr = String(month).trim();
-    const changedBy = req.user?.username || 'system';
+    const changedBy = req.user?.user_id || req.user?.username || 'system';
     const scoresAreDifferent = (a, b) => {
       if (a == null && b == null) return false;
       if (a == null || b == null) return true;
