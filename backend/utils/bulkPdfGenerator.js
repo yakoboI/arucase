@@ -100,6 +100,85 @@ async function inlineBulkReportImages(html, origin, authToken) {
 }
 
 /**
+ * Chromium often paints only the first occurrence when many <img> share the same data: URI.
+ * Append a per-report fragment so each logo/photo src string is unique (image bytes unchanged).
+ */
+function uniquifyBulkReportImageSrc(html) {
+  const parts = html.split(/<div class="report-container"/);
+  if (parts.length <= 1) return html;
+
+  let out = parts[0];
+  for (let i = 1; i < parts.length; i++) {
+    let chunk = parts[i];
+    let imgIdx = 0;
+    chunk = chunk.replace(
+      /(<img\b[^>]*?\bsrc=")([^"]+)(")/gi,
+      (_, pre, src, post) => {
+        const base = src.split('#')[0];
+        return `${pre}${base}#bulk-${i - 1}-${imgIdx++}${post}`;
+      }
+    );
+    out += `<div class="report-container"${chunk}`;
+  }
+  return out;
+}
+
+/** Bulk multi-page PDF: grid header so logo/photo stay on every student (flex+absolute breaks after page 1). */
+const BULK_MULTI_PAGE_HEADER_CSS = `
+    .report-container {
+      min-height: 0 !important;
+      overflow: visible !important;
+      overflow-x: visible !important;
+      page-break-after: always;
+    }
+    .report-container:last-child {
+      page-break-after: auto;
+    }
+    .report-container .report-header {
+      display: grid !important;
+      grid-template-columns: 90px minmax(0, 1fr) 90px !important;
+      align-items: center !important;
+      gap: 8px !important;
+      min-height: 104px !important;
+      position: relative !important;
+      overflow: visible !important;
+      box-sizing: border-box !important;
+      margin-bottom: 0 !important;
+      padding: 5px 4px 8px 4px !important;
+    }
+    .report-container .report-header .school-info {
+      grid-column: 2 !important;
+      min-width: 0 !important;
+    }
+    .report-container .logo-section {
+      grid-column: 1 !important;
+      position: relative !important;
+      left: auto !important;
+      right: auto !important;
+      top: auto !important;
+    }
+    .report-container .student-photo {
+      grid-column: 3 !important;
+      position: relative !important;
+      left: auto !important;
+      right: auto !important;
+      top: auto !important;
+    }
+    .report-container .logo-section,
+    .report-container .student-photo {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    .report-container .school-logo,
+    .report-container .photo {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+`;
+
+/**
  * Read CSS for bulk PDF HTML. Same resolution order as htmlReportRenderer: prefer copies under
  * backend/assets/pdf-report/ (Railway/backend-only), then repo frontend paths.
  * After editing frontend CSS, run: cd backend && npm run sync-report-pdf-css
@@ -117,38 +196,24 @@ async function readFirstExisting(paths) {
   return null;
 }
 
+/** Same CSS as individual PDF (htmlReportRenderer / puppeteerPdfGenerator) — not BulkReport.css UI styles. */
 async function getCSSContent() {
   const individualCandidates = [
     path.join(__dirname, '../assets/pdf-report/IndividualReportDetail.css'),
     path.join(__dirname, '../../frontend/src/pages/reports/IndividualReportDetail.css'),
     path.join(process.cwd(), 'frontend/src/pages/reports/IndividualReportDetail.css')
   ];
-  const bulkCandidates = [
-    path.join(__dirname, '../assets/pdf-report/BulkReport.css'),
-    path.join(__dirname, '../../frontend/src/pages/reports/BulkReport.css'),
-    path.join(process.cwd(), 'frontend/src/pages/reports/BulkReport.css')
-  ];
 
   const individualReportCSS = await readFirstExisting(individualCandidates);
-  const bulkReportCSS = await readFirstExisting(bulkCandidates);
-
-  if (individualReportCSS && bulkReportCSS) {
-    return `${bulkReportCSS}\n\n${individualReportCSS}`;
-  }
-
   if (individualReportCSS) {
-    console.warn('[bulk-pdf-report] BulkReport.css missing; using IndividualReportDetail.css only');
     return individualReportCSS;
   }
 
-  console.warn('[bulk-pdf-report] Could not read report CSS files; using minimal styles (PDF will not match the app).');
+  console.warn('[bulk-pdf-report] Could not read IndividualReportDetail.css; using minimal styles (PDF will not match the app).');
   return `
       * { box-sizing: border-box; }
       body { font-family: 'Tinos', 'Times New Roman', 'Liberation Serif', 'Times', serif; margin: 0; padding: 0; }
       .report-container { max-width: 194mm; margin: 0 auto; padding: 3px; }
-      .bulk-report-page { padding: 1rem; }
-      .excel-card { background: white; border-radius: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
-      .excel-card-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 1.25rem; }
       table { width: 100%; border-collapse: collapse; border: 1px solid #000; }
       th, td { border: 1px solid #000; padding: 4px 5px; font-size: 10px; }
       th { background: #fff; font-weight: bold; }
@@ -662,93 +727,25 @@ async function generateBulkReportPDFWithBatches(
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     ${cssContent}
-    /* Bulk multi-sheet: do not give every sheet min-height:100vh (breaks logo/photo after first student in Chrome PDF) */
-    .bulk-report-page > .bulk-reports-list .excel-card-body > .report-container {
-      min-height: 0 !important;
-      overflow: visible !important;
-      overflow-x: visible !important;
-    }
-    .bulk-report-page .report-header {
-      display: grid !important;
-      grid-template-columns: 90px minmax(0, 1fr) 90px !important;
-      align-items: center !important;
-      gap: 8px !important;
-      min-height: 104px !important;
-      position: relative !important;
-      overflow: visible !important;
-      box-sizing: border-box !important;
-    }
-    .bulk-report-page .report-header .school-info {
-      grid-column: 2 !important;
-      min-width: 0 !important;
-    }
-    .bulk-report-page .logo-section {
-      grid-column: 1 !important;
-      position: relative !important;
-      left: auto !important;
-      right: auto !important;
-      top: auto !important;
-    }
-    .bulk-report-page .student-photo {
-      grid-column: 3 !important;
-      position: relative !important;
-      left: auto !important;
-      right: auto !important;
-      top: auto !important;
-    }
     @media print {
-      .download-section, .breadcrumb, .bulk-report-actions, .excel-card-header { display: none !important; }
-      .bulk-report-page .excel-card,
-      .bulk-report-page .excel-card-body {
-        overflow: visible !important;
-      }
-      /* IndividualReportDetail hides logo/photo placeholders in print; restore for bulk when images load late or fail */
-      .bulk-report-page .logo-section .school-logo-placeholder,
-      .bulk-report-page .student-photo .photo-placeholder,
-      .bulk-report-page .logo-section .school-logo-placeholder i,
-      .bulk-report-page .student-photo .photo-placeholder i {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-      }
-      .report-container {
-        page-break-after: always;
-        margin-bottom: 20px;
-      }
-      .report-container:last-child {
-        page-break-after: auto;
-      }
-      .bulk-report-page {
-        padding: 0.5rem;
-      }
-      .excel-card {
-        box-shadow: none;
-        border: none;
-      }
+      .download-section, .breadcrumb { display: none !important; }
     }
+    ${BULK_MULTI_PAGE_HEADER_CSS}
   </style>
 </head>
 <body>
-  <div class="bulk-report-page">
-
-    <div class="bulk-reports-list">
-      <div class="excel-card">
-        <div class="excel-card-body">
-          ${reportHTMLs.map((html, index) => `
-            <div class="report-container" style="${index > 0 ? 'page-break-before: always;' : ''}">
-              ${html}
-            </div>
-          `).join('\n')}
-        </div>
-      </div>
-    </div>
+  ${reportHTMLs.map((html, index) => `
+  <div class="report-container" style="${index > 0 ? 'page-break-before: always;' : ''}">
+    ${html}
   </div>
+  `).join('\n')}
 </body>
 </html>`;
 
     const publicOrigin = publicOriginFromApiUrl(apiUrl);
     console.log('[BULK PDF] Inlining images (logo, photos, stamp, signatures) as data URIs for reliable multi-page PDF...');
-    const htmlForPdf = await inlineBulkReportImages(combinedHTML, publicOrigin, authToken);
+    let htmlForPdf = await inlineBulkReportImages(combinedHTML, publicOrigin, authToken);
+    htmlForPdf = uniquifyBulkReportImageSrc(htmlForPdf);
     
     // Step 3: Convert combined HTML to PDF using Puppeteer (pooled browser)
     console.log(`[BULK PDF] Step 3: Converting HTML to PDF using Puppeteer (pooled browser)...`);
@@ -761,17 +758,15 @@ async function generateBulkReportPDFWithBatches(
     page.setDefaultTimeout(300000);
     page.setDefaultNavigationTimeout(300000);
 
-    // Set viewport to match premium local development appearance
+    // Match individual report PDF (puppeteerPdfGenerator.js)
     await page.setViewport({
-      width: 1200,
-      height: 800,
+      width: 1920,
+      height: 1080,
       deviceScaleFactor: 1,
       isMobile: false,
       hasTouch: false,
       isLandscape: false
     });
-
-    await page.emulateMediaType('print');
 
     // Set auth headers for image requests
     if (authToken) {
@@ -798,10 +793,26 @@ async function generateBulkReportPDFWithBatches(
       console.warn('[BULK PDF] document.fonts.ready:', e.message);
     }
 
+    // Re-apply unique src in DOM (belt-and-suspenders if HTML split missed nested markup)
+    try {
+      await page.evaluate(() => {
+        document.querySelectorAll('.report-container').forEach((container, reportIndex) => {
+          container.querySelectorAll('img[src]').forEach((img, imgIndex) => {
+            const raw = img.getAttribute('src') || img.src;
+            if (!raw) return;
+            const base = raw.split('#')[0];
+            img.src = `${base}#bulk-${reportIndex}-${imgIndex}`;
+          });
+        });
+      });
+    } catch (uniqErr) {
+      console.warn('[BULK PDF] Image src uniquify:', uniqErr.message);
+    }
+
     console.log('[BULK PDF] Waiting for report images to finish loading...');
     try {
       await page.evaluate(async () => {
-        const imgs = Array.from(document.querySelectorAll('.bulk-report-page img[src]'));
+        const imgs = Array.from(document.querySelectorAll('.report-container img[src]'));
         await Promise.all(
           imgs.map(
             (img) =>
@@ -834,6 +845,31 @@ async function generateBulkReportPDFWithBatches(
       const reportContainers = document.querySelectorAll('.report-container');
       
       reportContainers.forEach((container) => {
+        const header = container.querySelector('.report-header');
+        if (header) {
+          header.style.setProperty('display', 'grid', 'important');
+          header.style.setProperty('grid-template-columns', '90px minmax(0, 1fr) 90px', 'important');
+          header.style.setProperty('align-items', 'center', 'important');
+          header.style.setProperty('gap', '8px', 'important');
+          header.style.setProperty('min-height', '104px', 'important');
+          header.style.setProperty('position', 'relative', 'important');
+          header.style.setProperty('overflow', 'visible', 'important');
+        }
+        container.querySelectorAll('.logo-section, .student-photo').forEach((el) => {
+          el.style.setProperty('position', 'relative', 'important');
+          el.style.setProperty('left', 'auto', 'important');
+          el.style.setProperty('right', 'auto', 'important');
+          el.style.setProperty('top', 'auto', 'important');
+          el.style.setProperty('display', 'flex', 'important');
+          el.style.setProperty('visibility', 'visible', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+        });
+        container.querySelectorAll('.school-logo, .photo').forEach((img) => {
+          img.style.setProperty('display', 'block', 'important');
+          img.style.setProperty('visibility', 'visible', 'important');
+          img.style.setProperty('opacity', '1', 'important');
+        });
+
         // Force MAONI column visibility within each report
         const forceMaoniColumnVisible = () => {
           const maoniHeaders = container.querySelectorAll('.academic-table th:nth-child(10)');
@@ -982,7 +1018,7 @@ async function generateBulkReportPDFWithBatches(
     // Final grace period after JavaScript execution
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Generate PDF with premium settings to match local development appearance
+    // Same PDF settings as individual report (puppeteerPdfGenerator.js)
     console.log('[BULK PDF] Generating PDF from HTML (this may take a while for bulk reports)...');
     const pdfPromise = page.pdf({
       format: 'A4',
@@ -995,7 +1031,7 @@ async function generateBulkReportPDFWithBatches(
       },
       preferCSSPageSize: false,
       displayHeaderFooter: false,
-      scale: 0.85
+      scale: 1.0
     });
     
     // Add timeout wrapper (10 minutes for very large bulk PDFs)
