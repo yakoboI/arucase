@@ -412,10 +412,10 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
     return -1;
   };
 
-  const handleDownloadTemplate = () => {
+  const buildParishCsv = (includeFilledParishes) => {
     const headers = ['AdmNumber', 'first_name', 'middle_name', 'surname', 'Parish'];
     const rows = students.map((s, index) => {
-      const parish = getParishName(index) || '';
+      const parish = includeFilledParishes ? (getParishName(index) || '') : '';
       return [
         csvEscape(s.adm_no),
         csvEscape(s.first_name),
@@ -424,17 +424,36 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
         csvEscape(parish),
       ].join(',');
     });
+    return [headers.join(','), ...rows].join('\r\n');
+  };
 
-    const csv = [headers.join(','), ...rows].join('\r\n');
+  const downloadParishCsv = (csv, filenameStem) => {
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement('a');
     a.href = url;
-    a.download = `student_parishes_template_${normalizedLevel}_${stream}_${apiYear}.csv`;
+    a.download = `${filenameStem}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const parishCsvFilenameStem = (kind) => {
+    const base = `student_parishes_${kind}_${normalizedLevel}_${stream}_${apiYear}`.replace(/\s+/g, '_');
+    const isFormVOrVI = normalizedLevel === 'FORM V' || normalizedLevel === 'FORM VI';
+    if (isFormVOrVI) {
+      return `${base}_${selectedTerm.replace(/\s+/g, '_')}`;
+    }
+    return base;
+  };
+
+  const handleDownloadTemplate = () => {
+    downloadParishCsv(buildParishCsv(false), parishCsvFilenameStem('template'));
     toast.success('Parish CSV template downloaded');
+  };
+
+  const handleDownloadFilledCSV = () => {
+    downloadParishCsv(buildParishCsv(true), parishCsvFilenameStem('filled'));
+    toast.success('Filled parish CSV downloaded');
   };
 
   const handleUploadFilled = (e) => {
@@ -619,9 +638,19 @@ const ParishManagement = ({ formLevel: formLevelProp }) => {
                 className="parish-btn small primary"
                 onClick={handleDownloadTemplate}
                 disabled={students.length === 0 || uploading}
-                title="Download CSV template"
+                title="Download CSV template with empty Parish column"
               >
                 <i className="fas fa-download"></i> Download CSV Template
+              </button>
+
+              <button
+                type="button"
+                className="parish-btn small primary"
+                onClick={handleDownloadFilledCSV}
+                disabled={students.length === 0 || uploading || parishesLoading}
+                title="Download CSV with current parish assignments filled in"
+              >
+                <i className="fas fa-file-csv"></i> Download Filled CSV
               </button>
 
               <label
