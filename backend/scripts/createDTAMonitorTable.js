@@ -28,9 +28,20 @@ async function createDTAMonitorTable() {
         last_changed_by VARCHAR(100),
         last_changed_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(student_adm_no, level, stream, year, month, subject_code)
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'score_change_audit_row_unique'
+        ) THEN
+          ALTER TABLE score_change_audit
+            ADD CONSTRAINT score_change_audit_row_unique
+            UNIQUE (student_adm_no, level, stream, year, month, subject_code);
+        END IF;
+      END $$;
     `);
     console.log('✅ score_change_audit table created');
     
