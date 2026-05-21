@@ -1,47 +1,14 @@
 # Railway/Nixpacks — backend API (root directory should be `backend/`)
 # PostgreSQL client: pg_dump / pg_restore for admin backups
-# Apt libs below: Puppeteer bundled Chrome (see https://pptr.dev/troubleshooting)
-# Do NOT rely on apt `chromium` on Ubuntu 24.04 — /usr/bin/chromium-browser is a snap stub.
+# Chrome system libs: installed via `puppeteer browsers install --install-deps`
+# (uses deb.deps + apt-get satisfy — correct on Ubuntu 24.04 Noble, incl. t64 packages).
+# Do NOT list legacy apt names (libasound2, etc.) here — Noble has no install candidate.
 
 [phases.setup]
-aptPkgs = [
-  "postgresql-client",
-  "ca-certificates",
-  "fonts-liberation",
-  "libasound2",
-  "libatk-bridge2.0-0",
-  "libatk1.0-0",
-  "libcairo2",
-  "libcups2",
-  "libdbus-1-3",
-  "libexpat1",
-  "libfontconfig1",
-  "libgbm1",
-  "libglib2.0-0",
-  "libgtk-3-0",
-  "libnspr4",
-  "libnss3",
-  "libpango-1.0-0",
-  "libpangocairo-1.0-0",
-  "libx11-6",
-  "libx11-xcb1",
-  "libxcb1",
-  "libxcomposite1",
-  "libxcursor1",
-  "libxdamage1",
-  "libxext6",
-  "libxfixes3",
-  "libxi6",
-  "libxrandr2",
-  "libxrender1",
-  "libxss1",
-  "libxtst6",
-  "wget",
-  "xdg-utils",
-]
+aptPkgs = ["postgresql-client"]
 
 [phases.build]
 cmds = [
-  "npx puppeteer browsers install chrome",
+  "npx puppeteer browsers install chrome --install-deps",
   "node scripts/verify-puppeteer-chrome.js",
 ]
