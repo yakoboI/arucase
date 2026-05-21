@@ -1482,7 +1482,7 @@ async function generatePhotoEntryFormPDF(level, stream, year, month = null, term
  * Generates PDF directly from database data (no frontend scraping)
  */
 async function generateMonthlyResultsPDF(level, stream, year, month) {
-  const puppeteer = require('puppeteer');
+  const { launchBrowser } = require('./puppeteerLaunch');
   const { calculateGrade, getSwahiliRemarks } = require('./calculations');
   const bwipjs = require('bwip-js');
   let browser = null;
@@ -1522,7 +1522,9 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     }
     
     if (studentsResult.rows.length === 0) {
-      throw new Error('No students found for this class');
+      const err = new Error('No students found for this class');
+      err.status = 404;
+      throw err;
     }
     
     // Get subjects
@@ -2063,18 +2065,10 @@ async function generateMonthlyResultsPDF(level, stream, year, month) {
     }
     
     // Launch browser and generate PDF
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu'
-      ]
-    });
+    browser = await launchBrowser({ timeout: 120000 });
     
     const page = await browser.newPage();
+    page.setDefaultTimeout(120000);
     await page.setViewport({ width: 1920, height: 1080 });
     
     // Set content directly (no navigation needed)

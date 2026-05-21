@@ -3978,7 +3978,8 @@ router.get('/monthly-results/pdf', async (req, res) => {
     
     // If it's already a response, don't send another
     if (!res.headersSent) {
-      return sendError(res, error, 500);
+      const status = error?.status || error?.statusCode || 500;
+      return sendError(res, error, status);
     }
   }
 });
