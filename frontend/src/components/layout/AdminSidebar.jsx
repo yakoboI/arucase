@@ -8,6 +8,13 @@ import './AdminSidebar.css';
 /** Matches routes that use `requiredAdmin` (subjects, etc.) — not all leadership roles. */
 const ADMIN_LIKE_ROLES = ['admin', 'superadmin'];
 
+const CategoryGuideLabel = ({ name }) => (
+  <span className="category-header__label">
+    <span className="category-marker" aria-hidden="true" />
+    <span className="category-title-text">{name}</span>
+  </span>
+);
+
 const AdminSidebar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -27,7 +34,17 @@ const AdminSidebar = () => {
     setExpandedCategories(navigationItems.map((_, i) => i));
   }, []);
 
+  const { logout, user } = useAuth();
+
+  const isAdminLike = user?.role && ADMIN_LIKE_ROLES.includes(user.role);
+  const keepNavSectionsOpen = !isAdminLike;
+  const sidebarTitle = isAdminLike ? 'Admin Panel' : 'Staff Portal';
+
+  const isCategoryExpanded = (catIndex) =>
+    keepNavSectionsOpen || expandedCategories.includes(catIndex);
+
   const toggleCategory = (index) => {
+    if (!isAdminLike) return;
     setExpandedCategories((prev) => {
       const next = prev.includes(index)
         ? prev.filter((i) => i !== index)
@@ -36,10 +53,6 @@ const AdminSidebar = () => {
       return next;
     });
   };
-  const { logout, user } = useAuth();
-
-  const isAdminLike = user?.role && ADMIN_LIKE_ROLES.includes(user.role);
-  const sidebarTitle = isAdminLike ? 'Admin Panel' : 'Staff Portal';
 
   // Helper: get modules array from user.permissions
   const getUserModules = () => {
@@ -276,7 +289,7 @@ const AdminSidebar = () => {
       )}
 
       {/* Sidebar */}
-      <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+      <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'mobile-open' : ''} ${keepNavSectionsOpen ? 'always-open-nav' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <i className="fas fa-shield-alt"></i>
@@ -297,23 +310,31 @@ const AdminSidebar = () => {
           {/* Desktop Navigation - Grouped by Category */}
           <div className="sidebar-nav-desktop">
             {filteredNavigationItems.map((category, catIndex) => {
-              const isExpanded = expandedCategories.includes(catIndex);
+              const isExpanded = isCategoryExpanded(catIndex);
               return (
                 <div key={catIndex} className={`nav-category ${isExpanded ? 'expanded' : ''}`}>
                   {!sidebarCollapsed && (
-                    <button
-                      type="button"
-                      className="category-header"
-                      onClick={() => toggleCategory(catIndex)}
-                      aria-expanded={isExpanded}
-                      title={category.category}
-                    >
-                      <span className="category-title-text">{category.category}</span>
-                      <i className={`fas fa-chevron-right category-chevron ${isExpanded ? 'rotated' : ''}`}></i>
-                    </button>
+                    keepNavSectionsOpen ? (
+                      <div className="category-header category-header--static" title={category.category}>
+                        <CategoryGuideLabel name={category.category} />
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="category-header"
+                        onClick={() => toggleCategory(catIndex)}
+                        aria-expanded={isExpanded}
+                        title={category.category}
+                      >
+                        <CategoryGuideLabel name={category.category} />
+                        <i className={`fas fa-chevron-right category-chevron ${isExpanded ? 'rotated' : ''}`}></i>
+                      </button>
+                    )
                   )}
                   {sidebarCollapsed && (
-                    <div className="category-title">{category.category}</div>
+                    <div className="category-title">
+                      <CategoryGuideLabel name={category.category} />
+                    </div>
                   )}
                   <ul className={`nav-items category-items ${isExpanded ? 'open' : ''}`}>
                   {category.items.map((item) => (
@@ -323,8 +344,7 @@ const AdminSidebar = () => {
                         className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
                         title={item.label}
                       >
-                        <i className={`fas ${item.icon}`}></i>
-                        {!sidebarCollapsed && <span className="nav-item-text">{item.label}</span>}
+                        <span className="nav-item-text">{item.label}</span>
                       </Link>
                     </li>
                   ))}
@@ -337,19 +357,25 @@ const AdminSidebar = () => {
           {/* Mobile Navigation - Accordion Categories */}
           <div className="sidebar-nav-mobile">
             {filteredNavigationItems.map((category, catIndex) => {
-              const isExpanded = expandedCategories.includes(catIndex);
+              const isExpanded = isCategoryExpanded(catIndex);
               return (
                 <div key={catIndex} className={`mobile-nav-category ${isExpanded ? 'expanded' : ''}`}>
-                  <button
-                    type="button"
-                    className="mobile-category-header"
-                    onClick={() => toggleCategory(catIndex)}
-                    aria-expanded={isExpanded}
-                    title={category.category}
-                  >
-                    <span className="category-title-text">{category.category}</span>
-                    <i className={`fas fa-chevron-right category-chevron ${isExpanded ? 'rotated' : ''}`}></i>
-                  </button>
+                  {keepNavSectionsOpen ? (
+                    <div className="mobile-category-header mobile-category-header--static" title={category.category}>
+                      <CategoryGuideLabel name={category.category} />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mobile-category-header"
+                      onClick={() => toggleCategory(catIndex)}
+                      aria-expanded={isExpanded}
+                      title={category.category}
+                    >
+                      <CategoryGuideLabel name={category.category} />
+                      <i className={`fas fa-chevron-right category-chevron ${isExpanded ? 'rotated' : ''}`}></i>
+                    </button>
+                  )}
                   <ul className={`mobile-nav-items mobile-category-items ${isExpanded ? 'open' : ''}`}>
                     {category.items.map((item) => (
                       <li key={item.key || item.path}>
@@ -358,7 +384,6 @@ const AdminSidebar = () => {
                           className={`mobile-nav-item ${isActive(item.path) ? 'active' : ''}`}
                           onClick={() => setMobileMenuOpen(false)}
                         >
-                          <i className={`fas ${item.icon}`}></i>
                           <span className="nav-item-text">{item.label}</span>
                         </Link>
                       </li>
@@ -370,17 +395,16 @@ const AdminSidebar = () => {
           </div>
         </nav>
 
-        <SidebarOnlinePresence collapsed={sidebarCollapsed} />
-
         {/* User Info & Logout */}
         <div className="sidebar-footer">
-          <div className="user-info">
-            {!sidebarCollapsed && (
-              <>
+          <div className="sidebar-footer__user-row">
+            {!sidebarCollapsed ? (
+              <div className="user-info">
                 <div className="user-name">{user?.full_name || user?.username || 'Admin'}</div>
                 <div className="user-role">{user?.role || 'Administrator'}</div>
-              </>
-            )}
+              </div>
+            ) : null}
+            <SidebarOnlinePresence collapsed={sidebarCollapsed} />
           </div>
           <button 
             className="logout-btn"

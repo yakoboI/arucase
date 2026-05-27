@@ -16,15 +16,22 @@ const SidebarUserPhoto = ({ collapsed }) => {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [photoVisible, setPhotoVisible] = useState(false);
   const location = useLocation();
+
+  const photoUrl = user?.profile_picture
+    ? resolveStaticUrl(user.profile_picture)
+    : null;
 
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  const photoUrl = user?.profile_picture
-    ? resolveStaticUrl(user.profile_picture)
-    : null;
+  useEffect(() => {
+    if (!photoUrl) {
+      setPhotoVisible(false);
+    }
+  }, [photoUrl]);
 
   const openFilePicker = () => {
     if (busy) return;
@@ -38,6 +45,17 @@ const SidebarUserPhoto = ({ collapsed }) => {
       return;
     }
     openFilePicker();
+  };
+
+  const handleShowPhoto = () => {
+    if (busy) return;
+    setMenuOpen(false);
+    setPhotoVisible(true);
+  };
+
+  const handleHidePhoto = () => {
+    setMenuOpen(false);
+    setPhotoVisible(false);
   };
 
   const handleDelete = async () => {
@@ -105,35 +123,65 @@ const SidebarUserPhoto = ({ collapsed }) => {
     <div
       className={`sidebar-user-photo ${collapsed ? 'sidebar-user-photo--collapsed' : ''} ${busy ? 'sidebar-user-photo--busy' : ''}`}
     >
-      <button
-        type="button"
-        className="sidebar-user-photo__area"
-        onClick={handleAreaClick}
-        disabled={busy}
-        aria-label={
-          photoUrl
-            ? 'Profile photo options'
-            : 'Upload profile photo'
-        }
-        aria-expanded={menuOpen}
-        aria-haspopup={photoUrl ? 'true' : undefined}
-      >
-        {photoUrl ? (
-          <img src={photoUrl} alt="" className="sidebar-user-photo__img" />
-        ) : (
-          <span className="sidebar-user-photo__placeholder" aria-hidden="true">
-            <i className="fas fa-user" />
-            <span className="sidebar-user-photo__hint">Add photo</span>
-          </span>
-        )}
-        {busy ? (
-          <span className="sidebar-user-photo__overlay" aria-hidden="true">
-            <i className="fas fa-spinner fa-spin" />
-          </span>
-        ) : null}
-      </button>
+      {!photoVisible ? (
+        <button
+          type="button"
+          className="sidebar-user-photo__toggle"
+          onClick={handleShowPhoto}
+          disabled={busy}
+          aria-label={photoUrl ? 'Show profile photo' : 'Show photo upload'}
+          title={photoUrl ? 'Show profile photo' : 'Show photo upload'}
+        >
+          <i className="fas fa-id-badge" aria-hidden="true" />
+          {!collapsed ? (
+            <span className="sidebar-user-photo__toggle-label">
+              {photoUrl ? 'Show photo' : 'Photo'}
+            </span>
+          ) : null}
+        </button>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="sidebar-user-photo__area"
+            onClick={handleAreaClick}
+            disabled={busy}
+            aria-label={
+              photoUrl ? 'Profile photo options' : 'Upload profile photo'
+            }
+            aria-expanded={menuOpen}
+            aria-haspopup={photoUrl ? 'true' : undefined}
+          >
+            {photoUrl ? (
+              <img src={photoUrl} alt="" className="sidebar-user-photo__img" />
+            ) : (
+              <span className="sidebar-user-photo__placeholder" aria-hidden="true">
+                <i className="fas fa-user" />
+                <span className="sidebar-user-photo__hint">Add photo</span>
+              </span>
+            )}
+            {busy ? (
+              <span className="sidebar-user-photo__overlay" aria-hidden="true">
+                <i className="fas fa-spinner fa-spin" />
+              </span>
+            ) : null}
+          </button>
 
-      {menuOpen && photoUrl ? (
+          <button
+            type="button"
+            className="sidebar-user-photo__hide-btn"
+            onClick={handleHidePhoto}
+            disabled={busy}
+            aria-label="Hide profile photo"
+            title="Hide profile photo"
+          >
+            <i className="fas fa-eye-slash" aria-hidden="true" />
+            {!collapsed ? <span>Hide photo</span> : null}
+          </button>
+        </>
+      )}
+
+      {menuOpen && photoUrl && photoVisible ? (
         <div className="sidebar-user-photo__menu" role="menu">
           <p className="sidebar-user-photo__menu-note">
             To change your photo, delete this one first, then upload again.

@@ -270,6 +270,7 @@ table {
         min-height: 0 !important;
         overflow: visible !important;
         overflow-x: visible !important;
+        background: #ffffff !important;
     }
 
     /*
@@ -2223,22 +2224,55 @@ table.academic-table thead tr:first-child th:nth-child(8).rotate-header.table-he
 }
 
 .download-btn {
-    background: #ffffff;
-    color: #000000;
-    border: 1px solid #000000;
+    background: #0ea5e9;
+    color: #ffffff;
+    border: 1px solid #0284c7;
     padding: 12px 24px;
     font-size: 13.5px !important;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     font-family: 'Tinos', 'Times New Roman', 'Liberation Serif', 'Times', serif;
     pointer-events: auto !important;
     z-index: 1000 !important;
     position: relative !important;
 }
 
-.download-btn:hover {
-    background: #ffffff;
+.download-btn:hover:not(:disabled) {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0369a1;
+}
+
+.download-btn:disabled {
+    background: #bae6fd;
+    color: #475569;
+    border-color: #7dd3fc;
+    cursor: not-allowed;
+}
+
+.report-container .download-btn,
+.report-container .download-btn i {
+    color: #ffffff !important;
+}
+
+.report-container .download-btn:disabled,
+.report-container .download-btn:disabled i {
+    color: #475569 !important;
+}
+
+/* Ice blue accent typography (color only — sizes unchanged) */
+.report-container .school-info h1,
+.report-container .school-info h2 {
+    color: #0c4a6e !important;
+}
+
+.report-container .contact-info p {
+    color: #0369a1 !important;
+}
+
+.report-container .report-section h3 {
+    color: #0369a1 !important;
 }
 
 .comments-table tr:last-child td:nth-child(3),
